@@ -291,3 +291,27 @@ This file records decisions already chosen for the current architecture candidat
 **Why:** Prevents the housing example from becoming a universal policy ontology and leaves room for executive actions, tax changes, automatic programs, appointments, judicial effects, and future domains.
 
 **Current class:** Candidate hard invariant.
+
+## D-037 — Historical occurrence history does not own mutable domain state
+
+**Decision:** `HistoricalRecord` owns immutable committed occurrence facts that a consequential event or transition happened. The originating domain retains ownership of mutable current/procedural state such as current certification state, current grant/award status, office assignment, payment state, proposal status, and other live domain facts. A global history index may reference domain occurrence records for chronology/query but may not duplicate or become the mutable owner of those facts.
+
+**Why:** Prevents `HistoricalRecord` from becoming an event-log god object and removes ambiguity between domain-owned records/state and immutable occurrence history.
+
+**Current class:** Candidate hard invariant.
+
+## D-038 — Legally operative program requirements remain legal-state truth
+
+**Decision:** Binding program requirements established by constitutions, statutes, regulations, orders, or other legally operative sources remain owned by the constitutional/legal order. Program/administrative state owns lawful operational configuration, workflow, application processing, discretionary parameters within delegated authority, determinations, staffing, and execution state. A concrete eligibility determination may derive from applicable legal requirements + lawful administrative configuration + applicant/project/state facts, but the program may not maintain a separately authoritative mutable copy of the legal rule that binds it.
+
+**Why:** Prevents statute/regulation requirements from being duplicated into program state and later diverging from the law the program is supposed to administer.
+
+**Current class:** Candidate hard invariant.
+
+## D-039 — Intergovernmental participation is relational, not a unilateral state flag
+
+**Decision:** State application, acceptance of terms, refusal, withdrawal intent, and state-side commitments belong to the relevant state political/administrative owner. Federal eligibility determinations, acceptance, awards, or denials belong to the federal program/administrative owner. The active participation/agreement relationship is derived from or canonically represented by the applicable intergovernmental/program relationship under both sides' authoritative state and governing legal conditions; it is not owned solely by a state `participates=true` flag or a federal summary.
+
+**Why:** Distinguishes a state's political choice from federal acceptance and from the bilateral relationship that actually authorizes/structures participation.
+
+**Current class:** Candidate hard invariant.

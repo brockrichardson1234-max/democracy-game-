@@ -550,3 +550,114 @@ Before Commit 3 derives detailed governmental primitives, reviewers should be ab
 11. Low-resolution GL0 state can deepen later by refining existing owners rather than replacing them.
 
 If a reviewer needs Commit-3 detail to name a final class but the semantic owner boundary is already unambiguous, that is **not** by itself a Commit-2 failure.
+
+## 19. Commit-2 repair clarifications — normative
+
+The following clarifications supersede any broader shorthand earlier in this document and the broad `HistoricalRecord` wording in `02_CAUSAL_ARCHITECTURE_V0.md`. Commit 3 must instantiate these semantic boundaries without collapsing them.
+
+### 19.1 Immutable occurrence history versus domain-owned current/procedural state
+
+The originating domain owns its mutable current and procedural state. `HistoricalRecord` owns only immutable committed occurrence facts that an event or transition happened.
+
+Examples:
+
+```text
+ElectionProcess.currentCertificationState
+    -> electoral/political process owner
+
+ElectionCertified(result=X, at=T)
+    -> immutable historical occurrence
+```
+
+```text
+Program.currentAwardState
+    -> program/administrative owner
+
+GrantAwarded(grant=G, at=T)
+    -> immutable historical occurrence
+```
+
+```text
+OfficeAssignment.currentHolder
+    -> political/institutional owner
+
+OfficeAssignmentChanged(old=A, new=B, at=T)
+    -> immutable historical occurrence
+```
+
+A global history index may reference domain events/records for chronology or query, but it may not duplicate or become the mutable owner of certification state, award state, office assignment, payment state, proposal status, or other domain facts.
+
+### Candidate hard invariant O-11
+
+**Historical occurrence records own that a committed event happened; originating domains retain ownership of current/procedural state. History/indexing infrastructure may reference occurrence records but may not become an event-log god object or shadow mutable domain state.**
+
+### 19.2 Legally operative requirements versus administrative configuration
+
+Program administration does not own a second copy of a legally binding rule merely because it applies that rule.
+
+The semantic split is:
+
+- constitution/statute/regulation/order or other legally operative requirement -> constitutional/legal owner;
+- lawful delegated administrative configuration, workflow, application-processing state, discretionary parameters, staffing, and operational status -> program/administrative owner;
+- applicant/project/state facts -> their existing canonical owners;
+- an eligibility determination -> program/administrative decision derived from the applicable legal requirements + lawful administrative configuration + relevant canonical facts.
+
+Conceptually:
+
+```text
+Applicable legal requirements
++ lawful delegated administrative configuration
++ applicant/project/state facts
+        ↓
+eligibility determination
+```
+
+The program may administer, interpret within delegated discretion, and operationalize legal requirements. It may not maintain an independently authoritative mutable copy of the legal rule that binds the program.
+
+### Candidate hard invariant O-12
+
+**Legally operative program requirements remain owned by the legal order. Program/administrative state owns lawful operational configuration and determinations, not a shadow copy of binding law.**
+
+### 19.3 State intent versus active intergovernmental participation
+
+“State participation” is not one unilateral state-owned boolean.
+
+The semantic facts are separated:
+
+- state application, acceptance of proposed terms, refusal, withdrawal intent, and state-side commitments -> relevant state political/administrative owner;
+- federal eligibility determination, acceptance, award, or denial -> federal program/administrative owner;
+- current active participation/agreement relationship -> derived from, or canonically represented by, the applicable intergovernmental/program relationship using both sides' authoritative state and governing legal conditions.
+
+Conceptually:
+
+```text
+State application / acceptance
++ federal eligibility / acceptance
++ applicable legal/program conditions
+        ↓
+active intergovernmental participation relationship
+```
+
+Commit 2 does not require a class named `IntergovernmentalProgramAgreement`. Commit 3 may choose the concrete representation. The invariant is that neither a unilateral state flag nor a federal dashboard may own the full bilateral relationship by itself.
+
+### Candidate hard invariant O-13
+
+**State intent and federal program decisions remain separately owned. Active intergovernmental participation is a relationship fact derived from or canonically owned by the relationship/process that joins them, not by one side's unilateral participation flag.**
+
+### 19.4 Corrected source-of-truth interpretation
+
+Where the table in Section 4 uses broader shorthand, interpret those rows as follows:
+
+| Refined canonical fact | Owner | Explicitly not the owner |
+|---|---|---|
+| Current election certification/procedural state | Electoral/political process state | `HistoricalRecord`, current office assignment |
+| Immutable occurrence that certification happened | Historical occurrence record | Current certification/procedural state |
+| Legally operative program eligibility/requirements | Constitutional/legal state | Program-owned duplicate rule |
+| Lawful operational configuration/workflow/discretionary program parameters | Program/administrative state | Constitutional/legal source itself |
+| Program eligibility determination for a specific case | Program/administrative state derived from legal requirements + lawful configuration + canonical case facts | A duplicate legal-rule store |
+| State application/acceptance/refusal/withdrawal intent | Relevant state political/administrative state | Federal program summary |
+| Federal program eligibility/acceptance/award/denial | Federal program/administrative state | State unilateral participation flag |
+| Active intergovernmental participation/agreement relationship | Relationship/process state or derived from both sides under applicable law | State-only boolean, national dashboard |
+| Immutable vote/award/payment/assignment occurrence | Historical occurrence record | Originating domain's mutable current/procedural state |
+
+These refinements are ownership clarifications only. They do not design Commit-3 government classes, legal resolvers, grant agreements, or event schemas.
