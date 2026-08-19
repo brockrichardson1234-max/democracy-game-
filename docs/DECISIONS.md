@@ -1,14 +1,14 @@
 # Decisions
 
-Status: **Commit-1 decision log for review.**
+Status: **Commit-1 repair decision log for review.**
 
 This file records decisions already chosen for the current architecture candidate. A later review may revise them in a new commit; this file does not pretend they are eternally immutable.
 
 ## D-001 — Player control binding
 
-**Decision:** The player controls the strategic decision surface of an executive administration anchored to an individual elected officeholder. The player is not the officeholder, administration, party, country, or political world as canonical state.
+**Decision:** The player controls the strategic decision surface of an executive administration anchored to an individual officeholder occupying an executive office through a valid office assignment in the constitutional/political order. Governing Loop 0 begins with an office assignment produced by election, but election is not a universal requirement for every possible officeholder. The player is not the officeholder, administration, party, country, or political world as canonical state.
 
-**Why:** Preserves independent world identity, succession, future alternate control modes, and causal separation between player intent and world response.
+**Why:** Preserves independent world identity, succession after election/death/resignation/incapacity, future alternate control modes, and causal separation between player intent and world response.
 
 **Current class:** Candidate hard invariant.
 
@@ -20,11 +20,11 @@ This file records decisions already chosen for the current architecture candidat
 
 **Current class:** Candidate hard invariant.
 
-## D-003 — Contested political actions are valid attempts
+## D-003 — Contested political actions use a four-stage admission boundary
 
-**Decision:** A meaningful political action may be attempted even when its authority is disputed or potentially unlawful. This is distinct from malformed/semantically invalid input, which is rejected without creating a political event.
+**Decision:** Every player command is conceptually evaluated as: (1) structural validity, (2) actor capability/attemptability, (3) authority/legal validity, and (4) compliance/consequence. Only commands that pass structural validity and actor-attemptability enter canonical political history as attempts. A meaningful political action may therefore be attempted even when its authority is disputed or potentially unlawful. Legal validity and compliance are world questions. Malformed input or a direct-world mutation that the controlled office cannot meaningfully attempt is rejected without creating a political event.
 
-**Why:** Required for ordinary executive-legislative conflict, bureaucratic resistance, federal-state disputes, judicial review, constitutional crises, and later democratic erosion through one engine.
+**Why:** Preserves executive overreach, bureaucratic resistance, federal-state conflict, judicial review, constitutional crises, and later democratic erosion without allowing arbitrary debug-style world mutations to masquerade as political acts.
 
 **Current class:** Candidate hard invariant.
 
@@ -52,11 +52,11 @@ This file records decisions already chosen for the current architecture candidat
 
 **Current class:** Candidate hard invariant.
 
-## D-007 — Election loss does not reset the world
+## D-007 — Election loss does not reset or freeze the world
 
-**Decision:** When the controlled administration loses office, the player-control binding ends at the effective transfer boundary while legal, fiscal, institutional, administrative, material, informational, and political state persists.
+**Decision:** When the controlled administration loses office, the player-control binding ends at the effective transfer boundary while legal, fiscal, institutional, administrative, material, informational, and political state persists as of that boundary. Persisted state may then change only through ordinary causal processes that have authority or capability to change it.
 
-**Why:** Makes elections consequential and establishes institutional/path-dependent history.
+**Why:** Makes elections consequential, establishes institutional/path-dependent history, and prevents succession from becoming either a reset or a permanent freeze of inherited state.
 
 **Current class:** Candidate hard invariant.
 
@@ -78,9 +78,9 @@ This file records decisions already chosen for the current architecture candidat
 
 ## D-010 — Housing design has a few consequential dimensions
 
-**Decision:** The first proposal is shaped by a small number of real tradeoff dimensions such as matching rate, eligibility/conditions, distribution formula, administrative funding, and reporting/enforcement requirements. Exact counts and tuning remain open.
+**Decision:** The first proposal is shaped by a small number of real tradeoff dimensions such as matching rate, state eligibility/participation conditions, project eligibility requirements, distribution formula, administrative funding, and reporting/enforcement requirements. Exact counts and tuning remain open. GL0 does not require first-class local-government simulation merely because a project may later depend on local eligibility facts.
 
-**Why:** Produces strategic choice while preventing a 100-policy content explosion before the loop exists.
+**Why:** Produces strategic choice while preventing a 100-policy content explosion or a premature municipality/zoning simulation before the loop exists.
 
 **Current class:** V0 scenario decision.
 
@@ -131,3 +131,19 @@ This file records decisions already chosen for the current architecture candidat
 **Why:** Preserves a clean review boundary before derived architecture is written.
 
 **Current class:** Process decision.
+
+## D-017 — Administration control is not actor ownership
+
+**Decision:** A `ControlBinding` grants the player access to the administration's authorized strategic decision surface. It does not make constituent officeholders, appointees, agencies, civil servants, staff, or other personnel player-owned actors. Routine staff activity may be abstracted where no meaningful independent decision exists, but compliance, resistance, judgment, and legally independent choices remain world behavior.
+
+**Why:** Prevents the executive administration from becoming a hidden player hive mind while still allowing appropriate abstraction of routine staff work.
+
+**Current class:** Candidate hard invariant.
+
+## D-018 — Housing is not the whole electorate
+
+**Decision:** GL0 may begin with persistent partisan dispositions, candidate/incumbent evaluations, political memories, turnout tendencies, and background issue salience supplied by the fixture. Housing is the first dynamically simulated policy domain, not the sole determinant of electoral preference or turnout.
+
+**Why:** Prevents the first election model from degenerating into a housing-referendum happiness function while avoiding premature implementation of many additional material policy domains.
+
+**Current class:** Candidate architecture requirement for the GL0 electorate seam.

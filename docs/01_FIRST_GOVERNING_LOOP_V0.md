@@ -1,6 +1,6 @@
 # 01 — First Governing Loop V0
 
-Status: **Commit-1 architecture candidate for review. Not implementation authority.**
+Status: **Commit-1 repair candidate for review. Not implementation authority.**
 
 ## 1. Purpose
 
@@ -42,7 +42,7 @@ The first federal intervention is a **conditional housing-construction grant pro
 The player may shape a small number of consequential design dimensions, such as:
 
 - federal matching rate;
-- state/local eligibility conditions;
+- state eligibility/participation conditions and project eligibility requirements;
 - geographic or need-based distribution formula;
 - administrative funding;
 - reporting, compliance, or enforcement requirements.
@@ -56,6 +56,8 @@ Examples of intended tensions:
 - underfunding administration can make the proposal politically cheaper while degrading delivery;
 - broad distribution can improve coalition support while diluting material effect;
 - concentrated funding can produce stronger local effects while creating political resistance elsewhere.
+
+Project eligibility may later depend on local facts, but GL0 does not require local governments, zoning authorities, or municipal political institutions to become first-class simulated jurisdictions.
 
 Exact values and coefficients are not frozen in Commit 1.
 
@@ -185,19 +187,23 @@ Competing actors may offer different causal interpretations of the same observed
 
 The player faces an election shaped by the world and the information environment, not a direct policy-to-happiness table.
 
+GL0's election is **not required to be a referendum solely on housing**. The electorate may enter the scenario with persistent partisan dispositions, candidate/incumbent evaluations, political memories, turnout tendencies, and background issue salience supplied by the fixture. Housing is the first dynamically simulated policy domain, not the entirety of political preference.
+
 If the player loses:
 
 - the controlled administration leaves office at the effective transfer boundary;
 - the world does not reset;
-- enacted law remains unless later changed;
-- remaining fiscal authorizations/obligations remain according to their rules;
-- agencies and appointments persist where appropriate;
-- unfinished projects remain;
-- state participation remains;
+- enacted law remains unless later changed through an authorized causal process;
+- remaining fiscal authorizations/obligations remain according to their rules until changed, exhausted, expired, or otherwise resolved through ordinary processes;
+- agencies and appointments persist where appropriate until ordinary causal processes change them;
+- unfinished projects remain and continue or change according to their governing state;
+- state participation remains as of the transfer boundary and may later change causally;
 - housing stock and construction state remain;
-- legal contests/orders remain;
-- population beliefs, attribution, salience, and political memory remain; and
+- legal contests/orders remain according to their scope and later procedural changes;
+- population beliefs, attribution, salience, and political memory remain and may subsequently evolve; and
 - the successor inherits this state.
+
+**Succession preserves the actual state at the transfer boundary. Persisted state may subsequently change only through ordinary causal processes that have authority or capability to change it.**
 
 The V0 run may end active player control after enough successor simulation to demonstrate inheritance. The final product's continuation mode is deferred.
 
@@ -244,7 +250,7 @@ Governing Loop 0 does not require:
 - congressional districting;
 - primaries;
 - full judicial hierarchy or detailed litigation;
-- local zoning simulation;
+- local government or local zoning simulation;
 - media-company ownership models;
 - lobbying or campaign-finance breadth;
 - foreign affairs;
@@ -265,7 +271,7 @@ After architecture review, the first executable proof should be deliberately sma
 - one federal agency/program;
 - a small synthetic set of state jurisdictions with structurally different responses;
 - one minimal housing mechanism;
-- a tiny aggregate electorate;
+- a tiny aggregate electorate with baseline political state outside the housing domain;
 - a minimal information/claim path;
 - one election; and
 - one small legal-contest seam.
@@ -282,4 +288,5 @@ Reviewers should attack:
 4. Does the loop require any magical policy-to-outcome or policy-to-voter jump?
 5. Does the state/federal seam belong in GL0 early enough to prevent bolting federalism on later?
 6. Does electoral defeat prove persistence rather than merely ending the scenario?
-7. Is any promised outcome impossible to support without a major architecture category not yet acknowledged?
+7. Does the election preserve broader baseline political state so housing does not become the sole causal determinant of electoral behavior?
+8. Is any promised outcome impossible to support without a major architecture category not yet acknowledged?

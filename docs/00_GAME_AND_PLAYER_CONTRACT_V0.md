@@ -1,6 +1,6 @@
 # 00 — Game and Player Contract V0
 
-Status: **Commit-1 architecture candidate for review. Not implementation authority.**
+Status: **Commit-1 repair candidate for review. Not implementation authority.**
 
 ## 1. Game identity
 
@@ -14,7 +14,7 @@ The intended player feeling is:
 
 ## 2. What the player is
 
-The player controls the **strategic decision surface of an executive administration anchored to an individual elected officeholder**.
+The player controls the **strategic decision surface of an executive administration anchored to an individual officeholder occupying an executive office through the constitutional/political order**.
 
 This is a control relationship, not a canonical political actor.
 
@@ -25,10 +25,13 @@ PlayerSession
   -> ControlBinding
       -> Administration
           -> headed by Officeholder
-              -> occupies ExecutiveOffice
+              -> OfficeAssignment
+                  -> ExecutiveOffice
 ```
 
-The office, officeholder, administration, country, parties, legislature, agencies, states, electorate, and material world all exist independently of the player session.
+The office, officeholder, administration, country, parties, legislature, agencies, states, electorate, and material world all exist independently of the player session. Governing Loop 0 begins with an officeholder whose office assignment results from an election, but election is not a universal requirement for every possible executive officeholder or future playable role.
+
+A `ControlBinding` grants access to the administration's authorized player decision surface. It does **not** convert constituent officeholders, appointees, agencies, civil servants, staff, or other personnel into player-owned actors. Routine staff work may be abstracted where it creates no meaningful independent decision, but another actor's compliance, resistance, judgment, or legally independent choice is never silently replaced by player ownership.
 
 ### Candidate hard invariant P-01
 
@@ -38,7 +41,7 @@ This permits later spectator/history modes, another playable office, opposition 
 
 ## 3. What the player can do
 
-The player may, when the controlled administration has a plausible institutional path:
+The player may, when the controlled administration can meaningfully originate, issue, communicate, propose, request, direct, withhold, sign, veto, appoint, spend, negotiate, or otherwise attempt the relevant kind of institutional action toward a real target:
 
 - set strategic priorities and agenda;
 - originate or support political proposals;
@@ -48,7 +51,7 @@ The player may, when the controlled administration has a plausible institutional
 - allocate or propose allocation of resources that are legally available to the administration;
 - make appointments or personnel choices where the office has authority;
 - accept, reject, amend, withdraw, delay, appeal, or contest an available political or administrative course; and
-- deliberately attempt an aggressive, disputed, norm-breaking, or potentially unlawful political action when the action is meaningful in-world.
+- deliberately attempt an aggressive, disputed, norm-breaking, or potentially unlawful political action when the office/administration can meaningfully perform the attempted act in-world.
 
 The player does **not** directly control:
 
@@ -68,9 +71,18 @@ The player does **not** directly control:
 
 Selecting a housing objective therefore cannot directly decrease rent, increase approval, create buildings, or assign legislative votes.
 
-## 4. Invalid input versus contested political action
+## 4. Command admission versus contested political action
 
-The simulation must distinguish malformed or impossible input from a valid attempt that may lack lawful authority.
+The simulation must distinguish malformed or impossible input from an attempted political action whose authority or outcome is disputed.
+
+Every player command passes through four conceptually distinct questions:
+
+1. **Structural validity.** Is the command well-formed, are required values valid, and do referenced entities exist?
+2. **Actor capability / attemptability.** Can the controlled office or administration meaningfully perform, issue, communicate, propose, direct, request, withhold, sign, veto, appoint, spend, negotiate, or otherwise attempt this kind of action toward this target?
+3. **Authority / legal validity.** Does the actor actually possess the claimed authority under the applicable constitutional/legal order? The answer may be valid, invalid, uncertain, disputed, scoped, or later adjudicated.
+4. **Compliance / consequence.** What do target actors and institutions actually do in response, and what political, administrative, operational, legal, informational, or material consequences follow?
+
+Only commands that pass **structural validity** and **actor capability/attemptability** enter canonical political history as attempted actions. Legal validity and compliance are world questions, not command-admission questions.
 
 ### Invalid game command
 
@@ -79,7 +91,8 @@ Examples:
 - negative monetary amount where the action requires a nonnegative amount;
 - nonexistent target entity;
 - impossible date/identifier shape;
-- command whose required semantic target is absent.
+- command whose required semantic target is absent; or
+- a direct-world mutation that is not an act the controlled office/administration can meaningfully perform, such as `SET_VIRGINIA_RENT = $900`.
 
 These fail without creating a political event.
 
@@ -89,14 +102,16 @@ Examples:
 
 - executive directs an agency under a disputed interpretation of authority;
 - administration attempts to redirect funds beyond an accepted interpretation of statute;
-- official refuses a lawful instruction;
+- President tells a governor that the state must enact a particular rule, even if the federal executive lacks authority to compel it;
+- President publicly claims or orders that rents are capped under asserted federal authority, even if that assertion has no valid legal effect;
+- official refuses a lawful instruction; or
 - state attempts conduct claimed to conflict with superior law.
 
 The attempt exists in canonical history. The world then resolves claimed authority, actor/institution response, legal contest where supported, operational behavior, material effects, and political consequences.
 
 ### Candidate hard invariant P-03
 
-**Unlawful or contestable political intent is not equivalent to malformed player input.**
+**Only structurally valid and actor-attemptable commands become canonical attempted political actions. Unlawful or contestable political intent is not equivalent to malformed player input, and legal invalidity alone does not erase a meaningful political attempt.**
 
 ## 5. Governing power is contextual, not a stack of meters
 
@@ -169,8 +184,10 @@ For Governing Loop 0:
 - the controlled administration can lose an election;
 - loss ends that administration's active player control binding at the constitutionally effective transfer boundary;
 - the world persists;
-- the successor inherits the legal, fiscal, institutional, administrative, material, informational, and political state that actually exists; and
+- the successor inherits the legal, fiscal, institutional, administrative, material, informational, and political state that actually exists at that transfer boundary; and
 - the simulation advances far enough to show inherited consequences relevant to the completed loop.
+
+Succession preserves existing state at the transfer boundary. Persisted state may subsequently change only through ordinary causal processes that have authority or capability to change it; succession itself is not a reset or a permanent freeze.
 
 The exact duration and whether a future product allows immediate continuation as opposition, another office, a successor administration, or spectator/history are deferred.
 
@@ -217,8 +234,8 @@ Those later capabilities must fit or deliberately extend the accepted architectu
 Reviewers should attack:
 
 1. Is the player role coherent and fun rather than secretly omnipotent or helpless?
-2. Does the control-binding model preserve the world across elections?
-3. Does permitting contested/unlawful attempts create a valid simulation seam without turning malformed commands into political events?
+2. Does the control-binding model preserve the world across elections without making administration personnel a player hive mind?
+3. Does the four-stage command-admission rule preserve contested/unlawful attempts without turning impossible direct-world mutations into political events?
 4. Is non-omniscience strategically legible?
 5. Does this contract accidentally require a U.S.-specific engine rather than a U.S. first configuration?
 6. Is any distinction here implementation detail rather than architecture?

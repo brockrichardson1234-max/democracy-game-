@@ -2,7 +2,7 @@
 
 Status: **architecture design only — not implementation authority**.
 
-Active design branch: `design/governing-loop-0-architecture`
+Review authority for any architecture candidate is the exact commit SHA supplied with the review request. Branch refs are convenience pointers only.
 
 This repository is for a systemic political strategy game in which the player occupies a constitutionally bounded governing role and attempts to change society through political support, lawful or contested authority, fiscal resources, institutions, administration, and persuasion. Laws do not directly create outcomes; institutions and material systems do. Voters react to what they experience, observe, believe, and attribute. Elections can remove the player without resetting the world.
 
