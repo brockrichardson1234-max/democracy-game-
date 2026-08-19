@@ -1,6 +1,6 @@
 # Decisions
 
-Status: **Final Commit-1 repair decision log for findings-only review.**
+Status: **Commit-2 architecture candidate decision log for review.**
 
 This file records decisions already chosen for the current architecture candidate. A later review may revise them in a new commit; this file does not pretend they are eternally immutable.
 
@@ -179,3 +179,115 @@ This file records decisions already chosen for the current architecture candidat
 **Why:** Prevents a causally correct architecture from producing a passive strategy game once legislation passes.
 
 **Current class:** Candidate player-experience requirement.
+
+## D-023 — Every canonical fact has one semantic owner
+
+**Decision:** Every mutable canonical fact has one semantic owner. Other representations of the same underlying fact must be explicit references, projections, in-world artifacts, indexes, caches, or historical records.
+
+**Why:** Prevents hidden duplicate authority and makes causal mutation ownership auditable.
+
+**Current class:** Candidate hard invariant.
+
+## D-024 — State is classified by semantic role
+
+**Decision:** Architecture distinguishes canonical current state, canonical historical records, in-world information artifacts, derived projections, session/control state, and rules/content configuration. These categories are semantic and need not map one-to-one to runtime base classes.
+
+**Why:** Prevents reports, caches, UI models, player session state, or historical records from becoming accidental world truth.
+
+**Current class:** Candidate architecture invariant.
+
+## D-025 — Geography and population are independently owned
+
+**Decision:** Geography owns spatial identity/boundaries/topology. Population owns population weight, demographics, and residence linkage. Electoral maps reference geography; electorates are derived from population + geography + eligibility rules. Districts do not own copied people.
+
+**Why:** Allows redistricting and resolution changes without duplicating/moving population into political boundary objects.
+
+**Current class:** Candidate hard invariant.
+
+## D-026 — Material domains own material outcomes
+
+**Decision:** Laws, appropriations, programs, and administrative actions may create legitimate inputs into material systems, but the corresponding material domain owns the material response. For GL0, Housing owns construction/stock/affordability outcomes.
+
+**Why:** Prevents policy/program objects from becoming direct material-effect modifiers and preserves competent implementation with uncertain material results.
+
+**Current class:** Candidate hard invariant.
+
+## D-027 — Cross-domain references preserve identity rather than clone state
+
+**Decision:** A subsystem referring to an entity/fact owned elsewhere stores a reference/relationship to canonical identity rather than a mutable shadow copy of the other subsystem's state.
+
+**Why:** Prevents later divergence such as district population versus canonical population or program project state versus physical project state.
+
+**Current class:** Candidate hard invariant.
+
+## D-028 — Derived projections are read-only
+
+**Decision:** UI metrics, summaries, electorates, forecasts, causal explanations, regime classifications, and other derived projections may be computed/cached but may not mutate canonical source state. Persisting a projection as something actors can later observe creates a provenance-bearing in-world artifact rather than a second owner.
+
+**Why:** Preserves one-way derivation and prevents convenience write-back into summaries/caches.
+
+**Current class:** Candidate hard invariant.
+
+## D-029 — Information artifacts own information, not their referents
+
+**Decision:** Polls, reports, claims, forecasts, memos, and releases can be canonical in-world artifacts owning their own content/provenance/access/history while remaining non-authoritative about the underlying material/legal/political state they describe.
+
+**Why:** Allows information to be delayed, uncertain, wrong, revised, private, or politically contested without rewriting world truth.
+
+**Current class:** Candidate hard invariant.
+
+## D-030 — Historical records and current state are separate owners
+
+**Decision:** Historical records own the fact that an event/decision/transition occurred. Current-state domains own what is true now. Election records, vote records, old polls, grant records, and other history cannot substitute for current authoritative state.
+
+**Why:** Preserves path-dependent history and future career continuity without making history a mutable current-state store.
+
+**Current class:** Candidate hard invariant.
+
+## D-031 — Scheduling infrastructure is an index, not semantic authority
+
+**Decision:** Domain-owned effective dates, deadlines, obligations, expirations, and scheduled conditions remain authoritative in their owning domains. A future scheduler/event queue may index when they need processing but does not become the owner of their meaning.
+
+**Why:** Prevents central scheduling machinery from silently absorbing legal, fiscal, political, or material authority.
+
+**Current class:** Candidate architecture invariant; exact scheduling implementation deferred.
+
+## D-032 — Resolution deepens by refining owners
+
+**Decision:** Higher simulation resolution should refine the internal representation of an existing canonical owner where the semantic fact is the same. A low-resolution summary must not later become a second owner competing with a newly detailed system.
+
+**Why:** Allows thin GL0 states, population, geography, agencies, information, and material domains to deepen without foundational truth migration.
+
+**Current class:** Candidate hard invariant.
+
+## D-033 — Fiscal authority, execution, and outcome are distinct
+
+**Decision:** Legal authorization/appropriation, actual public financial state, obligations, disbursements/expenditures, and material use/outcomes remain semantically distinct facts. Commit 3 will define the internal PoliticalOrder/public-finance primitives that own them.
+
+**Why:** Prevents “law passed,” “money authorized,” “money spent,” and “program worked” from collapsing into one funded-policy state.
+
+**Current class:** Candidate hard invariant.
+
+## D-034 — Applicable legal position is scoped/derived, not one global effect field
+
+**Decision:** Legal sources/orders own their own text, scope, authority/procedural state, and effective dates. The applicable legal position for an actor/action/place/time is derived from relevant sources and scoped state. There is no universal `currentLegalEffect` boolean/value that owns legal reality for every context.
+
+**Why:** Preserves contested interpretation, scoped orders, future appeals, and institutional/legal disagreement without designing detailed judiciary procedure in Commit 2.
+
+**Current class:** Candidate hard invariant.
+
+## D-035 — Hypothetical evaluation cannot mutate live truth
+
+**Decision:** Proposal scoring, forecasts, and other “what if” analysis consume an explicit state/snapshot plus hypothetical change and produce a projection/artifact. They may not mutate-and-undo live state or become a parallel authoritative proposed-policy world.
+
+**Why:** Prevents forecast/actual divergence from becoming duplicate truth and keeps player analysis causally separate from world mutation.
+
+**Current class:** Candidate hard invariant.
+
+## D-036 — Policy is player-facing aggregation, not canonical ownership
+
+**Decision:** “Policy” may be used as player-facing language to aggregate related intent/proposal/legal/fiscal/program/material/information objects. No canonical all-purpose `Policy` owner may directly mutate those domains, and no single mandatory policy pipeline is assumed for every governing action.
+
+**Why:** Prevents the housing example from becoming a universal policy ontology and leaves room for executive actions, tax changes, automatic programs, appointments, judicial effects, and future domains.
+
+**Current class:** Candidate hard invariant.
