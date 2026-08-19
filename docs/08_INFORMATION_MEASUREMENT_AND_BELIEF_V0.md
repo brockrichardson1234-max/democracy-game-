@@ -107,6 +107,30 @@ The measurement does not update the referent to match the report.
 
 **Measurement is an observation process over canonical state, not a mutation of that state. Measurement error, lag, coverage limits, aggregation, and later revision affect the observation/artifact, not the authoritative referent.**
 
+### 4.1 Lagged measurement work-in-progress has its own canonical process state
+
+A measurement that spans time may accumulate canonical observation/process state before any published artifact exists.
+
+Conceptually:
+
+```text
+MeasurementProcess
+  referent reference
+  method/sample/coverage definition
+  observation/as_of interval
+  captured observations/sample state
+  processing/completion state
+  committed measurement result when resolved
+```
+
+The exact runtime class is deferred. The semantic requirement is that once an observation/sample needed by the measurement has been canonically captured, that captured information belongs to the measurement process until it produces or contributes to a committed result. It is not owned by the referent domain, by a future report artifact that does not yet exist, or by `HistoricalRecord` as a substitute reconstruction store.
+
+Later changes to the referent may affect later observations when the method says they should, but they may not silently replace already captured observations. A persisted report may then copy/reference the committed measurement result according to provenance while remaining non-authoritative about the referent itself.
+
+### Candidate hard invariant IM-02A
+
+**Lagged/in-progress measurements own their captured observations, sample/progress state, method/as-of context, and committed measurement result as canonical information-process state. Once an observation is canonically captured, later referent changes may not silently substitute for it; publication creates an artifact from the measurement result rather than reconstructing the observation from current world state or a general-purpose history store.**
+
 ## 5. Measurement time, as-of time, and release time are different
 
 GL0 specifically requires data lag.

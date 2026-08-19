@@ -218,7 +218,9 @@ The administrative owner resolves administrative timing. Housing resolves materi
 
 A measurement performed or released at time T may describe an earlier interval/state.
 
-The measurement process must use the referent state/history appropriate to its declared as-of semantics rather than simply reading “whatever is current when the UI asks.”
+The measurement process must use the referent state and any canonically captured measurement-process observations appropriate to its declared as-of semantics rather than simply reading “whatever is current when the UI asks.”
+
+Where a lagged measurement has already captured observations under `08`, those captured observations remain measurement-process-owned inputs even if the referent changes before processing or publication completes.
 
 A persisted report must not behave like a live alias to current canonical state.
 
@@ -235,7 +237,7 @@ The report's content is fixed according to its measurement result/method, even i
 
 ### Candidate hard invariant ST-08
 
-**Measurement/as-of time, report creation/release time, and later exposure are distinct. Persisted artifacts retain the information appropriate to their recorded as-of/method rather than following live current state.**
+**Measurement/as-of time, measurement-process capture/processing state, report creation/release time, and later exposure are distinct. Persisted artifacts retain the information produced from the appropriate recorded observations/as-of/method rather than following live current state.**
 
 ## 11. Same-time transitions require deterministic semantics
 
@@ -266,6 +268,26 @@ Conceptually:
 ### Candidate hard invariant ST-09
 
 **Same-time transition results may depend only on declared causal dependencies and explicit stable tie-breaking, never accidental execution order. If ordering can change a causal outcome, that ordering dependency must be represented explicitly.**
+
+### 11.1 Stochastic canonical outcomes require deterministic causal randomness
+
+Commit 4 permits supported processes such as exposure, polling/measurement error, turnout realization, or later material uncertainty to use probabilistic resolution. Probability does not exempt those processes from deterministic continuation and ordering guarantees.
+
+A stochastic canonical draw must therefore be bound to explicit causal identity/context sufficient to reproduce the same outcome from the same canonical inputs. The architecture does not choose the RNG family, hash/counter scheme, stream structure, or sampling implementation.
+
+Rejected semantic dependencies include:
+
+- one mutable global RNG cursor whose consumption depends on iteration order;
+- drawing extra values merely because population aggregates were traversed in a different container order;
+- UI stepping cadence changing which random values are consumed;
+- scheduler reconstruction after save/load advancing or rewinding a hidden random stream;
+- unrelated stochastic events changing each other's outcomes solely by consuming the same incidental sequence first.
+
+Population refinement may legitimately change future stochastic outcomes when the modeled causal entities/weights or declared stochastic process itself has changed. It may not change already resolved canonical stochastic outcomes or alter unrelated outcomes merely through incidental enumeration.
+
+### Candidate hard invariant ST-09A
+
+**Any randomness that contributes to canonical state must have explicit deterministic causal semantics. For identical canonical inputs and causal identities, stochastic outcomes may not depend on global RNG position, incidental iteration/registration order, player-facing advance chunking, UI cadence, scheduler reconstruction, or save/load boundaries. The exact deterministic random-generation implementation is deferred.**
 
 ## 12. Boundary stabilization and zero-time chains
 
@@ -427,7 +449,7 @@ Rebuildable caches/indexes may be omitted/reconstructed.
 
 ### Candidate hard invariant ST-18
 
-**Deterministic continuation must derive from persisted canonical owner state plus declared rules/configuration, not from unowned transient execution order. Rebuildable scheduler/projection caches are not canonical save truth.**
+**Deterministic continuation must derive from persisted canonical owner state plus declared rules/configuration, including any canonical state required by stochastic causal semantics, not from unowned transient execution order or an incidental global random-stream cursor. Rebuildable scheduler/projection caches are not canonical save truth.**
 
 ## 21. Election and succession timing
 
@@ -467,11 +489,31 @@ The canonical order owner from Commit 3 owns those operative temporal facts.
 
 A legal contest owns its procedural deadlines/current stage.
 
-A stay/reversal at time T changes later legal resolution according to its scope. It does not retroactively erase material or administrative acts that occurred before T unless a separate legal/material process produces a later remedy/consequence.
+A later judicial/procedural act may change the legal position for future conduct, may declare an earlier act unlawful or legally ineffective for an earlier temporal scope, or may create another bounded temporal consequence when the applicable legal order provides for it. Commit 4 does not force all legal effects to be prospective.
+
+That legal temporal scope remains separate from occurrence history and from non-legal domain truth. A retrospective legal determination does not make an action, payment, compliance choice, construction event, or political reaction cease to have occurred. Any remedy or corrective consequence must proceed causally through the appropriate legal, fiscal, administrative, or material owner.
+
+Example:
+
+```text
+T1: payment executed
+T2: court determines the payment lacked legal authority at T1
+→ legal state may treat the act as unlawful/invalid for the applicable temporal scope
+→ remedy may create a repayment obligation
+→ treasury/recipient process may later execute repayment
+```
+
+not:
+
+```text
+T2 ruling
+→ delete PaymentExecuted(T1)
+→ erase downstream material/political history
+```
 
 ### Candidate hard invariant ST-20
 
-**Judicial/procedural temporal changes affect legal applicability prospectively according to their canonical scope and effective semantics; they do not rewrite earlier non-legal world history by changing timestamps after the fact.**
+**Legal temporal effects are governed by the canonical legal source/order/procedure and may be prospective, retrospective, or otherwise bounded according to that authority. Changing legal applicability for an earlier period does not automatically rewrite immutable occurrence history or non-legal current/past facts; remedies and corrective consequences must occur through ordinary owner-respecting causal processes.**
 
 ## 23. GL0 timing proof cases
 
@@ -555,6 +597,14 @@ when same-time ordering changes results.
 Rejected:
 
 ```text
+globalRng.next()
+```
+
+when canonical stochastic outcomes then depend on unrelated draw order, UI stepping, scheduler reconstruction, or population/container traversal order.
+
+Rejected:
+
+```text
 schedulerEvent.status = sourceOfTruth
 ```
 
@@ -576,6 +626,14 @@ onLoad(): runCurrentBoundaryAgain()
 
 when it duplicates a period effect already canonically resolved.
 
+Rejected:
+
+```text
+retroactiveLegalFinding -> deleteEarlierMaterialOccurrence()
+```
+
+when the proper consequence is a scoped legal state change and, where applicable, a later owner-resolved remedy.
+
 ## 26. Commit-4 review questions for this document
 
 Review should ask only whether simulation-time/transition semantics are closed enough for GL0:
@@ -584,9 +642,10 @@ Review should ask only whether simulation-time/transition semantics are closed e
 2. Can coarse/player-facing advancement cross intervals without skipping causal boundaries?
 3. Are enactment, effectiveness, fiscal execution, implementation, material realization, measurement, reporting, political processing, election, and transfer temporally distinct?
 4. Are same-time transitions deterministic based on explicit dependencies/tie-breaks rather than incidental execution order?
-5. Can finite zero-time causal chains resolve without infinite/repeated effects?
-6. Are player decisions interrupted at meaningful boundaries without turning routine simulation into click spam?
-7. Can rate/periodic processes avoid chunk-size and save/load exploits?
-8. Do election/succession and judicial timing preserve the accepted Commit-1–3 ownership distinctions?
+5. Do stochastic canonical outcomes remain reproducible independent of global RNG consumption order, UI cadence, chunking, scheduler reconstruction, and save/load boundaries?
+6. Can finite zero-time causal chains resolve without infinite/repeated effects?
+7. Are player decisions interrupted at meaningful boundaries without turning routine simulation into click spam?
+8. Can rate/periodic processes avoid chunk-size and save/load exploits?
+9. Do election/succession and judicial timing preserve the accepted Commit-1–3 ownership distinctions, including legal effects with retrospective scope that do not rewrite occurrence history?
 
 No scheduler/runtime implementation and no Commit-5 design is authorized by this document.
