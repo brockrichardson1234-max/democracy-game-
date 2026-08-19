@@ -32,7 +32,8 @@ This document must preserve:
 - historical action records do not own current actor state;
 - information availability/provenance constrains what an actor can know;
 - support summaries/forecasts are projections or artifacts, not decision authority;
-- procedures own current procedural state, while actors own their choices.
+- procedures own current procedural state, while actors own their choices;
+- canonical affiliation and negotiated-commitment relationship facts must have one relationship/organization owner rather than duplicated actor copies.
 
 ## 3. Individual political actor
 
@@ -112,14 +113,14 @@ Potential semantic categories include:
 
 - issue/policy evaluations;
 - goals/priorities;
-- party/organizational affiliations;
 - public positions;
 - private intentions where represented;
-- current commitments;
-- strategic relationships;
 - perceived constituency incentives;
 - electoral vulnerability/ambition where supported;
-- trust/relationship state;
+- actor-private trust/evaluations of other actors or organizations;
+- willingness/intention to honor, break, or renegotiate commitments;
+- references to canonical party/organization affiliations;
+- references to canonical negotiated commitments/coalition relationships;
 - knowledge/beliefs available to the actor;
 - procedural strategy.
 
@@ -129,9 +130,23 @@ No field is required merely because it sounds realistic.
 
 The walking skeleton may use a deliberately simple actor decision model so long as actors remain independent canonical decision-makers.
 
+### 5.1 Relationship facts versus actor-private facts
+
+Relationship truth is not duplicated into every participant's actor state.
+
+The semantic split is:
+
+- canonical party/organization membership or affiliation relationship -> organization/relationship owner;
+- canonical bilateral/multilateral negotiated commitment -> `PoliticalCommitment`/coalition relationship owner;
+- actor reference to those relationships -> actor may hold reference only;
+- actor's own belief about the relationship, trust, willingness to honor, interpretation, or future intention -> actor-owned private/current state;
+- a truly unilateral pledge/position made by one actor may be actor-owned, but it must be distinguished from a negotiated relationship involving other parties.
+
+A party membership or negotiated promise must not exist as separately mutable authoritative copies in both `ActorPoliticalState` and organization/commitment state.
+
 ### Candidate hard invariant A-03
 
-**Actor political state belongs to the actor/actor-specific relationship owners. It is not a copied subset of population opinion, party state, or a universal legislative-support meter.**
+**Actor political state owns actor-private evaluations, intentions, beliefs, and decision-relevant state. Canonical affiliation/membership and negotiated commitment facts are owned once by their organization/relationship state; actors may reference them and own their own beliefs or willingness concerning them, but may not shadow-own the relationship itself. A unilateral pledge may be actor-owned only when it is semantically distinct from a bilateral/multilateral negotiated commitment.**
 
 ## 6. Actor knowledge is bounded
 
@@ -206,7 +221,7 @@ A `Party` is a persistent political organization, not a hive mind.
 Party/organization state may own:
 
 - identity;
-- membership/affiliation relationships;
+- canonical membership/affiliation relationships;
 - official positions/platform where represented;
 - party resources;
 - leadership offices;
@@ -226,7 +241,9 @@ It does not own:
 
 ### 8.1 Party affiliation
 
-Party membership/affiliation is a relationship between actor and organization.
+Party membership/affiliation is a canonical relationship between actor and organization, owned once by the relevant organization/relationship state.
+
+An actor may hold a reference to that relationship plus actor-private beliefs or feelings about it; the actor does not maintain a separately authoritative affiliation flag that can diverge from the canonical relationship.
 
 An actor can deviate from the party.
 
@@ -234,7 +251,7 @@ The party may react to defection through future systems, but party membership do
 
 ### Candidate hard invariant A-06
 
-**Parties and caucuses own organizational state and coordination efforts; individual actors retain ownership of their decisions. Party membership may influence but never directly substitute for a member's canonical action.**
+**Parties and caucuses own organizational state and canonical membership/affiliation relationships; individual actors retain ownership of their decisions and actor-private evaluations. Party membership may influence but never directly substitute for a member's canonical action.**
 
 ## 9. Caucus and political organization
 
@@ -303,13 +320,13 @@ A member can defect.
 
 ### Candidate hard invariant A-07
 
-**Coalitions are scoped relationships or derived estimates, not universal political-power meters. A coalition/commitment may influence an actor but cannot own or pre-resolve the actor's future vote/action.**
+**Coalitions are scoped relationships or derived estimates, not universal political-power meters. A canonical coalition/commitment relationship owns its negotiated relationship facts once; participant actors may reference and evaluate that relationship but cannot shadow-own it. The relationship may influence an actor but cannot own or pre-resolve the actor's future vote/action.**
 
 ## 11. Commitment and bargaining
 
 Political bargaining must be able to create persistent causal state without becoming a scripted dialogue system.
 
-A `PoliticalCommitment` or equivalent relationship can represent an explicit promise/condition such as:
+A `PoliticalCommitment` or equivalent relationship can represent an explicit negotiated promise/condition such as:
 
 - support proposal if provision X changes;
 - withhold support unless state condition Y is removed;
@@ -318,7 +335,7 @@ A `PoliticalCommitment` or equivalent relationship can represent an explicit pro
 
 Exact interaction UI is deferred.
 
-A commitment may own:
+A negotiated commitment relationship may own:
 
 - parties;
 - proposal/objective reference;
@@ -330,11 +347,15 @@ A commitment may own:
 
 The actor still decides whether to honor it.
 
+The actor may separately own its current intention/willingness to honor or breach the commitment, but that intention is not the commitment relationship itself.
+
+A unilateral actor pledge that is not negotiated with another party may instead be actor-owned public/private position state; if it later becomes a negotiated agreement, the canonical negotiated relationship gets its own owner.
+
 Breach may produce later relationship/information/electoral consequences.
 
 ### Candidate hard invariant A-08
 
-**Negotiated commitments are canonical political relationship state when they genuinely exist, but they do not deterministically force actor behavior. Actor choice remains separate from the promise to choose.**
+**Negotiated commitments are canonical political relationship state when they genuinely exist, but they do not deterministically force actor behavior. Actor choice and actor-private willingness remain separate from the relationship fact. Unilateral pledges are distinct actor-owned state unless/until they become negotiated relationship state.**
 
 ## 12. Proposal support is not one authoritative scalar
 
@@ -473,9 +494,11 @@ Example:
 Senator A says "I will oppose this bill."
 ```
 
-That statement may also update an actor-owned public-position/commitment state where the game tracks it.
+That statement may also update actor-owned public-position or unilateral-pledge state where the game tracks it.
 
-But the statement does not directly become:
+If the statement concerns an existing negotiated commitment, any change to the canonical commitment's status/terms must occur through the commitment relationship owner rather than by mutating an actor-local copy.
+
+The statement does not directly become:
 
 ```text
 Vote = NAY
@@ -669,6 +692,22 @@ as a replacement for future actor choice.
 Rejected:
 
 ```text
+Actor.affiliation = copiedPartyMembership
+```
+
+when organization/relationship state already owns the canonical membership fact.
+
+Rejected:
+
+```text
+Actor.commitment = copiedNegotiatedCommitment
+```
+
+when a canonical negotiated relationship already owns the commitment terms/status.
+
+Rejected:
+
+```text
 playerNegotiation.changedBillTextDirectly()
 ```
 
@@ -695,9 +734,10 @@ if actor.isPlayer:
 2. Does individualization follow discrete causal need without forcing ordinary citizens into individual simulation?
 3. Can parties/blocs influence legislators without owning votes?
 4. Can bargaining create persistent commitments without turning commitments into guaranteed actions?
-5. Does the procedure own current vote state while actors own choices and history owns immutable occurrences?
-6. Can shared actor templates keep the skeleton tiny without turning blocs into vote-count shortcuts?
-7. Are staff support estimates/projections kept separate from actual actor state?
-8. Is constituency information actor-bounded rather than omniscient?
-9. Does player control remain a decision-source substitution rather than a special causal path?
-10. Did this document accidentally design career mode, lobbying, or politician psychology beyond what GL0 requires?
+5. Are canonical affiliation/negotiated-commitment relationship facts owned once while actors retain only references plus private intentions/evaluations?
+6. Does the procedure own current vote state while actors own choices and history owns immutable occurrences?
+7. Can shared actor templates keep the skeleton tiny without turning blocs into vote-count shortcuts?
+8. Are staff support estimates/projections kept separate from actual actor state?
+9. Is constituency information actor-bounded rather than omniscient?
+10. Does player control remain a decision-source substitution rather than a special causal path?
+11. Did this document accidentally design career mode, lobbying, or politician psychology beyond what GL0 requires?

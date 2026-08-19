@@ -26,7 +26,8 @@ This document must preserve:
 - immutable historical occurrences do not own current case/order state;
 - player control does not own judges/courts;
 - court rulings may alter legal obligations but cannot rewind prior material history;
-- election/office assignment/compliance remain separate from legal claims.
+- election/office assignment/compliance remain separate from legal claims;
+- a legal contest owns case/procedural state and references operative orders; it does not shadow-own the order's current legal status.
 
 ## 3. Judiciary is built from the same governmental primitives
 
@@ -74,9 +75,11 @@ Possible semantic state includes:
 - legal questions/claims;
 - current procedural stage;
 - current pending motions/requests where supported;
-- current orders;
+- references to operative judicial orders affecting the contest;
 - appeal/review relationship where supported;
 - status such as pending/resolved/dismissed.
+
+The contest owns its case/procedural state. It does **not** own a second mutable copy of an operative judicial order's text, scope, effective status, stay/reversal/supersession/expiration state, or other legally operative order facts.
 
 The exact schema is deferred.
 
@@ -182,8 +185,11 @@ It does not become one global truth regardless of context.
 
 A judicial order is a legally operative directive/remedy addressed to some subject(s) or conduct.
 
-An order may specify:
+Each operative judicial order has one canonical legal-order owner for its legally operative state. That owner may be represented as `JudicialOrderState` inside `LegalOrderState` or an equivalent single legal-order authority; the exact class name is deferred.
 
+The canonical order state owns facts such as:
+
+- order identity/text/directive;
 - subject/party;
 - prohibited/required conduct;
 - legal basis;
@@ -191,14 +197,18 @@ An order may specify:
 - effective time;
 - expiration/duration;
 - interim/final status;
+- current effective/status state;
+- stay/reversal/supersession/expiration state;
 - remedy;
-- relationship to appeal/review.
+- relationship/reference to appeal/review.
 
-These may be one implementation object if the semantics remain distinct.
+A `LegalContest` may reference the order and may, through valid legal procedure, cause the legal-order owner to change the order's canonical status. The contest does not maintain a second authoritative copy of that status.
+
+Judicial decision, interpretation, and order may be represented by related implementation structures if their semantic ownership remains distinct.
 
 ### Candidate hard invariant J-04
 
-**A judicial ruling, legal interpretation, and operative order may be related but are not assumed to be one global legal-effect flag. Their authority, scope, subjects, and temporal effect remain explicit.**
+**A judicial ruling, legal interpretation, and operative order may be related but are not one global legal-effect flag. Each operative order has one canonical legal-order owner for its text, subjects, scope, temporal/effective status, and stay/reversal/supersession/expiration state. Legal contests reference that order state rather than shadow-owning it.**
 
 ## 8. No universal currentLegalEffect
 
@@ -263,20 +273,20 @@ specific agency/executive conduct is constrained
 target actors decide/respond
 ```
 
-The order has:
+The order's canonical legal-order state has:
 
 - explicit subject/scope;
 - effective boundary;
 - current status;
 - expiration/review condition.
 
-The temporary order is current legal-order/judicial state.
+The `LegalContest` references that order and owns only the related case/procedural facts.
 
 `TemporaryOrderIssued(...)` is immutable occurrence history.
 
 ### Candidate hard invariant J-06
 
-**Interim orders are scoped current legal state with independent historical issuance records. Their existence does not automatically resolve the underlying contest or erase prior actions.**
+**Interim orders are scoped current legal state with one canonical legal-order owner and independent historical issuance records. Legal contests reference the order rather than duplicating its current status. The order's existence does not automatically resolve the underlying contest or erase prior actions.**
 
 ## 10. Court orders do not mutate material reality
 
@@ -319,7 +329,7 @@ An actor/institution can:
 - seek stay/review;
 - resist/refuse where actor-attemptable.
 
-The order remains legally operative according to its own state unless modified/stayed/reversed/expired through proper process.
+The order remains legally operative according to its own canonical legal-order state unless modified/stayed/reversed/expired through proper process.
 
 A refusal does not mutate:
 
@@ -349,7 +359,9 @@ Commit 3 only requires a seam for:
 
 - contest/decision can identify review availability;
 - a party may attempt review/appeal;
-- current order may remain, be stayed, changed, or superseded according to legal procedure.
+- the canonical order state may remain, be stayed, changed, or superseded according to applicable legal procedure.
+
+A filing/procedure may cause the order owner to change its state when the legal rules permit; the appeal/contest does not keep a second authoritative `order.status` field.
 
 GL0 contested-authority route may choose:
 
@@ -361,7 +373,7 @@ without implementing a complete appellate hierarchy.
 
 ### Candidate hard invariant J-09
 
-**Review/appeal changes legal/procedural state through configured procedure. Filing an appeal does not automatically erase the lower/current order unless applicable legal rules say it does.**
+**Review/appeal changes legal/procedural state through configured procedure. Filing an appeal does not automatically erase the lower/current order unless applicable legal rules say it does, and any resulting order-status change occurs at the single canonical order owner.**
 
 ## 13. Conflicting legal sources/orders
 
@@ -553,7 +565,7 @@ This seam is architectural only.
 
 ## 20. Historical ownership in judiciary
 
-Current case/order state and occurrence history remain separate.
+Current case/order state and occurrence history remain separate, and case state is separate from operative order state.
 
 Examples:
 
@@ -561,24 +573,32 @@ Examples:
 LegalContest.currentStage
     -> JudicialContestState
 
+LegalContest.orderRefs
+    -> references only; no authoritative order status copy
+
 CourtOrder.currentStatus
-    -> LegalOrder/Judicial state
+CourtOrder.scope
+CourtOrder.subjects
+CourtOrder.effectiveState
+    -> single canonical JudicialOrderState within LegalOrderState (or equivalent one-owner legal-order representation)
 
 LegalContestFiled(...)
 CourtOrderIssued(...)
 AppealFiled(...)
 OrderStayed(...)
+OrderReversed(...)
+OrderSuperseded(...)
 RulingEntered(...)
     -> immutable occurrence history
 ```
 
-A chronological history index may reference these occurrences.
+A legal/judicial procedure may cause the canonical order owner to update current status when legally effective. A chronological history index may reference the resulting immutable occurrences.
 
-It does not own current case/order status.
+Neither the contest nor history owns a second mutable copy of current order status.
 
 ### Candidate hard invariant J-12
 
-**Judiciary obeys the same domain-current-state versus immutable-occurrence split as every other system.**
+**Judiciary obeys the same one-owner split as every other system: `JudicialContestState` owns current case/procedural facts, the legal order's single judicial-order owner owns each operative order's current legally effective state, and immutable history owns only committed occurrences. References between them do not create shadow authority.**
 
 ## 21. Minimum walking-skeleton judiciary
 
@@ -643,10 +663,18 @@ case.claim = legalTruth
 Rejected:
 
 ```text
+LegalContest.orderStatus = copiedCourtOrderStatus
+```
+
+when the legal order already owns the operative order state.
+
+Rejected:
+
+```text
 appealFiled -> order.active = false
 ```
 
-unless the applicable legal procedure actually grants that effect.
+unless the applicable legal procedure actually grants that effect through the canonical order owner.
 
 Rejected:
 
@@ -671,11 +699,12 @@ actorIgnoredOrder -> order.deleted
 
 1. Are court, judicial office, judge actor, legal contest, claim, ruling, interpretation, and order distinct enough?
 2. Does a legal claim remain an assertion rather than legal truth?
-3. Can an interim order be scoped to subjects/actions/place/time without one global legal switch?
-4. Can the court create legal obligations without directly mutating agency/fiscal/material state?
-5. Is compliance independently resolved?
-6. Can an appeal exist without automatically erasing the current order?
-7. Can conflicting/scoped legal state coexist long enough for later deeper doctrine?
-8. Does current contest/order state remain separate from immutable occurrence history?
-9. Is the GL0 court fixture narrow enough to avoid full judiciary scope creep?
-10. Does this architecture leave a seam for future constitutional crises without implementing dictatorship/coup mechanics now?
+3. Does each operative judicial order have exactly one canonical owner while contests hold references rather than shadow status?
+4. Can an interim order be scoped to subjects/actions/place/time without one global legal switch?
+5. Can the court create legal obligations without directly mutating agency/fiscal/material state?
+6. Is compliance independently resolved?
+7. Can an appeal exist without automatically erasing the current order?
+8. Can conflicting/scoped legal state coexist long enough for later deeper doctrine?
+9. Does current contest/order state remain separate from immutable occurrence history?
+10. Is the GL0 court fixture narrow enough to avoid full judiciary scope creep?
+11. Does this architecture leave a seam for future constitutional crises without implementing dictatorship/coup mechanics now?

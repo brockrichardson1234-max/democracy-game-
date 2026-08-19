@@ -161,7 +161,7 @@ The original constitutional history remains queryable.
 
 ## 6. Institution
 
-An `Institution` is a persistent governmental/organizational structure that contains roles, procedures, capabilities, and state.
+An `Institution` is a persistent governmental/organizational structure that hosts roles, capabilities, operational state, and participation in legally defined procedures.
 
 Examples in the first target configuration may include:
 
@@ -182,12 +182,14 @@ It may own:
 - structural identity;
 - institutional capacity;
 - internal operational state;
-- legally defined procedures assigned to it;
+- references to legally defined procedures assigned to or involving it;
+- operational capability/state used to participate in those procedures;
 - references to offices;
 - administrative resources/capability where appropriate.
 
 It does not own:
 
+- the normative legal requirements of a procedure merely because it hosts or participates in that procedure;
 - the private state of individual actors;
 - the law merely because it administers it;
 - the material outcomes of its programs;
@@ -195,7 +197,7 @@ It does not own:
 
 ### Candidate hard invariant G-04
 
-**Institutions define persistent structures, procedures, and capabilities. Actors occupy or interact with institutional roles; they are not interchangeable with the institution itself.**
+**Institutions define persistent structures and own institutional capabilities/operational state. They may host or reference procedures assigned to them, but the legal order owns the normative requirements that make those procedures legally valid. Actors occupy or interact with institutional roles; actors, institutions, procedure instances, and legal rules are not interchangeable.**
 
 ## 7. Office and OfficeAssignment
 
@@ -366,18 +368,36 @@ The legally operative requirements for a procedure remain legal-order truth.
 
 A reusable implementation template may exist in rules/content configuration, but it does not become the source of legal validity once instantiated in-world.
 
+An institution may host or reference such a procedure and provide operational capability for it. That does not make the institution the normative owner of the procedure's legal requirements.
+
 ### Procedure instance/current state
 
-The active process owns:
+The active process owns mutable facts about this particular proceeding, including:
 
 - current stage;
 - pending proposal/matter;
-- participants/offices required at the stage;
+- current participants/offices associated with the proceeding;
 - decisions already received;
-- deadlines where procedural;
-- amendments/revisions under consideration;
-- next legally available transitions;
+- current procedural deadlines/events as instance facts;
+- amendments/revisions currently under consideration;
 - current completion/failure status.
+
+It does **not** own an independently normative list of what transitions are legally permitted next.
+
+### Legally available transitions are derived
+
+The next legally available transition(s) are derived from:
+
+```text
+applicable legal procedure requirements
++ current ProcedureInstance facts
++ actor/office/institution context
++ scoped legal constraints/orders where relevant
+        ↓
+LegallyAvailableTransitions
+```
+
+An implementation may cache that derived set for performance or UI. Such a cache is non-authoritative and must be invalidated/recomputed when its legal/contextual inputs change.
 
 ### Historical occurrences
 
@@ -393,7 +413,7 @@ History does not own the current procedure state.
 
 ### Candidate hard invariant G-08
 
-**Procedure rules derive from the legal order; an active procedure instance owns mutable current process state; actors own their decisions; historical records own immutable occurrences. These may not collapse into one object.**
+**The legal order owns normative procedure requirements. Institutions host/reference procedures and own relevant operational capability. An active procedure instance owns only mutable facts of the particular proceeding. Which transitions are legally available is derived from applicable legal rules plus current procedure/context facts; any cached transition set is non-authoritative. Actors own their decisions, and historical records own immutable occurrences.**
 
 ## 11. Legislature and chamber composition
 
