@@ -1,6 +1,6 @@
 # 01 — First Governing Loop V0
 
-Status: **Commit-1 repair candidate for review. Not implementation authority.**
+Status: **Final Commit-1 repair candidate for findings-only review. Not implementation authority.**
 
 ## 1. Purpose
 
@@ -18,18 +18,18 @@ The first playable proof is a controlled federal housing-affordability scenario 
 
 Scenario numbers, political alignments, economic values, and state responses are **test fixtures**, not claims about current real-world conditions.
 
-The player begins as the strategic controller of a newly seated executive administration during a geographically uneven housing-affordability problem.
+The player begins with a GL0 `ControlBinding` to the strategic decision surface of a newly seated executive administration during a geographically uneven housing-affordability problem.
 
 The opening world includes, at minimum conceptually:
 
-- a federal executive administration controlled by the player;
+- a federal executive administration whose GL0 strategic surface is controlled by the player;
 - a legislature in which the administration cannot command votes;
 - finite fiscal room and existing budget obligations;
 - a federal administrative institution capable of operating a housing-grant program but with finite capacity;
 - multiple state jurisdictions with different incentives and implementation capacity;
 - a housing material domain in which construction takes time and local conditions differ;
 - an electorate that does not directly observe canonical simulation state; and
-- a scheduled election capable of removing the player's administration.
+- a scheduled election whose result can lead, through the applicable constitutional/political process, to an ordinary transfer of executive office and the end of the GL0 control binding.
 
 The walking skeleton may use a synthetic miniature federation rather than complete United States content. That fixture must exercise the same semantic loop.
 
@@ -63,7 +63,7 @@ Exact values and coefficients are not frozen in Commit 1.
 
 ## 4. Complete causal loop
 
-A normal successful route must be capable of traversing, without a magical jump:
+A normal viable route must be capable of traversing, without a magical jump:
 
 ```text
 player diagnosis / agenda
@@ -82,8 +82,9 @@ player diagnosis / agenda
 -> competing political claims
 -> population exposure / belief / attribution / salience
 -> preference / turnout
--> election
--> office/control transition
+-> election result
+-> applicable office-transfer process
+-> office/control transition where actually resolved
 -> same persistent world
 ```
 
@@ -103,7 +104,7 @@ The player should be able to answer:
 - Which federal levers appear institutionally available?
 - What political and fiscal constraints are immediately relevant?
 
-The player receives reports and projections, not direct debug truth.
+The player receives institutionally available reports and projections rather than debug truth, while authoritative records the administration legitimately knows may be exact.
 
 ### Phase B — choose an approach
 
@@ -156,7 +157,7 @@ The loop must support at least three materially different implementation respons
 
 These are causal world states, not scripted labels.
 
-### Phase F — material consequences take time
+### Phase F — material consequences take time and may disappoint even when government performs competently
 
 Approved programs and grants create operational/project pipelines.
 
@@ -168,8 +169,11 @@ Housing outcomes may be:
 - geographically uneven;
 - smaller than forecast;
 - constrained by delivery capacity;
-- partially successful; or
-- materially successful only after the political window has moved on.
+- partially successful;
+- materially successful only after the political window has moved on; or
+- weak, mixed, offsetting, or otherwise different from forecast **even when the law is valid, funding is adequate, participating institutions comply, and administration is competent**.
+
+GL0 does not freeze the mechanism for that last case. The architectural burden is only that competent implementation must not guarantee the desired material outcome.
 
 ### Phase G — the country does not observe reality perfectly
 
@@ -183,16 +187,22 @@ Official data may lag actual changes.
 
 Competing actors may offer different causal interpretations of the same observed condition.
 
-### Phase H — election and inheritance
+### Phase H — election and ordinary succession proof
 
 The player faces an election shaped by the world and the information environment, not a direct policy-to-happiness table.
 
 GL0's election is **not required to be a referendum solely on housing**. The electorate may enter the scenario with persistent partisan dispositions, candidate/incumbent evaluations, political memories, turnout tendencies, and background issue salience supplied by the fixture. Housing is the first dynamically simulated policy domain, not the entirety of political preference.
 
-If the player loses:
+The required GL0 defeat route uses an **ordinary uncontested transfer**, not a universal rule that every lost election automatically removes an incumbent:
 
-- the controlled administration leaves office at the effective transfer boundary;
-- the world does not reset;
+- the administration loses the election under the fixture's accepted process;
+- the applicable constitutional/political process establishes the successor's entitlement and office assignment at the effective transfer boundary;
+- the outgoing administration actually ceases to hold the GL0 executive decision surface;
+- the outgoing `ControlBinding` therefore ends; and
+- the world does not reset.
+
+At that transfer boundary:
+
 - enacted law remains unless later changed through an authorized causal process;
 - remaining fiscal authorizations/obligations remain according to their rules until changed, exhausted, expired, or otherwise resolved through ordinary processes;
 - agencies and appointments persist where appropriate until ordinary causal processes change them;
@@ -201,7 +211,9 @@ If the player loses:
 - housing stock and construction state remain;
 - legal contests/orders remain according to their scope and later procedural changes;
 - population beliefs, attribution, salience, and political memory remain and may subsequently evolve; and
-- the successor inherits this state.
+- information artifacts persist according to their canonical owners, provenance, access, confidentiality, and transfer rules rather than being copied wholesale into the successor player's knowledge.
+
+The successor administration receives records and information it legitimately owns, inherits, is transferred, or can access. Outgoing private polling, coalition intelligence, and staff-only assessments do not automatically transfer merely because player control changed.
 
 **Succession preserves the actual state at the transfer boundary. Persisted state may subsequently change only through ordinary causal processes that have authority or capability to change it.**
 
@@ -217,13 +229,14 @@ Architecture V0 must be capable of representing all of the following without bes
 4. **State refusal** — eligible jurisdiction declines or blocks participation.
 5. **Lawful but incompetent implementation** — authority and money are valid, actors comply, but weak agency/state capacity and material bottlenecks produce disappointing delivery.
 6. **Projects not finished before election** — grants and obligations exist while material results remain pending.
-7. **Material success with data lag** — actual conditions improve before official measurement fully captures them.
-8. **Material success with misattribution** — another actor or institution receives substantial credit.
-9. **Messaging advantage without delivery** — political interpretation temporarily runs ahead of material outcomes without changing canonical material truth.
-10. **Electoral defeat and succession** — player loses while the created world state persists.
-11. **Contested-authority attempt** — an aggressive executive action can be attempted and produce institutional/legal response rather than a generic invalid-command error.
+7. **Competent implementation with weak/mixed material response** — law is valid, funding is adequate, participating institutions comply and administer competently, yet the material system responds less favorably, differently, or with offsetting effects relative to forecast.
+8. **Material success with data lag** — actual conditions improve before official measurement fully captures them.
+9. **Material success with misattribution** — another actor or institution receives substantial credit.
+10. **Messaging advantage without delivery** — political interpretation temporarily runs ahead of material outcomes without changing canonical material truth.
+11. **Electoral defeat and succession** — player loses through the GL0 ordinary transfer route while the created world state persists.
+12. **Contested-authority attempt** — an aggressive executive action can be attempted and produce institutional/legal response rather than a generic invalid-command error.
 
-The walking skeleton need not make all eleven routes rich gameplay. It must prove the architecture has legitimate state owners and causal edges for them.
+The walking skeleton need not make all twelve routes rich gameplay. It must prove the architecture has legitimate state owners and causal edges for them.
 
 ## 7. Decision cadence and legibility
 
@@ -236,9 +249,13 @@ The intended cadence is:
 
 - player makes a strategically meaningful decision;
 - routine institutional/material activity advances automatically;
-- control returns when new information, changed political feasibility, implementation failure, legal contest, material consequence, or an electoral decision creates a meaningful choice.
+- control returns when new information, changed political feasibility, implementation conditions, legal contest, material consequence, or an electoral decision creates a meaningful choice.
 
-The player must be able to inspect why a process is blocked, delayed, revised, succeeding, or failing without seeing omniscient internal state.
+**An ordinary viable GL0 route must contain at least one strategically meaningful post-enactment governing decision before the election.** It cannot satisfy the loop solely through proposal design, legislative negotiation, enactment, passive observation, and election.
+
+Commit 1 does not choose the exact post-enactment interaction. It may arise from administration, state participation, implementation tradeoffs, changed forecasts, political reaction, legal risk, resource allocation, or another legitimate governing condition. The requirement is experiential: enactment must open further governing choices rather than end them.
+
+The player must be able to inspect why a process is blocked, delayed, revised, succeeding, failing, or diverging from forecast without seeing omniscient internal state.
 
 ## 8. What GL0 intentionally does not require
 
@@ -255,7 +272,7 @@ Governing Loop 0 does not require:
 - lobbying or campaign-finance breadth;
 - foreign affairs;
 - individual ordinary citizens;
-- coups, military loyalty, repression, or comprehensive authoritarian gameplay; or
+- contested election-transfer gameplay, coups, military loyalty, repression, or comprehensive authoritarian gameplay; or
 - a polished commercial UI.
 
 It does require architecture that does not make these foreseeable additions destructive to foundational truth ownership.
@@ -270,23 +287,25 @@ After architecture review, the first executable proof should be deliberately sma
 - one fiscal authorization path;
 - one federal agency/program;
 - a small synthetic set of state jurisdictions with structurally different responses;
-- one minimal housing mechanism;
+- one minimal housing mechanism capable of delayed and unexpectedly weak/mixed outcomes;
 - a tiny aggregate electorate with baseline political state outside the housing domain;
 - a minimal information/claim path;
-- one election; and
+- one election with an ordinary uncontested succession route; and
 - one small legal-contest seam.
 
 The skeleton proves causality, ownership, persistence, and transition semantics. It is not the commercial game.
 
-## 10. Commit-1 review questions
+## 10. Commit-1 findings-only recheck
 
-Reviewers should attack:
+Reviewers should verify only the repaired burdens relevant before Commit 2:
 
-1. Is housing narrow enough to prove the engine without becoming the engine?
-2. Does the term contain recurring meaningful decisions rather than procedure theater?
-3. Can failure occur through politics, legality, administration, material capacity, information, or elections without every failure becoming "someone resisted"?
-4. Does the loop require any magical policy-to-outcome or policy-to-voter jump?
-5. Does the state/federal seam belong in GL0 early enough to prevent bolting federalism on later?
-6. Does electoral defeat prove persistence rather than merely ending the scenario?
-7. Does the election preserve broader baseline political state so housing does not become the sole causal determinant of electoral behavior?
-8. Is any promised outcome impossible to support without a major architecture category not yet acknowledged?
+1. Is GL0 clearly a specific executive-administration control binding rather than the universal player ontology?
+2. Does the ordinary succession route avoid defining `election loss -> automatic control removal` as universal truth?
+3. Does informational persistence respect canonical ownership/access rather than copying private outgoing knowledge to the successor?
+4. Can exact authoritative records be legible without making the player omniscient?
+5. Can competent government still produce weak/mixed material results?
+6. Is at least one meaningful post-enactment decision required on an ordinary viable route?
+7. Are broader baseline politics preserved so housing is not the sole determinant of electoral behavior?
+8. Is any new contradiction introduced by these narrow repairs?
+
+No broader Commit-1 redesign is requested by this recheck.

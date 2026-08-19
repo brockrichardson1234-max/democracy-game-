@@ -1,6 +1,6 @@
 # 00 — Game and Player Contract V0
 
-Status: **Commit-1 repair candidate for review. Not implementation authority.**
+Status: **Final Commit-1 repair candidate for findings-only review. Not implementation authority.**
 
 ## 1. Game identity
 
@@ -14,34 +14,50 @@ The intended player feeling is:
 
 ## 2. What the player is
 
-The player controls the **strategic decision surface of an executive administration anchored to an individual officeholder occupying an executive office through the constitutional/political order**.
-
-This is a control relationship, not a canonical political actor.
+At engine level, player control is a transferable binding over a **supported player decision surface** associated with canonical actors, offices, administrations, or institutions. The binding determines which strategically player-facing in-world intentions the player may select. It does not create a new political actor and does not own simulation truth.
 
 Conceptually:
 
 ```text
 PlayerSession
   -> ControlBinding
-      -> Administration
-          -> headed by Officeholder
-              -> OfficeAssignment
-                  -> ExecutiveOffice
+      -> SupportedDecisionSurface
+          -> canonical actor / office / administration / institution
 ```
 
-The office, officeholder, administration, country, parties, legislature, agencies, states, electorate, and material world all exist independently of the player session. Governing Loop 0 begins with an officeholder whose office assignment results from an election, but election is not a universal requirement for every possible executive officeholder or future playable role.
+A supported decision surface is a control permission, not a declaration of constitutional or legal authority. Inclusion of an action category on the surface means the player may meaningfully attempt that kind of in-world action through the bound role. It does **not** mean a particular attempted action is lawful, effective, obeyed, or successful.
 
-A `ControlBinding` grants access to the administration's authorized player decision surface. It does **not** convert constituent officeholders, appointees, agencies, civil servants, staff, or other personnel into player-owned actors. Routine staff work may be abstracted where it creates no meaningful independent decision, but another actor's compliance, resistance, judgment, or legally independent choice is never silently replaced by player ownership.
+### Governing Loop 0 binding
+
+Governing Loop 0 supports one player mode:
+
+```text
+PlayerSession
+  -> ControlBinding
+      -> ExecutiveAdministrationStrategicSurface
+          -> Administration
+              -> headed by Officeholder
+                  -> OfficeAssignment
+                      -> ExecutiveOffice
+```
+
+The GL0 office assignment begins through an election. Election is not a universal requirement for every possible officeholder or future supported player binding.
+
+The office, officeholder, administration, country, parties, legislature, agencies, states, electorate, and material world all exist independently of the player session.
+
+A `ControlBinding` does **not** convert constituent officeholders, appointees, agencies, civil servants, staff, or other personnel into player-owned actors. Routine staff work may be abstracted where it creates no meaningful independent decision, but another actor's compliance, resistance, judgment, or legally independent choice is never silently replaced by player ownership.
+
+Changing the source of a canonical decision from autonomous selection to player selection must not change that decision's downstream causal resolution. Player control changes **who selects an available intent**, not what that intent means after submission to the world.
 
 ### Candidate hard invariant P-01
 
-**Player control is a projection/control relationship over canonical actors and institutions. The player is not canonical political society or world state.**
+**Player control is a non-canonical `ControlBinding` over a supported decision surface grounded in canonical actors/institutions. Executive-administration control is the first supported GL0 binding, not the universal definition of the player. Control source affects decision selection, not downstream causal semantics.**
 
-This permits later spectator/history modes, another playable office, opposition play, or a different control binding without rewriting the world model. None of those later modes is authorized by V0.
+This preserves later spectator/history modes, another playable office, opposition play, or different role-specific decision surfaces without requiring Commit 1 to design those game modes.
 
-## 3. What the player can do
+## 3. What the player can do in GL0
 
-The player may, when the controlled administration can meaningfully originate, issue, communicate, propose, request, direct, withhold, sign, veto, appoint, spend, negotiate, or otherwise attempt the relevant kind of institutional action toward a real target:
+Through the GL0 executive-administration decision surface, the player may, when the controlled administration can meaningfully originate, issue, communicate, propose, request, direct, withhold, sign, veto, appoint, spend, negotiate, or otherwise attempt the relevant kind of institutional action toward a real target:
 
 - set strategic priorities and agenda;
 - originate or support political proposals;
@@ -67,7 +83,7 @@ The player does **not** directly control:
 
 ### Candidate hard invariant P-02
 
-**A player command is an institutional intent or attempted action issued through a controlled office/administration. It is never a direct mutation of societal outcome state.**
+**A player command is an institutional intent or attempted action submitted through the bound decision surface. It is never a direct mutation of societal outcome state.**
 
 Selecting a housing objective therefore cannot directly decrease rent, increase approval, create buildings, or assign legislative votes.
 
@@ -78,13 +94,13 @@ The simulation must distinguish malformed or impossible input from an attempted 
 Every player command passes through four conceptually distinct questions:
 
 1. **Structural validity.** Is the command well-formed, are required values valid, and do referenced entities exist?
-2. **Actor capability / attemptability.** Can the controlled office or administration meaningfully perform, issue, communicate, propose, direct, request, withhold, sign, veto, appoint, spend, negotiate, or otherwise attempt this kind of action toward this target?
-3. **Authority / legal validity.** Does the actor actually possess the claimed authority under the applicable constitutional/legal order? The answer may be valid, invalid, uncertain, disputed, scoped, or later adjudicated.
+2. **Actor capability / attemptability.** Can the bound role meaningfully perform, issue, communicate, propose, direct, request, withhold, sign, veto, appoint, spend, negotiate, or otherwise attempt this kind of action toward this target?
+3. **Authority / legal validity.** Does the relevant actor/institution actually possess the claimed authority under the applicable constitutional/legal order? The answer may be valid, invalid, uncertain, disputed, scoped, or later adjudicated.
 4. **Compliance / consequence.** What do target actors and institutions actually do in response, and what political, administrative, operational, legal, informational, or material consequences follow?
 
 Only commands that pass **structural validity** and **actor capability/attemptability** enter canonical political history as attempted actions. Legal validity and compliance are world questions, not command-admission questions.
 
-### Invalid game command
+### Invalid player command
 
 Examples:
 
@@ -92,26 +108,28 @@ Examples:
 - nonexistent target entity;
 - impossible date/identifier shape;
 - command whose required semantic target is absent; or
-- a direct-world mutation that is not an act the controlled office/administration can meaningfully perform, such as `SET_VIRGINIA_RENT = $900`.
+- a direct-world mutation that is not an act the bound role can meaningfully perform, such as `SET_VIRGINIA_RENT = $900`.
 
 These fail without creating a political event.
 
-### Valid attempted political action
+### Valid player-issued attempted political action
 
 Examples:
 
 - executive directs an agency under a disputed interpretation of authority;
 - administration attempts to redirect funds beyond an accepted interpretation of statute;
-- President tells a governor that the state must enact a particular rule, even if the federal executive lacks authority to compel it;
-- President publicly claims or orders that rents are capped under asserted federal authority, even if that assertion has no valid legal effect;
-- official refuses a lawful instruction; or
-- state attempts conduct claimed to conflict with superior law.
+- President tells a governor that the state must enact a particular rule, even if the federal executive lacks authority to compel it; or
+- President publicly claims or orders that rents are capped under asserted federal authority, even if that assertion has no valid legal effect.
 
 The attempt exists in canonical history. The world then resolves claimed authority, actor/institution response, legal contest where supported, operational behavior, material effects, and political consequences.
 
+### Autonomous political actions
+
+Canonical world actors also originate actions without passing through the player-command source. Examples include an official refusing an instruction or a state undertaking conduct claimed to conflict with superior law. Such actions require corresponding world-side capability/authority/consequence rules; they are not derived from or owned by the player command pipeline.
+
 ### Candidate hard invariant P-03
 
-**Only structurally valid and actor-attemptable commands become canonical attempted political actions. Unlawful or contestable political intent is not equivalent to malformed player input, and legal invalidity alone does not erase a meaningful political attempt.**
+**Only structurally valid and actor-attemptable player commands become canonical player-issued attempts. Unlawful or contestable political intent is not equivalent to malformed input, and legal invalidity alone does not erase a meaningful political attempt. Autonomous actors may originate their own canonical political actions through the same world semantics without becoming player commands.**
 
 ## 5. Governing power is contextual, not a stack of meters
 
@@ -149,7 +167,7 @@ The architectural requirement is narrower:
 - the legal/constitutional order can disagree with an actor's claim;
 - institutions and actors can comply, partially comply, delay, resist, or refuse;
 - legal contest can alter obligations without rewriting prior material history;
-- elections and office assignments are persistent state rather than reset triggers; and
+- election results, office entitlement, office assignment, and actual institutional behavior are distinguishable; and
 - any later regime classification is derived from the resulting institutional/political world.
 
 There is no causal `democracyScore` or `dictatorship = true` switch in the game identity.
@@ -171,29 +189,37 @@ The administration may receive institutionally plausible information such as:
 
 The player does not receive exact hidden voter beliefs, guaranteed future effects, exact private motivations, or debug-level state merely because the simulation stores them.
 
-The design goal is **bounded strategic legibility**, not blindness. Uncertainty must support judgment rather than arbitrary punishment.
+Non-omniscience does **not** require artificial uncertainty about facts the administration legitimately knows exactly. Authoritative records and directly controlled institutional acts available to the administration may be presented exactly, including the text of a bill it signed, the amount of an enacted appropriation, its own issued directive, a known office assignment, or a judicial order actually delivered to the administration.
+
+The design goal is **bounded strategic legibility**, not blindness. Uncertainty belongs where the administration genuinely lacks direct knowledge, where measurement is imperfect, or where the future/other actors remain uncertain.
 
 ### Candidate hard invariant P-05
 
-**The player sees bounded institutional observations and projections of world state, never a privileged mutable copy of canonical truth.**
+**The player receives information according to canonical ownership, provenance, access, and institutional availability. Legitimately known authoritative facts may be exact; hidden or imperfectly measured state is not exposed merely because the simulation stores it.**
 
-## 8. Election loss and persistence
+## 8. Election, office transfer, control binding, and persistence
 
-For Governing Loop 0:
+An election result, legal entitlement to office, actual office assignment, institutional recognition/compliance, and player control binding are related but not metaphysically identical events.
 
-- the controlled administration can lose an election;
-- loss ends that administration's active player control binding at the constitutionally effective transfer boundary;
-- the world persists;
-- the successor inherits the legal, fiscal, institutional, administrative, material, informational, and political state that actually exists at that transfer boundary; and
-- the simulation advances far enough to show inherited consequences relevant to the completed loop.
+For Governing Loop 0, the required defeat route is an **ordinary uncontested transfer**:
 
-Succession preserves existing state at the transfer boundary. Persisted state may subsequently change only through ordinary causal processes that have authority or capability to change it; succession itself is not a reset or a permanent freeze.
+- the controlled administration loses the relevant election under the scenario's accepted process;
+- applicable constitutional/political procedures establish the successor's entitlement and office assignment at the effective transfer boundary;
+- the outgoing administration actually ceases to hold the GL0 executive decision surface at that boundary;
+- the outgoing player's control binding ends because its supported decision surface is no longer held by that administration; and
+- the world persists.
 
-The exact duration and whether a future product allows immediate continuation as opposition, another office, a successor administration, or spectator/history are deferred.
+Future contested certification, refusal to transfer, conflicting claims to office, judicial intervention, institutional splits, or altered constitutional rules are not implemented by GL0, but the hard invariant must not make them impossible by defining `electionLost -> bindingRemoved` as an automatic universal transition.
+
+At an ordinary succession boundary, canonical state persists according to its owners. Legal, fiscal, institutional, administrative, material, and political state is not reset. Informational artifacts also persist according to their **actual owners, provenance, access rules, confidentiality, and transfer rules**. A successor administration does not automatically inherit the outgoing administration's private polling, confidential coalition intelligence, staff-only assessments, or other actor-specific knowledge merely because player control changed. It receives records and information the successor administration legitimately owns, inherits, is transferred, or can otherwise access.
+
+Persisted state may subsequently change only through ordinary causal processes that have authority or capability to change it; succession itself is not a reset or a permanent freeze.
+
+The exact duration of post-transfer simulation and whether a future product allows immediate continuation as opposition, another office, a successor administration, or spectator/history are deferred.
 
 ### Candidate hard invariant P-06
 
-**Elections change office/control assignments. They do not reset the world.**
+**Elections produce constitutionally/politically consequential selection results. Office entitlement, office assignment, institutional behavior, and player control change through the applicable world processes rather than by an automatic election-result reset. A `ControlBinding` ends when its supported decision surface is no longer available to that binding under resolved world state. None of these transitions resets the world.**
 
 ## 9. Player-facing presentation target
 
@@ -229,13 +255,16 @@ V0 is not trying to specify or implement:
 
 Those later capabilities must fit or deliberately extend the accepted architecture, but they are not excuses to expand Governing Loop 0.
 
-## 11. Commit-1 review questions
+## 11. Commit-1 findings-only recheck
 
-Reviewers should attack:
+The next review should answer only whether the following repaired claims are coherent enough for Commit 2 to derive state ownership:
 
-1. Is the player role coherent and fun rather than secretly omnipotent or helpless?
-2. Does the control-binding model preserve the world across elections without making administration personnel a player hive mind?
-3. Does the four-stage command-admission rule preserve contested/unlawful attempts without turning impossible direct-world mutations into political events?
-4. Is non-omniscience strategically legible?
-5. Does this contract accidentally require a U.S.-specific engine rather than a U.S. first configuration?
-6. Is any distinction here implementation detail rather than architecture?
+1. Is generic `ControlBinding -> supported decision surface` clearly separated from GL0's executive-administration binding?
+2. Is player-control permission clearly distinct from legal authority?
+3. Is control source prevented from changing downstream causal resolution?
+4. Are election result, office entitlement/assignment, institutional behavior, and control-binding termination sufficiently distinct?
+5. Does informational persistence respect canonical ownership/access rather than transferring an outgoing administration's private knowledge?
+6. Does P-05 permit exact presentation of legitimately known authoritative records while preserving non-omniscience elsewhere?
+7. Are player-issued attempts separated from autonomous world-actor actions?
+
+No broader Commit-1 redesign is requested by this recheck.

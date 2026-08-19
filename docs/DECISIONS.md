@@ -1,20 +1,20 @@
 # Decisions
 
-Status: **Commit-1 repair decision log for review.**
+Status: **Final Commit-1 repair decision log for findings-only review.**
 
 This file records decisions already chosen for the current architecture candidate. A later review may revise them in a new commit; this file does not pretend they are eternally immutable.
 
-## D-001 — Player control binding
+## D-001 — Generic player control binding
 
-**Decision:** The player controls the strategic decision surface of an executive administration anchored to an individual officeholder occupying an executive office through a valid office assignment in the constitutional/political order. Governing Loop 0 begins with an office assignment produced by election, but election is not a universal requirement for every possible officeholder. The player is not the officeholder, administration, party, country, or political world as canonical state.
+**Decision:** A `PlayerSession` may hold a `ControlBinding` over a supported player decision surface grounded in canonical actors, offices, administrations, or institutions. The binding and decision surface are not canonical political world state. Changing a decision source from autonomous selection to player selection does not change the downstream causal semantics of the resulting canonical intent/action.
 
-**Why:** Preserves independent world identity, succession after election/death/resignation/incapacity, future alternate control modes, and causal separation between player intent and world response.
+**Why:** Preserves independent world identity, future alternate playable roles, and causal separation between who selects a decision and how the world resolves it.
 
 **Current class:** Candidate hard invariant.
 
 ## D-002 — Player command semantics
 
-**Decision:** Player commands are institutional intents/attempts issued through the controlled administration. They do not directly mutate material outcomes, votes, beliefs, or other actors' choices.
+**Decision:** Player commands are institutional intents/attempts submitted through the current supported decision surface. They do not directly mutate material outcomes, votes, beliefs, or other actors' choices.
 
 **Why:** Prevents a policy-slider ontology from entering the engine through the command layer.
 
@@ -22,7 +22,7 @@ This file records decisions already chosen for the current architecture candidat
 
 ## D-003 — Contested political actions use a four-stage admission boundary
 
-**Decision:** Every player command is conceptually evaluated as: (1) structural validity, (2) actor capability/attemptability, (3) authority/legal validity, and (4) compliance/consequence. Only commands that pass structural validity and actor-attemptability enter canonical political history as attempts. A meaningful political action may therefore be attempted even when its authority is disputed or potentially unlawful. Legal validity and compliance are world questions. Malformed input or a direct-world mutation that the controlled office cannot meaningfully attempt is rejected without creating a political event.
+**Decision:** Every player command is conceptually evaluated as: (1) structural validity, (2) actor capability/attemptability, (3) authority/legal validity, and (4) compliance/consequence. Only commands that pass structural validity and actor-attemptability enter canonical political history as player-issued attempts. A meaningful political action may therefore be attempted even when its authority is disputed or potentially unlawful. Legal validity and compliance are world questions. Malformed input or a direct-world mutation that the bound role cannot meaningfully attempt is rejected without creating a political event.
 
 **Why:** Preserves executive overreach, bureaucratic resistance, federal-state conflict, judicial review, constitutional crises, and later democratic erosion without allowing arbitrary debug-style world mutations to masquerade as political acts.
 
@@ -44,27 +44,27 @@ This file records decisions already chosen for the current architecture candidat
 
 **Current class:** Candidate hard invariant.
 
-## D-006 — Player knowledge is institutionally bounded
+## D-006 — Player knowledge follows ownership, provenance, and access
 
-**Decision:** The player receives strategically useful reports, measurements, forecasts, polls, coalition assessments, and other institutionally plausible information rather than exact hidden simulation truth.
+**Decision:** The player receives strategically useful information that the bound role can legitimately know or access. Authoritative records and directly controlled institutional acts available to that role may be presented exactly. Hidden voter beliefs, private motivations, future effects, imperfectly measured material state, and inaccessible actor-specific information are not exposed merely because the simulation stores them.
 
-**Why:** Preserves uncertainty without importing ApocalypseEngine-style personal perception into a national strategy game.
-
-**Current class:** Candidate hard invariant.
-
-## D-007 — Election loss does not reset or freeze the world
-
-**Decision:** When the controlled administration loses office, the player-control binding ends at the effective transfer boundary while legal, fiscal, institutional, administrative, material, informational, and political state persists as of that boundary. Persisted state may then change only through ordinary causal processes that have authority or capability to change it.
-
-**Why:** Makes elections consequential, establishes institutional/path-dependent history, and prevents succession from becoming either a reset or a permanent freeze of inherited state.
+**Why:** Preserves uncertainty without creating artificial fog around exact facts the administration truly knows.
 
 **Current class:** Candidate hard invariant.
 
-## D-008 — GL0 may end active control after succession proof
+## D-007 — Election result, office state, and control binding are distinct
 
-**Decision:** For Governing Loop 0, active player control may end after defeat once the simulation has advanced enough to prove successor inheritance. The final product's continuation model is deferred.
+**Decision:** Elections produce constitutionally/politically consequential selection results. Legal entitlement to office, office assignment, institutional recognition/compliance, and player-control binding change through applicable world processes rather than through an automatic universal `electionLost -> bindingRemoved` transition. None of these transitions resets the world.
 
-**Why:** Lets the first proof demonstrate persistence without prematurely designing opposition, successor, or spectator gameplay.
+**Why:** Preserves normal democratic succession while leaving legitimate architecture space for certification disputes, judicial orders, refusal, institutional splits, altered rules, or other future contested-authority states.
+
+**Current class:** Candidate hard invariant.
+
+## D-008 — GL0 uses an ordinary uncontested defeat/transfer proof
+
+**Decision:** Governing Loop 0 may end active player control after an ordinary uncontested electoral defeat once applicable constitutional/political processes have transferred the executive office, the outgoing administration actually ceases to hold the GL0 decision surface, and successor inheritance has been demonstrated. The final product's continuation model and contested election-transfer gameplay are deferred.
+
+**Why:** Lets the first proof demonstrate persistence and correct separation of election result from actual transfer without prematurely designing opposition, successor, or constitutional-crisis gameplay.
 
 **Current class:** V0 implementation assumption.
 
@@ -132,11 +132,11 @@ This file records decisions already chosen for the current architecture candidat
 
 **Current class:** Process decision.
 
-## D-017 — Administration control is not actor ownership
+## D-017 — Decision surface control is not actor ownership or legal authority
 
-**Decision:** A `ControlBinding` grants the player access to the administration's authorized strategic decision surface. It does not make constituent officeholders, appointees, agencies, civil servants, staff, or other personnel player-owned actors. Routine staff activity may be abstracted where no meaningful independent decision exists, but compliance, resistance, judgment, and legally independent choices remain world behavior.
+**Decision:** A `ControlBinding` grants access to a **supported** player decision surface. It does not make constituent officeholders, appointees, agencies, civil servants, staff, or other personnel player-owned actors, and it does not establish that a selected action is lawful. Routine staff activity may be abstracted where no meaningful independent decision exists, but compliance, resistance, judgment, legally independent choices, and legal validity remain world behavior.
 
-**Why:** Prevents the executive administration from becoming a hidden player hive mind while still allowing appropriate abstraction of routine staff work.
+**Why:** Prevents both a hidden player hive mind and the accidental collapse of control permission into constitutional/legal authority.
 
 **Current class:** Candidate hard invariant.
 
@@ -147,3 +147,35 @@ This file records decisions already chosen for the current architecture candidat
 **Why:** Prevents the first election model from degenerating into a housing-referendum happiness function while avoiding premature implementation of many additional material policy domains.
 
 **Current class:** Candidate architecture requirement for the GL0 electorate seam.
+
+## D-019 — GL0 binds specifically to an executive administration
+
+**Decision:** Governing Loop 0's first supported `ControlBinding` targets an executive-administration strategic decision surface grounded in an administration headed by an officeholder occupying an executive office through an office assignment. This is the GL0 player mode, not the universal player ontology.
+
+**Why:** Keeps the first game concrete while preserving future role-specific control surfaces without designing career mode now.
+
+**Current class:** V0 player-mode decision.
+
+## D-020 — Informational succession follows canonical ownership/access
+
+**Decision:** Information artifacts persist across succession according to their canonical owners, provenance, confidentiality, access, and transfer rules. A successor administration does not automatically inherit outgoing private polling, coalition intelligence, staff-only assessments, or other actor-specific knowledge merely because the player-control binding changed.
+
+**Why:** Prevents control transfer from functioning like a mind-transfer or global knowledge copy.
+
+**Current class:** Candidate hard invariant.
+
+## D-021 — Competent implementation does not guarantee desired material success
+
+**Decision:** GL0 architecture must support a route where law is valid, funding is adequate, participating institutions comply and administer competently, yet the material response is weak, mixed, offsetting, or otherwise different from forecast.
+
+**Why:** Separates policy-mechanism uncertainty and material causality from political obstruction or administrative incompetence.
+
+**Current class:** Candidate architecture requirement.
+
+## D-022 — GL0 requires post-enactment governing agency
+
+**Decision:** An ordinary viable GL0 route must contain at least one strategically meaningful post-enactment governing decision before the election. Proposal design + enactment + passive waiting + election is insufficient.
+
+**Why:** Prevents a causally correct architecture from producing a passive strategy game once legislation passes.
+
+**Current class:** Candidate player-experience requirement.
