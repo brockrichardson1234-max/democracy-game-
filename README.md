@@ -1,6 +1,6 @@
 # democracy-game-
 
-Status: **Architecture design only — Commit 1 accepted for Commit 2 derivation; Commit 2 candidate under review. Not implementation authority.**
+Status: **Architecture design only — Commits 1–2 accepted for Commit 3 derivation; Commit 3 candidate under review. Not implementation authority.**
 
 Review authority for any architecture candidate is the exact commit SHA supplied with the review request. Branch refs are convenience pointers only.
 
@@ -18,10 +18,15 @@ The architecture is derived from one concrete player-facing proof, **Governing L
 2. `docs/01_FIRST_GOVERNING_LOOP_V0.md`
 3. `docs/02_CAUSAL_ARCHITECTURE_V0.md`
 4. `docs/03_STATE_OWNERSHIP_AND_PROJECTIONS_V0.md`
-5. `docs/DECISIONS.md`
-6. `docs/OPEN_QUESTIONS.md`
+5. `docs/04_GOVERNMENT_AUTHORITY_AND_PROCEDURE_V0.md`
+6. `docs/05_POLITICAL_ACTORS_AND_COALITIONS_V0.md`
+7. `docs/06_JUDICIARY_AND_LEGAL_CONTEST_V0.md`
+8. `docs/DECISIONS.md`
+9. `docs/OPEN_QUESTIONS.md`
 
-Commit 1 is accepted as the player/product boundary for deriving architecture. Commit 2 adds only the causal state classes, ownership rules, projection rules, and GL0 source-of-truth map. Detailed government/legal/political actor primitives remain intentionally deferred to Commit 3.
+Commit 1 is accepted as the player/product boundary. Commit 2 is accepted at the BLOCKER/HIGH threshold as the causal ownership/projection boundary, including its normative Section 19 repair. Commit 3 now derives the internal governmental, political-actor, federalism, and legal-contest architecture required by GL0.
+
+Commit-3 candidate invariants are normative within their owning `04`–`06` documents during review. `DECISIONS.md` remains the accepted Commit-1/2 decision log until the Commit-3 candidate survives review; this avoids duplicating unaccepted decisions into a second authority surface.
 
 ## Governing Loop 0 in one sentence
 
@@ -31,17 +36,23 @@ The player inherits a geographically uneven housing-affordability problem, attem
 
 > Canonical state changes through explicit causal processes owned by the subsystem responsible for that fact. Other systems may reference, measure, summarize, forecast, or react to that state, but they do not silently become alternate owners of it.
 
-Important consequences include:
+Commit 3 applies that doctrine to government:
 
-- player control selects intents but owns no political truth;
-- geography and population are separately owned;
-- districts/electorates do not own copied people;
-- law and fiscal authority do not own material outcomes;
-- programs do not own the material domains they affect;
-- polls/reports/forecasts are artifacts or projections rather than world truth;
-- election results do not own current office assignments;
-- historical records own what happened, not what is true now; and
-- UI owns nothing underneath it.
+- jurisdiction is not geography;
+- institution is not actor;
+- office is not officeholder;
+- office assignment is not election result;
+- legal authority is contextual and source-grounded;
+- claimed authority is not legal validity;
+- procedure state is not actor decision state;
+- pending proposal is not enacted law;
+- party/coalition is not a hive mind;
+- political support is not one authoritative scalar;
+- legally operative requirements are not program-owned copies;
+- state intent is not the full intergovernmental relationship;
+- judicial claim is not legal truth;
+- judicial order is not automatic compliance;
+- court action does not directly rewrite material history.
 
 ## Non-goals
 
@@ -59,4 +70,4 @@ The first content target is the United States, but the engine must not be synony
 
 ## Process stop
 
-This branch is being built in bounded commits. Commit 2 does **not** authorize runtime implementation and does not design Commit 3. After Commit 2 review/repair, the next bounded step is government authority, political actors/coalitions, and judiciary/legal contest.
+Commit 3 is architecture only. It does **not** authorize runtime implementation, population/electorate representation, information/belief formulas, or transition/tick ordering. After Commit 3 review/repair, the next bounded architecture step is population/geography/electorate + information/measurement/belief + simulation time/transitions.
