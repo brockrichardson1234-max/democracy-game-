@@ -119,8 +119,8 @@ export const HOUSING_GRANT_APPROPRIATION_PURPOSE = "gl0-housing-construction-gra
 /**
  * GL0 synthetic fixture value: the fixed amount awarded to any one state
  * with ACTIVE participation. Not a claim about real U.S. grant sizing and
- * deliberately independent of a state's administrative capacity -- capacity
- * does not yet drive award/fiscal/material outcomes (Commit 13 concern).
+ * deliberately independent of a state's administrative capacity. Housing's
+ * separate material capacity controls physical progress downstream.
  * Two awards (State A + State C) total $2,000,000,000, well under the
  * $5,000,000,000 appropriation ceiling, so the arithmetic stays manually
  * inspectable and never approaches exhausting available public finance.
@@ -923,6 +923,7 @@ export const materializeHousingProjectFromDisbursement = (
     history: appendOccurrence(world.history, {
       type: "HousingProjectCreated",
       projectId: project.id,
+      housingRegionId: project.housingRegionId,
       sourceDisbursementId: disbursement.id,
       stateJurisdictionId: state.id,
       at: world.time.current,

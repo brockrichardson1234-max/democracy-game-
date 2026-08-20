@@ -82,6 +82,12 @@ export interface HousingGrantProgramProjection {
 export interface StateProgramProjection {
   readonly id: string;
   readonly capacity: StateAdministrativeCapacity;
+  readonly housingRegion: {
+    readonly id: string;
+    readonly geographyRegionId: string;
+    readonly constructionCapacityWorkUnitsPerDay: number;
+    readonly housingStockUnits: number;
+  };
   readonly decision: StateProgramDecision | null;
   readonly applicationId: string | null;
   readonly federalDetermination: FederalApplicationDeterminationOutcome | null;
@@ -89,7 +95,16 @@ export interface StateProgramProjection {
   readonly award: { readonly id: string; readonly awardedAmount: number } | null;
   readonly obligation: { readonly id: string; readonly amount: number } | null;
   readonly disbursement: { readonly id: string; readonly amount: number } | null;
-  readonly housingProject: { readonly id: string; readonly status: HousingProjectStatus } | null;
+  readonly housingProject: {
+    readonly id: string;
+    readonly housingRegionId: string;
+    readonly status: HousingProjectStatus;
+    readonly completedWorkUnits: number;
+    readonly requiredWorkUnits: number;
+    readonly plannedHousingUnits: number;
+    readonly startedAtSimulationTime: SimulationInstant | null;
+    readonly completedAtSimulationTime: SimulationInstant | null;
+  } | null;
 }
 
 export interface GameSession {
@@ -126,7 +141,7 @@ const projectWorld = (world: WorldState): GameView => {
     intergovernmentalProgramRelationships,
     housingGrantAwards,
   } = world.governance;
-  const { projects: housingProjects } = world.housing;
+  const { projects: housingProjects, regions: housingRegions } = world.housing;
   const latestEnactedLaw = enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
   const housingGrantProgramLaw =
     housingGrantProgram === null
@@ -196,6 +211,17 @@ const projectWorld = (world: WorldState): GameView => {
       if (administrativeState === undefined) {
         throw new Error(`State jurisdiction ${state.id} has no administrative fixture state.`);
       }
+      const housingRegion = housingRegions.find(
+        (candidate) => candidate.stateJurisdictionId === state.id,
+      );
+      if (housingRegion === undefined) {
+        throw new Error(`State jurisdiction ${state.id} has no Housing region.`);
+      }
+      if (!world.geography.regions.some((region) => region.id === housingRegion.geographyRegionId)) {
+        throw new Error(
+          `Housing region ${housingRegion.id} references unknown geography ${housingRegion.geographyRegionId}.`,
+        );
+      }
       const stateDecision =
         housingGrantProgram === null
           ? null
@@ -258,6 +284,13 @@ const projectWorld = (world: WorldState): GameView => {
       return {
         id: state.id,
         capacity: administrativeState.administrativeCapacity,
+        housingRegion: {
+          id: housingRegion.id,
+          geographyRegionId: housingRegion.geographyRegionId,
+          constructionCapacityWorkUnitsPerDay:
+            housingRegion.constructionCapacityWorkUnitsPerDay,
+          housingStockUnits: housingRegion.housingStockUnits,
+        },
         decision: stateDecision?.decision ?? null,
         applicationId: application?.id ?? null,
         federalDetermination: determination?.outcome ?? null,
@@ -266,7 +299,18 @@ const projectWorld = (world: WorldState): GameView => {
         obligation: obligation === null ? null : { id: obligation.id, amount: obligation.amount },
         disbursement: disbursement === null ? null : { id: disbursement.id, amount: disbursement.amount },
         housingProject:
-          housingProject === null ? null : { id: housingProject.id, status: housingProject.status },
+          housingProject === null
+            ? null
+            : {
+                id: housingProject.id,
+                housingRegionId: housingProject.housingRegionId,
+                status: housingProject.status,
+                completedWorkUnits: housingProject.completedWorkUnits,
+                requiredWorkUnits: housingProject.requiredWorkUnits,
+                plannedHousingUnits: housingProject.plannedHousingUnits,
+                startedAtSimulationTime: housingProject.startedAtSimulationTime,
+                completedAtSimulationTime: housingProject.completedAtSimulationTime,
+              },
       };
     }),
   };

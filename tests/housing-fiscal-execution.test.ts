@@ -18,7 +18,7 @@ import {
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
 import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
-import { createInitialHousingState, materializeHousingProject } from "../src/sim/housing";
+import { materializeHousingProject } from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 import { createDeterministicWorldFixture } from "../src/sim/world";
 
@@ -337,7 +337,8 @@ describe("Commit 12 participation -> award -> obligation -> disbursement -> Hous
 
   it("26. HousingState contains no project before the material-project creation transition", () => {
     const fresh = createDeterministicWorldFixture();
-    expect(fresh.housing).toEqual({ projects: [] });
+    expect(fresh.housing.projects).toEqual([]);
+    expect(fresh.housing.regions).toHaveLength(3);
 
     const disbursed = disburseState(activateState(establishProgram(), STATE_A_ID), STATE_A_ID);
     expect(disbursed.housing.projects).toEqual([]);
@@ -386,7 +387,7 @@ describe("Commit 12 participation -> award -> obligation -> disbursement -> Hous
     // state involved at all, proves the mutation boundary and its
     // admissibility/duplicate check live inside Housing -- not spliced into
     // HousingState by the cross-domain orchestrator.
-    const empty = createInitialHousingState();
+    const empty = createDeterministicWorldFixture().housing;
     const input = { stateJurisdictionId: STATE_A_ID, sourceDisbursementId: "gl0-disbursement-fixture" };
 
     const withProject = materializeHousingProject(empty, input, 0);
@@ -428,12 +429,15 @@ describe("Commit 12 participation -> award -> obligation -> disbursement -> Hous
     expect(project.sourceDisbursementId).toBe(disbursement.id);
   });
 
-  it("31. Housing project has no construction completion/progress or affordability effect in Commit 12", () => {
+  it("31. newly materialized Housing project still has no realized progress or affordability effect", () => {
     const disbursed = disburseState(activateState(establishProgram(), STATE_A_ID), STATE_A_ID);
     const materialized = materializeHousingProjectFromDisbursement(disbursed, STATE_A_ID);
     const project = materialized.housing.projects[0];
 
-    expect(project).not.toHaveProperty("percentComplete");
+    expect(project.completedWorkUnits).toBe(0);
+    expect(project.requiredWorkUnits).toBeGreaterThan(0);
+    expect(project.startedAtSimulationTime).toBeNull();
+    expect(project.completedAtSimulationTime).toBeNull();
     expect(project).not.toHaveProperty("unitsCompleted");
     expect(project).not.toHaveProperty("rent");
     expect(project).not.toHaveProperty("affordability");

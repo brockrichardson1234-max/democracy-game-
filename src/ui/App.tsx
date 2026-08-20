@@ -30,7 +30,7 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 8 runtime bootstrap</p>
+        <p className="eyebrow">Commit 13 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -148,8 +148,8 @@ export const App = () => {
       </section>
 
       <section className="card">
-        <p className="eyebrow">Commit 11 developer inspection</p>
-        <h1>State response / federal participation</h1>
+        <p className="eyebrow">Commit 13 developer inspection</p>
+        <h1>State response / Housing material delivery</h1>
 
         {statePrograms.map((state) => (
           <div key={state.id}>
@@ -172,8 +172,18 @@ export const App = () => {
                 <dd>{state.participation ?? "none"}</dd>
               </div>
               <div>
-                <dt>Capacity</dt>
+                <dt>Administrative capacity</dt>
                 <dd>{state.capacity}</dd>
+              </div>
+              <div>
+                <dt>Housing region</dt>
+                <dd>
+                  {state.housingRegion.id} ({state.housingRegion.geographyRegionId})
+                </dd>
+              </div>
+              <div>
+                <dt>Material capacity</dt>
+                <dd>{state.housingRegion.constructionCapacityWorkUnitsPerDay} work/day</dd>
               </div>
               <div>
                 <dt>Award</dt>
@@ -190,6 +200,22 @@ export const App = () => {
               <div>
                 <dt>Housing project</dt>
                 <dd>{state.housingProject === null ? "none" : state.housingProject.status}</dd>
+              </div>
+              <div>
+                <dt>Physical progress</dt>
+                <dd>
+                  {state.housingProject === null
+                    ? "none"
+                    : `${state.housingProject.completedWorkUnits} / ${state.housingProject.requiredWorkUnits} work`}
+                </dd>
+              </div>
+              <div>
+                <dt>Housing stock</dt>
+                <dd>
+                  {state.housingProject?.status === "COMPLETED"
+                    ? `${state.housingRegion.housingStockUnits - state.housingProject.plannedHousingUnits} → ${state.housingRegion.housingStockUnits}`
+                    : `${state.housingRegion.housingStockUnits} (unchanged)`}
+                </dd>
               </div>
             </dl>
 

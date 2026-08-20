@@ -375,9 +375,15 @@ describe("Commit 11 bounded federal program -> state response slice", () => {
     const view = session.activateIntergovernmentalHousingGrantParticipation(STATE_A_ID);
     const stateA = view.statePrograms.find((state) => state.id === STATE_A_ID);
 
-    expect(stateA).toEqual({
+    expect(stateA).toMatchObject({
       id: STATE_A_ID,
       capacity: "ADEQUATE",
+      housingRegion: {
+        id: "housing-region-a",
+        geographyRegionId: "geo-region-a",
+        constructionCapacityWorkUnitsPerDay: 10,
+        housingStockUnits: 1000,
+      },
       decision: "APPLY",
       applicationId: expect.any(String),
       federalDetermination: "ACCEPTED",

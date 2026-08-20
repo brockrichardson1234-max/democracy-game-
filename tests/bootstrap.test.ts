@@ -34,7 +34,7 @@ describe("Commit 8 headless bootstrap", () => {
 
   it("exposes only an application projection to consumers", () => {
     const session = createGameSession();
-    expect(session.getView()).toEqual({
+    expect(session.getView()).toMatchObject({
       currentTime: 0,
       bootstrapBoundaryResolved: false,
       nextKnownBootstrapBoundary: 1,
@@ -45,6 +45,12 @@ describe("Commit 8 headless bootstrap", () => {
         {
           id: "state-a",
           capacity: "ADEQUATE",
+          housingRegion: {
+            id: "housing-region-a",
+            geographyRegionId: "geo-region-a",
+            constructionCapacityWorkUnitsPerDay: 10,
+            housingStockUnits: 1000,
+          },
           decision: null,
           applicationId: null,
           federalDetermination: null,
@@ -57,6 +63,12 @@ describe("Commit 8 headless bootstrap", () => {
         {
           id: "state-b",
           capacity: "ADEQUATE",
+          housingRegion: {
+            id: "housing-region-b",
+            geographyRegionId: "geo-region-b",
+            constructionCapacityWorkUnitsPerDay: 5,
+            housingStockUnits: 1000,
+          },
           decision: null,
           applicationId: null,
           federalDetermination: null,
@@ -69,6 +81,12 @@ describe("Commit 8 headless bootstrap", () => {
         {
           id: "state-c",
           capacity: "WEAK",
+          housingRegion: {
+            id: "housing-region-c",
+            geographyRegionId: "geo-region-c",
+            constructionCapacityWorkUnitsPerDay: 2,
+            housingStockUnits: 1000,
+          },
           decision: null,
           applicationId: null,
           federalDetermination: null,

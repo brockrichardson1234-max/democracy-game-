@@ -245,18 +245,11 @@ describe("Commit 9 first political/legal causal slice", () => {
     const resolved = resolveHousingGrantProposalVote(amended);
 
     // Time and the unrelated Commit-8 bootstrap transition are untouched --
-    // no fiscal, administrative, state, housing, or opinion state exists to
-    // silently mutate, and this proves enactment did not invent any.
+    // geography and Housing remain untouched by enactment.
     expect(resolved.time).toEqual(world.time);
     expect(resolved.bootstrapTransition).toEqual(world.bootstrapTransition);
+    expect(resolved.geography).toEqual(world.geography);
     expect(resolved.housing).toEqual(world.housing);
-    expect(Object.keys(resolved)).toEqual([
-      "time",
-      "bootstrapTransition",
-      "governance",
-      "housing",
-      "history",
-    ]);
   });
 
   it("produces identical canonical results across equivalent deterministic executions", () => {

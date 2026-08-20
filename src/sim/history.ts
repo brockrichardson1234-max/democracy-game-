@@ -1,6 +1,7 @@
 import type { ProposalTerms, VoteChoice } from "./legislature";
 import type { SimulationInstant } from "./world";
 import type { StateProgramDecision } from "./federalism";
+import type { HousingMaterialOccurrence } from "./housing";
 
 /**
  * Immutable committed occurrences. HistoricalRecord owns only the fact that
@@ -9,6 +10,7 @@ import type { StateProgramDecision } from "./federalism";
  * state going forward.
  */
 export type HistoricalOccurrence =
+  | HousingMaterialOccurrence
   | {
       readonly type: "ProposalIntroduced";
       readonly proposalId: string;
@@ -115,6 +117,7 @@ export type HistoricalOccurrence =
   | {
       readonly type: "HousingProjectCreated";
       readonly projectId: string;
+      readonly housingRegionId: string;
       readonly sourceDisbursementId: string;
       readonly stateJurisdictionId: string;
       readonly at: SimulationInstant;
