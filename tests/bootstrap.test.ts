@@ -49,6 +49,10 @@ describe("Commit 8 headless bootstrap", () => {
           applicationId: null,
           federalDetermination: null,
           participation: null,
+          award: null,
+          obligation: null,
+          disbursement: null,
+          housingProject: null,
         },
         {
           id: "state-b",
@@ -57,6 +61,10 @@ describe("Commit 8 headless bootstrap", () => {
           applicationId: null,
           federalDetermination: null,
           participation: null,
+          award: null,
+          obligation: null,
+          disbursement: null,
+          housingProject: null,
         },
         {
           id: "state-c",
@@ -65,6 +73,10 @@ describe("Commit 8 headless bootstrap", () => {
           applicationId: null,
           federalDetermination: null,
           participation: null,
+          award: null,
+          obligation: null,
+          disbursement: null,
+          housingProject: null,
         },
       ],
     });

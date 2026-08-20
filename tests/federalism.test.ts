@@ -382,6 +382,10 @@ describe("Commit 11 bounded federal program -> state response slice", () => {
       applicationId: expect.any(String),
       federalDetermination: "ACCEPTED",
       participation: "ACTIVE",
+      award: null,
+      obligation: null,
+      disbursement: null,
+      housingProject: null,
     });
     expect(view.housingGrantProgram).toMatchObject({
       federalMatchRatePercent: COMPROMISE_TERMS.federalMatchRatePercent,

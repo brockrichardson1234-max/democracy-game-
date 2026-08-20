@@ -175,6 +175,22 @@ export const App = () => {
                 <dt>Capacity</dt>
                 <dd>{state.capacity}</dd>
               </div>
+              <div>
+                <dt>Award</dt>
+                <dd>{state.award === null ? "none" : `$${state.award.awardedAmount}`}</dd>
+              </div>
+              <div>
+                <dt>Obligated</dt>
+                <dd>{state.obligation === null ? "$0" : `$${state.obligation.amount}`}</dd>
+              </div>
+              <div>
+                <dt>Disbursed</dt>
+                <dd>{state.disbursement === null ? "$0" : `$${state.disbursement.amount}`}</dd>
+              </div>
+              <div>
+                <dt>Housing project</dt>
+                <dd>{state.housingProject === null ? "none" : state.housingProject.status}</dd>
+              </div>
             </dl>
 
             <button
@@ -212,6 +228,34 @@ export const App = () => {
               }
             >
               Activate participation
+            </button>
+            <button
+              type="button"
+              disabled={state.participation !== "ACTIVE" || state.award !== null}
+              onClick={() => setView(session.createHousingGrantAward(state.id))}
+            >
+              Create administrative award
+            </button>
+            <button
+              type="button"
+              disabled={state.award === null || state.obligation !== null}
+              onClick={() => setView(session.obligateHousingGrantAward(state.id))}
+            >
+              Obligate award
+            </button>
+            <button
+              type="button"
+              disabled={state.obligation === null || state.disbursement !== null}
+              onClick={() => setView(session.disburseHousingGrantObligation(state.id))}
+            >
+              Disburse obligation
+            </button>
+            <button
+              type="button"
+              disabled={state.disbursement === null || state.housingProject !== null}
+              onClick={() => setView(session.materializeHousingProjectFromDisbursement(state.id))}
+            >
+              Materialize Housing project
             </button>
           </div>
         ))}

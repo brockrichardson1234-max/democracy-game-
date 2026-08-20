@@ -1,16 +1,26 @@
 import {
-  establishHousingGrantProgramFromLaw,
   createFederalHousingAdministrationInstitution,
+  createHousingGrantAwardForRelationship,
+  establishHousingGrantProgramFromLaw,
   type AdministrativeInstitution,
+  type HousingGrantAward,
   type HousingGrantProgram,
 } from "./administration";
 import {
+  commitAvailablePublicFinance,
   createFiscalExecutionState,
+  createFiscalObligation,
   createInitialPublicFinanceState,
+  createPublicDisbursement,
   recognizePublicFinanceState,
+  recordFiscalObligation,
+  recordPublicDisbursement,
   type FiscalExecutionState,
+  type FiscalObligation,
+  type PublicDisbursement,
   type PublicFinanceState,
 } from "./fiscal";
+import { createHousingProjectFromDisbursement } from "./housing";
 import {
   createDeterministicLegislatureFixture,
   decideActorVote,
@@ -63,6 +73,8 @@ export interface GovernanceState {
   readonly federalApplicationDeterminations: readonly FederalApplicationDetermination[];
   /** Relationship-owned active cross-jurisdiction participation facts. */
   readonly intergovernmentalProgramRelationships: readonly IntergovernmentalProgramRelationship[];
+  /** Federal program/administrative-owned award records; distinct from fiscal obligation/disbursement. */
+  readonly housingGrantAwards: readonly HousingGrantAward[];
 }
 
 export const createInitialGovernanceState = (): GovernanceState => ({
@@ -80,6 +92,7 @@ export const createInitialGovernanceState = (): GovernanceState => ({
   programApplications: [],
   federalApplicationDeterminations: [],
   intergovernmentalProgramRelationships: [],
+  housingGrantAwards: [],
 });
 
 /**
@@ -102,6 +115,17 @@ const HOUSING_GRANT_PROPOSAL_ID = "gl0-housing-grant-proposal";
  */
 export const HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT = 5_000_000_000;
 export const HOUSING_GRANT_APPROPRIATION_PURPOSE = "gl0-housing-construction-grant-program";
+
+/**
+ * GL0 synthetic fixture value: the fixed amount awarded to any one state
+ * with ACTIVE participation. Not a claim about real U.S. grant sizing and
+ * deliberately independent of a state's administrative capacity -- capacity
+ * does not yet drive award/fiscal/material outcomes (Commit 13 concern).
+ * Two awards (State A + State C) total $2,000,000,000, well under the
+ * $5,000,000,000 appropriation ceiling, so the arithmetic stays manually
+ * inspectable and never approaches exhausting available public finance.
+ */
+export const HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT = 1_000_000_000;
 
 /** Structural validity: malformed terms fail before any world mutation. */
 const assertStructurallyValidTerms = (terms: ProposalTerms): void => {
@@ -648,6 +672,255 @@ export const activateIntergovernmentalHousingGrantParticipation = (
       stateJurisdictionId: state.id,
       applicationId: application.id,
       determinationId: determination.id,
+      at: world.time.current,
+    }),
+  };
+};
+
+const resolveActiveIntergovernmentalRelationship = (
+  world: WorldState,
+  programId: string,
+  stateJurisdictionId: string,
+): IntergovernmentalProgramRelationship | null =>
+  world.governance.intergovernmentalProgramRelationships.find(
+    (relationship) =>
+      relationship.federalProgramId === programId &&
+      relationship.stateJurisdictionId === stateJurisdictionId &&
+      relationship.status === "ACTIVE",
+  ) ?? null;
+
+const resolveHousingGrantAward = (
+  world: WorldState,
+  programId: string,
+  stateJurisdictionId: string,
+): HousingGrantAward | null =>
+  world.governance.housingGrantAwards.find(
+    (award) => award.federalProgramId === programId && award.stateJurisdictionId === stateJurisdictionId,
+  ) ?? null;
+
+const resolveFiscalObligationForAward = (world: WorldState, awardId: string): FiscalObligation | null =>
+  (world.governance.fiscalExecution?.obligations ?? []).find(
+    (obligation) => obligation.awardId === awardId,
+  ) ?? null;
+
+const resolvePublicDisbursementForObligation = (
+  world: WorldState,
+  obligationId: string,
+): PublicDisbursement | null =>
+  (world.governance.publicFinance.housingGrant?.disbursements ?? []).find(
+    (disbursement) => disbursement.obligationId === obligationId,
+  ) ?? null;
+
+/**
+ * Federal program-owned award stage. Requires ACTIVE intergovernmental
+ * participation -- a state application or federal acceptance alone is not
+ * enough, because the relationship is the accepted intergovernmental seam
+ * (see `activateIntergovernmentalHousingGrantParticipation` above). Awarding
+ * does not itself obligate or disburse money and creates no Housing project.
+ */
+export const createHousingGrantAward = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+
+  const relationship = resolveActiveIntergovernmentalRelationship(world, program.id, state.id);
+  if (relationship === null) {
+    throw new Error(
+      `State ${state.id} must have an ACTIVE intergovernmental participation relationship before an award can be created.`,
+    );
+  }
+
+  if (resolveHousingGrantAward(world, program.id, state.id) !== null) {
+    throw new Error(`An award already exists for state ${state.id}.`);
+  }
+
+  const availableAmount = world.governance.publicFinance.housingGrant?.availableAmount ?? 0;
+  if (availableAmount < HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT) {
+    throw new Error(`Awarding state ${state.id} would exceed currently available public-finance authority.`);
+  }
+
+  const award = createHousingGrantAwardForRelationship(
+    program.id,
+    relationship.id,
+    state.id,
+    HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT,
+    world.time.current,
+  );
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      housingGrantAwards: [...world.governance.housingGrantAwards, award],
+    },
+    history: appendOccurrence(world.history, {
+      type: "HousingGrantAwardCreated",
+      awardId: award.id,
+      programId: program.id,
+      relationshipId: relationship.id,
+      stateJurisdictionId: state.id,
+      awardedAmount: award.awardedAmount,
+      at: world.time.current,
+    }),
+  };
+};
+
+/**
+ * Fiscal-execution-owned obligation stage. Requires an actual award and
+ * rejects committing beyond currently available public-finance authority.
+ * Recording an obligation moves the committed amount out of "available" but
+ * does not itself pay anyone -- see `disburseHousingGrantObligation` below.
+ */
+export const obligateHousingGrantAward = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+
+  const award = resolveHousingGrantAward(world, program.id, state.id);
+  if (award === null) {
+    throw new Error(`State ${state.id} must have an award before it can be obligated.`);
+  }
+
+  if (resolveFiscalObligationForAward(world, award.id) !== null) {
+    throw new Error(`An obligation already exists for award ${award.id}.`);
+  }
+
+  const { fiscalExecution, publicFinance } = world.governance;
+  if (fiscalExecution === null || publicFinance.housingGrant === null) {
+    throw new Error("Fiscal authority must be recognized before an award can be obligated.");
+  }
+  if (publicFinance.housingGrant.availableAmount < award.awardedAmount) {
+    throw new Error(`Obligating award ${award.id} would exceed currently available public-finance authority.`);
+  }
+
+  const obligation = createFiscalObligation(
+    fiscalExecution.sourceLawId,
+    program.id,
+    award.id,
+    state.id,
+    award.awardedAmount,
+    world.time.current,
+  );
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      fiscalExecution: recordFiscalObligation(fiscalExecution, obligation),
+      publicFinance: commitAvailablePublicFinance(publicFinance, obligation.amount),
+    },
+    history: appendOccurrence(world.history, {
+      type: "HousingGrantObligationRecorded",
+      obligationId: obligation.id,
+      awardId: award.id,
+      stateJurisdictionId: state.id,
+      amount: obligation.amount,
+      at: world.time.current,
+    }),
+  };
+};
+
+/**
+ * Public-finance-owned disbursement stage. Requires an existing obligation
+ * and pays exactly its obligated amount in one transition (GL0 does not
+ * model partial payment schedules). Disbursement never adjusts
+ * `availableAmount` again -- that was already committed at obligation time.
+ */
+export const disburseHousingGrantObligation = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+
+  const award = resolveHousingGrantAward(world, program.id, state.id);
+  if (award === null) {
+    throw new Error(`State ${state.id} has no award to disburse against.`);
+  }
+
+  const obligation = resolveFiscalObligationForAward(world, award.id);
+  if (obligation === null) {
+    throw new Error(`State ${state.id} must have an obligation before it can be disbursed.`);
+  }
+
+  if (resolvePublicDisbursementForObligation(world, obligation.id) !== null) {
+    throw new Error(`A disbursement already exists for obligation ${obligation.id}.`);
+  }
+
+  const { publicFinance } = world.governance;
+  if (publicFinance.housingGrant === null) {
+    throw new Error("Public finance must be recognized before an obligation can be disbursed.");
+  }
+
+  const disbursement = createPublicDisbursement(obligation, world.time.current);
+  if (disbursement.amount > obligation.amount) {
+    throw new Error(`Disbursement for obligation ${obligation.id} cannot exceed its obligated amount.`);
+  }
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      publicFinance: recordPublicDisbursement(publicFinance, disbursement),
+    },
+    history: appendOccurrence(world.history, {
+      type: "HousingGrantDisbursementMade",
+      disbursementId: disbursement.id,
+      obligationId: obligation.id,
+      stateJurisdictionId: state.id,
+      amount: disbursement.amount,
+      at: world.time.current,
+    }),
+  };
+};
+
+/**
+ * Housing-owned material project stage. Requires an actual disbursement --
+ * relationship, award, and obligation alone are not enough, so the strongest
+ * possible proof that money movement and material state are distinct
+ * transitions is preserved. Creates exactly one project per disbursement and
+ * does not touch program/fiscal/administrative state.
+ */
+export const materializeHousingProjectFromDisbursement = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+
+  const award = resolveHousingGrantAward(world, program.id, state.id);
+  if (award === null) {
+    throw new Error(`State ${state.id} has no award to materialize a Housing project from.`);
+  }
+
+  const obligation = resolveFiscalObligationForAward(world, award.id);
+  if (obligation === null) {
+    throw new Error(`State ${state.id} has no obligation to materialize a Housing project from.`);
+  }
+
+  const disbursement = resolvePublicDisbursementForObligation(world, obligation.id);
+  if (disbursement === null) {
+    throw new Error(`State ${state.id} must have an actual disbursement before a Housing project can be created.`);
+  }
+
+  if (world.housing.projects.some((project) => project.sourceDisbursementId === disbursement.id)) {
+    throw new Error(`A Housing project already exists for disbursement ${disbursement.id}.`);
+  }
+
+  const project = createHousingProjectFromDisbursement(state.id, disbursement.id, world.time.current);
+
+  return {
+    ...world,
+    housing: { ...world.housing, projects: [...world.housing.projects, project] },
+    history: appendOccurrence(world.history, {
+      type: "HousingProjectCreated",
+      projectId: project.id,
+      sourceDisbursementId: disbursement.id,
+      stateJurisdictionId: state.id,
       at: world.time.current,
     }),
   };

@@ -7,7 +7,11 @@ import {
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
+  createHousingGrantAward,
+  disburseHousingGrantObligation,
   establishHousingGrantProgram,
+  materializeHousingProjectFromDisbursement,
+  obligateHousingGrantAward,
   recognizeHousingGrantFiscalAuthority,
   resolveFederalHousingGrantApplication,
   resolveStateHousingGrantDecision,
@@ -24,6 +28,7 @@ import type {
   StateAdministrativeCapacity,
   StateProgramDecision,
 } from "../sim/federalism";
+import type { HousingProjectStatus } from "../sim/housing";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -81,6 +86,10 @@ export interface StateProgramProjection {
   readonly applicationId: string | null;
   readonly federalDetermination: FederalApplicationDeterminationOutcome | null;
   readonly participation: "ACTIVE" | null;
+  readonly award: { readonly id: string; readonly awardedAmount: number } | null;
+  readonly obligation: { readonly id: string; readonly amount: number } | null;
+  readonly disbursement: { readonly id: string; readonly amount: number } | null;
+  readonly housingProject: { readonly id: string; readonly status: HousingProjectStatus } | null;
 }
 
 export interface GameSession {
@@ -95,6 +104,10 @@ export interface GameSession {
   submitStateHousingGrantApplication(stateId: string): GameView;
   resolveFederalHousingGrantApplication(stateId: string): GameView;
   activateIntergovernmentalHousingGrantParticipation(stateId: string): GameView;
+  createHousingGrantAward(stateId: string): GameView;
+  obligateHousingGrantAward(stateId: string): GameView;
+  disburseHousingGrantObligation(stateId: string): GameView;
+  materializeHousingProjectFromDisbursement(stateId: string): GameView;
 }
 
 const projectWorld = (world: WorldState): GameView => {
@@ -111,7 +124,9 @@ const projectWorld = (world: WorldState): GameView => {
     programApplications,
     federalApplicationDeterminations,
     intergovernmentalProgramRelationships,
+    housingGrantAwards,
   } = world.governance;
+  const { projects: housingProjects } = world.housing;
   const latestEnactedLaw = enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
   const housingGrantProgramLaw =
     housingGrantProgram === null
@@ -213,6 +228,32 @@ const projectWorld = (world: WorldState): GameView => {
                   candidate.federalProgramId === housingGrantProgram.id &&
                   candidate.stateJurisdictionId === state.id,
               ) ?? null;
+      const award =
+        housingGrantProgram === null
+          ? null
+          : housingGrantAwards.find(
+                (candidate) =>
+                  candidate.federalProgramId === housingGrantProgram.id &&
+                  candidate.stateJurisdictionId === state.id,
+              ) ?? null;
+      const obligation =
+        award === null
+          ? null
+          : (fiscalExecution?.obligations ?? []).find(
+                (candidate) => candidate.awardId === award.id,
+              ) ?? null;
+      const disbursement =
+        obligation === null
+          ? null
+          : (publicFinance.housingGrant?.disbursements ?? []).find(
+                (candidate) => candidate.obligationId === obligation.id,
+              ) ?? null;
+      const housingProject =
+        disbursement === null
+          ? null
+          : housingProjects.find(
+                (candidate) => candidate.sourceDisbursementId === disbursement.id,
+              ) ?? null;
 
       return {
         id: state.id,
@@ -221,6 +262,11 @@ const projectWorld = (world: WorldState): GameView => {
         applicationId: application?.id ?? null,
         federalDetermination: determination?.outcome ?? null,
         participation: relationship?.status ?? null,
+        award: award === null ? null : { id: award.id, awardedAmount: award.awardedAmount },
+        obligation: obligation === null ? null : { id: obligation.id, amount: obligation.amount },
+        disbursement: disbursement === null ? null : { id: disbursement.id, amount: disbursement.amount },
+        housingProject:
+          housingProject === null ? null : { id: housingProject.id, status: housingProject.status },
       };
     }),
   };
@@ -269,6 +315,22 @@ export const createGameSession = (): GameSession => {
     },
     activateIntergovernmentalHousingGrantParticipation: (stateId) => {
       world = activateIntergovernmentalHousingGrantParticipation(world, stateId);
+      return projectWorld(world);
+    },
+    createHousingGrantAward: (stateId) => {
+      world = createHousingGrantAward(world, stateId);
+      return projectWorld(world);
+    },
+    obligateHousingGrantAward: (stateId) => {
+      world = obligateHousingGrantAward(world, stateId);
+      return projectWorld(world);
+    },
+    disburseHousingGrantObligation: (stateId) => {
+      world = disburseHousingGrantObligation(world, stateId);
+      return projectWorld(world);
+    },
+    materializeHousingProjectFromDisbursement: (stateId) => {
+      world = materializeHousingProjectFromDisbursement(world, stateId);
       return projectWorld(world);
     },
   };

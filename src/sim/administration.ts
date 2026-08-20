@@ -1,5 +1,6 @@
 import type { PublicFinanceState } from "./fiscal";
 import type { EnactedLaw } from "./proposal";
+import type { SimulationInstant } from "./world";
 
 export interface AdministrativeInstitution {
   readonly id: string;
@@ -62,3 +63,41 @@ export const establishHousingGrantProgramFromLaw = (
     status: "READY_FOR_APPLICATIONS",
   };
 };
+
+/**
+ * A federal administrative award: owned by program/administrative state, not
+ * by fiscal execution (see `FiscalObligation` in fiscal.ts) and not by
+ * Housing (see `HousingProject` in housing.ts). It references the ACTIVE
+ * intergovernmental relationship that authorized it rather than duplicating
+ * that relationship's facts, and it does not itself commit or move money.
+ */
+export interface HousingGrantAward {
+  readonly id: string;
+  readonly federalProgramId: string;
+  readonly relationshipId: string;
+  readonly stateJurisdictionId: string;
+  readonly awardedAmount: number;
+  readonly awardedAtSimulationTime: SimulationInstant;
+}
+
+/**
+ * Pure resolver: the active relationship plus a fixture-determined amount
+ * become an administrative award record. Does not decide whether awarding is
+ * currently permitted (active relationship, no duplicate, within available
+ * fiscal authority) -- those preconditions belong to the governance
+ * transition that calls this.
+ */
+export const createHousingGrantAwardForRelationship = (
+  federalProgramId: string,
+  relationshipId: string,
+  stateJurisdictionId: string,
+  awardedAmount: number,
+  at: SimulationInstant,
+): HousingGrantAward => ({
+  id: `gl0-award-${stateJurisdictionId}-for-${federalProgramId}`,
+  federalProgramId,
+  relationshipId,
+  stateJurisdictionId,
+  awardedAmount,
+  awardedAtSimulationTime: at,
+});

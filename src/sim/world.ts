@@ -1,4 +1,5 @@
 import { createInitialGovernanceState, type GovernanceState } from "./governance";
+import { createInitialHousingState, type HousingState } from "./housing";
 import type { HistoricalOccurrence } from "./history";
 
 export type SimulationInstant = number;
@@ -16,6 +17,8 @@ export interface WorldState {
   readonly time: TimeState;
   readonly bootstrapTransition: BootstrapTransitionState;
   readonly governance: GovernanceState;
+  /** MaterialDomains root: Housing's own physical/material truth, a sibling of governance/PoliticalOrder. */
+  readonly housing: HousingState;
   /** Immutable committed occurrences. Owns only that something happened, never current state. */
   readonly history: readonly HistoricalOccurrence[];
 }
@@ -29,6 +32,7 @@ export const createDeterministicWorldFixture = (): WorldState => ({
     resolved: false,
   },
   governance: createInitialGovernanceState(),
+  housing: createInitialHousingState(),
   history: [],
 });
 

@@ -86,6 +86,38 @@ export type HistoricalOccurrence =
       readonly applicationId: string;
       readonly determinationId: string;
       readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingGrantAwardCreated";
+      readonly awardId: string;
+      readonly programId: string;
+      readonly relationshipId: string;
+      readonly stateJurisdictionId: string;
+      readonly awardedAmount: number;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingGrantObligationRecorded";
+      readonly obligationId: string;
+      readonly awardId: string;
+      readonly stateJurisdictionId: string;
+      readonly amount: number;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingGrantDisbursementMade";
+      readonly disbursementId: string;
+      readonly obligationId: string;
+      readonly stateJurisdictionId: string;
+      readonly amount: number;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingProjectCreated";
+      readonly projectId: string;
+      readonly sourceDisbursementId: string;
+      readonly stateJurisdictionId: string;
+      readonly at: SimulationInstant;
     };
 
 export const appendOccurrence = (

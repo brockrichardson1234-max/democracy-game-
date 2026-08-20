@@ -249,7 +249,14 @@ describe("Commit 9 first political/legal causal slice", () => {
     // silently mutate, and this proves enactment did not invent any.
     expect(resolved.time).toEqual(world.time);
     expect(resolved.bootstrapTransition).toEqual(world.bootstrapTransition);
-    expect(Object.keys(resolved)).toEqual(["time", "bootstrapTransition", "governance", "history"]);
+    expect(resolved.housing).toEqual(world.housing);
+    expect(Object.keys(resolved)).toEqual([
+      "time",
+      "bootstrapTransition",
+      "governance",
+      "housing",
+      "history",
+    ]);
   });
 
   it("produces identical canonical results across equivalent deterministic executions", () => {
