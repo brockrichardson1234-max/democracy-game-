@@ -32,7 +32,7 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 15 runtime candidate</p>
+        <p className="eyebrow">Commit 16 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -218,6 +218,14 @@ export const App = () => {
                     ? `${state.housingRegion.housingStockUnits - state.housingProject.plannedHousingUnits} → ${state.housingRegion.housingStockUnits}`
                     : `${state.housingRegion.housingStockUnits} (unchanged)`}
                 </dd>
+              </div>
+              <div>
+                <dt>Synthetic material demand</dt>
+                <dd>{state.housingRegion.housingDemandUnits}</dd>
+              </div>
+              <div>
+                <dt>Affordability pressure</dt>
+                <dd>{state.housingRegion.affordabilityPressure}</dd>
               </div>
             </dl>
 

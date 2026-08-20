@@ -107,6 +107,8 @@ export interface StateProgramProjection {
     readonly geographyRegionId: string;
     readonly constructionCapacityWorkUnitsPerDay: number;
     readonly housingStockUnits: number;
+    readonly housingDemandUnits: number;
+    readonly affordabilityPressure: number;
   };
   readonly decision: StateProgramDecision | null;
   readonly applicationId: string | null;
@@ -338,6 +340,8 @@ const projectWorld = (world: WorldState): GameView => {
           constructionCapacityWorkUnitsPerDay:
             housingRegion.constructionCapacityWorkUnitsPerDay,
           housingStockUnits: housingRegion.housingStockUnits,
+          housingDemandUnits: housingRegion.housingDemandUnits,
+          affordabilityPressure: housingRegion.affordabilityPressure,
         },
         decision: stateDecision?.decision ?? null,
         applicationId: application?.id ?? null,

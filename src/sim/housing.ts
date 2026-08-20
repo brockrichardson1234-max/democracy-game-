@@ -9,6 +9,10 @@ export interface HousingRegion {
   readonly stateJurisdictionId: string;
   readonly constructionCapacityWorkUnitsPerDay: number;
   readonly housingStockUnits: number;
+  /** Synthetic GL0 material demand owned by Housing until Population integration exists. */
+  readonly housingDemandUnits: number;
+  /** Canonical material pressure derived by Housing from usable stock and demand. */
+  readonly affordabilityPressure: number;
 }
 
 /**
@@ -71,6 +75,9 @@ export const HOUSING_REGION_A_ID = "housing-region-a";
 export const HOUSING_REGION_B_ID = "housing-region-b";
 export const HOUSING_REGION_C_ID = "housing-region-c";
 export const INITIAL_HOUSING_STOCK_UNITS = 1_000;
+export const STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS = 1_200;
+export const STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS = 1_150;
+export const STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS = 1_250;
 export const HOUSING_PROJECT_REQUIRED_WORK_UNITS = 100;
 export const HOUSING_PROJECT_PLANNED_UNITS = 100;
 export const STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 10;
@@ -78,6 +85,12 @@ export const STATE_B_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 5;
 export const STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 2;
 /** Synthetic GL0 material rule, not a claim about real administrative effects. */
 export const HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT = 3;
+
+/** Housing's deliberately bounded deterministic GL0 material-pressure rule. */
+export const resolveHousingAffordabilityPressure = (
+  housingStockUnits: number,
+  housingDemandUnits: number,
+): number => Math.max(0, housingDemandUnits - housingStockUnits);
 
 export const createInitialHousingState = (
   references: HousingFixtureReferences,
@@ -90,6 +103,11 @@ export const createInitialHousingState = (
       constructionCapacityWorkUnitsPerDay:
         STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
       housingStockUnits: INITIAL_HOUSING_STOCK_UNITS,
+      housingDemandUnits: STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS,
+      affordabilityPressure: resolveHousingAffordabilityPressure(
+        INITIAL_HOUSING_STOCK_UNITS,
+        STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS,
+      ),
     },
     {
       id: HOUSING_REGION_B_ID,
@@ -98,6 +116,11 @@ export const createInitialHousingState = (
       constructionCapacityWorkUnitsPerDay:
         STATE_B_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
       housingStockUnits: INITIAL_HOUSING_STOCK_UNITS,
+      housingDemandUnits: STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS,
+      affordabilityPressure: resolveHousingAffordabilityPressure(
+        INITIAL_HOUSING_STOCK_UNITS,
+        STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS,
+      ),
     },
     {
       id: HOUSING_REGION_C_ID,
@@ -106,6 +129,11 @@ export const createInitialHousingState = (
       constructionCapacityWorkUnitsPerDay:
         STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
       housingStockUnits: INITIAL_HOUSING_STOCK_UNITS,
+      housingDemandUnits: STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS,
+      affordabilityPressure: resolveHousingAffordabilityPressure(
+        INITIAL_HOUSING_STOCK_UNITS,
+        STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS,
+      ),
     },
   ],
   projects: [],
@@ -257,6 +285,14 @@ export type HousingMaterialOccurrence =
       readonly previousHousingStockUnits: number;
       readonly newHousingStockUnits: number;
       readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingAffordabilityPressureChanged";
+      readonly projectId: string;
+      readonly housingRegionId: string;
+      readonly previousPressure: number;
+      readonly newPressure: number;
+      readonly at: SimulationInstant;
     };
 
 export interface HousingAdvancementResult {
@@ -268,6 +304,7 @@ const occurrenceRank: Readonly<Record<HousingMaterialOccurrence["type"], number>
   HousingProjectStarted: 0,
   HousingProjectCompleted: 1,
   HousingStockChanged: 2,
+  HousingAffordabilityPressureChanged: 3,
 };
 
 const resolveProjectRegion = (
@@ -448,13 +485,21 @@ export const advanceHousing = (
     const addedUnits = stockAdditions.get(region.id) ?? 0;
     if (addedUnits === 0) return region;
 
-    const completingProjects = projects.filter(
-      (project, index) =>
-        project.housingRegionId === region.id &&
-        project.status === "COMPLETED" &&
-        housing.projects[index].status !== "COMPLETED",
-    );
+    const completingProjects = projects
+      .filter(
+        (project, index) =>
+          project.housingRegionId === region.id &&
+          project.status === "COMPLETED" &&
+          housing.projects[index].status !== "COMPLETED",
+      )
+      .sort((left, right) => {
+        if (left.completedAtSimulationTime !== right.completedAtSimulationTime) {
+          return left.completedAtSimulationTime! - right.completedAtSimulationTime!;
+        }
+        return left.id < right.id ? -1 : left.id === right.id ? 0 : 1;
+      });
     let runningStock = region.housingStockUnits;
+    let runningPressure = region.affordabilityPressure;
     for (const project of completingProjects) {
       const previousHousingStockUnits = runningStock;
       runningStock += project.plannedHousingUnits;
@@ -466,9 +511,28 @@ export const advanceHousing = (
         newHousingStockUnits: runningStock,
         at: project.completedAtSimulationTime!,
       });
+      const previousPressure = runningPressure;
+      runningPressure = resolveHousingAffordabilityPressure(
+        runningStock,
+        region.housingDemandUnits,
+      );
+      if (runningPressure !== previousPressure) {
+        occurrences.push({
+          type: "HousingAffordabilityPressureChanged",
+          projectId: project.id,
+          housingRegionId: region.id,
+          previousPressure,
+          newPressure: runningPressure,
+          at: project.completedAtSimulationTime!,
+        });
+      }
     }
 
-    return { ...region, housingStockUnits: region.housingStockUnits + addedUnits };
+    return {
+      ...region,
+      housingStockUnits: region.housingStockUnits + addedUnits,
+      affordabilityPressure: runningPressure,
+    };
   });
 
   return {
