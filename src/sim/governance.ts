@@ -1,22 +1,31 @@
 import {
   createDeterministicLegislatureFixture,
-  decideLegislatorVote,
-  resolvePassageThreshold,
+  decideActorVote,
+  resolveSeatHolder,
   type Legislature,
   type ProposalTerms,
 } from "./legislature";
-import type { EnactedLaw, LegislativeProposal, LegislativeVoteRecord } from "./proposal";
+import {
+  createLegislativeProcedureInstance,
+  resolveRequiredYeaVotes,
+  type LegislativeProcedureInstance,
+  type RecordedVote,
+} from "./legislative-procedure";
+import { appendOccurrence } from "./history";
+import type { EnactedLaw, LegislativeProposal } from "./proposal";
 import type { WorldState } from "./world";
 
 export interface GovernanceState {
   readonly legislature: Legislature;
   readonly proposal: LegislativeProposal | null;
+  readonly procedure: LegislativeProcedureInstance | null;
   readonly enactedLaws: readonly EnactedLaw[];
 }
 
 export const createInitialGovernanceState = (): GovernanceState => ({
   legislature: createDeterministicLegislatureFixture(),
   proposal: null,
+  procedure: null,
   enactedLaws: [],
 });
 
@@ -29,7 +38,6 @@ export const createInitialGovernanceState = (): GovernanceState => ({
 const HOUSING_GRANT_ADMINISTRATION_ID = "gl0-federal-executive-administration";
 
 const HOUSING_GRANT_PROPOSAL_ID = "gl0-housing-grant-proposal";
-const HOUSING_GRANT_LAW_ID = "gl0-housing-grant-law";
 
 /** Structural validity: malformed terms fail before any world mutation. */
 const assertStructurallyValidTerms = (terms: ProposalTerms): void => {
@@ -48,9 +56,16 @@ const assertStructurallyValidTerms = (terms: ProposalTerms): void => {
 };
 
 /**
- * Administration intent -> canonical attempted proposal. This is the
- * accepted simulation action boundary: it admits only structurally valid
- * input and never assigns legislator votes or a passage outcome itself.
+ * Administration intent -> canonical attempted proposal, plus the proceeding
+ * that will govern it. This is the accepted simulation action boundary: it
+ * admits only structurally valid input and never assigns actor votes or a
+ * passage outcome itself.
+ *
+ * GL0 supports exactly one housing-grant proposal lifecycle. A proposal's id
+ * is therefore only ever assigned once per world, so rejecting any second
+ * submission -- passed, failed, or still pending -- keeps that id (and any
+ * law/history it produced) stable instead of building a proposal registry
+ * this increment does not need.
  */
 export const submitHousingGrantProposal = (
   world: WorldState,
@@ -58,8 +73,8 @@ export const submitHousingGrantProposal = (
 ): WorldState => {
   assertStructurallyValidTerms(terms);
 
-  if (world.governance.proposal !== null && world.governance.proposal.status === "PENDING") {
-    throw new Error("A housing grant proposal is already pending before the legislature.");
+  if (world.governance.proposal !== null) {
+    throw new Error("A housing grant proposal already exists for this world.");
   }
 
   const proposal: LegislativeProposal = {
@@ -67,17 +82,31 @@ export const submitHousingGrantProposal = (
     sponsorAdministrationId: HOUSING_GRANT_ADMINISTRATION_ID,
     terms,
     status: "PENDING",
-    amendmentCount: 0,
-    votes: null,
   };
 
-  return { ...world, governance: { ...world.governance, proposal } };
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      proposal,
+      procedure: createLegislativeProcedureInstance(proposal.id),
+    },
+    history: appendOccurrence(world.history, {
+      type: "ProposalIntroduced",
+      proposalId: proposal.id,
+      terms,
+      at: world.time.current,
+    }),
+  };
 };
 
 /**
- * A formal amendment changes the pending proposal's actual provisions. Only
- * legal while the proposal is still pending a vote; it cannot rewrite a
- * resolved proposal or an enacted law.
+ * A formal amendment attempt is admitted by the active proceeding, which
+ * this fixture's procedure resolves deterministically (GL0 does not yet
+ * model a contested amendment vote): only then does the pending proposal's
+ * own provisions actually change, and an immutable occurrence records that
+ * the amendment was accepted. Only legal while the proceeding is still
+ * awaiting its vote.
  */
 export const amendHousingGrantProposal = (
   world: WorldState,
@@ -85,56 +114,106 @@ export const amendHousingGrantProposal = (
 ): WorldState => {
   assertStructurallyValidTerms(terms);
 
-  const current = world.governance.proposal;
-  if (current === null) throw new Error("No proposal is pending to amend.");
-  if (current.status !== "PENDING") throw new Error("Only a pending proposal may be amended.");
+  const proposal = world.governance.proposal;
+  const procedure = world.governance.procedure;
+  if (proposal === null || procedure === null) throw new Error("No proposal is pending to amend.");
+  if (procedure.stage !== "AWAITING_VOTE") {
+    throw new Error("Only a proposal still awaiting its vote may be amended.");
+  }
 
-  const amended: LegislativeProposal = {
-    ...current,
-    terms,
-    amendmentCount: current.amendmentCount + 1,
+  const previousTerms = proposal.terms;
+  const amendedProposal: LegislativeProposal = { ...proposal, terms };
+  const amendedProcedure: LegislativeProcedureInstance = {
+    ...procedure,
+    amendmentsAdopted: procedure.amendmentsAdopted + 1,
   };
 
-  return { ...world, governance: { ...world.governance, proposal: amended } };
+  return {
+    ...world,
+    governance: { ...world.governance, proposal: amendedProposal, procedure: amendedProcedure },
+    history: appendOccurrence(world.history, {
+      type: "AmendmentAccepted",
+      proposalId: proposal.id,
+      previousTerms,
+      newTerms: terms,
+      at: world.time.current,
+    }),
+  };
 };
 
 /**
- * Each legislator independently resolves its own vote from the proposal
- * terms currently before it. The procedure then applies the configured
- * passage rule to the individually admitted votes; it never reads or writes
- * a global support scalar. Enactment creates a new legal-order fact and
- * stops there: no fiscal, administrative, state, or material state exists
- * yet for this to touch.
+ * Each seat's current office holder independently resolves its own vote from
+ * the proposal terms currently before it. The proceeding then admits those
+ * votes as its own recorded state and applies the passage rule configured on
+ * it; it never reads or writes a global support scalar. Enactment creates a
+ * new legal-order fact and stops there: no fiscal, administrative, state, or
+ * material state exists yet for this to touch.
  */
 export const resolveHousingGrantProposalVote = (world: WorldState): WorldState => {
-  const current = world.governance.proposal;
-  if (current === null) throw new Error("No proposal is pending for a vote.");
-  if (current.status !== "PENDING") throw new Error("This proposal has already been resolved.");
+  const proposal = world.governance.proposal;
+  const procedure = world.governance.procedure;
+  if (proposal === null || procedure === null) throw new Error("No proposal is pending for a vote.");
+  if (procedure.stage !== "AWAITING_VOTE") {
+    throw new Error("This proposal's vote has already been resolved.");
+  }
 
-  const votes: LegislativeVoteRecord[] = world.governance.legislature.legislators.map(
-    (legislator) => ({
-      legislatorId: legislator.id,
-      choice: decideLegislatorVote(legislator.decisionCriteria, current.terms),
-    }),
-  );
+  const votes: RecordedVote[] = world.governance.legislature.seats.map((seat) => {
+    const holder = resolveSeatHolder(world.governance.legislature, seat.id);
+    return {
+      seatId: seat.id,
+      actorId: holder.id,
+      choice: decideActorVote(holder.decisionCriteria, proposal.terms),
+    };
+  });
 
   const yeaCount = votes.filter((vote) => vote.choice === "YEA").length;
-  const passed = yeaCount >= resolvePassageThreshold(world.governance.legislature);
+  const requiredYeaVotes = resolveRequiredYeaVotes(procedure.rules, world.governance.legislature);
+  const passed = yeaCount >= requiredYeaVotes;
 
-  const resolvedProposal: LegislativeProposal = {
-    ...current,
-    status: passed ? "PROCEDURE_PASSED" : "PROCEDURE_FAILED",
+  const resolvedProcedure: LegislativeProcedureInstance = {
+    ...procedure,
+    stage: "RESOLVED",
     votes,
   };
+  const resolvedProposal: LegislativeProposal = {
+    ...proposal,
+    status: passed ? "PROCEDURE_PASSED" : "PROCEDURE_FAILED",
+  };
+
+  const historyWithVotes = votes.reduce(
+    (history, vote) =>
+      appendOccurrence(history, {
+        type: "VoteCast",
+        proposalId: proposal.id,
+        seatId: vote.seatId,
+        actorId: vote.actorId,
+        choice: vote.choice,
+        at: world.time.current,
+      }),
+    world.history,
+  );
+
+  const historyWithResolution = appendOccurrence(historyWithVotes, {
+    type: "LegislativeProcedureResolved",
+    proposalId: proposal.id,
+    outcome: passed ? "PASSED" : "FAILED",
+    yeaCount,
+    requiredYeaVotes,
+    at: world.time.current,
+  });
 
   if (!passed) {
-    return { ...world, governance: { ...world.governance, proposal: resolvedProposal } };
+    return {
+      ...world,
+      governance: { ...world.governance, proposal: resolvedProposal, procedure: resolvedProcedure },
+      history: historyWithResolution,
+    };
   }
 
   const enactedLaw: EnactedLaw = {
-    id: HOUSING_GRANT_LAW_ID,
-    sourceProposalId: current.id,
-    enactedTerms: current.terms,
+    id: `gl0-law-for-${proposal.id}`,
+    sourceProposalId: proposal.id,
+    enactedTerms: proposal.terms,
     enactedAtSimulationTime: world.time.current,
   };
 
@@ -143,7 +222,14 @@ export const resolveHousingGrantProposalVote = (world: WorldState): WorldState =
     governance: {
       ...world.governance,
       proposal: resolvedProposal,
+      procedure: resolvedProcedure,
       enactedLaws: [...world.governance.enactedLaws, enactedLaw],
     },
+    history: appendOccurrence(historyWithResolution, {
+      type: "LawEnacted",
+      proposalId: proposal.id,
+      lawId: enactedLaw.id,
+      at: world.time.current,
+    }),
   };
 };

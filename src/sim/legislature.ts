@@ -15,10 +15,10 @@ export type LegislativeCoalition =
   | "SWING_COALITION";
 
 /**
- * Actor-owned decision criteria. A legislator votes YEA only when every
+ * Actor-owned decision criteria. An actor votes YEA only when every
  * criterion it specifies is satisfied by the proposal terms currently before
- * it; a criterion left null means that legislator has no requirement on that
- * dimension. Criteria live on the individual legislator, not on the
+ * it; a criterion left null means that actor has no requirement on that
+ * dimension. Criteria live on the individual actor, not on the
  * coalition/bloc label, so a shared template never becomes a shortcut owner
  * of multiple votes.
  */
@@ -28,21 +28,35 @@ export interface LegislatorDecisionCriteria {
   readonly requiredReportingRequirement: ReportingRequirement | null;
 }
 
-export interface Legislator {
+/** A persistent individual political actor. Exists independently of any seat/office. */
+export interface PoliticalActor {
   readonly id: string;
   readonly coalition: LegislativeCoalition;
   readonly decisionCriteria: LegislatorDecisionCriteria;
 }
 
-export interface Legislature {
-  readonly legislators: readonly Legislator[];
+/** A causally discrete legislative Office. Exists independently of who currently holds it. */
+export interface LegislativeSeat {
+  readonly id: string;
 }
 
-const legislator = (
+/** The current relationship between a seat (office) and the actor who holds it. */
+export interface OfficeAssignment {
+  readonly seatId: string;
+  readonly actorId: string;
+}
+
+export interface Legislature {
+  readonly seats: readonly LegislativeSeat[];
+  readonly actors: readonly PoliticalActor[];
+  readonly assignments: readonly OfficeAssignment[];
+}
+
+const actor = (
   id: string,
   coalition: LegislativeCoalition,
   decisionCriteria: LegislatorDecisionCriteria,
-): Legislator => ({ id, coalition, decisionCriteria });
+): PoliticalActor => ({ id, coalition, decisionCriteria });
 
 const noAdditionalCriteria: LegislatorDecisionCriteria = {
   minimumFederalMatchRatePercent: null,
@@ -63,32 +77,61 @@ const requiresGenerousMatchAndStrongReporting: LegislatorDecisionCriteria = {
 };
 
 /**
- * Deliberately tiny synthetic legislature: 11 causally discrete seats.
- * Each legislator independently owns its decision criteria. The coalition
- * label only groups legislators who happen to share a deterministic
- * template for fixture readability; it never casts a vote on their behalf.
+ * Deliberately tiny synthetic legislature: 11 causally discrete seats, each
+ * currently held by its own persistent political actor. The coalition label
+ * on an actor only groups actors who happen to share a deterministic
+ * template for fixture readability; it never casts a vote on their behalf,
+ * and it is the seat/assignment -- not the actor object alone -- that
+ * establishes who is currently entitled to cast that seat's vote.
  */
-export const createDeterministicLegislatureFixture = (): Legislature => ({
-  legislators: [
-    legislator("support-1", "SUPPORT_COALITION", noAdditionalCriteria),
-    legislator("support-2", "SUPPORT_COALITION", noAdditionalCriteria),
-    legislator("support-3", "SUPPORT_COALITION", noAdditionalCriteria),
-    legislator("support-4", "SUPPORT_COALITION", noAdditionalCriteria),
-    legislator("opposition-1", "OPPOSITION_COALITION", requiresLenientParticipation),
-    legislator("opposition-2", "OPPOSITION_COALITION", requiresLenientParticipation),
-    legislator("opposition-3", "OPPOSITION_COALITION", requiresLenientParticipation),
-    legislator("opposition-4", "OPPOSITION_COALITION", requiresLenientParticipation),
-    legislator("swing-1", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
-    legislator("swing-2", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
-    legislator("swing-3", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
-  ],
-});
+export const createDeterministicLegislatureFixture = (): Legislature => {
+  const actors: PoliticalActor[] = [
+    actor("actor-support-1", "SUPPORT_COALITION", noAdditionalCriteria),
+    actor("actor-support-2", "SUPPORT_COALITION", noAdditionalCriteria),
+    actor("actor-support-3", "SUPPORT_COALITION", noAdditionalCriteria),
+    actor("actor-support-4", "SUPPORT_COALITION", noAdditionalCriteria),
+    actor("actor-opposition-1", "OPPOSITION_COALITION", requiresLenientParticipation),
+    actor("actor-opposition-2", "OPPOSITION_COALITION", requiresLenientParticipation),
+    actor("actor-opposition-3", "OPPOSITION_COALITION", requiresLenientParticipation),
+    actor("actor-opposition-4", "OPPOSITION_COALITION", requiresLenientParticipation),
+    actor("actor-swing-1", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
+    actor("actor-swing-2", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
+    actor("actor-swing-3", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
+  ];
+
+  const seats: LegislativeSeat[] = actors.map((_, index) => ({ id: `seat-${index + 1}` }));
+
+  const assignments: OfficeAssignment[] = seats.map((seat, index) => ({
+    seatId: seat.id,
+    actorId: actors[index].id,
+  }));
+
+  return { seats, actors, assignments };
+};
+
+/** Resolves which actor currently holds a seat through the office-assignment relationship. */
+export const resolveSeatHolder = (
+  legislature: Legislature,
+  seatId: string,
+): PoliticalActor => {
+  const assignment = legislature.assignments.find((entry) => entry.seatId === seatId);
+  if (assignment === undefined) {
+    throw new Error(`Seat "${seatId}" has no current office assignment.`);
+  }
+
+  const holder = legislature.actors.find((candidate) => candidate.id === assignment.actorId);
+  if (holder === undefined) {
+    throw new Error(`Seat "${seatId}" is assigned to an unknown actor "${assignment.actorId}".`);
+  }
+
+  return holder;
+};
 
 /**
- * Pure resolver: proposal facts + this legislator's own criteria -> this
- * legislator's own decision. No global support scalar, no bloc-cast votes.
+ * Pure resolver: proposal facts + this actor's own criteria -> this actor's
+ * own decision. No global support scalar, no bloc-cast votes.
  */
-export const decideLegislatorVote = (
+export const decideActorVote = (
   criteria: LegislatorDecisionCriteria,
   terms: ProposalTerms,
 ): VoteChoice => {
@@ -112,7 +155,3 @@ export const decideLegislatorVote = (
   }
   return "YEA";
 };
-
-/** Legally configured passage rule for this fixture: a strict majority of seats. */
-export const resolvePassageThreshold = (legislature: Legislature): number =>
-  Math.floor(legislature.legislators.length / 2) + 1;

@@ -73,7 +73,7 @@ export const App = () => {
           </div>
           <div>
             <dt>Amendments</dt>
-            <dd>{proposal?.amendmentCount ?? "—"}</dd>
+            <dd>{proposal?.amendmentsAdopted ?? "—"}</dd>
           </div>
           <div>
             <dt>Votes</dt>

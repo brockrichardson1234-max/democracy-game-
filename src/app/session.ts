@@ -10,10 +10,12 @@ import {
   submitHousingGrantProposal,
 } from "../sim/governance";
 import type { ProposalTerms } from "../sim/legislature";
-import type { LegislativeVoteRecord, ProposalStatus } from "../sim/proposal";
+import type { ProposalStatus } from "../sim/proposal";
+import type { RecordedVote } from "../sim/legislative-procedure";
 
 export type { ProposalTerms } from "../sim/legislature";
-export type { LegislativeVoteRecord, ProposalStatus } from "../sim/proposal";
+export type { ProposalStatus } from "../sim/proposal";
+export type { RecordedVote } from "../sim/legislative-procedure";
 
 export interface GameView {
   readonly currentTime: SimulationInstant;
@@ -27,8 +29,8 @@ export interface LegislativeProjection {
     readonly id: string;
     readonly status: ProposalStatus;
     readonly terms: ProposalTerms;
-    readonly amendmentCount: number;
-    readonly votes: readonly LegislativeVoteRecord[] | null;
+    readonly amendmentsAdopted: number;
+    readonly votes: readonly RecordedVote[] | null;
   } | null;
   readonly enactedLaw: {
     readonly id: string;
@@ -46,7 +48,7 @@ export interface GameSession {
 }
 
 const projectWorld = (world: WorldState): GameView => {
-  const { proposal, enactedLaws } = world.governance;
+  const { proposal, procedure, enactedLaws } = world.governance;
   const latestEnactedLaw = enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
 
   return {
@@ -63,8 +65,8 @@ const projectWorld = (world: WorldState): GameView => {
               id: proposal.id,
               status: proposal.status,
               terms: proposal.terms,
-              amendmentCount: proposal.amendmentCount,
-              votes: proposal.votes,
+              amendmentsAdopted: procedure?.amendmentsAdopted ?? 0,
+              votes: procedure?.votes ?? null,
             },
       enactedLaw:
         latestEnactedLaw === null

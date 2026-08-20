@@ -1,4 +1,5 @@
 import { createInitialGovernanceState, type GovernanceState } from "./governance";
+import type { HistoricalOccurrence } from "./history";
 
 export type SimulationInstant = number;
 
@@ -15,6 +16,8 @@ export interface WorldState {
   readonly time: TimeState;
   readonly bootstrapTransition: BootstrapTransitionState;
   readonly governance: GovernanceState;
+  /** Immutable committed occurrences. Owns only that something happened, never current state. */
+  readonly history: readonly HistoricalOccurrence[];
 }
 
 const BOOTSTRAP_BOUNDARY: SimulationInstant = 1;
@@ -26,6 +29,7 @@ export const createDeterministicWorldFixture = (): WorldState => ({
     resolved: false,
   },
   governance: createInitialGovernanceState(),
+  history: [],
 });
 
 const assertValidTarget = (world: WorldState, target: SimulationInstant): void => {

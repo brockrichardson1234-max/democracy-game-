@@ -1,4 +1,4 @@
-import type { ProposalTerms, VoteChoice } from "./legislature";
+import type { ProposalTerms } from "./legislature";
 import type { SimulationInstant } from "./world";
 
 /**
@@ -7,13 +7,12 @@ import type { SimulationInstant } from "./world";
  * same fact as an enacted legal source existing (see EnactedLaw below).
  * Collapsing the two into one field/status is the rejected
  * `proposal.status = LAW` anti-pattern.
+ *
+ * Amendment count and recorded votes are NOT proposal fields: they are
+ * facts of the active proceeding (see LegislativeProcedureInstance in
+ * legislative-procedure.ts), not of the pending proposal's own provisions.
  */
 export type ProposalStatus = "PENDING" | "PROCEDURE_PASSED" | "PROCEDURE_FAILED";
-
-export interface LegislativeVoteRecord {
-  readonly legislatorId: string;
-  readonly choice: VoteChoice;
-}
 
 /** Pending proposal/provisions/status: PoliticalOrder legislative/procedural state. */
 export interface LegislativeProposal {
@@ -21,8 +20,6 @@ export interface LegislativeProposal {
   readonly sponsorAdministrationId: string;
   readonly terms: ProposalTerms;
   readonly status: ProposalStatus;
-  readonly amendmentCount: number;
-  readonly votes: readonly LegislativeVoteRecord[] | null;
 }
 
 /**
