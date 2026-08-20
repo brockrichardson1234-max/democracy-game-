@@ -34,7 +34,10 @@ import type {
   StateAdministrativeCapacity,
   StateProgramDecision,
 } from "../sim/federalism";
-import type { HousingProjectStatus } from "../sim/housing";
+import {
+  resolveHousingProjectEffectiveWorkUnitsPerDay,
+  type HousingProjectStatus,
+} from "../sim/housing";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -122,6 +125,13 @@ export interface StateProgramProjection {
     readonly startedAtSimulationTime: SimulationInstant | null;
     readonly completedAtSimulationTime: SimulationInstant | null;
   } | null;
+  readonly acceptedImplementationSupport: {
+    readonly sourceDeploymentId: string;
+    readonly supportUnits: number;
+    readonly supplementalWorkUnitsPerDay: number;
+    readonly effectiveAtSimulationTime: SimulationInstant;
+  } | null;
+  readonly effectiveProjectWorkUnitsPerDay: number | null;
 }
 
 export interface GameSession {
@@ -312,6 +322,12 @@ const projectWorld = (world: WorldState): GameView => {
           : housingProjects.find(
                 (candidate) => candidate.sourceDisbursementId === disbursement.id,
               ) ?? null;
+      const acceptedImplementationSupport =
+        housingProject === null
+          ? null
+          : world.housing.projectDeliverySupports.find(
+              (support) => support.housingProjectId === housingProject.id,
+            ) ?? null;
 
       return {
         id: state.id,
@@ -343,6 +359,25 @@ const projectWorld = (world: WorldState): GameView => {
                 startedAtSimulationTime: housingProject.startedAtSimulationTime,
                 completedAtSimulationTime: housingProject.completedAtSimulationTime,
               },
+        acceptedImplementationSupport:
+          acceptedImplementationSupport === null
+            ? null
+            : {
+                sourceDeploymentId: acceptedImplementationSupport.sourceDeploymentId,
+                supportUnits: acceptedImplementationSupport.supportUnits,
+                supplementalWorkUnitsPerDay:
+                  acceptedImplementationSupport.supplementalWorkUnitsPerDay,
+                effectiveAtSimulationTime:
+                  acceptedImplementationSupport.effectiveAtSimulationTime,
+              },
+        effectiveProjectWorkUnitsPerDay:
+          housingProject === null
+            ? null
+            : resolveHousingProjectEffectiveWorkUnitsPerDay(
+                world.housing,
+                housingProject.id,
+                world.time.current,
+              ),
       };
     }),
   };

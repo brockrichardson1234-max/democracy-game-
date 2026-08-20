@@ -139,6 +139,13 @@ export type HistoricalOccurrence =
       readonly stateJurisdictionId: string;
       readonly supportUnits: number;
       readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingImplementationSupportAccepted";
+      readonly sourceDeploymentId: string;
+      readonly projectId: string;
+      readonly housingRegionId: string;
+      readonly at: SimulationInstant;
     };
 
 export const appendOccurrence = (

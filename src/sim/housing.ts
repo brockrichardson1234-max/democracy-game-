@@ -29,9 +29,32 @@ export interface HousingProject {
   readonly completedAtSimulationTime: SimulationInstant | null;
 }
 
+/**
+ * The smallest cross-domain input accepted by Housing. Administration says
+ * only that support was legitimately deployed to a state; Housing resolves
+ * the material target and effect.
+ */
+export interface HousingImplementationSupportInput {
+  readonly sourceDeploymentId: string;
+  readonly stateJurisdictionId: string;
+  readonly supportUnits: number;
+}
+
+/** Housing-owned material interpretation of one accepted deployment. */
+export interface HousingProjectDeliverySupport {
+  readonly id: string;
+  readonly sourceDeploymentId: string;
+  readonly housingProjectId: string;
+  readonly housingRegionId: string;
+  readonly supportUnits: number;
+  readonly supplementalWorkUnitsPerDay: number;
+  readonly effectiveAtSimulationTime: SimulationInstant;
+}
+
 export interface HousingState {
   readonly regions: readonly HousingRegion[];
   readonly projects: readonly HousingProject[];
+  readonly projectDeliverySupports: readonly HousingProjectDeliverySupport[];
 }
 
 /** References supplied by the world fixture; Housing supplies all material values. */
@@ -53,6 +76,8 @@ export const HOUSING_PROJECT_PLANNED_UNITS = 100;
 export const STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 10;
 export const STATE_B_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 5;
 export const STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 2;
+/** Synthetic GL0 material rule, not a claim about real administrative effects. */
+export const HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT = 3;
 
 export const createInitialHousingState = (
   references: HousingFixtureReferences,
@@ -84,6 +109,7 @@ export const createInitialHousingState = (
     },
   ],
   projects: [],
+  projectDeliverySupports: [],
 });
 
 export interface HousingProjectInitiationInput {
@@ -134,6 +160,81 @@ export const materializeHousingProject = (
   return { ...housing, projects: [...housing.projects, project] };
 };
 
+/**
+ * Housing's admission and interpretation boundary for a legitimate federal
+ * deployment input. No governance state is available here: Housing resolves
+ * the single bounded material project, its region, and the synthetic effect.
+ */
+export const acceptHousingImplementationSupport = (
+  housing: HousingState,
+  input: HousingImplementationSupportInput,
+  at: SimulationInstant,
+): HousingState => {
+  if (!Number.isFinite(at)) {
+    throw new Error("Housing implementation-support acceptance time must be finite.");
+  }
+  if (!Number.isInteger(input.supportUnits) || input.supportUnits <= 0) {
+    throw new Error("Housing implementation support must contain positive whole support units.");
+  }
+  if (
+    housing.projectDeliverySupports.some(
+      (support) => support.sourceDeploymentId === input.sourceDeploymentId,
+    )
+  ) {
+    throw new Error(
+      `Housing has already consumed implementation-support deployment ${input.sourceDeploymentId}.`,
+    );
+  }
+
+  const projects = housing.projects.filter(
+    (project) => project.stateJurisdictionId === input.stateJurisdictionId,
+  );
+  if (projects.length !== 1) {
+    throw new Error(
+      `Housing requires exactly one supported material project for state ${input.stateJurisdictionId}; found ${projects.length}.`,
+    );
+  }
+  const project = projects[0];
+  if (project.status === "COMPLETED") {
+    throw new Error(`Housing project ${project.id} is already completed.`);
+  }
+  if (at < project.createdAtSimulationTime) {
+    throw new Error(
+      `Housing implementation support cannot predate project ${project.id}.`,
+    );
+  }
+
+  const region = resolveHousingRegionForState(housing, input.stateJurisdictionId);
+  if (project.housingRegionId !== region.id) {
+    throw new Error(
+      `Housing project ${project.id} does not belong to the supported region ${region.id}.`,
+    );
+  }
+  if (
+    housing.projectDeliverySupports.some(
+      (support) => support.housingProjectId === project.id,
+    )
+  ) {
+    throw new Error(`Housing project ${project.id} already has accepted implementation support.`);
+  }
+
+  const support: HousingProjectDeliverySupport = {
+    id: `gl0-housing-delivery-support-for-${input.sourceDeploymentId}`,
+    sourceDeploymentId: input.sourceDeploymentId,
+    housingProjectId: project.id,
+    housingRegionId: region.id,
+    supportUnits: input.supportUnits,
+    supplementalWorkUnitsPerDay:
+      input.supportUnits * HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
+    effectiveAtSimulationTime: at,
+  };
+
+  return {
+    ...housing,
+    projectDeliverySupports: [...housing.projectDeliverySupports, support],
+  };
+};
+
 export type HousingMaterialOccurrence =
   | {
       readonly type: "HousingProjectStarted";
@@ -167,6 +268,45 @@ const occurrenceRank: Readonly<Record<HousingMaterialOccurrence["type"], number>
   HousingProjectStarted: 0,
   HousingProjectCompleted: 1,
   HousingStockChanged: 2,
+};
+
+const resolveProjectRegion = (
+  housing: HousingState,
+  project: HousingProject,
+): HousingRegion => {
+  const region = housing.regions.find((candidate) => candidate.id === project.housingRegionId);
+  if (region === undefined) {
+    throw new Error(
+      `Housing project ${project.id} references unknown region ${project.housingRegionId}.`,
+    );
+  }
+  return region;
+};
+
+/** Housing-owned inspection query over already accepted material state. */
+export const resolveHousingProjectEffectiveWorkUnitsPerDay = (
+  housing: HousingState,
+  housingProjectId: string,
+  at: SimulationInstant,
+): number => {
+  const project = housing.projects.find((candidate) => candidate.id === housingProjectId);
+  if (project === undefined) {
+    throw new Error(`Unknown Housing project ${housingProjectId}.`);
+  }
+  const region = resolveProjectRegion(housing, project);
+  if (project.status === "COMPLETED") {
+    return region.constructionCapacityWorkUnitsPerDay;
+  }
+  return housing.projectDeliverySupports
+    .filter(
+      (support) =>
+        support.housingProjectId === project.id &&
+        support.effectiveAtSimulationTime <= at,
+    )
+    .reduce(
+      (rate, support) => rate + support.supplementalWorkUnitsPerDay,
+      region.constructionCapacityWorkUnitsPerDay,
+    );
 };
 
 const sortOccurrences = (
@@ -207,46 +347,82 @@ export const advanceHousing = (
   const occurrences: HousingMaterialOccurrence[] = [];
   const stockAdditions = new Map<string, number>();
 
+  for (const support of housing.projectDeliverySupports) {
+    const project = housing.projects.find(
+      (candidate) => candidate.id === support.housingProjectId,
+    );
+    if (project === undefined) {
+      throw new Error(
+        `Housing delivery support ${support.id} references unknown project ${support.housingProjectId}.`,
+      );
+    }
+    if (project.housingRegionId !== support.housingRegionId) {
+      throw new Error(
+        `Housing delivery support ${support.id} references the wrong region for project ${project.id}.`,
+      );
+    }
+  }
+
   const projects = housing.projects.map((project): HousingProject => {
     if (project.status === "COMPLETED") return project;
 
-    const region = housing.regions.find((candidate) => candidate.id === project.housingRegionId);
-    if (region === undefined) {
-      throw new Error(`Housing project ${project.id} references unknown region ${project.housingRegionId}.`);
-    }
-    if (region.constructionCapacityWorkUnitsPerDay <= 0) return project;
+    const region = resolveProjectRegion(housing, project);
 
     const effectiveFrom = Math.max(fromTime, project.createdAtSimulationTime);
     if (toTime <= effectiveFrom) return project;
 
-    const startedAt = project.startedAtSimulationTime ?? effectiveFrom;
-    if (project.startedAtSimulationTime === null) {
-      occurrences.push({
-        type: "HousingProjectStarted",
-        projectId: project.id,
-        housingRegionId: region.id,
-        stateJurisdictionId: project.stateJurisdictionId,
-        at: startedAt,
-      });
+    const supportBoundaries = housing.projectDeliverySupports
+      .filter(
+        (support) =>
+          support.housingProjectId === project.id &&
+          support.effectiveAtSimulationTime > effectiveFrom &&
+          support.effectiveAtSimulationTime < toTime,
+      )
+      .map((support) => support.effectiveAtSimulationTime)
+      .sort((left, right) => left - right);
+    const boundaries = [...new Set(supportBoundaries), toTime];
+    let cursor = effectiveFrom;
+    let completedWorkUnits = project.completedWorkUnits;
+    let startedAt = project.startedAtSimulationTime;
+    let completedAt: SimulationInstant | null = null;
+
+    for (const boundary of boundaries) {
+      const rate = resolveHousingProjectEffectiveWorkUnitsPerDay(
+        housing,
+        project.id,
+        cursor,
+      );
+      if (rate > 0) {
+        if (startedAt === null) {
+          startedAt = cursor;
+          occurrences.push({
+            type: "HousingProjectStarted",
+            projectId: project.id,
+            housingRegionId: region.id,
+            stateJurisdictionId: project.stateJurisdictionId,
+            at: startedAt,
+          });
+        }
+        const possibleWork = completedWorkUnits + rate * (boundary - cursor);
+        if (possibleWork >= project.requiredWorkUnits) {
+          completedAt = cursor + (project.requiredWorkUnits - completedWorkUnits) / rate;
+          completedWorkUnits = project.requiredWorkUnits;
+          break;
+        }
+        completedWorkUnits = possibleWork;
+      }
+      cursor = boundary;
     }
 
-    const possibleWork =
-      project.completedWorkUnits +
-      region.constructionCapacityWorkUnitsPerDay * (toTime - effectiveFrom);
-    const completedWorkUnits = Math.min(project.requiredWorkUnits, possibleWork);
-
-    if (completedWorkUnits < project.requiredWorkUnits) {
+    if (completedAt === null) {
       return {
         ...project,
         completedWorkUnits,
-        status: "ACTIVE",
+        status: startedAt === null ? "FUNDED_NOT_STARTED" : "ACTIVE",
         startedAtSimulationTime: startedAt,
       };
     }
 
-    const remainingWorkUnits = project.requiredWorkUnits - project.completedWorkUnits;
-    const completedAt =
-      effectiveFrom + remainingWorkUnits / region.constructionCapacityWorkUnitsPerDay;
     occurrences.push({
       type: "HousingProjectCompleted",
       projectId: project.id,
@@ -296,7 +472,7 @@ export const advanceHousing = (
   });
 
   return {
-    housing: { regions, projects },
+    housing: { ...housing, regions, projects },
     occurrences: sortOccurrences(occurrences),
   };
 };

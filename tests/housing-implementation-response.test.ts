@@ -291,12 +291,14 @@ describe("Commit 14 post-enactment implementation response", () => {
     });
   });
 
-  it("13. neither response directly changes Housing progress, capacity, or stock", () => {
+  it("13. neither response directly changes progress, intrinsic capacity, or stock", () => {
     const before = createAttemptableWorld();
     const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
     const preserved = resolveHousingImplementationResponse(before, "PRESERVE_SUPPORT_RESERVE");
 
-    expect(deployed.housing).toEqual(before.housing);
+    expect(deployed.housing.projects).toEqual(before.housing.projects);
+    expect(deployed.housing.regions).toEqual(before.housing.regions);
+    expect(deployed.housing.projectDeliverySupports).toHaveLength(1);
     expect(preserved.housing).toEqual(before.housing);
     expect(regionFor(deployed, STATE_C_ID).housingStockUnits).toBe(INITIAL_HOUSING_STOCK_UNITS);
   });
@@ -324,14 +326,19 @@ describe("Commit 14 post-enactment implementation response", () => {
     expect(deployment).not.toHaveProperty("administrativeCapacity");
   });
 
-  it("15. leaves Housing independently advanceable from HousingState plus time", () => {
+  it("15. leaves both routes independently advanceable from HousingState plus time", () => {
     const before = createAttemptableWorld();
     const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
     const preserved = resolveHousingImplementationResponse(before, "PRESERVE_SUPPORT_RESERVE");
 
     const ordinaryAdvance = advanceHousing(before.housing, 5, 6);
-    expect(advanceHousing(deployed.housing, 5, 6)).toEqual(ordinaryAdvance);
     expect(advanceHousing(preserved.housing, 5, 6)).toEqual(ordinaryAdvance);
+    const deployedAdvance = advanceHousing(deployed.housing, 5, 6);
+    expect(
+      deployedAdvance.housing.projects.find(
+        (project) => project.stateJurisdictionId === STATE_C_ID,
+      )?.completedWorkUnits,
+    ).toBe(15);
   });
 
   it("16. produces the same attemptable canonical starting state under equivalent advancement chunking", () => {

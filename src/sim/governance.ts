@@ -27,7 +27,10 @@ import {
   type PublicDisbursement,
   type PublicFinanceState,
 } from "./fiscal";
-import { materializeHousingProject } from "./housing";
+import {
+  acceptHousingImplementationSupport,
+  materializeHousingProject,
+} from "./housing";
 import {
   createDeterministicLegislatureFixture,
   decideActorVote,
@@ -1004,9 +1007,10 @@ export const isHousingImplementationResponseAttemptable = (world: WorldState): b
 };
 
 /**
- * Resolves exactly one bounded player-selected administrative response. A
- * deployment ends at a canonical administrative/intergovernmental input;
- * neither branch passes any input to Housing in Commit 14.
+ * Resolves exactly one bounded player-selected administrative response. On
+ * DEPLOY, administration first creates the canonical deployment; routine
+ * orchestration then presents its minimal input to Housing's own acceptance
+ * boundary at the same simulation instant. PRESERVE never creates that input.
  */
 export const resolveHousingImplementationResponse = (
   world: WorldState,
@@ -1058,25 +1062,58 @@ export const resolveHousingImplementationResponse = (
           housingImplementationSupport.deployments.length - 1
         ]
       : null;
+  const housing =
+    deployment === null
+      ? world.housing
+      : acceptHousingImplementationSupport(
+          world.housing,
+          {
+            sourceDeploymentId: deployment.id,
+            stateJurisdictionId: deployment.stateJurisdictionId,
+            supportUnits: deployment.supportUnits,
+          },
+          world.time.current,
+        );
+  const acceptedSupport =
+    deployment === null
+      ? null
+      : housing.projectDeliverySupports.find(
+          (support) => support.sourceDeploymentId === deployment.id,
+        ) ?? null;
+  if (deployment !== null && acceptedSupport === null) {
+    throw new Error(`Housing did not retain accepted deployment ${deployment.id}.`);
+  }
+
+  const historyWithDeployment =
+    deployment === null
+      ? historyWithDecision
+      : appendOccurrence(historyWithDecision, {
+          type: "HousingImplementationSupportDeployed",
+          deploymentId: deployment.id,
+          programId: deployment.federalProgramId,
+          relationshipId: deployment.relationshipId,
+          stateJurisdictionId: deployment.stateJurisdictionId,
+          supportUnits: deployment.supportUnits,
+          at: deployment.deployedAtSimulationTime,
+        });
 
   return {
     ...world,
+    housing,
     governance: {
       ...world.governance,
       housingImplementationSupport,
       housingImplementationResponseDecision: decision,
     },
     history:
-      deployment === null
-        ? historyWithDecision
-        : appendOccurrence(historyWithDecision, {
-            type: "HousingImplementationSupportDeployed",
-            deploymentId: deployment.id,
-            programId: deployment.federalProgramId,
-            relationshipId: deployment.relationshipId,
-            stateJurisdictionId: deployment.stateJurisdictionId,
-            supportUnits: deployment.supportUnits,
-            at: deployment.deployedAtSimulationTime,
+      acceptedSupport === null
+        ? historyWithDeployment
+        : appendOccurrence(historyWithDeployment, {
+            type: "HousingImplementationSupportAccepted",
+            sourceDeploymentId: acceptedSupport.sourceDeploymentId,
+            projectId: acceptedSupport.housingProjectId,
+            housingRegionId: acceptedSupport.housingRegionId,
+            at: acceptedSupport.effectiveAtSimulationTime,
           }),
   };
 };

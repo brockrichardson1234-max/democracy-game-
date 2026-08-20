@@ -32,7 +32,7 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 14 runtime candidate</p>
+        <p className="eyebrow">Commit 15 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -290,8 +290,8 @@ export const App = () => {
       </section>
 
       <section className="card">
-        <p className="eyebrow">Commit 14 developer inspection</p>
-        <h1>Implementation response</h1>
+        <p className="eyebrow">Commit 15 developer inspection</p>
+        <h1>Implementation response → Housing delivery</h1>
 
         <dl>
           <div>
@@ -308,6 +308,38 @@ export const App = () => {
               {stateCProgram?.housingProject == null
                 ? "none"
                 : `${stateCProgram.housingProject.completedWorkUnits} / ${stateCProgram.housingProject.requiredWorkUnits}`}
+            </dd>
+          </div>
+          <div>
+            <dt>State C intrinsic material capacity</dt>
+            <dd>
+              {stateCProgram === undefined
+                ? "none"
+                : `${stateCProgram.housingRegion.constructionCapacityWorkUnitsPerDay} work/day`}
+            </dd>
+          </div>
+          <div>
+            <dt>State C accepted Housing support</dt>
+            <dd>
+              {stateCProgram?.acceptedImplementationSupport == null
+                ? "none"
+                : `+${stateCProgram.acceptedImplementationSupport.supplementalWorkUnitsPerDay} work/day from ${stateCProgram.acceptedImplementationSupport.sourceDeploymentId}`}
+            </dd>
+          </div>
+          <div>
+            <dt>State C effective project rate</dt>
+            <dd>
+              {stateCProgram?.effectiveProjectWorkUnitsPerDay == null
+                ? "none"
+                : `${stateCProgram.effectiveProjectWorkUnitsPerDay} work/day`}
+            </dd>
+          </div>
+          <div>
+            <dt>State C completion / stock</dt>
+            <dd>
+              {stateCProgram?.housingProject == null
+                ? "none"
+                : `${stateCProgram.housingProject.completedAtSimulationTime ?? "pending"} / ${stateCProgram.housingRegion.housingStockUnits}`}
             </dd>
           </div>
           <div>
