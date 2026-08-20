@@ -52,6 +52,8 @@ export interface GameView {
   readonly fiscal: FiscalProjection | null;
   readonly housingGrantProgram: HousingGrantProgramProjection | null;
   readonly implementationResponse: HousingImplementationResponseProjection;
+  /** Raw Information-domain truth for the developer inspection harness. */
+  readonly officialHousingMeasurement: OfficialHousingMeasurementProjection;
   readonly statePrograms: readonly StateProgramProjection[];
 }
 
@@ -97,6 +99,32 @@ export interface HousingImplementationResponseProjection {
   readonly availableSupportUnits: number;
   readonly resolvedAction: HousingImplementationResponseAction | null;
   readonly targetStateJurisdictionId: string | null;
+}
+
+export interface HousingObservationProjection {
+  readonly housingRegionId: string;
+  readonly housingStockUnits: number;
+  readonly affordabilityPressure: number;
+}
+
+export interface OfficialHousingMeasurementProjection {
+  readonly id: string;
+  readonly status: "SCHEDULED" | "CAPTURED" | "RELEASED";
+  readonly observationStart: SimulationInstant;
+  readonly observationEnd: SimulationInstant;
+  readonly capturedAtSimulationTime: SimulationInstant | null;
+  readonly scheduledReleaseAtSimulationTime: SimulationInstant;
+  readonly capturedRegionalResults: readonly HousingObservationProjection[];
+  readonly releasedReport: {
+    readonly id: string;
+    readonly sourceMeasurementId: string;
+    readonly asOfStart: SimulationInstant;
+    readonly asOfEnd: SimulationInstant;
+    readonly createdAtSimulationTime: SimulationInstant;
+    readonly releasedAtSimulationTime: SimulationInstant;
+    readonly accessClass: "PUBLIC";
+    readonly regionalResults: readonly HousingObservationProjection[];
+  } | null;
 }
 
 export interface StateProgramProjection {
@@ -175,6 +203,14 @@ const projectWorld = (world: WorldState): GameView => {
     housingImplementationResponseDecision,
   } = world.governance;
   const { projects: housingProjects, regions: housingRegions } = world.housing;
+  const measurement = world.information.housingMeasurement;
+  const measurementReports = world.information.artifacts.filter(
+    (artifact) => artifact.sourceMeasurementId === measurement.id,
+  );
+  if (measurementReports.length > 1) {
+    throw new Error(`Measurement ${measurement.id} has multiple official report artifacts.`);
+  }
+  const releasedReport = measurementReports[0] ?? null;
   const latestEnactedLaw = enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
   const housingGrantProgramLaw =
     housingGrantProgram === null
@@ -247,6 +283,38 @@ const projectWorld = (world: WorldState): GameView => {
       resolvedAction: housingImplementationResponseDecision?.action ?? null,
       targetStateJurisdictionId:
         housingImplementationResponseDecision?.targetStateJurisdictionId ?? null,
+    },
+    officialHousingMeasurement: {
+      id: measurement.id,
+      status:
+        releasedReport !== null
+          ? "RELEASED"
+          : measurement.status === "SCHEDULED"
+            ? "SCHEDULED"
+            : "CAPTURED",
+      observationStart: measurement.observationStart,
+      observationEnd: measurement.observationEnd,
+      capturedAtSimulationTime: measurement.capturedAtSimulationTime,
+      scheduledReleaseAtSimulationTime: measurement.scheduledReleaseAtSimulationTime,
+      capturedRegionalResults:
+        measurement.result?.regionalObservations.map((observation) => ({
+          ...observation,
+        })) ?? [],
+      releasedReport:
+        releasedReport === null
+          ? null
+          : {
+              id: releasedReport.id,
+              sourceMeasurementId: releasedReport.sourceMeasurementId,
+              asOfStart: releasedReport.asOfStart,
+              asOfEnd: releasedReport.asOfEnd,
+              createdAtSimulationTime: releasedReport.createdAtSimulationTime,
+              releasedAtSimulationTime: releasedReport.releasedAtSimulationTime,
+              accessClass: releasedReport.accessClass,
+              regionalResults: releasedReport.regionalResults.map((observation) => ({
+                ...observation,
+              })),
+            },
     },
     statePrograms: stateJurisdictions.map((state) => {
       const administrativeState = stateProgramAdministrativeStates.find(

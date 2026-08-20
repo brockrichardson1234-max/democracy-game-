@@ -32,7 +32,7 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 16 runtime candidate</p>
+        <p className="eyebrow">Commit 17 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -381,6 +381,54 @@ export const App = () => {
         >
           Preserve support reserve
         </button>
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 17 developer inspection</p>
+        <h1>Official Housing Measurement</h1>
+
+        <dl>
+          <div>
+            <dt>Status</dt>
+            <dd>{view.officialHousingMeasurement.status}</dd>
+          </div>
+          <div>
+            <dt>Observation window</dt>
+            <dd>
+              {view.officialHousingMeasurement.observationStart}–
+              {view.officialHousingMeasurement.observationEnd}
+            </dd>
+          </div>
+          <div>
+            <dt>Captured at</dt>
+            <dd>{view.officialHousingMeasurement.capturedAtSimulationTime ?? "pending"}</dd>
+          </div>
+          <div>
+            <dt>Scheduled report release</dt>
+            <dd>{view.officialHousingMeasurement.scheduledReleaseAtSimulationTime}</dd>
+          </div>
+          <div>
+            <dt>Released report</dt>
+            <dd>{view.officialHousingMeasurement.releasedReport === null ? "no" : "yes"}</dd>
+          </div>
+        </dl>
+
+        <h2>Captured regional material values</h2>
+        <dl>
+          {view.officialHousingMeasurement.capturedRegionalResults.map((result) => {
+            const state = statePrograms.find(
+              (candidate) => candidate.housingRegion.id === result.housingRegionId,
+            );
+            return (
+              <div key={result.housingRegionId}>
+                <dt>{state?.id ?? result.housingRegionId}</dt>
+                <dd>
+                  stock {result.housingStockUnits} / pressure {result.affordabilityPressure}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
       </section>
     </main>
   );
