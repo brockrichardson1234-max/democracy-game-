@@ -32,14 +32,8 @@ export interface HousingState {
 
 export const createInitialHousingState = (): HousingState => ({ projects: [] });
 
-/**
- * Pure resolver: an actual disbursement becomes a real material project
- * admitted into Housing's pipeline. Does not decide whether materialization
- * is currently permitted (an actual disbursement exists, no duplicate
- * project for it) -- those preconditions belong to the governance transition
- * that calls this.
- */
-export const createHousingProjectFromDisbursement = (
+/** Pure constructor: builds the project object admitted by `materializeHousingProject` below. */
+const createHousingProjectFromDisbursement = (
   stateJurisdictionId: string,
   sourceDisbursementId: string,
   at: SimulationInstant,
@@ -50,3 +44,40 @@ export const createHousingProjectFromDisbursement = (
   status: "FUNDED_NOT_STARTED",
   createdAtSimulationTime: at,
 });
+
+/**
+ * A legitimate cross-domain material-initiation input: a caller may
+ * establish that an actual disbursement exists for a state, but that fact
+ * alone is not a Housing mutation. Only `materializeHousingProject` below
+ * decides whether/how it is admitted into HousingState.
+ */
+export interface HousingProjectInitiationInput {
+  readonly stateJurisdictionId: string;
+  readonly sourceDisbursementId: string;
+}
+
+/**
+ * Housing owns this mutation boundary: cross-domain callers may construct
+ * and pass a `HousingProjectInitiationInput`, but Housing itself decides
+ * admissibility (including rejecting a duplicate project for the same
+ * disbursement) and performs the actual `HousingState` update. Per
+ * Architecture V0's cross-domain causality rule, no other subsystem may
+ * splice `projects` directly.
+ */
+export const materializeHousingProject = (
+  housing: HousingState,
+  input: HousingProjectInitiationInput,
+  at: SimulationInstant,
+): HousingState => {
+  if (housing.projects.some((project) => project.sourceDisbursementId === input.sourceDisbursementId)) {
+    throw new Error(`A Housing project already exists for disbursement ${input.sourceDisbursementId}.`);
+  }
+
+  const project = createHousingProjectFromDisbursement(
+    input.stateJurisdictionId,
+    input.sourceDisbursementId,
+    at,
+  );
+
+  return { ...housing, projects: [...housing.projects, project] };
+};

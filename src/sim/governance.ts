@@ -20,7 +20,7 @@ import {
   type PublicDisbursement,
   type PublicFinanceState,
 } from "./fiscal";
-import { createHousingProjectFromDisbursement } from "./housing";
+import { materializeHousingProject } from "./housing";
 import {
   createDeterministicLegislatureFixture,
   decideActorVote,
@@ -907,15 +907,19 @@ export const materializeHousingProjectFromDisbursement = (
     throw new Error(`State ${state.id} must have an actual disbursement before a Housing project can be created.`);
   }
 
-  if (world.housing.projects.some((project) => project.sourceDisbursementId === disbursement.id)) {
-    throw new Error(`A Housing project already exists for disbursement ${disbursement.id}.`);
-  }
-
-  const project = createHousingProjectFromDisbursement(state.id, disbursement.id, world.time.current);
+  // Governance establishes that a legitimate material input exists; Housing
+  // itself owns whether/how that input mutates HousingState (including
+  // admissibility/duplicate rejection) -- see `materializeHousingProject`.
+  const housing = materializeHousingProject(
+    world.housing,
+    { stateJurisdictionId: state.id, sourceDisbursementId: disbursement.id },
+    world.time.current,
+  );
+  const project = housing.projects[housing.projects.length - 1];
 
   return {
     ...world,
-    housing: { ...world.housing, projects: [...world.housing.projects, project] },
+    housing,
     history: appendOccurrence(world.history, {
       type: "HousingProjectCreated",
       projectId: project.id,

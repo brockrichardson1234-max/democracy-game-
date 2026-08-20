@@ -18,6 +18,7 @@ import {
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
 import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+import { createInitialHousingState, materializeHousingProject } from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 import { createDeterministicWorldFixture } from "../src/sim/world";
 
@@ -378,6 +379,29 @@ describe("Commit 12 participation -> award -> obligation -> disbursement -> Hous
       /already exists/,
     );
     expect(materialized.housing.projects).toHaveLength(1);
+  });
+
+  it("C12-01: Housing itself owns the material mutation, not the governance orchestrator", () => {
+    // Calling Housing's own transition directly, with no governance/fiscal
+    // state involved at all, proves the mutation boundary and its
+    // admissibility/duplicate check live inside Housing -- not spliced into
+    // HousingState by the cross-domain orchestrator.
+    const empty = createInitialHousingState();
+    const input = { stateJurisdictionId: STATE_A_ID, sourceDisbursementId: "gl0-disbursement-fixture" };
+
+    const withProject = materializeHousingProject(empty, input, 0);
+    expect(withProject.projects).toHaveLength(1);
+    expect(withProject.projects[0]).toMatchObject({
+      stateJurisdictionId: STATE_A_ID,
+      sourceDisbursementId: input.sourceDisbursementId,
+      status: "FUNDED_NOT_STARTED",
+    });
+    // The prior HousingState reference is untouched (pure transition).
+    expect(empty.projects).toEqual([]);
+
+    // Housing rejects the duplicate itself, independent of any governance call.
+    expect(() => materializeHousingProject(withProject, input, 1)).toThrow(/already exists/);
+    expect(withProject.projects).toHaveLength(1);
   });
 
   it("30. Housing project is canonical material state distinct from every upstream owner", () => {
