@@ -12,7 +12,7 @@ import {
   createHousingGrantAward,
   disburseHousingGrantObligation,
   establishHousingGrantProgram,
-  isHousingImplementationResponseEligible,
+  isHousingImplementationResponseAttemptable,
   materializeHousingProjectFromDisbursement,
   obligateHousingGrantAward,
   recognizeHousingGrantFiscalAuthority,
@@ -74,7 +74,7 @@ const materializeParticipatingProjects = (): WorldState => {
   return materializeStateProject(world, STATE_C_ID);
 };
 
-const createEligibleWorld = (): WorldState =>
+const createAttemptableWorld = (): WorldState =>
   advanceWorldTo(materializeParticipatingProjects(), 5);
 
 const projectFor = (world: WorldState, stateId: string) => {
@@ -103,7 +103,7 @@ const responseHistory = (world: WorldState) =>
 
 describe("Commit 14 post-enactment implementation response", () => {
   it("1. preserves the Commit-13 uneven material route before the new response", () => {
-    let world = createEligibleWorld();
+    let world = createAttemptableWorld();
     world = resolveStateHousingGrantDecision(world, STATE_B_ID);
 
     expect(projectFor(world, STATE_A_ID)).toMatchObject({
@@ -142,7 +142,7 @@ describe("Commit 14 post-enactment implementation response", () => {
     expect(availableHousingImplementationSupportUnits(support)).toBe(1);
   });
 
-  it("4. rejects resolution before program, projects, material progress, or the fixture boundary", () => {
+  it("4. requires the administrative/process prerequisites but not exact Housing progress", () => {
     expect(() =>
       resolveHousingImplementationResponse(
         createDeterministicWorldFixture(),
@@ -167,14 +167,18 @@ describe("Commit 14 post-enactment implementation response", () => {
     let noProgress = advanceWorldTo(establishProgram(), 5);
     noProgress = materializeStateProject(noProgress, STATE_A_ID);
     noProgress = materializeStateProject(noProgress, STATE_C_ID);
-    expect(() =>
-      resolveHousingImplementationResponse(noProgress, "PRESERVE_SUPPORT_RESERVE"),
-    ).toThrow(/uneven implementation condition/i);
-    expect(isHousingImplementationResponseEligible(createEligibleWorld())).toBe(true);
+    expect(projectFor(noProgress, STATE_A_ID).completedWorkUnits).toBe(0);
+    expect(projectFor(noProgress, STATE_C_ID).completedWorkUnits).toBe(0);
+    expect(isHousingImplementationResponseAttemptable(noProgress)).toBe(true);
+    expect(
+      resolveHousingImplementationResponse(noProgress, "PRESERVE_SUPPORT_RESERVE")
+        .governance.housingImplementationResponseDecision?.action,
+    ).toBe("PRESERVE_SUPPORT_RESERVE");
+    expect(isHousingImplementationResponseAttemptable(createAttemptableWorld())).toBe(true);
   });
 
   it("5. requires State C's existing ACTIVE intergovernmental relationship", () => {
-    const eligible = createEligibleWorld();
+    const eligible = createAttemptableWorld();
     const withoutStateCRelationship: WorldState = {
       ...eligible,
       governance: {
@@ -193,7 +197,7 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("6. DEPLOY creates exactly one canonical support deployment", () => {
     const resolved = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "DEPLOY_SUPPORT_TO_C",
     );
     expect(resolved.governance.housingImplementationSupport.deployments).toHaveLength(1);
@@ -201,7 +205,7 @@ describe("Commit 14 post-enactment implementation response", () => {
   });
 
   it("7. deployment references the existing program, relationship, and jurisdiction", () => {
-    const before = createEligibleWorld();
+    const before = createAttemptableWorld();
     const after = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
     const deployment = after.governance.housingImplementationSupport.deployments[0];
     const relationship = before.governance.intergovernmentalProgramRelationships.find(
@@ -217,7 +221,7 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("8. DEPLOY commits exactly one unit and leaves none reusable", () => {
     const support = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "DEPLOY_SUPPORT_TO_C",
     ).governance.housingImplementationSupport;
     expect(support.committedSupportUnits).toBe(1);
@@ -225,7 +229,7 @@ describe("Commit 14 post-enactment implementation response", () => {
   });
 
   it("9. rejects deployment when no support remains and never drives availability below zero", () => {
-    const eligible = createEligibleWorld();
+    const eligible = createAttemptableWorld();
     const exhausted: WorldState = {
       ...eligible,
       governance: {
@@ -245,11 +249,11 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("10. rejects every repeated resolution sequence for the single opportunity", () => {
     const deployed = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "DEPLOY_SUPPORT_TO_C",
     );
     const preserved = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "PRESERVE_SUPPORT_RESERVE",
     );
 
@@ -266,7 +270,7 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("11. PRESERVE creates no deployment and consumes no support", () => {
     const support = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "PRESERVE_SUPPORT_RESERVE",
     ).governance.housingImplementationSupport;
     expect(support.deployments).toEqual([]);
@@ -276,7 +280,7 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("12. PRESERVE is still a resolved canonical administrative decision", () => {
     const resolved = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "PRESERVE_SUPPORT_RESERVE",
     );
     expect(resolved.governance.housingImplementationResponseDecision).toMatchObject({
@@ -288,7 +292,7 @@ describe("Commit 14 post-enactment implementation response", () => {
   });
 
   it("13. neither response directly changes Housing progress, capacity, or stock", () => {
-    const before = createEligibleWorld();
+    const before = createAttemptableWorld();
     const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
     const preserved = resolveHousingImplementationResponse(before, "PRESERVE_SUPPORT_RESERVE");
 
@@ -298,7 +302,7 @@ describe("Commit 14 post-enactment implementation response", () => {
   });
 
   it("14. does not copy State C's state-owned administrative-capacity fixture", () => {
-    const eligible = createEligibleWorld();
+    const eligible = createAttemptableWorld();
     const altered: WorldState = {
       ...eligible,
       governance: {
@@ -321,7 +325,7 @@ describe("Commit 14 post-enactment implementation response", () => {
   });
 
   it("15. leaves Housing independently advanceable from HousingState plus time", () => {
-    const before = createEligibleWorld();
+    const before = createAttemptableWorld();
     const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
     const preserved = resolveHousingImplementationResponse(before, "PRESERVE_SUPPORT_RESERVE");
 
@@ -330,19 +334,19 @@ describe("Commit 14 post-enactment implementation response", () => {
     expect(advanceHousing(preserved.housing, 5, 6)).toEqual(ordinaryAdvance);
   });
 
-  it("16. produces the same eligible canonical starting state under equivalent advancement chunking", () => {
+  it("16. produces the same attemptable canonical starting state under equivalent advancement chunking", () => {
     const base = materializeParticipatingProjects();
     const direct = advanceWorldTo(base, 5);
     const chunked = advanceWorldTo(advanceWorldTo(advanceWorldTo(base, 1), 3), 5);
 
     expect(chunked).toEqual(direct);
-    expect(isHousingImplementationResponseEligible(chunked)).toBe(true);
-    expect(isHousingImplementationResponseEligible(direct)).toBe(true);
+    expect(isHousingImplementationResponseAttemptable(chunked)).toBe(true);
+    expect(isHousingImplementationResponseAttemptable(direct)).toBe(true);
   });
 
   it("17. emits response and deployment occurrences exactly once with stable identities", () => {
     const deployed = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "DEPLOY_SUPPORT_TO_C",
     );
     expect(responseHistory(deployed).map((occurrence) => occurrence.type)).toEqual([
@@ -364,7 +368,7 @@ describe("Commit 14 post-enactment implementation response", () => {
     });
 
     const preserved = resolveHousingImplementationResponse(
-      createEligibleWorld(),
+      createAttemptableWorld(),
       "PRESERVE_SUPPORT_RESERVE",
     );
     expect(responseHistory(preserved).map((occurrence) => occurrence.type)).toEqual([
@@ -390,9 +394,9 @@ describe("Commit 14 post-enactment implementation response", () => {
       session.materializeHousingProjectFromDisbursement(stateId);
     }
 
-    const eligible = session.advanceTo(5);
-    expect(eligible.implementationResponse).toMatchObject({
-      eligible: true,
+    const attemptable = session.advanceTo(5);
+    expect(attemptable.implementationResponse).toMatchObject({
+      responseOpportunityReady: true,
       totalSupportUnits: 1,
       availableSupportUnits: 1,
       committedSupportUnits: 0,
@@ -400,7 +404,7 @@ describe("Commit 14 post-enactment implementation response", () => {
     });
     const resolved = session.deployHousingImplementationSupportToStateC();
     expect(resolved.implementationResponse).toMatchObject({
-      eligible: false,
+      responseOpportunityReady: false,
       availableSupportUnits: 0,
       committedSupportUnits: 1,
       resolvedAction: "DEPLOY_SUPPORT_TO_C",

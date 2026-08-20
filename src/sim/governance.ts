@@ -46,7 +46,6 @@ import {
   type FederalApplicationDetermination,
   type IntergovernmentalProgramRelationship,
   type ProgramApplicationRecord,
-  STATE_A_ID,
   STATE_C_ID,
   createDeterministicStateJurisdictions,
   createDeterministicStateProgramAdministrativeStates,
@@ -954,7 +953,8 @@ export const materializeHousingProjectFromDisbursement = (
 /**
  * Explicit fixture boundary for GL0's single post-enactment response. This
  * is not a universal day-five rule: the boundary is additionally gated by
- * the supported program, relationship, and actual material divergence.
+ * the supported program, relationship, and existence of State C's material
+ * project. Exact Housing progress is deliberately not an attemptability fact.
  */
 export const GL0_HOUSING_IMPLEMENTATION_RESPONSE_BOUNDARY = 5;
 
@@ -963,7 +963,7 @@ const resolveHousingProjectForState = (world: WorldState, stateJurisdictionId: s
     (project) => project.stateJurisdictionId === stateJurisdictionId,
   ) ?? null;
 
-const requireHousingImplementationResponseEligibility = (
+const requireHousingImplementationResponseAttemptability = (
   world: WorldState,
 ): {
   readonly program: HousingGrantProgram;
@@ -986,26 +986,17 @@ const requireHousingImplementationResponseEligibility = (
     throw new Error("State C must have an ACTIVE participation relationship before the response.");
   }
 
-  const stateAProject = resolveHousingProjectForState(world, STATE_A_ID);
   const stateCProject = resolveHousingProjectForState(world, STATE_C_ID);
   if (stateCProject === null) {
     throw new Error("State C must have an actual Housing project before the response.");
-  }
-  if (
-    stateAProject === null ||
-    stateCProject.status !== "ACTIVE" ||
-    stateCProject.completedWorkUnits <= 0 ||
-    stateAProject.completedWorkUnits <= stateCProject.completedWorkUnits
-  ) {
-    throw new Error("The supported uneven implementation condition does not yet exist.");
   }
 
   return { program, stateCRelationship };
 };
 
-export const isHousingImplementationResponseEligible = (world: WorldState): boolean => {
+export const isHousingImplementationResponseAttemptable = (world: WorldState): boolean => {
   try {
-    requireHousingImplementationResponseEligibility(world);
+    requireHousingImplementationResponseAttemptability(world);
     return true;
   } catch {
     return false;
@@ -1025,7 +1016,7 @@ export const resolveHousingImplementationResponse = (
     throw new Error(`Unsupported housing implementation response: ${String(action)}.`);
   }
 
-  const { program, stateCRelationship } = requireHousingImplementationResponseEligibility(world);
+  const { program, stateCRelationship } = requireHousingImplementationResponseAttemptability(world);
   const targetStateJurisdictionId = action === "DEPLOY_SUPPORT_TO_C" ? STATE_C_ID : null;
 
   if (

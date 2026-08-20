@@ -319,7 +319,7 @@ export const App = () => {
           </div>
           <div>
             <dt>Response</dt>
-            <dd>{view.implementationResponse.resolvedAction ?? "awaiting eligible decision"}</dd>
+            <dd>{view.implementationResponse.resolvedAction ?? "awaiting response opportunity"}</dd>
           </div>
           <div>
             <dt>Target</dt>
@@ -329,14 +329,14 @@ export const App = () => {
 
         <button
           type="button"
-          disabled={!view.implementationResponse.eligible}
+          disabled={!view.implementationResponse.responseOpportunityReady}
           onClick={() => setView(session.deployHousingImplementationSupportToStateC())}
         >
           Deploy support to State C
         </button>
         <button
           type="button"
-          disabled={!view.implementationResponse.eligible}
+          disabled={!view.implementationResponse.responseOpportunityReady}
           onClick={() => setView(session.preserveHousingImplementationSupportReserve())}
         >
           Preserve support reserve

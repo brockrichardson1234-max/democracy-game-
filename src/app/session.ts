@@ -19,7 +19,7 @@ import {
   resolveHousingGrantProposalVote,
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
-  isHousingImplementationResponseEligible,
+  isHousingImplementationResponseAttemptable,
 } from "../sim/governance";
 import type { ParticipationCondition, ProposalTerms, ReportingRequirement } from "../sim/legislature";
 import type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -87,7 +87,8 @@ export interface HousingGrantProgramProjection {
 }
 
 export interface HousingImplementationResponseProjection {
-  readonly eligible: boolean;
+  /** Raw canonical process readiness for this developer inspection harness. */
+  readonly responseOpportunityReady: boolean;
   readonly totalSupportUnits: number;
   readonly committedSupportUnits: number;
   readonly availableSupportUnits: number;
@@ -225,7 +226,7 @@ const projectWorld = (world: WorldState): GameView => {
             reportingRequirement: housingGrantProgramLaw!.enactedTerms.reportingRequirement,
           },
     implementationResponse: {
-      eligible: isHousingImplementationResponseEligible(world),
+      responseOpportunityReady: isHousingImplementationResponseAttemptable(world),
       totalSupportUnits: housingImplementationSupport.totalSupportUnits,
       committedSupportUnits: housingImplementationSupport.committedSupportUnits,
       availableSupportUnits: availableHousingImplementationSupportUnits(
