@@ -23,6 +23,17 @@ export interface LegislativeProposal {
 }
 
 /**
+ * The minimum legally operative fiscal provision the enacted law carries:
+ * legal permission/limit to spend for a purpose, not actual spendable money.
+ * Owned by the legal source itself (see EnactedLaw below), distinct from the
+ * fiscal-execution state in fiscal.ts that later recognizes it as available.
+ */
+export interface LegalAppropriation {
+  readonly amount: number;
+  readonly purpose: string;
+}
+
+/**
  * A new legal-order fact created only when the legislative procedure
  * resolves in favor. It has its own identity/provenance and is not the
  * mutable proposal object repurposed in place.
@@ -32,4 +43,5 @@ export interface EnactedLaw {
   readonly sourceProposalId: string;
   readonly enactedTerms: ProposalTerms;
   readonly enactedAtSimulationTime: SimulationInstant;
+  readonly appropriation: LegalAppropriation;
 }

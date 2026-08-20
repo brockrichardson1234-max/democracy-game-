@@ -25,6 +25,7 @@ export const App = () => {
   };
 
   const { proposal, enactedLaw } = view.legislative;
+  const { fiscal, housingGrantProgram } = view;
 
   return (
     <main className="shell">
@@ -87,7 +88,11 @@ export const App = () => {
           </div>
           <div>
             <dt>Enacted law</dt>
-            <dd>{enactedLaw === null ? "none" : enactedLaw.id}</dd>
+            <dd>
+              {enactedLaw === null
+                ? "none"
+                : `${enactedLaw.id} (appropriation: ${enactedLaw.appropriation.amount})`}
+            </dd>
           </div>
         </dl>
 
@@ -105,6 +110,40 @@ export const App = () => {
         </button>
         <button type="button" onClick={() => setView(session.resolveHousingGrantProposalVote())}>
           Resolve legislative vote
+        </button>
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 10 developer inspection</p>
+        <h1>Fiscal authority / federal program</h1>
+
+        <dl>
+          <div>
+            <dt>Fiscal authority</dt>
+            <dd>
+              {fiscal === null
+                ? "not yet recognized"
+                : `available ${fiscal.available} / obligated ${fiscal.obligated} / disbursed ${fiscal.disbursed}`}
+            </dd>
+          </div>
+          <div>
+            <dt>Housing grant program</dt>
+            <dd>
+              {housingGrantProgram === null
+                ? "not established"
+                : `${housingGrantProgram.status} — match ${housingGrantProgram.federalMatchRatePercent}%, ${housingGrantProgram.participationCondition} participation, ${housingGrantProgram.reportingRequirement} reporting`}
+            </dd>
+          </div>
+        </dl>
+
+        <button
+          type="button"
+          onClick={() => setView(session.recognizeHousingGrantFiscalAuthority())}
+        >
+          Recognize fiscal authority
+        </button>
+        <button type="button" onClick={() => setView(session.establishHousingGrantProgram())}>
+          Establish housing grant program
         </button>
       </section>
     </main>

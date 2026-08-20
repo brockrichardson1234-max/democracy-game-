@@ -39,6 +39,8 @@ describe("Commit 8 headless bootstrap", () => {
       bootstrapBoundaryResolved: false,
       nextKnownBootstrapBoundary: 1,
       legislative: { proposal: null, enactedLaw: null },
+      fiscal: null,
+      housingGrantProgram: null,
     });
 
     expect(session.advanceTo(1).bootstrapBoundaryResolved).toBe(true);

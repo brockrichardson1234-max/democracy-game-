@@ -1,4 +1,9 @@
 import {
+  establishHousingGrantProgramFromLaw,
+  type HousingGrantProgram,
+} from "./administration";
+import { recognizeFiscalExecutionState, type FiscalExecutionState } from "./fiscal";
+import {
   createDeterministicLegislatureFixture,
   decideActorVote,
   resolveSeatHolder,
@@ -20,6 +25,10 @@ export interface GovernanceState {
   readonly proposal: LegislativeProposal | null;
   readonly procedure: LegislativeProcedureInstance | null;
   readonly enactedLaws: readonly EnactedLaw[];
+  /** Fiscal-execution owner: null until an explicit recognition transition runs. */
+  readonly fiscalExecution: FiscalExecutionState | null;
+  /** Administrative/program owner: null until an explicit establishment transition runs. */
+  readonly housingGrantProgram: HousingGrantProgram | null;
 }
 
 export const createInitialGovernanceState = (): GovernanceState => ({
@@ -27,6 +36,8 @@ export const createInitialGovernanceState = (): GovernanceState => ({
   proposal: null,
   procedure: null,
   enactedLaws: [],
+  fiscalExecution: null,
+  housingGrantProgram: null,
 });
 
 /**
@@ -38,6 +49,17 @@ export const createInitialGovernanceState = (): GovernanceState => ({
 const HOUSING_GRANT_ADMINISTRATION_ID = "gl0-federal-executive-administration";
 
 const HOUSING_GRANT_PROPOSAL_ID = "gl0-housing-grant-proposal";
+
+/**
+ * GL0 synthetic fixture value: the smallest legally operative fiscal
+ * provision this enacted law carries. Not a claim about real U.S. fiscal
+ * policy and not a player-selected amount -- the accepted Commit-9 proposal
+ * terms do not yet include a fiscal dimension. Owned here because governance
+ * is what constructs the enacted legal source that carries it (see
+ * `EnactedLaw.appropriation` in proposal.ts).
+ */
+export const HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT = 5_000_000_000;
+export const HOUSING_GRANT_APPROPRIATION_PURPOSE = "gl0-housing-construction-grant-program";
 
 /** Structural validity: malformed terms fail before any world mutation. */
 const assertStructurallyValidTerms = (terms: ProposalTerms): void => {
@@ -215,6 +237,10 @@ export const resolveHousingGrantProposalVote = (world: WorldState): WorldState =
     sourceProposalId: proposal.id,
     enactedTerms: proposal.terms,
     enactedAtSimulationTime: world.time.current,
+    appropriation: {
+      amount: HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
+      purpose: HOUSING_GRANT_APPROPRIATION_PURPOSE,
+    },
   };
 
   return {
@@ -228,6 +254,83 @@ export const resolveHousingGrantProposalVote = (world: WorldState): WorldState =
     history: appendOccurrence(historyWithResolution, {
       type: "LawEnacted",
       proposalId: proposal.id,
+      lawId: enactedLaw.id,
+      at: world.time.current,
+    }),
+  };
+};
+
+/** GL0 has exactly one housing-grant proposal lifecycle, so at most one law is ever enacted. */
+const latestEnactedHousingGrantLaw = (world: WorldState): EnactedLaw | null => {
+  const { enactedLaws } = world.governance;
+  return enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
+};
+
+/**
+ * Enacted legal appropriation -> recognized fiscal-execution availability.
+ * This is a distinct downstream transition from enactment itself: a passed
+ * law can exist for one or more simulation instants with no fiscal-execution
+ * state at all, because nothing calls this transition automatically. Rejects
+ * recognizing twice against the same law so available authority is never
+ * double-counted.
+ */
+export const recognizeHousingGrantFiscalAuthority = (world: WorldState): WorldState => {
+  const enactedLaw = latestEnactedHousingGrantLaw(world);
+  if (enactedLaw === null) {
+    throw new Error("Fiscal authority cannot be recognized without an enacted housing grant law.");
+  }
+  if (world.governance.fiscalExecution !== null) {
+    throw new Error("Fiscal authority has already been recognized for this law.");
+  }
+
+  const fiscalExecution = recognizeFiscalExecutionState(enactedLaw, world.time.current);
+
+  return {
+    ...world,
+    governance: { ...world.governance, fiscalExecution },
+    history: appendOccurrence(world.history, {
+      type: "FiscalAuthorityMadeAvailable",
+      lawId: enactedLaw.id,
+      available: fiscalExecution.available,
+      at: world.time.current,
+    }),
+  };
+};
+
+/**
+ * Enacted law + recognized fiscal authority -> operational federal program
+ * state. Ordering is chosen deliberately: establishment requires fiscal
+ * authority to already be available, so the program can reference real
+ * recognized availability rather than assuming its own law's appropriation
+ * will later be recognized. Rejects duplicate establishment.
+ */
+export const establishHousingGrantProgram = (world: WorldState): WorldState => {
+  const enactedLaw = latestEnactedHousingGrantLaw(world);
+  if (enactedLaw === null) {
+    throw new Error(
+      "The housing grant program cannot be established without an enacted housing grant law.",
+    );
+  }
+
+  const { fiscalExecution } = world.governance;
+  if (fiscalExecution === null || fiscalExecution.sourceLawId !== enactedLaw.id) {
+    throw new Error(
+      "The housing grant program cannot be established before its fiscal authority is available.",
+    );
+  }
+
+  if (world.governance.housingGrantProgram !== null) {
+    throw new Error("The housing grant program has already been established.");
+  }
+
+  const housingGrantProgram = establishHousingGrantProgramFromLaw(enactedLaw, fiscalExecution);
+
+  return {
+    ...world,
+    governance: { ...world.governance, housingGrantProgram },
+    history: appendOccurrence(world.history, {
+      type: "HousingGrantProgramEstablished",
+      programId: housingGrantProgram.id,
       lawId: enactedLaw.id,
       at: world.time.current,
     }),

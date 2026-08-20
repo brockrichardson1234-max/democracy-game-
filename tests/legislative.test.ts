@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   amendHousingGrantProposal,
+  HOUSING_GRANT_APPROPRIATION_PURPOSE,
+  HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
   resolveHousingGrantProposalVote,
   submitHousingGrantProposal,
 } from "../src/sim/governance";
@@ -214,6 +216,10 @@ describe("Commit 9 first political/legal causal slice", () => {
         sourceProposalId: "gl0-housing-grant-proposal",
         enactedTerms: COMPROMISE_TERMS,
         enactedAtSimulationTime: 0,
+        appropriation: {
+          amount: HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
+          purpose: HOUSING_GRANT_APPROPRIATION_PURPOSE,
+        },
       },
     ]);
     expect(

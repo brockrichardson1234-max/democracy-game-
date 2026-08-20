@@ -42,6 +42,18 @@ export type HistoricalOccurrence =
       readonly proposalId: string;
       readonly lawId: string;
       readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "FiscalAuthorityMadeAvailable";
+      readonly lawId: string;
+      readonly available: number;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingGrantProgramEstablished";
+      readonly programId: string;
+      readonly lawId: string;
+      readonly at: SimulationInstant;
     };
 
 export const appendOccurrence = (
