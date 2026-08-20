@@ -5,16 +5,25 @@ import {
   type WorldState,
 } from "../sim/world";
 import {
+  activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
   establishHousingGrantProgram,
   recognizeHousingGrantFiscalAuthority,
+  resolveFederalHousingGrantApplication,
+  resolveStateHousingGrantDecision,
   resolveHousingGrantProposalVote,
   submitHousingGrantProposal,
+  submitStateHousingGrantApplication,
 } from "../sim/governance";
 import type { ParticipationCondition, ProposalTerms, ReportingRequirement } from "../sim/legislature";
 import type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
 import type { RecordedVote } from "../sim/legislative-procedure";
 import type { HousingGrantProgramStatus } from "../sim/administration";
+import type {
+  FederalApplicationDeterminationOutcome,
+  StateAdministrativeCapacity,
+  StateProgramDecision,
+} from "../sim/federalism";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -28,6 +37,7 @@ export interface GameView {
   readonly legislative: LegislativeProjection;
   readonly fiscal: FiscalProjection | null;
   readonly housingGrantProgram: HousingGrantProgramProjection | null;
+  readonly statePrograms: readonly StateProgramProjection[];
 }
 
 export interface LegislativeProjection {
@@ -64,6 +74,15 @@ export interface HousingGrantProgramProjection {
   readonly reportingRequirement: ReportingRequirement;
 }
 
+export interface StateProgramProjection {
+  readonly id: string;
+  readonly capacity: StateAdministrativeCapacity;
+  readonly decision: StateProgramDecision | null;
+  readonly applicationId: string | null;
+  readonly federalDetermination: FederalApplicationDeterminationOutcome | null;
+  readonly participation: "ACTIVE" | null;
+}
+
 export interface GameSession {
   getView(): GameView;
   advanceTo(target: SimulationInstant): GameView;
@@ -72,6 +91,10 @@ export interface GameSession {
   resolveHousingGrantProposalVote(): GameView;
   recognizeHousingGrantFiscalAuthority(): GameView;
   establishHousingGrantProgram(): GameView;
+  resolveStateHousingGrantDecision(stateId: string): GameView;
+  submitStateHousingGrantApplication(stateId: string): GameView;
+  resolveFederalHousingGrantApplication(stateId: string): GameView;
+  activateIntergovernmentalHousingGrantParticipation(stateId: string): GameView;
 }
 
 const projectWorld = (world: WorldState): GameView => {
@@ -82,6 +105,11 @@ const projectWorld = (world: WorldState): GameView => {
     publicFinance,
     fiscalExecution,
     housingGrantProgram,
+    stateJurisdictions,
+    stateProgramDecisions,
+    programApplications,
+    federalApplicationDeterminations,
+    intergovernmentalProgramRelationships,
   } = world.governance;
   const latestEnactedLaw = enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
   const housingGrantProgramLaw =
@@ -145,6 +173,49 @@ const projectWorld = (world: WorldState): GameView => {
             participationCondition: housingGrantProgramLaw!.enactedTerms.participationCondition,
             reportingRequirement: housingGrantProgramLaw!.enactedTerms.reportingRequirement,
           },
+    statePrograms: stateJurisdictions.map((state) => {
+      const stateDecision =
+        housingGrantProgram === null
+          ? null
+          : stateProgramDecisions.find(
+                (decision) =>
+                  decision.federalProgramId === housingGrantProgram.id &&
+                  decision.stateJurisdictionId === state.id,
+              ) ?? null;
+      const application =
+        housingGrantProgram === null
+          ? null
+          : programApplications.find(
+                (candidate) =>
+                  candidate.federalProgramId === housingGrantProgram.id &&
+                  candidate.stateJurisdictionId === state.id,
+              ) ?? null;
+      const determination =
+        housingGrantProgram === null
+          ? null
+          : federalApplicationDeterminations.find(
+                (candidate) =>
+                  candidate.federalProgramId === housingGrantProgram.id &&
+                  candidate.stateJurisdictionId === state.id,
+              ) ?? null;
+      const relationship =
+        housingGrantProgram === null
+          ? null
+          : intergovernmentalProgramRelationships.find(
+                (candidate) =>
+                  candidate.federalProgramId === housingGrantProgram.id &&
+                  candidate.stateJurisdictionId === state.id,
+              ) ?? null;
+
+      return {
+        id: state.id,
+        capacity: state.administrativeCapacity,
+        decision: stateDecision?.decision ?? null,
+        applicationId: application?.id ?? null,
+        federalDetermination: determination?.outcome ?? null,
+        participation: relationship?.status ?? null,
+      };
+    }),
   };
 };
 
@@ -175,6 +246,22 @@ export const createGameSession = (): GameSession => {
     },
     establishHousingGrantProgram: () => {
       world = establishHousingGrantProgram(world);
+      return projectWorld(world);
+    },
+    resolveStateHousingGrantDecision: (stateId) => {
+      world = resolveStateHousingGrantDecision(world, stateId);
+      return projectWorld(world);
+    },
+    submitStateHousingGrantApplication: (stateId) => {
+      world = submitStateHousingGrantApplication(world, stateId);
+      return projectWorld(world);
+    },
+    resolveFederalHousingGrantApplication: (stateId) => {
+      world = resolveFederalHousingGrantApplication(world, stateId);
+      return projectWorld(world);
+    },
+    activateIntergovernmentalHousingGrantParticipation: (stateId) => {
+      world = activateIntergovernmentalHousingGrantParticipation(world, stateId);
       return projectWorld(world);
     },
   };

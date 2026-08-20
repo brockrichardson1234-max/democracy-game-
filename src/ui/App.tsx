@@ -25,7 +25,7 @@ export const App = () => {
   };
 
   const { proposal, enactedLaw } = view.legislative;
-  const { fiscal, housingGrantProgram } = view;
+  const { fiscal, housingGrantProgram, statePrograms } = view;
 
   return (
     <main className="shell">
@@ -145,6 +145,76 @@ export const App = () => {
         <button type="button" onClick={() => setView(session.establishHousingGrantProgram())}>
           Establish housing grant program
         </button>
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 11 developer inspection</p>
+        <h1>State response / federal participation</h1>
+
+        {statePrograms.map((state) => (
+          <div key={state.id}>
+            <h2>{state.id}</h2>
+            <dl>
+              <div>
+                <dt>Decision</dt>
+                <dd>{state.decision ?? "not resolved"}</dd>
+              </div>
+              <div>
+                <dt>Application</dt>
+                <dd>{state.applicationId === null ? "none" : "submitted"}</dd>
+              </div>
+              <div>
+                <dt>Federal determination</dt>
+                <dd>{state.federalDetermination ?? "none"}</dd>
+              </div>
+              <div>
+                <dt>Participation</dt>
+                <dd>{state.participation ?? "none"}</dd>
+              </div>
+              <div>
+                <dt>Capacity</dt>
+                <dd>{state.capacity}</dd>
+              </div>
+            </dl>
+
+            <button
+              type="button"
+              disabled={housingGrantProgram === null || state.decision !== null}
+              onClick={() => setView(session.resolveStateHousingGrantDecision(state.id))}
+            >
+              Resolve state decision
+            </button>
+            <button
+              type="button"
+              disabled={
+                housingGrantProgram === null ||
+                state.decision !== "APPLY" ||
+                state.applicationId !== null
+              }
+              onClick={() => setView(session.submitStateHousingGrantApplication(state.id))}
+            >
+              Submit state application
+            </button>
+            <button
+              type="button"
+              disabled={state.applicationId === null || state.federalDetermination !== null}
+              onClick={() => setView(session.resolveFederalHousingGrantApplication(state.id))}
+            >
+              Resolve federal determination
+            </button>
+            <button
+              type="button"
+              disabled={
+                state.federalDetermination !== "ACCEPTED" || state.participation !== null
+              }
+              onClick={() =>
+                setView(session.activateIntergovernmentalHousingGrantParticipation(state.id))
+              }
+            >
+              Activate participation
+            </button>
+          </div>
+        ))}
       </section>
     </main>
   );

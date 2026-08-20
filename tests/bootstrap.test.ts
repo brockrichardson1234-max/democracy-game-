@@ -41,6 +41,32 @@ describe("Commit 8 headless bootstrap", () => {
       legislative: { proposal: null, enactedLaw: null },
       fiscal: null,
       housingGrantProgram: null,
+      statePrograms: [
+        {
+          id: "state-a",
+          capacity: "ADEQUATE",
+          decision: null,
+          applicationId: null,
+          federalDetermination: null,
+          participation: null,
+        },
+        {
+          id: "state-b",
+          capacity: "ADEQUATE",
+          decision: null,
+          applicationId: null,
+          federalDetermination: null,
+          participation: null,
+        },
+        {
+          id: "state-c",
+          capacity: "WEAK",
+          decision: null,
+          applicationId: null,
+          federalDetermination: null,
+          participation: null,
+        },
+      ],
     });
 
     expect(session.advanceTo(1).bootstrapBoundaryResolved).toBe(true);

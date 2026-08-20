@@ -204,22 +204,17 @@ describe("Commit 10 law -> public finance -> administration slice", () => {
     expect(established.governance.publicFinance.housingGrant?.disbursedAmount).toBe(0);
   });
 
-  it("program setup creates no state participation/application/award facts and no new canonical roots", () => {
+  it("program setup creates no state decision/application/determination/relationship or award facts", () => {
     const established = establishHousingGrantProgram(
       recognizeHousingGrantFiscalAuthority(enactHousingGrantLaw()),
     );
 
-    expect(Object.keys(established.governance)).toEqual([
-      "legislature",
-      "proposal",
-      "procedure",
-      "enactedLaws",
-      "publicFinance",
-      "fiscalExecution",
-      "administrativeInstitution",
-      "housingGrantProgram",
-    ]);
-    expect(Object.keys(established)).toEqual(["time", "bootstrapTransition", "governance", "history"]);
+    expect(established.governance.stateJurisdictions).toHaveLength(3);
+    expect(established.governance.stateProgramDecisions).toEqual([]);
+    expect(established.governance.programApplications).toEqual([]);
+    expect(established.governance.federalApplicationDeterminations).toEqual([]);
+    expect(established.governance.intergovernmentalProgramRelationships).toEqual([]);
+    expect(established.governance).not.toHaveProperty("awards");
   });
 
   it("program setup creates no Housing/material state and leaves time/bootstrap untouched", () => {

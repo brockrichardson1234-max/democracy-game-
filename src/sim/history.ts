@@ -1,5 +1,6 @@
 import type { ProposalTerms, VoteChoice } from "./legislature";
 import type { SimulationInstant } from "./world";
+import type { StateProgramDecision } from "./federalism";
 
 /**
  * Immutable committed occurrences. HistoricalRecord owns only the fact that
@@ -53,6 +54,37 @@ export type HistoricalOccurrence =
       readonly type: "HousingGrantProgramEstablished";
       readonly programId: string;
       readonly lawId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "StateProgramDecisionResolved";
+      readonly programId: string;
+      readonly stateJurisdictionId: string;
+      readonly decision: StateProgramDecision;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "StateProgramApplicationSubmitted";
+      readonly applicationId: string;
+      readonly programId: string;
+      readonly stateJurisdictionId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "FederalProgramApplicationAccepted";
+      readonly determinationId: string;
+      readonly applicationId: string;
+      readonly programId: string;
+      readonly stateJurisdictionId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "IntergovernmentalProgramRelationshipActivated";
+      readonly relationshipId: string;
+      readonly programId: string;
+      readonly stateJurisdictionId: string;
+      readonly applicationId: string;
+      readonly determinationId: string;
       readonly at: SimulationInstant;
     };
 

@@ -25,6 +25,14 @@ import {
   type RecordedVote,
 } from "./legislative-procedure";
 import { appendOccurrence } from "./history";
+import {
+  type FederalApplicationDetermination,
+  type IntergovernmentalProgramRelationship,
+  type ProgramApplicationRecord,
+  createDeterministicStateJurisdictions,
+  type StateJurisdiction,
+  type StateProgramDecisionState,
+} from "./federalism";
 import type { EnactedLaw, LegislativeProposal } from "./proposal";
 import type { WorldState } from "./world";
 
@@ -41,6 +49,16 @@ export interface GovernanceState {
   readonly administrativeInstitution: AdministrativeInstitution | null;
   /** Administrative/program owner: null until an explicit establishment transition runs. */
   readonly housingGrantProgram: HousingGrantProgram | null;
+  /** Political/legal state jurisdictions; no geography or population is implied. */
+  readonly stateJurisdictions: readonly StateJurisdiction[];
+  /** State-owned current decisions for the federal program offer. */
+  readonly stateProgramDecisions: readonly StateProgramDecisionState[];
+  /** State-originating application records owned by program administration. */
+  readonly programApplications: readonly ProgramApplicationRecord[];
+  /** Federal-owned application determinations. */
+  readonly federalApplicationDeterminations: readonly FederalApplicationDetermination[];
+  /** Relationship-owned active cross-jurisdiction participation facts. */
+  readonly intergovernmentalProgramRelationships: readonly IntergovernmentalProgramRelationship[];
 }
 
 export const createInitialGovernanceState = (): GovernanceState => ({
@@ -52,6 +70,11 @@ export const createInitialGovernanceState = (): GovernanceState => ({
   fiscalExecution: null,
   administrativeInstitution: createFederalHousingAdministrationInstitution(),
   housingGrantProgram: null,
+  stateJurisdictions: createDeterministicStateJurisdictions(),
+  stateProgramDecisions: [],
+  programApplications: [],
+  federalApplicationDeterminations: [],
+  intergovernmentalProgramRelationships: [],
 });
 
 /**
@@ -361,6 +384,242 @@ export const establishHousingGrantProgram = (world: WorldState): WorldState => {
       type: "HousingGrantProgramEstablished",
       programId: housingGrantProgram.id,
       lawId: enactedLaw.id,
+      at: world.time.current,
+    }),
+  };
+};
+
+const requireHousingGrantProgram = (world: WorldState): HousingGrantProgram => {
+  const program = world.governance.housingGrantProgram;
+  if (program === null) {
+    throw new Error("The housing grant program must be established before state participation can be resolved.");
+  }
+  return program;
+};
+
+const resolveStateJurisdiction = (world: WorldState, stateJurisdictionId: string): StateJurisdiction => {
+  const state = world.governance.stateJurisdictions.find(
+    (candidate) => candidate.id === stateJurisdictionId,
+  );
+  if (state === undefined) {
+    throw new Error(`Unknown state jurisdiction: ${stateJurisdictionId}.`);
+  }
+  return state;
+};
+
+const resolveStateProgramDecision = (
+  world: WorldState,
+  programId: string,
+  stateJurisdictionId: string,
+): StateProgramDecisionState | null =>
+  world.governance.stateProgramDecisions.find(
+    (decision) =>
+      decision.federalProgramId === programId &&
+      decision.stateJurisdictionId === stateJurisdictionId,
+  ) ?? null;
+
+const resolveProgramApplication = (
+  world: WorldState,
+  programId: string,
+  stateJurisdictionId: string,
+): ProgramApplicationRecord | null =>
+  world.governance.programApplications.find(
+    (application) =>
+      application.federalProgramId === programId &&
+      application.stateJurisdictionId === stateJurisdictionId,
+  ) ?? null;
+
+const resolveFederalApplicationDetermination = (
+  world: WorldState,
+  programId: string,
+  stateJurisdictionId: string,
+): FederalApplicationDetermination | null =>
+  world.governance.federalApplicationDeterminations.find(
+    (determination) =>
+      determination.federalProgramId === programId &&
+      determination.stateJurisdictionId === stateJurisdictionId,
+  ) ?? null;
+
+/** State-owned decision stage. It never creates an application or federal result. */
+export const resolveStateHousingGrantDecision = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+  if (resolveStateProgramDecision(world, program.id, state.id) !== null) {
+    throw new Error(`State ${state.id} has already resolved its housing grant decision.`);
+  }
+
+  const decision: StateProgramDecisionState = {
+    stateJurisdictionId: state.id,
+    federalProgramId: program.id,
+    decision: state.housingGrantDecisionRule,
+    resolvedAtSimulationTime: world.time.current,
+  };
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      stateProgramDecisions: [...world.governance.stateProgramDecisions, decision],
+    },
+    history: appendOccurrence(world.history, {
+      type: "StateProgramDecisionResolved",
+      programId: program.id,
+      stateJurisdictionId: state.id,
+      decision: decision.decision,
+      at: world.time.current,
+    }),
+  };
+};
+
+/** State-originating application stage. Refusal cannot create an application. */
+export const submitStateHousingGrantApplication = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+  const decision = resolveStateProgramDecision(world, program.id, state.id);
+  if (decision === null) {
+    throw new Error(`State ${state.id} must resolve its housing grant decision before applying.`);
+  }
+  if (decision.decision !== "APPLY") {
+    throw new Error(`State ${state.id} refused the housing grant program and cannot apply.`);
+  }
+  if (resolveProgramApplication(world, program.id, state.id) !== null) {
+    throw new Error(`State ${state.id} has already submitted a housing grant application.`);
+  }
+
+  const application: ProgramApplicationRecord = {
+    id: `gl0-application-${state.id}-for-${program.id}`,
+    federalProgramId: program.id,
+    stateJurisdictionId: state.id,
+    status: "SUBMITTED",
+    submittedAtSimulationTime: world.time.current,
+  };
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      programApplications: [...world.governance.programApplications, application],
+    },
+    history: appendOccurrence(world.history, {
+      type: "StateProgramApplicationSubmitted",
+      applicationId: application.id,
+      programId: program.id,
+      stateJurisdictionId: state.id,
+      at: world.time.current,
+    }),
+  };
+};
+
+/** Federal-owned determination stage. GL0 deterministically accepts submitted applications. */
+export const resolveFederalHousingGrantApplication = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+  const application = resolveProgramApplication(world, program.id, state.id);
+  if (application === null) {
+    throw new Error(`Federal determination cannot occur without a state application from ${state.id}.`);
+  }
+  const decision = resolveStateProgramDecision(world, program.id, state.id);
+  if (decision === null || decision.decision !== "APPLY") {
+    throw new Error(`Federal determination requires a state-owned APPLY decision from ${state.id}.`);
+  }
+  if (resolveFederalApplicationDetermination(world, program.id, state.id) !== null) {
+    throw new Error(`Federal determination already exists for state ${state.id}.`);
+  }
+
+  const determination: FederalApplicationDetermination = {
+    id: `gl0-determination-for-${application.id}`,
+    federalProgramId: program.id,
+    applicationId: application.id,
+    stateJurisdictionId: state.id,
+    outcome: "ACCEPTED",
+    determinedAtSimulationTime: world.time.current,
+  };
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      federalApplicationDeterminations: [
+        ...world.governance.federalApplicationDeterminations,
+        determination,
+      ],
+    },
+    history: appendOccurrence(world.history, {
+      type: "FederalProgramApplicationAccepted",
+      determinationId: determination.id,
+      applicationId: application.id,
+      programId: program.id,
+      stateJurisdictionId: state.id,
+      at: world.time.current,
+    }),
+  };
+};
+
+/** Relationship-owned activation requires both state APPLY and federal ACCEPTED facts. */
+export const activateIntergovernmentalHousingGrantParticipation = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): WorldState => {
+  const program = requireHousingGrantProgram(world);
+  const state = resolveStateJurisdiction(world, stateJurisdictionId);
+  const decision = resolveStateProgramDecision(world, program.id, state.id);
+  if (decision === null || decision.decision !== "APPLY") {
+    throw new Error(`State ${state.id} must have a state-owned APPLY decision before participation can activate.`);
+  }
+
+  const application = resolveProgramApplication(world, program.id, state.id);
+  if (application === null) {
+    throw new Error(`State ${state.id} must submit an application before participation can activate.`);
+  }
+
+  const determination = resolveFederalApplicationDetermination(world, program.id, state.id);
+  if (determination === null || determination.outcome !== "ACCEPTED") {
+    throw new Error(`State ${state.id} must have federal acceptance before participation can activate.`);
+  }
+
+  const existingRelationship = world.governance.intergovernmentalProgramRelationships.find(
+    (relationship) =>
+      relationship.federalProgramId === program.id &&
+      relationship.stateJurisdictionId === state.id,
+  );
+  if (existingRelationship !== undefined) {
+    throw new Error(`Participation is already active for state ${state.id}.`);
+  }
+
+  const relationship: IntergovernmentalProgramRelationship = {
+    id: `gl0-participation-${state.id}-for-${program.id}`,
+    federalProgramId: program.id,
+    stateJurisdictionId: state.id,
+    stateApplicationId: application.id,
+    federalDeterminationId: determination.id,
+    status: "ACTIVE",
+  };
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      intergovernmentalProgramRelationships: [
+        ...world.governance.intergovernmentalProgramRelationships,
+        relationship,
+      ],
+    },
+    history: appendOccurrence(world.history, {
+      type: "IntergovernmentalProgramRelationshipActivated",
+      relationshipId: relationship.id,
+      programId: program.id,
+      stateJurisdictionId: state.id,
+      applicationId: application.id,
+      determinationId: determination.id,
       at: world.time.current,
     }),
   };
