@@ -3,10 +3,27 @@ import type { SimulationInstant } from "./world";
 export type StateProgramDecision = "APPLY" | "REFUSE";
 export type StateAdministrativeCapacity = "ADEQUATE" | "WEAK";
 
-/** A political/legal jurisdiction, intentionally independent of geography. */
+/**
+ * A political/legal jurisdiction: identity/existence only, intentionally
+ * independent of geography. It does not own deterministic decision behavior
+ * or administrative capacity -- those are separately owned fixture facts
+ * (see `StateProgramAdministrativeState` below) that merely reference this
+ * jurisdiction by stable id, the same way `StateProgramDecisionState` does.
+ */
 export interface StateJurisdiction {
   readonly id: string;
-  /** Deterministic GL0 fixture behavior owned by the state, not the federal program. */
+}
+
+/**
+ * State political/administrative fixture state: the deterministic GL0
+ * behavior and capacity a state jurisdiction currently has for the housing
+ * grant program offer. This is distinct from jurisdiction identity above
+ * (existence != behavior) and from `StateProgramDecisionState` below (a
+ * standing disposition != the actual resolved decision that was made from
+ * it at a point in time).
+ */
+export interface StateProgramAdministrativeState {
+  readonly stateJurisdictionId: string;
   readonly housingGrantDecisionRule: StateProgramDecision;
   readonly administrativeCapacity: StateAdministrativeCapacity;
 }
@@ -55,18 +72,24 @@ export const STATE_B_ID = "state-b";
 export const STATE_C_ID = "state-c";
 
 export const createDeterministicStateJurisdictions = (): readonly StateJurisdiction[] => [
+  { id: STATE_A_ID },
+  { id: STATE_B_ID },
+  { id: STATE_C_ID },
+];
+
+export const createDeterministicStateProgramAdministrativeStates = (): readonly StateProgramAdministrativeState[] => [
   {
-    id: STATE_A_ID,
+    stateJurisdictionId: STATE_A_ID,
     housingGrantDecisionRule: "APPLY",
     administrativeCapacity: "ADEQUATE",
   },
   {
-    id: STATE_B_ID,
+    stateJurisdictionId: STATE_B_ID,
     housingGrantDecisionRule: "REFUSE",
     administrativeCapacity: "ADEQUATE",
   },
   {
-    id: STATE_C_ID,
+    stateJurisdictionId: STATE_C_ID,
     housingGrantDecisionRule: "APPLY",
     administrativeCapacity: "WEAK",
   },

@@ -106,6 +106,7 @@ const projectWorld = (world: WorldState): GameView => {
     fiscalExecution,
     housingGrantProgram,
     stateJurisdictions,
+    stateProgramAdministrativeStates,
     stateProgramDecisions,
     programApplications,
     federalApplicationDeterminations,
@@ -174,6 +175,12 @@ const projectWorld = (world: WorldState): GameView => {
             reportingRequirement: housingGrantProgramLaw!.enactedTerms.reportingRequirement,
           },
     statePrograms: stateJurisdictions.map((state) => {
+      const administrativeState = stateProgramAdministrativeStates.find(
+        (candidate) => candidate.stateJurisdictionId === state.id,
+      );
+      if (administrativeState === undefined) {
+        throw new Error(`State jurisdiction ${state.id} has no administrative fixture state.`);
+      }
       const stateDecision =
         housingGrantProgram === null
           ? null
@@ -209,7 +216,7 @@ const projectWorld = (world: WorldState): GameView => {
 
       return {
         id: state.id,
-        capacity: state.administrativeCapacity,
+        capacity: administrativeState.administrativeCapacity,
         decision: stateDecision?.decision ?? null,
         applicationId: application?.id ?? null,
         federalDetermination: determination?.outcome ?? null,

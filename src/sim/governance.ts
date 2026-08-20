@@ -30,7 +30,9 @@ import {
   type IntergovernmentalProgramRelationship,
   type ProgramApplicationRecord,
   createDeterministicStateJurisdictions,
+  createDeterministicStateProgramAdministrativeStates,
   type StateJurisdiction,
+  type StateProgramAdministrativeState,
   type StateProgramDecisionState,
 } from "./federalism";
 import type { EnactedLaw, LegislativeProposal } from "./proposal";
@@ -49,8 +51,10 @@ export interface GovernanceState {
   readonly administrativeInstitution: AdministrativeInstitution | null;
   /** Administrative/program owner: null until an explicit establishment transition runs. */
   readonly housingGrantProgram: HousingGrantProgram | null;
-  /** Political/legal state jurisdictions; no geography or population is implied. */
+  /** Political/legal state jurisdiction identity only; no geography or population is implied. */
   readonly stateJurisdictions: readonly StateJurisdiction[];
+  /** State-owned deterministic fixture behavior/capacity, separate from jurisdiction identity. */
+  readonly stateProgramAdministrativeStates: readonly StateProgramAdministrativeState[];
   /** State-owned current decisions for the federal program offer. */
   readonly stateProgramDecisions: readonly StateProgramDecisionState[];
   /** State-originating application records owned by program administration. */
@@ -71,6 +75,7 @@ export const createInitialGovernanceState = (): GovernanceState => ({
   administrativeInstitution: createFederalHousingAdministrationInstitution(),
   housingGrantProgram: null,
   stateJurisdictions: createDeterministicStateJurisdictions(),
+  stateProgramAdministrativeStates: createDeterministicStateProgramAdministrativeStates(),
   stateProgramDecisions: [],
   programApplications: [],
   federalApplicationDeterminations: [],
@@ -407,6 +412,28 @@ const resolveStateJurisdiction = (world: WorldState, stateJurisdictionId: string
   return state;
 };
 
+/**
+ * The state's deterministic fixture behavior/capacity is a separate owner
+ * from jurisdiction identity (see `StateProgramAdministrativeState` in
+ * federalism.ts). Every fixture jurisdiction has exactly one such record, so
+ * its absence indicates a fixture-construction defect rather than a normal
+ * runtime precondition failure.
+ */
+const resolveStateProgramAdministrativeState = (
+  world: WorldState,
+  stateJurisdictionId: string,
+): StateProgramAdministrativeState => {
+  const administrativeState = world.governance.stateProgramAdministrativeStates.find(
+    (candidate) => candidate.stateJurisdictionId === stateJurisdictionId,
+  );
+  if (administrativeState === undefined) {
+    throw new Error(
+      `State jurisdiction ${stateJurisdictionId} has no administrative fixture state.`,
+    );
+  }
+  return administrativeState;
+};
+
 const resolveStateProgramDecision = (
   world: WorldState,
   programId: string,
@@ -447,6 +474,7 @@ export const resolveStateHousingGrantDecision = (
 ): WorldState => {
   const program = requireHousingGrantProgram(world);
   const state = resolveStateJurisdiction(world, stateJurisdictionId);
+  const administrativeState = resolveStateProgramAdministrativeState(world, state.id);
   if (resolveStateProgramDecision(world, program.id, state.id) !== null) {
     throw new Error(`State ${state.id} has already resolved its housing grant decision.`);
   }
@@ -454,7 +482,7 @@ export const resolveStateHousingGrantDecision = (
   const decision: StateProgramDecisionState = {
     stateJurisdictionId: state.id,
     federalProgramId: program.id,
-    decision: state.housingGrantDecisionRule,
+    decision: administrativeState.housingGrantDecisionRule,
     resolvedAtSimulationTime: world.time.current,
   };
 

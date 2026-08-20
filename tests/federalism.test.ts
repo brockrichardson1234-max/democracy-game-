@@ -14,6 +14,7 @@ import {
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
 import {
+  createDeterministicStateProgramAdministrativeStates,
   STATE_A_ID,
   STATE_B_ID,
   STATE_C_ID,
@@ -61,29 +62,76 @@ describe("Commit 11 bounded federal program -> state response slice", () => {
     expect(world.governance.publicFinance.housingGrant?.disbursedAmount).toBe(0);
   });
 
-  it("initializes exactly three distinct political/legal state jurisdictions without geography", () => {
+  it("initializes exactly three distinct political/legal state jurisdictions without geography, owning only identity", () => {
     const world = createDeterministicWorldFixture();
     const states = world.governance.stateJurisdictions;
 
     expect(states).toHaveLength(3);
-    expect(states.map((state) => state.id)).toEqual([STATE_A_ID, STATE_B_ID, STATE_C_ID]);
+    expect(states).toEqual([{ id: STATE_A_ID }, { id: STATE_B_ID }, { id: STATE_C_ID }]);
     expect(new Set(states.map((state) => state.id)).size).toBe(3);
     expect(world.governance).not.toHaveProperty("geography");
-    expect(states.map((state) => state.housingGrantDecisionRule)).toEqual([
-      "APPLY",
-      "REFUSE",
-      "APPLY",
-    ]);
+    // C11-01: jurisdiction identity does not carry decision behavior or capacity.
+    for (const state of states) {
+      expect(state).not.toHaveProperty("housingGrantDecisionRule");
+      expect(state).not.toHaveProperty("administrativeCapacity");
+    }
   });
 
-  it("keeps State A adequate and State C weak as state-owned administrative capacity", () => {
+  it("owns one separate state political/administrative fixture state per state, referencing jurisdiction by stable id", () => {
+    const world = createDeterministicWorldFixture();
+    const administrativeStates = world.governance.stateProgramAdministrativeStates;
+
+    expect(administrativeStates).toHaveLength(3);
+    expect(new Set(administrativeStates.map((state) => state.stateJurisdictionId)).size).toBe(3);
+    expect(
+      administrativeStates.map((state) => state.stateJurisdictionId).sort(),
+    ).toEqual([STATE_A_ID, STATE_B_ID, STATE_C_ID].sort());
+
+    const byState = Object.fromEntries(
+      administrativeStates.map((state) => [state.stateJurisdictionId, state]),
+    );
+    expect(byState[STATE_A_ID]).toMatchObject({
+      housingGrantDecisionRule: "APPLY",
+      administrativeCapacity: "ADEQUATE",
+    });
+    expect(byState[STATE_B_ID]).toMatchObject({ housingGrantDecisionRule: "REFUSE" });
+    expect(byState[STATE_C_ID]).toMatchObject({
+      housingGrantDecisionRule: "APPLY",
+      administrativeCapacity: "WEAK",
+    });
+  });
+
+  it("matches the deterministic fixture constructor exposed for direct construction", () => {
+    expect(createDeterministicStateProgramAdministrativeStates()).toEqual(
+      createDeterministicWorldFixture().governance.stateProgramAdministrativeStates,
+    );
+  });
+
+  it("keeps State A adequate and State C weak as state-owned administrative capacity, not jurisdiction identity", () => {
     const world = createDeterministicWorldFixture();
 
-    expect(world.governance.stateJurisdictions).toMatchObject([
-      { id: STATE_A_ID, administrativeCapacity: "ADEQUATE" },
-      { id: STATE_B_ID, administrativeCapacity: "ADEQUATE" },
-      { id: STATE_C_ID, administrativeCapacity: "WEAK" },
+    expect(world.governance.stateProgramAdministrativeStates).toMatchObject([
+      { stateJurisdictionId: STATE_A_ID, administrativeCapacity: "ADEQUATE" },
+      { stateJurisdictionId: STATE_B_ID, administrativeCapacity: "ADEQUATE" },
+      { stateJurisdictionId: STATE_C_ID, administrativeCapacity: "WEAK" },
     ]);
+    // Jurisdiction identity itself carries no capacity field at all.
+    for (const state of world.governance.stateJurisdictions) {
+      expect(state).not.toHaveProperty("administrativeCapacity");
+    }
+  });
+
+  it("resolveStateHousingGrantDecision obtains its decision rule through the separate fixture state", () => {
+    const decidedA = resolveStateHousingGrantDecision(establishProgram(), STATE_A_ID);
+    const administrativeStateA = decidedA.governance.stateProgramAdministrativeStates.find(
+      (state) => state.stateJurisdictionId === STATE_A_ID,
+    );
+
+    expect(decidedA.governance.stateProgramDecisions[0].decision).toBe(
+      administrativeStateA?.housingGrantDecisionRule,
+    );
+    // The resolved decision is its own distinct current fact, not a live alias.
+    expect(decidedA.governance.stateProgramDecisions[0]).not.toBe(administrativeStateA);
   });
 
   it("resolves state-owned decisions independently and creates no applications", () => {
@@ -267,15 +315,16 @@ describe("Commit 11 bounded federal program -> state response slice", () => {
     expect(completed.governance.publicFinance.housingGrant?.disbursedAmount).toBe(0);
   });
 
-  it("keeps binding law terms out of state, application, determination, and relationship state", () => {
+  it("keeps binding law terms out of state, administrative, application, determination, and relationship state", () => {
     const completed = completeStateRoute(establishProgram(), STATE_A_ID);
     const state = completed.governance.stateJurisdictions[0];
+    const administrativeState = completed.governance.stateProgramAdministrativeStates[0];
     const decision = completed.governance.stateProgramDecisions[0];
     const application = completed.governance.programApplications[0];
     const determination = completed.governance.federalApplicationDeterminations[0];
     const relationship = completed.governance.intergovernmentalProgramRelationships[0];
 
-    for (const value of [state, decision, application, determination, relationship]) {
+    for (const value of [state, administrativeState, decision, application, determination, relationship]) {
       expect(value).not.toHaveProperty("federalMatchRatePercent");
       expect(value).not.toHaveProperty("participationCondition");
       expect(value).not.toHaveProperty("reportingRequirement");
@@ -285,14 +334,19 @@ describe("Commit 11 bounded federal program -> state response slice", () => {
     );
   });
 
-  it("preserves State C weak capacity without turning it into a money or material effect", () => {
+  it("preserves State C weak capacity, owned by the separate fixture state, without turning it into a money or material effect", () => {
     const program = establishProgram();
     const completed = completeStateRoute(program, STATE_C_ID);
-    const stateC = completed.governance.stateJurisdictions.find((state) => state.id === STATE_C_ID);
+    const stateC = completed.governance.stateProgramAdministrativeStates.find(
+      (state) => state.stateJurisdictionId === STATE_C_ID,
+    );
 
     expect(stateC?.administrativeCapacity).toBe("WEAK");
+    // Capacity never mutates law, public finance, fiscal execution, or program terms.
+    expect(completed.governance.enactedLaws).toEqual(program.governance.enactedLaws);
     expect(completed.governance.publicFinance).toEqual(program.governance.publicFinance);
     expect(completed.governance.fiscalExecution).toEqual(program.governance.fiscalExecution);
+    expect(completed.governance.housingGrantProgram).toEqual(program.governance.housingGrantProgram);
     expect(completed.governance).not.toHaveProperty("housing");
     expect(completed.governance).not.toHaveProperty("awards");
   });
