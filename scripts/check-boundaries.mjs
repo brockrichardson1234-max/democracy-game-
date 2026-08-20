@@ -45,7 +45,7 @@ for (const rule of importRules) {
     for (const forbidden of rule.forbidden) {
       const escaped = forbidden.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const pattern = new RegExp(
-        `(?:from\\s+|import\\s*\\(|require\\s*\\()\\s*["'][^"']*${escaped}[^"']*["']`,
+        `(?:from\\s+|import\\s*\\(|require\\s*\\(|import\\s+)["'][^"']*${escaped}[^"']*["']`,
         "m",
       );
       if (pattern.test(source)) {
