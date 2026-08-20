@@ -119,7 +119,7 @@ export const App = () => {
 
         <dl>
           <div>
-            <dt>Fiscal authority</dt>
+            <dt>Public finance / fiscal execution</dt>
             <dd>
               {fiscal === null
                 ? "not yet recognized"
@@ -131,7 +131,7 @@ export const App = () => {
             <dd>
               {housingGrantProgram === null
                 ? "not established"
-                : `${housingGrantProgram.status} — match ${housingGrantProgram.federalMatchRatePercent}%, ${housingGrantProgram.participationCondition} participation, ${housingGrantProgram.reportingRequirement} reporting`}
+                : `${housingGrantProgram.status} — operator ${housingGrantProgram.operatorInstitutionId}; match ${housingGrantProgram.federalMatchRatePercent}%, ${housingGrantProgram.participationCondition} participation, ${housingGrantProgram.reportingRequirement} reporting`}
             </dd>
           </div>
         </dl>

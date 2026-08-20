@@ -1,8 +1,16 @@
 import {
   establishHousingGrantProgramFromLaw,
+  createFederalHousingAdministrationInstitution,
+  type AdministrativeInstitution,
   type HousingGrantProgram,
 } from "./administration";
-import { recognizeFiscalExecutionState, type FiscalExecutionState } from "./fiscal";
+import {
+  createFiscalExecutionState,
+  createInitialPublicFinanceState,
+  recognizePublicFinanceState,
+  type FiscalExecutionState,
+  type PublicFinanceState,
+} from "./fiscal";
 import {
   createDeterministicLegislatureFixture,
   decideActorVote,
@@ -25,8 +33,12 @@ export interface GovernanceState {
   readonly proposal: LegislativeProposal | null;
   readonly procedure: LegislativeProcedureInstance | null;
   readonly enactedLaws: readonly EnactedLaw[];
-  /** Fiscal-execution owner: null until an explicit recognition transition runs. */
+  /** Public-finance owner: recognition is explicit and does not occur at enactment. */
+  readonly publicFinance: PublicFinanceState;
+  /** Fiscal-execution owner: null until the recognition transition creates its zero-obligation state. */
   readonly fiscalExecution: FiscalExecutionState | null;
+  /** Canonical federal administrative institution that can operate the program. */
+  readonly administrativeInstitution: AdministrativeInstitution | null;
   /** Administrative/program owner: null until an explicit establishment transition runs. */
   readonly housingGrantProgram: HousingGrantProgram | null;
 }
@@ -36,7 +48,9 @@ export const createInitialGovernanceState = (): GovernanceState => ({
   proposal: null,
   procedure: null,
   enactedLaws: [],
+  publicFinance: createInitialPublicFinanceState(),
   fiscalExecution: null,
+  administrativeInstitution: createFederalHousingAdministrationInstitution(),
   housingGrantProgram: null,
 });
 
@@ -267,42 +281,42 @@ const latestEnactedHousingGrantLaw = (world: WorldState): EnactedLaw | null => {
 };
 
 /**
- * Enacted legal appropriation -> recognized fiscal-execution availability.
+ * Enacted legal appropriation -> explicit public-finance availability
+ * recognition plus a zero-obligation fiscal-execution state.
  * This is a distinct downstream transition from enactment itself: a passed
- * law can exist for one or more simulation instants with no fiscal-execution
- * state at all, because nothing calls this transition automatically. Rejects
- * recognizing twice against the same law so available authority is never
- * double-counted.
+ * law can exist for one or more simulation instants with no recognized
+ * public-finance availability, because nothing calls this transition
+ * automatically. Rejects recognizing twice against the same law so
+ * availability is never double-counted.
  */
 export const recognizeHousingGrantFiscalAuthority = (world: WorldState): WorldState => {
   const enactedLaw = latestEnactedHousingGrantLaw(world);
   if (enactedLaw === null) {
     throw new Error("Fiscal authority cannot be recognized without an enacted housing grant law.");
   }
-  if (world.governance.fiscalExecution !== null) {
+  if (world.governance.publicFinance.housingGrant !== null) {
     throw new Error("Fiscal authority has already been recognized for this law.");
   }
 
-  const fiscalExecution = recognizeFiscalExecutionState(enactedLaw, world.time.current);
+  const publicFinance = recognizePublicFinanceState(enactedLaw, world.time.current);
+  const fiscalExecution = createFiscalExecutionState(enactedLaw);
 
   return {
     ...world,
-    governance: { ...world.governance, fiscalExecution },
+    governance: { ...world.governance, publicFinance, fiscalExecution },
     history: appendOccurrence(world.history, {
-      type: "FiscalAuthorityMadeAvailable",
+      type: "PublicFinanceAvailabilityRecognized",
       lawId: enactedLaw.id,
-      available: fiscalExecution.available,
+      availableAmount: publicFinance.housingGrant!.availableAmount,
       at: world.time.current,
     }),
   };
 };
 
 /**
- * Enacted law + recognized fiscal authority -> operational federal program
- * state. Ordering is chosen deliberately: establishment requires fiscal
- * authority to already be available, so the program can reference real
- * recognized availability rather than assuming its own law's appropriation
- * will later be recognized. Rejects duplicate establishment.
+ * Enacted law + recognized public-finance availability + canonical operator
+ * institution -> operational federal program state. Establishment remains a
+ * separate explicit transition and rejects duplicate establishment.
  */
 export const establishHousingGrantProgram = (world: WorldState): WorldState => {
   const enactedLaw = latestEnactedHousingGrantLaw(world);
@@ -312,10 +326,21 @@ export const establishHousingGrantProgram = (world: WorldState): WorldState => {
     );
   }
 
-  const { fiscalExecution } = world.governance;
-  if (fiscalExecution === null || fiscalExecution.sourceLawId !== enactedLaw.id) {
+  const { fiscalExecution, publicFinance, administrativeInstitution } = world.governance;
+  if (
+    fiscalExecution === null ||
+    fiscalExecution.sourceLawId !== enactedLaw.id ||
+    publicFinance.housingGrant === null ||
+    publicFinance.housingGrant.sourceLawId !== enactedLaw.id
+  ) {
     throw new Error(
       "The housing grant program cannot be established before its fiscal authority is available.",
+    );
+  }
+
+  if (administrativeInstitution === null) {
+    throw new Error(
+      "The housing grant program cannot be established without its administrative institution.",
     );
   }
 
@@ -323,7 +348,11 @@ export const establishHousingGrantProgram = (world: WorldState): WorldState => {
     throw new Error("The housing grant program has already been established.");
   }
 
-  const housingGrantProgram = establishHousingGrantProgramFromLaw(enactedLaw, fiscalExecution);
+  const housingGrantProgram = establishHousingGrantProgramFromLaw(
+    enactedLaw,
+    publicFinance,
+    administrativeInstitution,
+  );
 
   return {
     ...world,

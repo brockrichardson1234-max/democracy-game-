@@ -56,6 +56,8 @@ export interface FiscalProjection {
 export interface HousingGrantProgramProjection {
   readonly id: string;
   readonly sourceLawId: string;
+  readonly operatorInstitutionId: string;
+  readonly publicFinanceRef: string;
   readonly status: HousingGrantProgramStatus;
   readonly federalMatchRatePercent: number;
   readonly participationCondition: ParticipationCondition;
@@ -73,8 +75,23 @@ export interface GameSession {
 }
 
 const projectWorld = (world: WorldState): GameView => {
-  const { proposal, procedure, enactedLaws, fiscalExecution, housingGrantProgram } = world.governance;
+  const {
+    proposal,
+    procedure,
+    enactedLaws,
+    publicFinance,
+    fiscalExecution,
+    housingGrantProgram,
+  } = world.governance;
   const latestEnactedLaw = enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
+  const housingGrantProgramLaw =
+    housingGrantProgram === null
+      ? null
+      : enactedLaws.find((law) => law.id === housingGrantProgram.sourceLawId) ?? null;
+
+  if (housingGrantProgram !== null && housingGrantProgramLaw === null) {
+    throw new Error("The housing grant program references an unknown enacted law.");
+  }
 
   return {
     currentTime: world.time.current,
@@ -104,24 +121,29 @@ const projectWorld = (world: WorldState): GameView => {
             },
     },
     fiscal:
-      fiscalExecution === null
+      publicFinance.housingGrant === null
         ? null
         : {
-            sourceLawId: fiscalExecution.sourceLawId,
-            available: fiscalExecution.available,
-            obligated: fiscalExecution.obligated,
-            disbursed: fiscalExecution.disbursed,
+            sourceLawId: publicFinance.housingGrant.sourceLawId,
+            available: publicFinance.housingGrant.availableAmount,
+            obligated:
+              fiscalExecution !== null && fiscalExecution.sourceLawId === publicFinance.housingGrant.sourceLawId
+                ? fiscalExecution.obligated
+                : 0,
+            disbursed: publicFinance.housingGrant.disbursedAmount,
           },
     housingGrantProgram:
       housingGrantProgram === null
         ? null
-        : {
+          : {
             id: housingGrantProgram.id,
             sourceLawId: housingGrantProgram.sourceLawId,
+            operatorInstitutionId: housingGrantProgram.operatorInstitutionId,
+            publicFinanceRef: housingGrantProgram.publicFinanceRef,
             status: housingGrantProgram.status,
-            federalMatchRatePercent: housingGrantProgram.federalMatchRatePercent,
-            participationCondition: housingGrantProgram.participationCondition,
-            reportingRequirement: housingGrantProgram.reportingRequirement,
+            federalMatchRatePercent: housingGrantProgramLaw!.enactedTerms.federalMatchRatePercent,
+            participationCondition: housingGrantProgramLaw!.enactedTerms.participationCondition,
+            reportingRequirement: housingGrantProgramLaw!.enactedTerms.reportingRequirement,
           },
   };
 };

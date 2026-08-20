@@ -8,6 +8,8 @@ import {
   resolveHousingGrantProposalVote,
   submitHousingGrantProposal,
 } from "../src/sim/governance";
+import { FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID } from "../src/sim/administration";
+import { createGameSession } from "../src/app/session";
 import type { ProposalTerms } from "../src/sim/legislature";
 import { createDeterministicWorldFixture } from "../src/sim/world";
 
@@ -30,12 +32,13 @@ const enactHousingGrantLaw = () => {
   return resolveHousingGrantProposalVote(amended);
 };
 
-describe("Commit 10 law -> fiscal authority -> administration slice", () => {
-  it("a passed law exists with no fiscal-execution availability until an explicit recognition transition runs", () => {
+describe("Commit 10 law -> public finance -> administration slice", () => {
+  it("a passed law exists with no public-finance availability until explicit recognition runs", () => {
     const enacted = enactHousingGrantLaw();
 
     expect(enacted.governance.proposal?.status).toBe("PROCEDURE_PASSED");
     expect(enacted.governance.enactedLaws).toHaveLength(1);
+    expect(enacted.governance.publicFinance.housingGrant).toBeNull();
     expect(enacted.governance.fiscalExecution).toBeNull();
     expect(enacted.governance.housingGrantProgram).toBeNull();
   });
@@ -53,7 +56,7 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
     );
   });
 
-  it("the legal appropriation and recognized fiscal-execution availability are distinct owned facts", () => {
+  it("the legal appropriation and recognized public-finance availability are distinct owned facts", () => {
     const enacted = enactHousingGrantLaw();
     const law = enacted.governance.enactedLaws[0];
 
@@ -62,24 +65,29 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
     expect(law).not.toHaveProperty("obligated");
 
     const recognized = recognizeHousingGrantFiscalAuthority(enacted);
+    const publicFinance = recognized.governance.publicFinance.housingGrant!;
     const fiscal = recognized.governance.fiscalExecution!;
 
-    expect(fiscal.available).toBe(HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT);
+    expect(publicFinance.availableAmount).toBe(HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT);
+    expect(fiscal).not.toHaveProperty("available");
     expect(fiscal).not.toHaveProperty("appropriation");
     expect(fiscal).not.toHaveProperty("purpose");
     // The law object itself is untouched by recognition.
     expect(recognized.governance.enactedLaws[0]).toEqual(law);
   });
 
-  it("recognizing fiscal authority produces the exact expected available amount exactly once", () => {
+  it("recognizing fiscal authority produces the exact public-finance amount exactly once", () => {
     const enacted = enactHousingGrantLaw();
     const recognized = recognizeHousingGrantFiscalAuthority(enacted);
 
+    expect(recognized.governance.publicFinance.housingGrant).toMatchObject({
+      sourceLawId: enacted.governance.enactedLaws[0].id,
+      availableAmount: HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
+      disbursedAmount: 0,
+    });
     expect(recognized.governance.fiscalExecution).toMatchObject({
       sourceLawId: enacted.governance.enactedLaws[0].id,
-      available: HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
       obligated: 0,
-      disbursed: 0,
     });
     // Pure transition: the prior world reference is untouched.
     expect(enacted.governance.fiscalExecution).toBeNull();
@@ -90,16 +98,17 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
     const recognized = recognizeHousingGrantFiscalAuthority(enacted);
 
     expect(() => recognizeHousingGrantFiscalAuthority(recognized)).toThrow(/already been recognized/);
-    expect(recognized.governance.fiscalExecution?.available).toBe(
+    expect(recognized.governance.publicFinance.housingGrant?.availableAmount).toBe(
       HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
     );
   });
 
-  it("obligated and disbursed remain 0 through fiscal recognition, because no recipient exists yet", () => {
+  it("obligated and disbursed remain 0 in their respective owners because no recipient exists yet", () => {
     const recognized = recognizeHousingGrantFiscalAuthority(enactHousingGrantLaw());
 
     expect(recognized.governance.fiscalExecution?.obligated).toBe(0);
-    expect(recognized.governance.fiscalExecution?.disbursed).toBe(0);
+    expect(recognized.governance.fiscalExecution).not.toHaveProperty("disbursed");
+    expect(recognized.governance.publicFinance.housingGrant?.disbursedAmount).toBe(0);
   });
 
   it("program establishment fails without an enacted law", () => {
@@ -112,6 +121,18 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
     const enacted = enactHousingGrantLaw();
     expect(enacted.governance.fiscalExecution).toBeNull();
     expect(() => establishHousingGrantProgram(enacted)).toThrow(/fiscal authority is available/);
+  });
+
+  it("program establishment fails when its canonical operator institution is absent", () => {
+    const recognized = recognizeHousingGrantFiscalAuthority(enactHousingGrantLaw());
+    const withoutInstitution = {
+      ...recognized,
+      governance: { ...recognized.governance, administrativeInstitution: null },
+    };
+
+    expect(() => establishHousingGrantProgram(withoutInstitution)).toThrow(
+      /administrative institution/,
+    );
   });
 
   it("repeated program establishment is rejected rather than additive", () => {
@@ -129,21 +150,41 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
 
     expect(program.id).not.toBe(law.id);
     expect(program.sourceLawId).toBe(law.id);
-    expect(program.fiscalAuthorityRef).toBe(recognized.governance.fiscalExecution!.sourceLawId);
+    expect(program.operatorInstitutionId).toBe(
+      recognized.governance.administrativeInstitution!.id,
+    );
+    expect(program.publicFinanceRef).toBe(recognized.governance.publicFinance.housingGrant!.id);
     expect(program.status).toBe("READY_FOR_APPLICATIONS");
   });
 
-  it("the program's operational terms exactly reflect the enacted compromise terms, not the original proposal", () => {
+  it("program canonical state references the law and does not shadow-copy binding terms", () => {
     const established = establishHousingGrantProgram(
       recognizeHousingGrantFiscalAuthority(enactHousingGrantLaw()),
     );
     const program = established.governance.housingGrantProgram!;
 
-    expect(program.federalMatchRatePercent).toBe(COMPROMISE_TERMS.federalMatchRatePercent);
-    expect(program.participationCondition).toBe(COMPROMISE_TERMS.participationCondition);
-    expect(program.reportingRequirement).toBe(COMPROMISE_TERMS.reportingRequirement);
-    // Never the pre-amendment original terms.
-    expect(program.federalMatchRatePercent).not.toBe(INITIAL_TERMS.federalMatchRatePercent);
+    expect(program.sourceLawId).toBe(established.governance.enactedLaws[0].id);
+    expect(program).not.toHaveProperty("federalMatchRatePercent");
+    expect(program).not.toHaveProperty("participationCondition");
+    expect(program).not.toHaveProperty("reportingRequirement");
+  });
+
+  it("the program projection derives exact compromise terms from its enacted law", () => {
+    const session = createGameSession();
+    session.submitHousingGrantProposal(INITIAL_TERMS);
+    session.amendHousingGrantProposal(COMPROMISE_TERMS);
+    session.resolveHousingGrantProposalVote();
+    session.recognizeHousingGrantFiscalAuthority();
+    const view = session.establishHousingGrantProgram();
+
+    expect(view.housingGrantProgram).toMatchObject({
+      federalMatchRatePercent: COMPROMISE_TERMS.federalMatchRatePercent,
+      participationCondition: COMPROMISE_TERMS.participationCondition,
+      reportingRequirement: COMPROMISE_TERMS.reportingRequirement,
+    });
+    expect(view.housingGrantProgram?.operatorInstitutionId).toBe(
+      FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
+    );
   });
 
   it("program setup does not mutate the enacted law", () => {
@@ -160,7 +201,7 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
     );
 
     expect(established.governance.fiscalExecution?.obligated).toBe(0);
-    expect(established.governance.fiscalExecution?.disbursed).toBe(0);
+    expect(established.governance.publicFinance.housingGrant?.disbursedAmount).toBe(0);
   });
 
   it("program setup creates no state participation/application/award facts and no new canonical roots", () => {
@@ -173,7 +214,9 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
       "proposal",
       "procedure",
       "enactedLaws",
+      "publicFinance",
       "fiscalExecution",
+      "administrativeInstitution",
       "housingGrantProgram",
     ]);
     expect(Object.keys(established)).toEqual(["time", "bootstrapTransition", "governance", "history"]);
@@ -195,7 +238,7 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
     const law = enacted.governance.enactedLaws[0];
 
     const fiscalOccurrences = established.history.filter(
-      (entry) => entry.type === "FiscalAuthorityMadeAvailable",
+      (entry) => entry.type === "PublicFinanceAvailabilityRecognized",
     );
     const programOccurrences = established.history.filter(
       (entry) => entry.type === "HousingGrantProgramEstablished",
@@ -203,9 +246,9 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
 
     expect(fiscalOccurrences).toEqual([
       {
-        type: "FiscalAuthorityMadeAvailable",
+        type: "PublicFinanceAvailabilityRecognized",
         lawId: law.id,
-        available: HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
+        availableAmount: HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
         at: 0,
       },
     ]);
@@ -238,13 +281,27 @@ describe("Commit 10 law -> fiscal authority -> administration slice", () => {
     // Law exists.
     expect(established.governance.enactedLaws).toHaveLength(1);
     // Fiscal authority available.
-    expect(established.governance.fiscalExecution?.available).toBe(
+    expect(established.governance.publicFinance.housingGrant?.availableAmount).toBe(
       HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
     );
     // Program ready.
     expect(established.governance.housingGrantProgram?.status).toBe("READY_FOR_APPLICATIONS");
     // Nothing downstream has happened yet.
     expect(established.governance.fiscalExecution?.obligated).toBe(0);
-    expect(established.governance.fiscalExecution?.disbursed).toBe(0);
+    expect(established.governance.publicFinance.housingGrant?.disbursedAmount).toBe(0);
+  });
+
+  it("the initial fixture contains one explicit federal administrative institution distinct from the program", () => {
+    const world = createDeterministicWorldFixture();
+    expect(world.governance.administrativeInstitution).toEqual({
+      id: FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
+    });
+
+    const established = establishHousingGrantProgram(
+      recognizeHousingGrantFiscalAuthority(enactHousingGrantLaw()),
+    );
+    expect(established.governance.housingGrantProgram?.id).not.toBe(
+      established.governance.administrativeInstitution?.id,
+    );
   });
 });

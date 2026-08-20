@@ -26,7 +26,7 @@ export interface LegislativeProposal {
  * The minimum legally operative fiscal provision the enacted law carries:
  * legal permission/limit to spend for a purpose, not actual spendable money.
  * Owned by the legal source itself (see EnactedLaw below), distinct from the
- * fiscal-execution state in fiscal.ts that later recognizes it as available.
+ * public-finance state in fiscal.ts that later recognizes it as available.
  */
 export interface LegalAppropriation {
   readonly amount: number;

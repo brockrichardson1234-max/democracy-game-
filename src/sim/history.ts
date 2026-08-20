@@ -44,9 +44,9 @@ export type HistoricalOccurrence =
       readonly at: SimulationInstant;
     }
   | {
-      readonly type: "FiscalAuthorityMadeAvailable";
+      readonly type: "PublicFinanceAvailabilityRecognized";
       readonly lawId: string;
-      readonly available: number;
+      readonly availableAmount: number;
       readonly at: SimulationInstant;
     }
   | {

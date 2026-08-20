@@ -1,6 +1,16 @@
-import type { FiscalExecutionState } from "./fiscal";
-import type { ParticipationCondition, ReportingRequirement } from "./legislature";
+import type { PublicFinanceState } from "./fiscal";
 import type { EnactedLaw } from "./proposal";
+
+export interface AdministrativeInstitution {
+  readonly id: string;
+}
+
+export const FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID =
+  "gl0-federal-housing-administration";
+
+export const createFederalHousingAdministrationInstitution = (): AdministrativeInstitution => ({
+  id: FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
+});
 
 /**
  * The program is administrative/operational state, not the law: `NOT_
@@ -16,20 +26,15 @@ export type HousingGrantProgramStatus = "READY_FOR_APPLICATIONS";
 
 /**
  * Federal administrative/program state operating the enacted housing-grant
- * law. Operational terms are read from the enacted law at establishment
- * time and are not an independently mutable copy: this program cannot
- * silently diverge from what the legislature actually passed (see
- * `04_GOVERNMENT_AUTHORITY_AND_PROCEDURE_V0.md` S14 / O-12). `fiscalAuthorityRef`
- * references the recognized fiscal-execution state rather than owning or
- * duplicating its amount.
+ * law. Binding terms remain in the enacted law and are resolved by reference
+ * when consumed. `publicFinanceRef` references the recognized public-finance
+ * state rather than owning or duplicating its amount.
  */
 export interface HousingGrantProgram {
   readonly id: string;
   readonly sourceLawId: string;
-  readonly fiscalAuthorityRef: string;
-  readonly federalMatchRatePercent: number;
-  readonly participationCondition: ParticipationCondition;
-  readonly reportingRequirement: ReportingRequirement;
+  readonly operatorInstitutionId: string;
+  readonly publicFinanceRef: string;
   readonly status: HousingGrantProgramStatus;
 }
 
@@ -41,13 +46,19 @@ export interface HousingGrantProgram {
  */
 export const establishHousingGrantProgramFromLaw = (
   law: EnactedLaw,
-  fiscal: FiscalExecutionState,
-): HousingGrantProgram => ({
-  id: `gl0-program-for-${law.id}`,
-  sourceLawId: law.id,
-  fiscalAuthorityRef: fiscal.sourceLawId,
-  federalMatchRatePercent: law.enactedTerms.federalMatchRatePercent,
-  participationCondition: law.enactedTerms.participationCondition,
-  reportingRequirement: law.enactedTerms.reportingRequirement,
-  status: "READY_FOR_APPLICATIONS",
-});
+  publicFinance: PublicFinanceState,
+  operatorInstitution: AdministrativeInstitution,
+): HousingGrantProgram => {
+  const recognizedFinance = publicFinance.housingGrant;
+  if (recognizedFinance === null || recognizedFinance.sourceLawId !== law.id) {
+    throw new Error("The housing grant program requires recognized public-finance state for its law.");
+  }
+
+  return {
+    id: `gl0-program-for-${law.id}`,
+    sourceLawId: law.id,
+    operatorInstitutionId: operatorInstitution.id,
+    publicFinanceRef: recognizedFinance.id,
+    status: "READY_FOR_APPLICATIONS",
+  };
+};
