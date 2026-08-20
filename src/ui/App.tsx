@@ -26,11 +26,13 @@ export const App = () => {
 
   const { proposal, enactedLaw } = view.legislative;
   const { fiscal, housingGrantProgram, statePrograms } = view;
+  const stateAProgram = statePrograms.find((state) => state.id === "state-a");
+  const stateCProgram = statePrograms.find((state) => state.id === "state-c");
 
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 13 runtime candidate</p>
+        <p className="eyebrow">Commit 14 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -285,6 +287,60 @@ export const App = () => {
             </button>
           </div>
         ))}
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 14 developer inspection</p>
+        <h1>Implementation response</h1>
+
+        <dl>
+          <div>
+            <dt>State A project progress</dt>
+            <dd>
+              {stateAProgram?.housingProject == null
+                ? "none"
+                : `${stateAProgram.housingProject.completedWorkUnits} / ${stateAProgram.housingProject.requiredWorkUnits}`}
+            </dd>
+          </div>
+          <div>
+            <dt>State C project progress</dt>
+            <dd>
+              {stateCProgram?.housingProject == null
+                ? "none"
+                : `${stateCProgram.housingProject.completedWorkUnits} / ${stateCProgram.housingProject.requiredWorkUnits}`}
+            </dd>
+          </div>
+          <div>
+            <dt>Federal implementation support</dt>
+            <dd>
+              {view.implementationResponse.availableSupportUnits} available /{" "}
+              {view.implementationResponse.committedSupportUnits} committed
+            </dd>
+          </div>
+          <div>
+            <dt>Response</dt>
+            <dd>{view.implementationResponse.resolvedAction ?? "awaiting eligible decision"}</dd>
+          </div>
+          <div>
+            <dt>Target</dt>
+            <dd>{view.implementationResponse.targetStateJurisdictionId ?? "none"}</dd>
+          </div>
+        </dl>
+
+        <button
+          type="button"
+          disabled={!view.implementationResponse.eligible}
+          onClick={() => setView(session.deployHousingImplementationSupportToStateC())}
+        >
+          Deploy support to State C
+        </button>
+        <button
+          type="button"
+          disabled={!view.implementationResponse.eligible}
+          onClick={() => setView(session.preserveHousingImplementationSupportReserve())}
+        >
+          Preserve support reserve
+        </button>
       </section>
     </main>
   );

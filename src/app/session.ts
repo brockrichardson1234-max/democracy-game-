@@ -13,16 +13,22 @@ import {
   materializeHousingProjectFromDisbursement,
   obligateHousingGrantAward,
   recognizeHousingGrantFiscalAuthority,
+  resolveHousingImplementationResponse,
   resolveFederalHousingGrantApplication,
   resolveStateHousingGrantDecision,
   resolveHousingGrantProposalVote,
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
+  isHousingImplementationResponseEligible,
 } from "../sim/governance";
 import type { ParticipationCondition, ProposalTerms, ReportingRequirement } from "../sim/legislature";
 import type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
 import type { RecordedVote } from "../sim/legislative-procedure";
-import type { HousingGrantProgramStatus } from "../sim/administration";
+import {
+  availableHousingImplementationSupportUnits,
+  type HousingGrantProgramStatus,
+  type HousingImplementationResponseAction,
+} from "../sim/administration";
 import type {
   FederalApplicationDeterminationOutcome,
   StateAdministrativeCapacity,
@@ -42,6 +48,7 @@ export interface GameView {
   readonly legislative: LegislativeProjection;
   readonly fiscal: FiscalProjection | null;
   readonly housingGrantProgram: HousingGrantProgramProjection | null;
+  readonly implementationResponse: HousingImplementationResponseProjection;
   readonly statePrograms: readonly StateProgramProjection[];
 }
 
@@ -77,6 +84,15 @@ export interface HousingGrantProgramProjection {
   readonly federalMatchRatePercent: number;
   readonly participationCondition: ParticipationCondition;
   readonly reportingRequirement: ReportingRequirement;
+}
+
+export interface HousingImplementationResponseProjection {
+  readonly eligible: boolean;
+  readonly totalSupportUnits: number;
+  readonly committedSupportUnits: number;
+  readonly availableSupportUnits: number;
+  readonly resolvedAction: HousingImplementationResponseAction | null;
+  readonly targetStateJurisdictionId: string | null;
 }
 
 export interface StateProgramProjection {
@@ -123,6 +139,8 @@ export interface GameSession {
   obligateHousingGrantAward(stateId: string): GameView;
   disburseHousingGrantObligation(stateId: string): GameView;
   materializeHousingProjectFromDisbursement(stateId: string): GameView;
+  deployHousingImplementationSupportToStateC(): GameView;
+  preserveHousingImplementationSupportReserve(): GameView;
 }
 
 const projectWorld = (world: WorldState): GameView => {
@@ -140,6 +158,8 @@ const projectWorld = (world: WorldState): GameView => {
     federalApplicationDeterminations,
     intergovernmentalProgramRelationships,
     housingGrantAwards,
+    housingImplementationSupport,
+    housingImplementationResponseDecision,
   } = world.governance;
   const { projects: housingProjects, regions: housingRegions } = world.housing;
   const latestEnactedLaw = enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
@@ -204,6 +224,17 @@ const projectWorld = (world: WorldState): GameView => {
             participationCondition: housingGrantProgramLaw!.enactedTerms.participationCondition,
             reportingRequirement: housingGrantProgramLaw!.enactedTerms.reportingRequirement,
           },
+    implementationResponse: {
+      eligible: isHousingImplementationResponseEligible(world),
+      totalSupportUnits: housingImplementationSupport.totalSupportUnits,
+      committedSupportUnits: housingImplementationSupport.committedSupportUnits,
+      availableSupportUnits: availableHousingImplementationSupportUnits(
+        housingImplementationSupport,
+      ),
+      resolvedAction: housingImplementationResponseDecision?.action ?? null,
+      targetStateJurisdictionId:
+        housingImplementationResponseDecision?.targetStateJurisdictionId ?? null,
+    },
     statePrograms: stateJurisdictions.map((state) => {
       const administrativeState = stateProgramAdministrativeStates.find(
         (candidate) => candidate.stateJurisdictionId === state.id,
@@ -375,6 +406,14 @@ export const createGameSession = (): GameSession => {
     },
     materializeHousingProjectFromDisbursement: (stateId) => {
       world = materializeHousingProjectFromDisbursement(world, stateId);
+      return projectWorld(world);
+    },
+    deployHousingImplementationSupportToStateC: () => {
+      world = resolveHousingImplementationResponse(world, "DEPLOY_SUPPORT_TO_C");
+      return projectWorld(world);
+    },
+    preserveHousingImplementationSupportReserve: () => {
+      world = resolveHousingImplementationResponse(world, "PRESERVE_SUPPORT_RESERVE");
       return projectWorld(world);
     },
   };

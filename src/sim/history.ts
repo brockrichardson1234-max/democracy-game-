@@ -2,6 +2,7 @@ import type { ProposalTerms, VoteChoice } from "./legislature";
 import type { SimulationInstant } from "./world";
 import type { StateProgramDecision } from "./federalism";
 import type { HousingMaterialOccurrence } from "./housing";
+import type { HousingImplementationResponseAction } from "./administration";
 
 /**
  * Immutable committed occurrences. HistoricalRecord owns only the fact that
@@ -120,6 +121,23 @@ export type HistoricalOccurrence =
       readonly housingRegionId: string;
       readonly sourceDisbursementId: string;
       readonly stateJurisdictionId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingImplementationResponseResolved";
+      readonly decisionId: string;
+      readonly programId: string;
+      readonly action: HousingImplementationResponseAction;
+      readonly targetStateJurisdictionId: string | null;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "HousingImplementationSupportDeployed";
+      readonly deploymentId: string;
+      readonly programId: string;
+      readonly relationshipId: string;
+      readonly stateJurisdictionId: string;
+      readonly supportUnits: number;
       readonly at: SimulationInstant;
     };
 

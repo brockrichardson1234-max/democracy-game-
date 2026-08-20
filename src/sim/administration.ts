@@ -13,6 +13,110 @@ export const createFederalHousingAdministrationInstitution = (): AdministrativeI
   id: FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
 });
 
+export type HousingImplementationResponseAction =
+  | "DEPLOY_SUPPORT_TO_C"
+  | "PRESERVE_SUPPORT_RESERVE";
+
+/**
+ * Canonical federal administrative decision. This records that the bounded
+ * GL0 response opportunity was resolved; it is not a Housing instruction or
+ * a generic player-action resource.
+ */
+export interface HousingImplementationResponseDecision {
+  readonly id: string;
+  readonly federalProgramId: string;
+  readonly action: HousingImplementationResponseAction;
+  readonly targetStateJurisdictionId: string | null;
+  readonly decidedAtSimulationTime: SimulationInstant;
+}
+
+/**
+ * Canonical administrative/intergovernmental input for a later material
+ * consumer. References preserve the existing program, relationship, and
+ * jurisdiction identities without copying their current facts.
+ */
+export interface HousingImplementationSupportDeployment {
+  readonly id: string;
+  readonly federalProgramId: string;
+  readonly relationshipId: string;
+  readonly stateJurisdictionId: string;
+  readonly supportUnits: number;
+  readonly deployedAtSimulationTime: SimulationInstant;
+}
+
+/** Institution-owned operational capacity for this housing program route. */
+export interface FederalHousingImplementationSupportState {
+  readonly operatorInstitutionId: string;
+  readonly totalSupportUnits: number;
+  readonly committedSupportUnits: number;
+  readonly deployments: readonly HousingImplementationSupportDeployment[];
+}
+
+export const GL0_HOUSING_IMPLEMENTATION_SUPPORT_UNITS = 1;
+
+export const createInitialFederalHousingImplementationSupportState = (
+  operatorInstitution: AdministrativeInstitution,
+): FederalHousingImplementationSupportState => ({
+  operatorInstitutionId: operatorInstitution.id,
+  totalSupportUnits: GL0_HOUSING_IMPLEMENTATION_SUPPORT_UNITS,
+  committedSupportUnits: 0,
+  deployments: [],
+});
+
+export const availableHousingImplementationSupportUnits = (
+  support: FederalHousingImplementationSupportState,
+): number => support.totalSupportUnits - support.committedSupportUnits;
+
+export const createHousingImplementationResponseDecision = (
+  federalProgramId: string,
+  action: HousingImplementationResponseAction,
+  targetStateJurisdictionId: string | null,
+  at: SimulationInstant,
+): HousingImplementationResponseDecision => ({
+  id: `gl0-implementation-response-for-${federalProgramId}`,
+  federalProgramId,
+  action,
+  targetStateJurisdictionId,
+  decidedAtSimulationTime: at,
+});
+
+export const commitHousingImplementationSupport = (
+  support: FederalHousingImplementationSupportState,
+  federalProgramId: string,
+  relationshipId: string,
+  stateJurisdictionId: string,
+  supportUnits: number,
+  at: SimulationInstant,
+): FederalHousingImplementationSupportState => {
+  if (!Number.isInteger(supportUnits) || supportUnits <= 0) {
+    throw new Error("Implementation support deployment must commit a positive whole unit.");
+  }
+  if (support.totalSupportUnits < 0 || support.committedSupportUnits < 0) {
+    throw new Error("Implementation support capacity cannot be negative.");
+  }
+  if (support.deployments.some((deployment) => deployment.relationshipId === relationshipId)) {
+    throw new Error(`Implementation support is already deployed to relationship ${relationshipId}.`);
+  }
+  if (availableHousingImplementationSupportUnits(support) < supportUnits) {
+    throw new Error("Insufficient federal housing implementation support remains available.");
+  }
+
+  const deployment: HousingImplementationSupportDeployment = {
+    id: `gl0-implementation-support-for-${relationshipId}`,
+    federalProgramId,
+    relationshipId,
+    stateJurisdictionId,
+    supportUnits,
+    deployedAtSimulationTime: at,
+  };
+
+  return {
+    ...support,
+    committedSupportUnits: support.committedSupportUnits + supportUnits,
+    deployments: [...support.deployments, deployment],
+  };
+};
+
 /**
  * The program is administrative/operational state, not the law: `NOT_
  * ESTABLISHED` is represented by `GovernanceState.housingGrantProgram` being

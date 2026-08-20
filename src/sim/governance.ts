@@ -1,10 +1,17 @@
 import {
+  availableHousingImplementationSupportUnits,
+  commitHousingImplementationSupport,
+  createHousingImplementationResponseDecision,
+  createInitialFederalHousingImplementationSupportState,
   createFederalHousingAdministrationInstitution,
   createHousingGrantAwardForRelationship,
   establishHousingGrantProgramFromLaw,
   type AdministrativeInstitution,
   type HousingGrantAward,
   type HousingGrantProgram,
+  type FederalHousingImplementationSupportState,
+  type HousingImplementationResponseAction,
+  type HousingImplementationResponseDecision,
 } from "./administration";
 import {
   commitAvailablePublicFinance,
@@ -39,6 +46,8 @@ import {
   type FederalApplicationDetermination,
   type IntergovernmentalProgramRelationship,
   type ProgramApplicationRecord,
+  STATE_A_ID,
+  STATE_C_ID,
   createDeterministicStateJurisdictions,
   createDeterministicStateProgramAdministrativeStates,
   type StateJurisdiction,
@@ -59,6 +68,10 @@ export interface GovernanceState {
   readonly fiscalExecution: FiscalExecutionState | null;
   /** Canonical federal administrative institution that can operate the program. */
   readonly administrativeInstitution: AdministrativeInstitution | null;
+  /** Institution-owned operational implementation-support capacity. */
+  readonly housingImplementationSupport: FederalHousingImplementationSupportState;
+  /** Program/administrative-owned resolution of the single GL0 response opportunity. */
+  readonly housingImplementationResponseDecision: HousingImplementationResponseDecision | null;
   /** Administrative/program owner: null until an explicit establishment transition runs. */
   readonly housingGrantProgram: HousingGrantProgram | null;
   /** Political/legal state jurisdiction identity only; no geography or population is implied. */
@@ -77,23 +90,30 @@ export interface GovernanceState {
   readonly housingGrantAwards: readonly HousingGrantAward[];
 }
 
-export const createInitialGovernanceState = (): GovernanceState => ({
-  legislature: createDeterministicLegislatureFixture(),
-  proposal: null,
-  procedure: null,
-  enactedLaws: [],
-  publicFinance: createInitialPublicFinanceState(),
-  fiscalExecution: null,
-  administrativeInstitution: createFederalHousingAdministrationInstitution(),
-  housingGrantProgram: null,
-  stateJurisdictions: createDeterministicStateJurisdictions(),
-  stateProgramAdministrativeStates: createDeterministicStateProgramAdministrativeStates(),
-  stateProgramDecisions: [],
-  programApplications: [],
-  federalApplicationDeterminations: [],
-  intergovernmentalProgramRelationships: [],
-  housingGrantAwards: [],
-});
+export const createInitialGovernanceState = (): GovernanceState => {
+  const administrativeInstitution = createFederalHousingAdministrationInstitution();
+
+  return {
+    legislature: createDeterministicLegislatureFixture(),
+    proposal: null,
+    procedure: null,
+    enactedLaws: [],
+    publicFinance: createInitialPublicFinanceState(),
+    fiscalExecution: null,
+    administrativeInstitution,
+    housingImplementationSupport:
+      createInitialFederalHousingImplementationSupportState(administrativeInstitution),
+    housingImplementationResponseDecision: null,
+    housingGrantProgram: null,
+    stateJurisdictions: createDeterministicStateJurisdictions(),
+    stateProgramAdministrativeStates: createDeterministicStateProgramAdministrativeStates(),
+    stateProgramDecisions: [],
+    programApplications: [],
+    federalApplicationDeterminations: [],
+    intergovernmentalProgramRelationships: [],
+    housingGrantAwards: [],
+  };
+};
 
 /**
  * The controlled executive administration's decision surface for this
@@ -928,5 +948,144 @@ export const materializeHousingProjectFromDisbursement = (
       stateJurisdictionId: state.id,
       at: world.time.current,
     }),
+  };
+};
+
+/**
+ * Explicit fixture boundary for GL0's single post-enactment response. This
+ * is not a universal day-five rule: the boundary is additionally gated by
+ * the supported program, relationship, and actual material divergence.
+ */
+export const GL0_HOUSING_IMPLEMENTATION_RESPONSE_BOUNDARY = 5;
+
+const resolveHousingProjectForState = (world: WorldState, stateJurisdictionId: string) =>
+  world.housing.projects.find(
+    (project) => project.stateJurisdictionId === stateJurisdictionId,
+  ) ?? null;
+
+const requireHousingImplementationResponseEligibility = (
+  world: WorldState,
+): {
+  readonly program: HousingGrantProgram;
+  readonly stateCRelationship: IntergovernmentalProgramRelationship;
+} => {
+  const program = requireHousingGrantProgram(world);
+  if (world.governance.housingImplementationResponseDecision !== null) {
+    throw new Error("The GL0 housing implementation response has already been resolved.");
+  }
+  if (world.time.current < GL0_HOUSING_IMPLEMENTATION_RESPONSE_BOUNDARY) {
+    throw new Error("The housing implementation response is not yet available.");
+  }
+
+  const stateCRelationship = resolveActiveIntergovernmentalRelationship(
+    world,
+    program.id,
+    STATE_C_ID,
+  );
+  if (stateCRelationship === null) {
+    throw new Error("State C must have an ACTIVE participation relationship before the response.");
+  }
+
+  const stateAProject = resolveHousingProjectForState(world, STATE_A_ID);
+  const stateCProject = resolveHousingProjectForState(world, STATE_C_ID);
+  if (stateCProject === null) {
+    throw new Error("State C must have an actual Housing project before the response.");
+  }
+  if (
+    stateAProject === null ||
+    stateCProject.status !== "ACTIVE" ||
+    stateCProject.completedWorkUnits <= 0 ||
+    stateAProject.completedWorkUnits <= stateCProject.completedWorkUnits
+  ) {
+    throw new Error("The supported uneven implementation condition does not yet exist.");
+  }
+
+  return { program, stateCRelationship };
+};
+
+export const isHousingImplementationResponseEligible = (world: WorldState): boolean => {
+  try {
+    requireHousingImplementationResponseEligibility(world);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Resolves exactly one bounded player-selected administrative response. A
+ * deployment ends at a canonical administrative/intergovernmental input;
+ * neither branch passes any input to Housing in Commit 14.
+ */
+export const resolveHousingImplementationResponse = (
+  world: WorldState,
+  action: HousingImplementationResponseAction,
+): WorldState => {
+  if (action !== "DEPLOY_SUPPORT_TO_C" && action !== "PRESERVE_SUPPORT_RESERVE") {
+    throw new Error(`Unsupported housing implementation response: ${String(action)}.`);
+  }
+
+  const { program, stateCRelationship } = requireHousingImplementationResponseEligibility(world);
+  const targetStateJurisdictionId = action === "DEPLOY_SUPPORT_TO_C" ? STATE_C_ID : null;
+
+  if (
+    action === "DEPLOY_SUPPORT_TO_C" &&
+    availableHousingImplementationSupportUnits(world.governance.housingImplementationSupport) < 1
+  ) {
+    throw new Error("No federal housing implementation support remains available.");
+  }
+
+  const decision = createHousingImplementationResponseDecision(
+    program.id,
+    action,
+    targetStateJurisdictionId,
+    world.time.current,
+  );
+  const housingImplementationSupport =
+    action === "DEPLOY_SUPPORT_TO_C"
+      ? commitHousingImplementationSupport(
+          world.governance.housingImplementationSupport,
+          program.id,
+          stateCRelationship.id,
+          STATE_C_ID,
+          1,
+          world.time.current,
+        )
+      : world.governance.housingImplementationSupport;
+
+  const historyWithDecision = appendOccurrence(world.history, {
+    type: "HousingImplementationResponseResolved",
+    decisionId: decision.id,
+    programId: program.id,
+    action,
+    targetStateJurisdictionId,
+    at: world.time.current,
+  });
+  const deployment =
+    action === "DEPLOY_SUPPORT_TO_C"
+      ? housingImplementationSupport.deployments[
+          housingImplementationSupport.deployments.length - 1
+        ]
+      : null;
+
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      housingImplementationSupport,
+      housingImplementationResponseDecision: decision,
+    },
+    history:
+      deployment === null
+        ? historyWithDecision
+        : appendOccurrence(historyWithDecision, {
+            type: "HousingImplementationSupportDeployed",
+            deploymentId: deployment.id,
+            programId: deployment.federalProgramId,
+            relationshipId: deployment.relationshipId,
+            stateJurisdictionId: deployment.stateJurisdictionId,
+            supportUnits: deployment.supportUnits,
+            at: deployment.deployedAtSimulationTime,
+          }),
   };
 };
