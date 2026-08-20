@@ -1,3 +1,5 @@
+import { createInitialGovernanceState, type GovernanceState } from "./governance";
+
 export type SimulationInstant = number;
 
 export interface TimeState {
@@ -12,6 +14,7 @@ export interface BootstrapTransitionState {
 export interface WorldState {
   readonly time: TimeState;
   readonly bootstrapTransition: BootstrapTransitionState;
+  readonly governance: GovernanceState;
 }
 
 const BOOTSTRAP_BOUNDARY: SimulationInstant = 1;
@@ -22,6 +25,7 @@ export const createDeterministicWorldFixture = (): WorldState => ({
     boundaryAt: BOOTSTRAP_BOUNDARY,
     resolved: false,
   },
+  governance: createInitialGovernanceState(),
 });
 
 const assertValidTarget = (world: WorldState, target: SimulationInstant): void => {
@@ -42,6 +46,7 @@ export const advanceWorldTo = (
     target >= world.bootstrapTransition.boundaryAt;
 
   return {
+    ...world,
     time: { current: target },
     bootstrapTransition: resolvesBootstrapBoundary
       ? { ...world.bootstrapTransition, resolved: true }
