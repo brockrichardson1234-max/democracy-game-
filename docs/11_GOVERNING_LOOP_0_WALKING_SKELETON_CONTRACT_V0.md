@@ -178,16 +178,19 @@ executive attempts disputed housing-funds redirection or equivalent supported ac
 → claimed legal basis recorded
 → state/other party challenges
 → legal contest admitted under fixture rule
-→ temporary scoped order issued or denied
-→ target agency/institution responds
+→ temporary scoped order is issued on at least one forced/reproducible hostile path
+→ target agency/institution receives the operative order
+→ target response/compliance is independently resolved
 → executive may comply/back down/appeal through supported choice
 ```
 
-This route exists to prove:
+The same judicial procedure may also be capable of denying interim relief on another supported path. Denial does not substitute for the required issued-order proof.
+
+The required issued-order path exists to prove:
 
 - attemptability != legality;
 - claim != legal truth;
-- order != compliance;
+- operative order != automatic compliance;
 - legal state != material history;
 - player executive != judiciary.
 
@@ -195,7 +198,7 @@ It must remain small. No full appellate court system is required.
 
 ### Candidate hard invariant WS-06
 
-**The contested-authority route must traverse the accepted legal/actor/compliance boundaries without special-case debug commands or a second court engine.**
+**The contested-authority skeleton must include at least one reproducible path in which a temporary scoped order is actually issued, received by the target institution, and followed by an independently resolved target response. The court may support denial on other paths, but denial cannot replace the operative-order/compliance proof. No special-case debug command or second court engine may bypass the accepted legal/actor/compliance boundaries.**
 
 ## 10. Required election route
 
@@ -268,7 +271,7 @@ The skeleton must also contain at least one same-timestamp or tightly adjacent d
 
 ## 13. Required hostile outcome family
 
-The executable proof need not make every path polished gameplay, but Architecture V0 is not implementation-ready unless the fixture can legitimately produce or force-test:
+The executable proof need not make every path polished gameplay, but the eventual skeleton must be able to legitimately produce or force-test:
 
 1. bill failure;
 2. compromise passage;
@@ -281,7 +284,7 @@ The executable proof need not make every path polished gameplay, but Architectur
 9. material success with substantial misattribution/little incumbent credit;
 10. messaging advantage before delivery;
 11. ordinary electoral defeat + world-persistent succession;
-12. contested-authority attempt + scoped legal response;
+12. contested-authority attempt + an actually issued scoped order + independently resolved target response;
 13. save/load/chunk-equivalent deterministic continuation;
 14. same-time dependency/tie-break determinism.
 
@@ -310,7 +313,7 @@ Debug/audit views may expose canonical truth for tests but are not player knowle
 
 ## 15. What the skeleton must not build
 
-Commit-5 implementation planning must not require:
+Future implementation planning for this contract must not require:
 
 - all 50 states;
 - real current politicians/data;
@@ -328,25 +331,27 @@ Commit-5 implementation planning must not require:
 
 ## 16. Architecture-to-implementation handoff rule
 
-Commit 5 remains architecture/specification.
+Commit 5 remains architecture/specification and freezes the walking-skeleton proof target. It does **not** authorize runtime implementation.
 
-Runtime implementation may begin only after adversarial review accepts the Commit-5 candidate at the requested severity threshold.
+After Commit 5 is accepted, the previously planned bounded whole-architecture audit stage still occurs, followed by the planned single consolidated architecture repair/acceptance gate if findings require it. Only after those gates close is the architecture marked `READY FOR WALKING SKELETON` and first runtime code authorized.
 
-The first implementation slice must target this skeleton rather than building generic engine infrastructure disconnected from the proof.
+Commit 5 does not design those later audit/repair commits; it only preserves their place in the process.
+
+When implementation is eventually authorized, the first implementation slice must target this skeleton rather than building generic engine infrastructure disconnected from the proof.
 
 ### Candidate hard invariant WS-11
 
-**The first runtime implementation is judged by the GL0 causal proof, not by subsystem completeness. Infrastructure that does not serve an accepted skeleton requirement is not justified merely because it may be useful later.**
+**Commit-5 acceptance freezes the GL0 walking-skeleton contract but does not itself authorize code. Runtime begins only after the planned bounded whole-architecture audits and consolidated repair/acceptance gate close. Once authorized, the first runtime implementation is judged by the GL0 causal proof rather than subsystem completeness.**
 
 ## 17. Commit-5 review questions for this document
 
-1. Is the skeleton minimal enough to implement while still traversing every accepted GL0 ownership seam?
+1. Is the skeleton minimal enough to implement later while still traversing every accepted GL0 ownership seam?
 2. Does the normal route contain a real post-enactment decision?
 3. Can the three state fixtures prove federalism without full state-government breadth?
-4. Does the legal-contest route remain narrow but causally real?
+4. Does the legal-contest route force at least one operative-order/compliance proof while remaining narrow?
 5. Can the election defeat/succession route prove persistence without designing post-defeat gameplay?
 6. Are hostile outcome cases reproducible without story-specific ownership shortcuts?
 7. Are deterministic time/randomness/save-load requirements testable?
-8. Does the implementation handoff prevent architecture-first infrastructure sprawl?
+8. Does the handoff preserve the planned whole-architecture audit and consolidated repair gates before code?
 
 No runtime code is authorized by this document itself.

@@ -20,18 +20,19 @@ This document preserves accepted Commits 1–4:
 
 - one mutable canonical fact has one semantic owner;
 - GeographyState owns spatial identity/topology, not people or housing outcomes merely because those are located in geography;
-- PopulationState owns population/residence/demographic/political state;
+- PopulationState owns population/residence/demographic/political state subject to the domain-specific ownership clarification in `07`;
 - legal order owns legally operative requirements;
 - administration owns program workflow/determinations/capacity;
 - fiscal owners own authority, obligation, and payment state;
 - Housing owns construction, stock, and affordability/material pressure;
+- immutable committed occurrence facts remain owned by `HistoricalRecord` under D-037;
 - measurement/reporting are observations/artifacts, not housing truth;
 - time advancement must preserve material latency and intermediate causal boundaries;
 - stochastic material outcomes, where supported, obey Commit-4 deterministic causal-randomness semantics.
 
 ## 3. Housing material ownership
 
-For GL0, the housing domain may own canonical facts such as:
+For GL0, the housing domain may own canonical current facts such as:
 
 - regional housing stock relevant to the model;
 - occupied/vacant or equivalent utilization state where required;
@@ -41,14 +42,24 @@ For GL0, the housing domain may own canonical facts such as:
 - completed new units or equivalent stock additions;
 - rent/affordability or a bounded affordability-pressure representation;
 - materially relevant regional differences;
-- material project failure/delay/completion state;
-- material history/occurrences produced by housing processes.
+- current material project failure/delay/completion state.
+
+Housing processes may generate immutable occurrence records such as:
+
+```text
+ProjectStarted(...)
+ProjectDelayed(...)
+ProjectCompleted(...)
+HousingStockChanged(...)
+```
+
+The immutable fact that those occurrences happened belongs to the accepted historical-record owner. Housing does not maintain a second authoritative material-history store.
 
 Exact runtime classes and formulas remain deferred.
 
 ### Candidate hard invariant H-01
 
-**HousingState owns the material housing facts used by GL0. Legal sources, appropriations, grants, administrative records, projections, reports, and political claims may reference or causally influence those facts but may not shadow-own or directly overwrite them.**
+**HousingState owns current material housing facts used by GL0. Housing processes may generate immutable occurrence records under the accepted HistoricalRecord doctrine, but Housing does not own a parallel immutable history. Legal sources, appropriations, grants, administrative records, projections, reports, and political claims may reference or causally influence housing facts but may not shadow-own or directly overwrite them.**
 
 ## 4. Administrative project versus material project
 
@@ -334,11 +345,19 @@ ProjectAdminRecord.status = COMPLETE
 
 as proof that physical construction completed.
 
+Rejected:
+
+```text
+Housing.materialHistory = authoritativeOccurrenceStore
+```
+
+when immutable committed occurrences are owned by the accepted historical-record owner.
+
 ## 16. Commit-5 review questions for this document
 
-Review should ask only whether the first material domain is closed enough to implement the GL0 skeleton:
+Review should ask only whether the first material domain is closed enough for the GL0 skeleton contract:
 
-1. Does Housing own all material housing truth without absorbing population/geography/program/fiscal/political state?
+1. Does Housing own all current material housing truth without absorbing population/geography/program/fiscal/political state or immutable occurrence history?
 2. Are administrative projects and physical projects separated?
 3. Can funding and competent administration still encounter material latency/capacity and weak outcomes?
 4. Can geographic/material heterogeneity create different outcomes under the same program?

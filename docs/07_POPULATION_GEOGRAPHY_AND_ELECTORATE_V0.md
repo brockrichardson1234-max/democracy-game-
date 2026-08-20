@@ -1,6 +1,6 @@
 # 07 — Population, Geography, and Electorate V0
 
-Status: **Commit-4 architecture candidate for review. Not implementation authority.**
+Status: **Commit-4 architecture candidate for review; clarified by downstream Commit-5 second-domain probe. Not implementation authority.**
 
 ## 1. Purpose
 
@@ -22,10 +22,11 @@ This document must preserve the accepted architecture, especially:
 
 - every mutable canonical fact has one semantic owner;
 - geography owns spatial identity/boundaries/topology, not people;
-- population owns population weight, residence linkage, demographic state, and ordinary-population political state;
+- population owns population identity/weight, residence linkage, core represented demographic state assigned to PopulationState, and ordinary-population political state;
+- domain-specific material facts associated with ordinary population may remain owned by their material domain rather than being duplicated into PopulationState merely because another process uses them for eligibility or analysis;
 - jurisdictions may reference territory but do not own geography or population;
 - electoral boundaries reference geography;
-- electorates are derived from population + electoral boundaries + applicable eligibility rules;
+- electorates are derived from population + electoral boundaries + applicable eligibility rules + any other relevant canonical facts from their actual owners;
 - ordinary population remains aggregate/correlation-preserving rather than one simulated object per citizen;
 - individual political actors from Commit 3 remain distinct from ordinary population aggregates;
 - material housing truth remains owned by the housing domain;
@@ -33,29 +34,51 @@ This document must preserve the accepted architecture, especially:
 - elections do not own current office assignment;
 - resolution may deepen by refining an existing owner rather than creating a second authoritative population.
 
-Where any shorthand in this document conflicts with accepted Commit-1–3 ownership, the earlier accepted ownership rule controls.
+Where any shorthand in this document conflicts with accepted Commit-1–3 ownership, the earlier accepted ownership rule controls. The Commit-5 second-domain probe demonstrated one direct ambiguity in the phrase “eligibility-relevant attributes”; the clarification below narrows that phrase without changing the one-population rule.
 
 ## 3. PopulationState owns one ordinary population
 
-`PopulationState` is the canonical owner of ordinary-population state used by GL0.
+`PopulationState` is the canonical owner of ordinary-population identity/state used by GL0.
 
 At the supported resolution it must be able to represent, directly or by an equivalent correlation-preserving structure:
 
 - population weight;
 - residence/location linkage to canonical geography;
-- demographic attributes required by supported causal processes;
-- eligibility-relevant attributes required by supported programs/elections;
+- core demographic attributes assigned to PopulationState and required by supported GL0 causal/electoral processes;
 - baseline political dispositions needed by the GL0 fixture;
 - current population-level beliefs, attribution, salience, preferences, and turnout-relevant state detailed further in `08`;
+- references/joint linkage sufficient to correlate the ordinary population with domain-specific material facts owned elsewhere when supported causal processes require those facts;
 - persistent state needed for the same population to be queried by housing, information, political, and electoral processes without cloning it.
 
-`PopulationState` does not need to model every characteristic of a person.
+`PopulationState` does not need to model every characteristic of a person and does not become the owner of every material fact that can be associated with a person or population unit.
 
-A variable exists only when GL0 or a demonstrated future-deepening seam needs it.
+Examples of future domain-specific facts that may remain outside PopulationState include employment status, earnings/income, health condition, educational attainment, or other material-domain facts when a future accepted domain owns them.
+
+A variable exists only when GL0 or a demonstrated future-deepening seam needs it, and its semantic owner follows what the fact **is**, not merely which rule reads it.
 
 ### Candidate hard invariant PG-01
 
-**There is one canonical ordinary population. Housing, electoral, information, program, geographic, and UI systems may reference, query, measure, or project that population, but they may not maintain separately mutable copies of the same people or population facts.**
+**There is one canonical ordinary population identity/weight/residence/political representation. Housing, labor/income, health, electoral, information, program, geographic, and UI systems may reference, associate facts with, query, measure, or project that population, but they may not maintain separately mutable copies of the same people or the same canonical facts. The one-population rule does not make PopulationState a god object that owns every domain-specific material attribute associated with those people.**
+
+### 3.1 Eligibility does not determine ownership
+
+A fact does not move into PopulationState merely because an eligibility rule, program, election, forecast, or administrative determination needs to inspect it.
+
+Conceptually:
+
+```text
+PopulationState-owned facts
++ domain-specific facts from their actual canonical owners
++ applicable legal/program/electoral rules
+        ↓
+contextual eligibility/determination
+```
+
+For example, age may be a PopulationState-owned demographic fact in the supported representation, while a future employment or earnings fact may remain Labor/Income-domain truth. A benefit determination may read both without duplicating either.
+
+### Candidate hard invariant PG-01A
+
+**Eligibility is a consumer of canonical facts, not an ownership category. Domain-specific material facts remain with their semantic owner even when program/election eligibility reads them; PopulationState owns only the population facts assigned to its own semantic domain.**
 
 ## 4. Aggregate representation must preserve relevant correlations
 
@@ -80,7 +103,8 @@ For GL0, that includes enough joint structure that the simulation can distinguis
 - where people live;
 - whether they are exposed to housing pressure or housing improvement;
 - baseline partisan/political disposition;
-- relevant demographic/eligibility attributes;
+- relevant demographic facts owned by PopulationState;
+- relevant domain-specific material facts referenced from their actual owners where a supported process needs the joint relationship;
 - information exposure where differentiated;
 - belief/attribution/salience state;
 - turnout tendency/eligibility.
@@ -100,7 +124,7 @@ unless independence is an explicit supported modeling assumption for that fixtur
 
 ### Candidate hard invariant PG-02
 
-**Ordinary population is aggregate but correlation-preserving for the variables that affect supported causal outcomes. Aggregation may compress identity; it may not erase joint structure that GL0 relies on and later recreate it from incompatible marginals.**
+**Ordinary population is aggregate but correlation-preserving for the variables that affect supported causal outcomes. Those variables may be owned by PopulationState or another canonical domain; aggregation/joining must preserve the needed joint structure without migrating ownership or recreating it from incompatible marginals.**
 
 ## 5. Population units are not individual political actors
 
@@ -215,15 +239,16 @@ An electorate query may depend on supported inputs such as:
 - election date/time;
 - electoral boundary;
 - residence;
-- age or other eligibility-relevant attributes represented by PopulationState;
+- age or other PopulationState-owned demographic facts where relevant;
+- other eligibility-relevant canonical facts from their actual owners where a supported electoral rule genuinely requires them;
 - applicable legal eligibility rules from the legal/electoral order;
 - registration or other election-process state only if the supported fixture models it.
 
-The legal order owns normative eligibility requirements. PopulationState owns the population attributes those rules inspect. Electoral process state owns election-specific procedural facts.
+The legal order owns normative eligibility requirements. Each canonical domain owns the facts those rules inspect. Electoral process state owns election-specific procedural facts.
 
 ### Candidate hard invariant PG-07
 
-**Electoral eligibility is derived for a contest/time from applicable legal/electoral rules plus canonical population attributes and residence. PopulationState does not own normative election law, and election objects do not shadow-own population attributes.**
+**Electoral eligibility is derived for a contest/time from applicable legal/electoral rules plus relevant canonical facts from their actual owners, including PopulationState residence/demographic facts where applicable. PopulationState does not own normative election law or absorb unrelated material-domain facts merely because eligibility reads them, and election objects do not shadow-own those source facts.**
 
 ## 10. Electorate is a derived projection
 
@@ -231,10 +256,11 @@ The current electorate for a contest is conceptually:
 
 ```text
 DerivedElectorate(contest, time)
-  = PopulationState
+  = canonical ordinary population
     filtered/weighted by
       ElectoralBoundary(contest)
       + applicable eligibility rules
+      + relevant canonical eligibility facts from their owners
       + election-specific qualifying state where supported
 ```
 
@@ -248,11 +274,11 @@ The derived electorate may expose:
 
 Those outputs are projections.
 
-An election process may snapshot/reference the applicable electorate/as-of inputs needed for deterministic resolution and audit. Such a snapshot does not become a second continuously mutable population owner.
+An election process may snapshot/reference the applicable electorate/as-of inputs needed for deterministic resolution and audit. Such a snapshot does not become a second continuously mutable population owner or a new owner of domain-specific facts used in eligibility.
 
 ### Candidate hard invariant PG-08
 
-**An electorate is derived from canonical population, electoral geography, and applicable eligibility/election state. A district, contest, or election may store references or an auditable as-of snapshot, but may not maintain a second authoritative population that evolves independently.**
+**An electorate is derived from canonical population identity/state, electoral geography, applicable eligibility law, and any other relevant canonical facts from their actual owners. A district, contest, or election may store references or an auditable as-of snapshot, but may not maintain a second authoritative population or shadow copies of source-domain facts that evolve independently.**
 
 ## 11. Election participation is not identical to electorate membership
 
@@ -336,11 +362,11 @@ A direct internal query may be exact only when the institution legitimately has 
 
 Otherwise the actor receives an information artifact/measurement/projection with provenance and uncertainty under `08`.
 
-A politician does not gain omniscient access to PopulationState because their office represents a constituency.
+A politician does not gain omniscient access to PopulationState or other source domains because their office represents a constituency.
 
 ### Candidate hard invariant PG-12
 
-**Representation or jurisdiction over a population does not grant omniscient access to population truth. Actor/institution knowledge remains governed by information provenance/access even when electorate composition is derivable by the simulation.**
+**Representation or jurisdiction over a population does not grant omniscient access to population or material-domain truth. Actor/institution knowledge remains governed by information provenance/access even when electorate composition is derivable by the simulation.**
 
 ## 15. Resolution deepening
 
@@ -355,13 +381,15 @@ Later deepening may increase:
 - migration/mobility detail;
 - election-detail representation.
 
-Deepening must refine PopulationState/GeographyState/electoral projections rather than introduce a second “real people” owner.
+Future material domains may also deepen facts linked to the same population without migrating those facts into PopulationState.
+
+Deepening must refine PopulationState/GeographyState/electoral projections and each relevant material owner rather than introduce a second “real people” owner.
 
 If a coarse aggregate must be split, the split must conserve represented population weight and preserve/reconstruct supported joint state according to explicit rules rather than silently duplicating people.
 
 ### Candidate hard invariant PG-13
 
-**Population/geography resolution may deepen, but refinement must conserve canonical identity/weight semantics and preserve the one-owner doctrine. Coarse and fine representations may not simultaneously compete as authoritative populations.**
+**Population/geography resolution may deepen, but refinement must conserve represented population weight and supported joint/reference semantics while preserving the one-owner doctrine. Coarse and fine representations may not simultaneously compete as authoritative populations, and domain-specific material facts do not migrate into PopulationState merely because population resolution deepens.**
 
 ## 16. Minimum GL0 population/electorate fixture
 
@@ -404,6 +432,22 @@ when ordinary population already owns those people.
 Rejected:
 
 ```text
+PopulationState.employment = copiedLaborDomainEmployment
+```
+
+merely because a program eligibility rule reads employment.
+
+Rejected:
+
+```text
+PopulationState.income = copiedIncomeDomainFact
+```
+
+when a future material domain already owns that canonical fact.
+
+Rejected:
+
+```text
 HousingRegion.approval
 ```
 
@@ -425,17 +469,17 @@ PartyShare * RenterShare * AgeShare
 
 as a generic reconstruction of joint population state without an explicit independence assumption.
 
-## 18. Commit-4 review questions for this document
+## 18. Commit-4/5 clarification review questions for this document
 
-Review should ask only whether the population/geography/electorate side is closed enough for GL0:
+Review of the narrow downstream clarification should ask:
 
 1. Is one canonical ordinary population preserved across material, information, and electoral uses?
 2. Is the aggregate representation required to preserve causally relevant correlations without prematurely freezing an implementation?
 3. Are geography, residence, electoral boundaries, and electorates separated by ownership?
-4. Is eligibility derived from legal/electoral rules plus population facts rather than stored as universal voter identity?
+4. Does eligibility read facts from their actual canonical owners instead of turning PopulationState into a society-state god object?
 5. Are electorate membership, turnout disposition, actual participation, and election result distinct?
 6. Can baseline politics coexist with dynamically simulated housing politics in one population political owner?
 7. Does material experience influence population without allowing HousingState to own political response?
-8. Can later resolution deepen without population ownership migration?
+8. Can later resolution/material-domain depth increase without population ownership migration or duplicate people?
 
-No population implementation and no Commit-5 design is authorized by this document.
+No population implementation is authorized by this clarification.
