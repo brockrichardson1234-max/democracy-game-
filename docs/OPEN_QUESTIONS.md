@@ -1,197 +1,187 @@
 # Open Questions
 
-Status: **Commit-1 open-question register for review.**
+Status: **Current deferred-question register synchronized for the Commit-7 final Architecture V0 candidate.**
 
-Questions are categorized so this file does not become a graveyard. Every item states whether it blocks the next architecture commit.
+This file tracks genuinely deferred product, implementation, tuning, or presentation questions. It is not normative architecture authority. Exact-SHA review authority and the owning numbered architecture documents control.
 
-## OQ-001 — Exact post-defeat continuation
+A question marked **ARCHITECTURE RESOLVED** means Architecture V0 has fixed the ownership/causal boundary but implementation details may remain open. A question marked **OPEN** is intentionally deferred and does not block final Commit-7 findings-only acceptance unless stated otherwise.
 
-**Question:** After the player's administration loses office in GL0, how far does the simulation continue before the proof ends?
+## OQ-001 — Exact post-defeat continuation length
 
-**Why it matters:** Must prove inherited state without prematurely designing opposition/successor gameplay.
+**Status:** PARTIALLY RESOLVED / OPEN implementation-product detail.
 
-**Blocks Commit 2?** No.
+**Architecture resolved:** The walking skeleton must continue far enough after ordinary succession to prove inherited world state/process continuity. `ControlBinding` termination is separate from world simulation.
 
-**Decision deadline:** Before walking-skeleton acceptance criteria are frozen.
+**Still open:** How much post-transfer time the proof runs and what the final product lets the user do afterward.
 
-**Evidence needed:** Player-agency/legibility review and skeleton pacing.
-
-**Reserved seam:** Player control binding terminates independently from world simulation.
+**Decision deadline:** During walking-skeleton acceptance/pacing work.
 
 ## OQ-002 — Final playable role after GL0
 
-**Question:** In the eventual product, can the user continue as opposition, another officeholder, a successor administration, a party, or spectator/history after leaving office?
+**Status:** OPEN product decision.
 
-**Why it matters:** Major product identity choice, but not required to prove one executive term.
+**Question:** After losing the GL0 executive office in the eventual product, can the user continue as opposition, another officeholder, successor administration, party, or spectator/history?
 
-**Blocks Commit 2?** No.
+**Architecture seam already reserved:** Player control is a transferable non-canonical binding over supported decision surfaces.
 
-**Decision deadline:** Before post-GL0 campaign/progression design.
+**Decision deadline:** Before post-GL0 campaign/progression design, not before the first skeleton.
 
-**Evidence needed:** Human play after a functioning first term.
+## OQ-003 — Real, historical, or fictionalized U.S. content
 
-**Reserved seam:** Player control binding is not canonical political state.
+**Status:** OPEN content/product decision.
 
-## OQ-003 — Exact U.S. versus fictionalized first playable content
+**Question:** Should the first commercial configuration use current real-world names/data, a historical start, or fictionalized U.S.-like content?
 
-**Question:** Should the first commercial playable configuration use current real-world U.S. names/data, a historically anchored U.S. start, or a deliberately fictionalized U.S. political scenario?
+**Architecture resolved:** The United States is configuration, not engine ontology.
 
-**Why it matters:** Research burden, legal/political content expectations, balance, replayability, and freshness.
+**Decision deadline:** Before production content population/external positioning.
 
-**Blocks Commit 2?** No. Architecture treats U.S. as configuration.
+## OQ-004 — Exact simulation time unit and player-facing cadence
 
-**Decision deadline:** Before production content population.
+**Status:** ARCHITECTURE RESOLVED / OPEN implementation-playtest detail.
 
-**Evidence needed:** Product positioning and research plan.
+**Architecture resolved:** Time advancement is boundary-aware, deterministic, independent of wall-clock/UI stepping, supports decision interruption, deterministic randomness, and save/load equivalence. Domain temporal meaning remains owner-held.
 
-## OQ-004 — Exact term/time granularity
+**Still open:** Whether the player primarily advances days, weeks, months, or “until next meaningful choice,” and the exact numerical integration cadence used internally.
 
-**Question:** What simulation time unit and player-facing advancement cadence best supports legislation, administration, material latency, reporting, and elections?
+**Decision deadline:** Walking-skeleton implementation/playtest.
 
-**Why it matters:** Wrong temporal semantics can create order exploits or passive waiting.
+## OQ-005 — Exact legislative fixture count/stages
 
-**Blocks Commit 2?** No.
+**Status:** BOUNDED / OPEN tuning detail.
 
-**Decision deadline:** Commit 4 / transition-contract review.
+**Architecture resolved:** Votes remain individual actor actions; blocs/templates cannot directly cast vote totals; the skeleton needs proposal, amendment/bargaining, passage/failure paths. `11` identifies roughly 9–15 causally discrete legislators as a suitable V0 shape rather than a universal rule.
 
-**Evidence needed:** Causal cases and walking-skeleton performance/legibility.
+**Still open:** Exact count, chamber arrangement, thresholds, and fixture values within accepted procedure semantics.
 
-**Reserved seam:** Scheduled effective boundaries and deterministic processes must not depend on wall-clock/UI cadence.
-
-## OQ-005 — Legislative fixture detail
-
-**Question:** How many individual legislators/blocs and which procedural stages should the walking skeleton contain?
-
-**Why it matters:** Must prove discrete political actors and bargaining without building Congress breadth too early.
-
-**Blocks Commit 2?** No.
-
-**Decision deadline:** Commit 3 / walking-skeleton specification.
-
-**Evidence needed:** Political-actors contract and player-agency audit.
+**Decision deadline:** Before/within the first executable legislative slice.
 
 ## OQ-006 — Negotiation interaction grammar
 
-**Question:** How does the player actually bargain with legislators/coalitions: provision edits, commitments, agenda trades, conversations, strategic offers, or some combination?
+**Status:** OPEN interaction-design decision.
 
-**Why it matters:** This could determine whether politics feels like governing or like filling support bars.
+**Question:** How does the player actually bargain—provision edits, commitments, agenda trades, conversations, strategic offers, or some combination?
 
-**Blocks Commit 2?** No.
+**Architecture resolved:** Actors retain independent decision authority; commitments/relationships, proposals/amendments, public claims, and forecasts have distinct owners. The skeleton may use developer controls to prove causality.
 
-**Decision deadline:** Before real GL0 UI implementation; skeleton may use developer controls.
+**Decision deadline:** Before production-quality GL0 political interaction UI; not required before causal skeleton implementation.
 
-**Evidence needed:** Playable prototype comparison.
+## OQ-007 — Exact Housing formulas and tuning
 
-**Reserved seam:** Political actors retain independent decision authority; proposal provisions and commitments can change without direct vote control.
+**Status:** ARCHITECTURE RESOLVED / OPEN domain-implementation detail.
 
-## OQ-007 — Housing material-model depth
+**Architecture resolved:** `10` bounds Housing to regional stock/utilization-pressure, construction pipeline/material capacity, demand inputs, affordability response, forecast divergence, and measurement seams without making it a universal economy.
 
-**Question:** What minimum housing state is required to causally connect grants and projects to affordability without simulating the entire U.S. housing market?
+**Still open:** Exact equations, coefficients, numerical representation, project throughput, demand/pressure formula, and balance values.
 
-**Why it matters:** Housing can swallow the project if overmodeled, or become a fake modifier if undermodeled.
-
-**Blocks Commit 2?** No.
-
-**Decision deadline:** Before walking-skeleton material-domain implementation.
-
-**Evidence needed:** Causality audit and second-domain comparison.
-
-**Current candidate:** regional housing stock, demand/households, vacancy/utilization pressure, construction pipeline/capacity, income-relative affordability pressure.
+**Decision deadline:** Housing walking-skeleton implementation/validation.
 
 ## OQ-008 — State fixture count and variance
 
-**Question:** How many synthetic state fixtures are enough for the walking skeleton, and which structural differences matter?
+**Status:** ARCHITECTURE RESOLVED for GL0.
 
-**Why it matters:** Must prove cooperation/refusal/capacity and reusable jurisdiction primitives without content bloat.
+**Decision:** The skeleton uses three synthetic state-response contexts: willing/capable; refusal/nonparticipation; participating but weak delivery/capacity.
 
-**Blocks Commit 2?** No.
+**Still open:** Exact names, political values, capacity numbers, and fixture-specific legislative details.
 
-**Decision deadline:** Commit 3 / skeleton spec.
+**Decision deadline:** Skeleton content fixture creation.
 
-**Evidence needed:** Federalism and extensibility audit.
+## OQ-009 — Exact uncertainty/polling/measurement formulas and presentation
 
-**Current candidate:** three states — one willing/capable, one refusing, one participating but capacity-constrained; at least one structurally different legislature in architecture tests.
+**Status:** ARCHITECTURE RESOLVED / OPEN implementation-presentation detail.
 
-## OQ-009 — Exact knowledge/polling uncertainty model
+**Architecture resolved:** Measurement process state, as-of/release/exposure separation, artifacts, access, bounded knowledge, belief, attribution, salience, preference, turnout, polling, revisions, and deterministic causal randomness have distinct semantics.
 
-**Question:** How are uncertainty, polling error, staff estimates, and measurement revisions represented to the player?
+**Still open:** Error distributions, sample sizes, uncertainty display, staff-assessment presentation, and tuning.
 
-**Why it matters:** The player must reason under uncertainty without being blind or receiving debug truth.
+**Decision deadline:** Information/election skeleton implementation and player-legibility testing.
 
-**Blocks Commit 2?** No.
+## OQ-010 — Aggregate population implementation representation
 
-**Decision deadline:** Commit 4 and player-legibility audit.
+**Status:** OPEN implementation benchmark.
 
-**Evidence needed:** Information contract + skeleton UI proof.
+**Question:** Weighted synthetic particles, sparse joint distributions, hybrid, or another correlation-preserving representation?
 
-## OQ-010 — Electorate implementation representation
+**Architecture resolved:** One canonical aggregate population, one-owner facts, correlation preservation, single-owner cross-domain subject associations, deterministic refinement semantics, and derived electorates.
 
-**Question:** Weighted synthetic particles, sparse joint distributions, or hybrid?
+**Evidence needed:** Determinism, performance, explainability, refinement correctness, joint-correlation tests, and ease of cross-domain joins.
 
-**Why it matters:** Correlation, memory, performance, explainability, and geographic aggregation.
-
-**Blocks Commit 2?** No. The semantic requirement is intentionally implementation-open.
-
-**Decision deadline:** Walking-skeleton population implementation benchmark.
-
-**Evidence needed:** Determinism, performance, explainability, and correlation tests.
+**Decision deadline:** Before/early in population walking-skeleton implementation.
 
 ## OQ-011 — Authoritarian/anti-democratic playable breadth
 
-**Question:** Which democratic-erosion and authoritarian strategies become actual player capabilities, and at what development stage?
+**Status:** OPEN later product/architecture extension.
 
-**Why it matters:** Potentially core to the long-term political simulation but large enough to distort GL0 if implemented now.
+**Question:** Which democratic-erosion or authoritarian strategies eventually become actual player capabilities?
 
-**Blocks Commit 2?** No.
+**Architecture seams already reserved:** contested authority, actor-specific compliance, persistent legal history, elections/office assignments, information, institutional response, and derived regime classification.
 
-**Decision deadline:** After normal democratic governing loop and contested-authority skeleton route work.
-
-**Evidence needed:** Architecture stress tests plus product design.
-
-**Reserved seam:** contested authority, actor-specific compliance, persistent constitutional/legal history, elections/office assignment, information, and institutional response.
+**Decision deadline:** After the normal democratic governing loop and contested-authority skeleton are working.
 
 ## OQ-012 — Court/judiciary resolution depth
 
-**Question:** What minimum legal-contest model should the walking skeleton use?
+**Status:** ARCHITECTURE RESOLVED for GL0 / OPEN later breadth.
 
-**Why it matters:** Needs to prove attempted action versus legal validity and scoped orders without building full litigation.
+**GL0 decision:** One minimal generic judicial institution and one reproducible hostile route in which a temporary scoped order is actually issued, received by a target institution, and followed by independently resolved target response; appeal/back-down seam included. Denial may exist on other paths.
 
-**Blocks Commit 2?** No.
+**Still open:** Real hierarchy breadth, doctrine, appeals depth, remedies breadth, and production legal content.
 
-**Decision deadline:** Commit 3.
+**Decision deadline:** Later content/deepening after the skeleton proves the seam.
 
-**Evidence needed:** Judiciary contract and contested-authority route.
+## OQ-013 — Final public-facing national shell
 
-## OQ-013 — Exact public-facing Democracy-like shell
+**Status:** OPEN UI/product decision.
 
-**Question:** Which national dashboard/navigation conventions survive once canonical architecture is known?
+**Question:** Which dashboard/navigation conventions survive once the causal skeleton is playable?
 
-**Why it matters:** Accessibility and familiarity matter, but UI must adapt to the real ontology rather than own it.
+**Architecture resolved:** UI/dashboard concepts are projections/navigation and own no simulation truth. Player-facing knowledge must remain bounded while developer/audit observability may expose canonical truth separately.
 
-**Blocks Commit 2?** No.
+**Decision deadline:** After causal skeleton usability testing, before polished GL0 UI.
 
-**Decision deadline:** Before polished GL0 UI work.
+## OQ-014 — Second-domain probe choice
 
-**Evidence needed:** Player-agency/legibility testing.
+**Status:** RESOLVED for Architecture V0.
 
-## OQ-014 — Second-domain probe
+**Decision:** Use a deliberately shallow unemployment-insurance-like benefit probe to test non-housing ownership seams. It is not a second playable system.
 
-**Question:** Is unemployment insurance the best early generality probe, or should another non-housing domain be used?
+**Result:** The probe exposed and repaired the PopulationState eligibility ambiguity; Commit 7 further repairs the subject-association owner ambiguity found by the whole-architecture audit.
 
-**Why it matters:** Architecture must prove it is not a disguised housing engine.
+## OQ-015 — Product/repository name
 
-**Blocks Commit 2?** No.
-
-**Decision deadline:** Before walking-skeleton architecture acceptance.
-
-**Current candidate:** unemployment insurance because it stresses eligibility, labor-market state, household income, administration, and automatic/rule-driven fiscal flows rather than construction stock.
-
-## OQ-015 — Current game/repo name
+**Status:** OPEN branding decision.
 
 **Question:** What is the actual product/project name?
 
-**Why it matters:** `democracy-game-` is a repository placeholder, not a product identity.
+**Decision deadline:** Before external presentation/branding; does not block the walking skeleton.
 
-**Blocks Commit 2?** No.
+## OQ-016 — Exact post-enactment tradeoff fixture
 
-**Decision deadline:** Before external presentation/branding work.
+**Status:** ARCHITECTURE RESOLVED / OPEN implementation-playtest detail.
+
+**Architecture resolved:** The walking skeleton must contain at least one post-enactment decision with a genuine modeled opportunity cost, scarcity, risk, distributional conflict, timing conflict, or uncertainty. A costless dominant “spend more and improve” choice is insufficient, and this does not authorize recurring micromanagement.
+
+**Still open:** Which accepted constraints create the specific fixture tradeoff, exact option text, values, forecasts, and balance.
+
+**Decision deadline:** Before the walking-skeleton route is accepted.
+
+## OQ-017 — Cross-domain population/material storage representation
+
+**Status:** ARCHITECTURE RESOLVED / OPEN implementation detail.
+
+**Architecture resolved:** Every mutable subject association has one semantic owner. Intrinsic subject association follows the domain-specific fact owner; genuinely independent relationship facts may have one dedicated relationship owner; reverse mappings are non-authoritative.
+
+**Still open:** Storage direction, join/index strategy, weighted-aggregate representation, cache layout, and serialization.
+
+**Decision deadline:** During population/material implementation design, after final Architecture V0 acceptance.
+
+## Current gate note
+
+None of the intentionally open items above authorizes a new preimplementation architecture gate. The current process remains:
+
+```text
+Commit 7 final findings-only acceptance
+→ ARCHITECTURE V0 — READY FOR WALKING SKELETON
+→ Commit 8 first runtime code
+```
+
+A later open question re-enters architecture only if implementation/playtest evidence demonstrates a direct contradiction, unowned required fact, duplicate semantic owner, impossible accepted causal path, or deterministic/persistence defect.

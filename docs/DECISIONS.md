@@ -1,317 +1,352 @@
 # Decisions
 
-Status: **Commit-2 architecture candidate decision log for review.**
+Status: **Current Architecture V0 decision index through accepted Commit 6 plus the Commit-7 consolidated repair candidate.**
 
-This file records decisions already chosen for the current architecture candidate. A later review may revise them in a new commit; this file does not pretend they are eternally immutable.
+This file is a navigation/index surface, **not a competing normative authority**. The exact commit SHA supplied for review and the numbered architecture documents in their owning scope control when wording here is shorter or less specific. Historical decision IDs are retained so prior reviews/audits can continue to reference them.
+
+## Authority note
+
+- `00`–`12` contain the accepted derived Architecture V0 candidate through Commit 5.
+- `13`–`15` are accepted Commit-6 audit evidence/findings, not replacement architecture.
+- `16_COMMIT_7_CONSOLIDATED_ARCHITECTURE_REPAIR_V0.md` is the current narrow repair candidate and supersedes only the three Commit-6 HIGH findings if accepted.
+- No runtime implementation is authorized until Commit 7 passes final findings-only review and the exact accepted SHA is marked `READY FOR WALKING SKELETON`.
 
 ## D-001 — Generic player control binding
 
-**Decision:** A `PlayerSession` may hold a `ControlBinding` over a supported player decision surface grounded in canonical actors, offices, administrations, or institutions. The binding and decision surface are not canonical political world state. Changing a decision source from autonomous selection to player selection does not change the downstream causal semantics of the resulting canonical intent/action.
+**Decision:** `PlayerSession -> ControlBinding -> SupportedDecisionSurface` is session/control state grounded in canonical actors/offices/administrations/institutions. Changing decision source does not change downstream action semantics.
 
-**Why:** Preserves independent world identity, future alternate playable roles, and causal separation between who selects a decision and how the world resolves it.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`.
 
 ## D-002 — Player command semantics
 
-**Decision:** Player commands are institutional intents/attempts submitted through the current supported decision surface. They do not directly mutate material outcomes, votes, beliefs, or other actors' choices.
+**Decision:** Player commands are actor/institution intents or attempted actions; they never directly mutate material outcomes, votes, beliefs, or other actors' choices.
 
-**Why:** Prevents a policy-slider ontology from entering the engine through the command layer.
+**Source:** `00`.
 
-**Current class:** Candidate hard invariant.
+## D-003 — Contested political actions use a four-stage boundary
 
-## D-003 — Contested political actions use a four-stage admission boundary
+**Decision:** Structural validity, actor attemptability, legal/authority validity, and compliance/consequence are distinct. Actor-attemptable unlawful/disputed acts may enter canonical history.
 
-**Decision:** Every player command is conceptually evaluated as: (1) structural validity, (2) actor capability/attemptability, (3) authority/legal validity, and (4) compliance/consequence. Only commands that pass structural validity and actor-attemptability enter canonical political history as player-issued attempts. A meaningful political action may therefore be attempted even when its authority is disputed or potentially unlawful. Legal validity and compliance are world questions. Malformed input or a direct-world mutation that the bound role cannot meaningfully attempt is rejected without creating a political event.
-
-**Why:** Preserves executive overreach, bureaucratic resistance, federal-state conflict, judicial review, constitutional crises, and later democratic erosion without allowing arbitrary debug-style world mutations to masquerade as political acts.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`, `04`, `06`.
 
 ## D-004 — Institutional control is relational
 
-**Decision:** Effective control/compliance is evaluated for a particular actor or institution responding to a particular action under current conditions. No universal `institutionalControl`, `legalAuthority`, `politicalPower`, or `legitimacy` meter is allowed to cause behavior.
+**Decision:** Compliance/control is actor/institution/action/context specific. No universal power/control/legitimacy scalar directly causes behavior.
 
-**Why:** A government may be strong in one institutional relationship and weak in another. Authoritarian drift and normal democratic resistance should emerge from relational state.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`, `04`, `05`, `06`.
 
 ## D-005 — Regime type is derived
 
-**Decision:** Labels such as competitive democracy, illiberal democracy, or authoritarian regime may later summarize underlying state, but cannot cause institutional behavior or transition the world through a regime switch.
+**Decision:** Democracy/authoritarian-style classifications may summarize underlying institutional state later but cannot directly cause transitions.
 
-**Why:** Avoids replacing political causality with a more sophisticated-looking score.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`.
 
 ## D-006 — Player knowledge follows ownership, provenance, and access
 
-**Decision:** The player receives strategically useful information that the bound role can legitimately know or access. Authoritative records and directly controlled institutional acts available to that role may be presented exactly. Hidden voter beliefs, private motivations, future effects, imperfectly measured material state, and inaccessible actor-specific information are not exposed merely because the simulation stores them.
+**Decision:** Legitimately accessible authoritative records may be exact; hidden voter truth, inaccessible private state, future outcomes, and imperfectly measured facts are not exposed merely because the simulation stores them.
 
-**Why:** Preserves uncertainty without creating artificial fog around exact facts the administration truly knows.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`, `08`.
 
 ## D-007 — Election result, office state, and control binding are distinct
 
-**Decision:** Elections produce constitutionally/politically consequential selection results. Legal entitlement to office, office assignment, institutional recognition/compliance, and player-control binding change through applicable world processes rather than through an automatic universal `electionLost -> bindingRemoved` transition. None of these transitions resets the world.
+**Decision:** Election result/certification, entitlement, office assignment, institutional behavior, and `ControlBinding` transition are separate causal facts.
 
-**Why:** Preserves normal democratic succession while leaving legitimate architecture space for certification disputes, judicial orders, refusal, institutional splits, altered rules, or other future contested-authority states.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`, `03`, `07`, `09`.
 
 ## D-008 — GL0 uses an ordinary uncontested defeat/transfer proof
 
-**Decision:** Governing Loop 0 may end active player control after an ordinary uncontested electoral defeat once applicable constitutional/political processes have transferred the executive office, the outgoing administration actually ceases to hold the GL0 decision surface, and successor inheritance has been demonstrated. The final product's continuation model and contested election-transfer gameplay are deferred.
+**Decision:** The required defeat route proves normal succession and persistent world state without defining contested-transfer gameplay or final post-defeat product mode.
 
-**Why:** Lets the first proof demonstrate persistence and correct separation of election result from actual transfer without prematurely designing opposition, successor, or constitutional-crisis gameplay.
+**Source:** `00`, `01`, `11`.
 
-**Current class:** V0 implementation assumption.
+## D-009 — First governing domain is conditional housing construction grants
 
-## D-009 — First governing domain is a conditional housing-construction grant program
+**Decision:** GL0 uses geographically uneven housing affordability and a conditional federal housing-construction grant program as the first causal policy domain.
 
-**Decision:** Governing Loop 0 uses a geographically uneven housing-affordability problem and a conditional federal housing-construction grant program as the first causal domain.
+**Source:** `01`, `10`, `11`.
 
-**Why:** Housing exercises politics, fiscal authority, administration, federalism, implementation latency, physical/material outcomes, measurement lag, attribution, and elections in one bounded mechanism.
+## D-010 — Housing proposal has a few consequential dimensions
 
-**Current class:** V0 scenario decision.
+**Decision:** Proposal design uses a bounded set of real tradeoff dimensions such as matching generosity, eligibility/participation conditions, distribution, administration, reporting/compliance, and project constraints.
 
-## D-010 — Housing design has a few consequential dimensions
-
-**Decision:** The first proposal is shaped by a small number of real tradeoff dimensions such as matching rate, state eligibility/participation conditions, project eligibility requirements, distribution formula, administrative funding, and reporting/enforcement requirements. Exact counts and tuning remain open. GL0 does not require first-class local-government simulation merely because a project may later depend on local eligibility facts.
-
-**Why:** Produces strategic choice while preventing a 100-policy content explosion or a premature municipality/zoning simulation before the loop exists.
-
-**Current class:** V0 scenario decision.
+**Source:** `01`, `11`.
 
 ## D-011 — Federalism appears inside GL0
 
-**Decision:** State participation/refusal/capacity is part of the first complete governing loop rather than a late decorative feature.
+**Decision:** State application/acceptance/refusal/capacity and federal response are part of the first governing loop rather than decorative later breadth.
 
-**Why:** A federal housing grant that bypasses state response would prove the wrong U.S. governing architecture and encourage federalism to be bolted on later.
-
-**Current class:** Candidate architecture requirement.
+**Source:** `01`, `03`, `04`, `11`.
 
 ## D-012 — Walking skeleton uses a synthetic miniature federation
 
-**Decision:** The first runtime proof may use a synthetic federation with a small number of deliberately different state fixtures rather than claiming to simulate all 50 states.
+**Decision:** The first executable proof uses a deliberately small synthetic federation rather than full U.S. content.
 
-**Why:** Allows hostile structural cases with minimal content while testing the same jurisdiction/government semantics intended for the United States configuration.
-
-**Current class:** V0 implementation assumption.
+**Source:** `01`, `11`.
 
 ## D-013 — U.S. is first configuration, not the engine
 
-**Decision:** The eventual first game target is the United States, but generic constitutional/political concepts must not be defined solely as President + House + Senate + Governor special cases.
+**Decision:** Generic political/legal primitives cannot be defined solely as President/House/Senate/Governor special cases.
 
-**Why:** Prevents U.S. content from becoming foundational ontology and makes structural variance testable.
-
-**Current class:** Candidate architecture requirement.
+**Source:** `00`, `04`, `06`.
 
 ## D-014 — Democracy-like shell is presentation only
 
-**Decision:** National dashboards, problems, policies, indicators, causal explanation, elections, and time advancement are player-facing design grammar. They own no simulation state and do not dictate canonical objects.
+**Decision:** Dashboards, policy cards, indicators, elections, causal explanations, and time controls are presentation grammar and own no canonical simulation truth.
 
-**Why:** Preserves accessibility without recreating the ontology of the reference game.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`, `02`, `03`.
 
 ## D-015 — Architecture is derived from Governing Loop 0
 
-**Decision:** The first governing loop is the consumer and authority context for Architecture V0. A new concept must serve the loop or prevent a demonstrated foreseeable rewrite.
+**Decision:** New Architecture V0 concepts must serve the accepted GL0 proof or prevent a demonstrated foreseeable rewrite.
 
-**Why:** Prevents architecture from becoming the product.
+**Source:** `01`, `02`, `12`.
 
-**Current class:** Process invariant for Architecture V0.
+## D-016 — Architecture gates do not authorize runtime code
 
-## D-016 — No runtime implementation in Commit 1
+**Decision:** Commits 1–7 are architecture/review gates. First runtime code begins only in Commit 8 after final Commit-7 acceptance marks Architecture V0 `READY FOR WALKING SKELETON`.
 
-**Decision:** Commit 1 contains game/player/GL0 design only. Architecture ownership, government primitives, population, belief, transition semantics, and runtime code are later bounded commits.
+**Source:** `12`, `16`.
 
-**Why:** Preserves a clean review boundary before derived architecture is written.
+## D-017 — Decision-surface control is not actor ownership or legal authority
 
-**Current class:** Process decision.
+**Decision:** A supported decision surface permits intent selection; it does not make subordinate actors player-owned or make selected actions legally valid.
 
-## D-017 — Decision surface control is not actor ownership or legal authority
-
-**Decision:** A `ControlBinding` grants access to a **supported** player decision surface. It does not make constituent officeholders, appointees, agencies, civil servants, staff, or other personnel player-owned actors, and it does not establish that a selected action is lawful. Routine staff activity may be abstracted where no meaningful independent decision exists, but compliance, resistance, judgment, legally independent choices, and legal validity remain world behavior.
-
-**Why:** Prevents both a hidden player hive mind and the accidental collapse of control permission into constitutional/legal authority.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`, `04`, `05`.
 
 ## D-018 — Housing is not the whole electorate
 
-**Decision:** GL0 may begin with persistent partisan dispositions, candidate/incumbent evaluations, political memories, turnout tendencies, and background issue salience supplied by the fixture. Housing is the first dynamically simulated policy domain, not the sole determinant of electoral preference or turnout.
+**Decision:** Baseline partisan dispositions, candidate/incumbent evaluations, memory, background salience, and turnout tendencies coexist with dynamically simulated housing politics.
 
-**Why:** Prevents the first election model from degenerating into a housing-referendum happiness function while avoiding premature implementation of many additional material policy domains.
-
-**Current class:** Candidate architecture requirement for the GL0 electorate seam.
+**Source:** `01`, `07`, `08`.
 
 ## D-019 — GL0 binds specifically to an executive administration
 
-**Decision:** Governing Loop 0's first supported `ControlBinding` targets an executive-administration strategic decision surface grounded in an administration headed by an officeholder occupying an executive office through an office assignment. This is the GL0 player mode, not the universal player ontology.
+**Decision:** The first player mode binds to an executive-administration strategic surface; this is not the universal definition of the player.
 
-**Why:** Keeps the first game concrete while preserving future role-specific control surfaces without designing career mode now.
-
-**Current class:** V0 player-mode decision.
+**Source:** `00`, `05`.
 
 ## D-020 — Informational succession follows canonical ownership/access
 
-**Decision:** Information artifacts persist across succession according to their canonical owners, provenance, confidentiality, access, and transfer rules. A successor administration does not automatically inherit outgoing private polling, coalition intelligence, staff-only assessments, or other actor-specific knowledge merely because the player-control binding changed.
+**Decision:** Public/institutional/private information persists and transfers according to its owner/provenance/access rules; outgoing private knowledge is not copied wholesale to a successor.
 
-**Why:** Prevents control transfer from functioning like a mind-transfer or global knowledge copy.
-
-**Current class:** Candidate hard invariant.
+**Source:** `00`, `03`, `08`, `11`.
 
 ## D-021 — Competent implementation does not guarantee desired material success
 
-**Decision:** GL0 architecture must support a route where law is valid, funding is adequate, participating institutions comply and administer competently, yet the material response is weak, mixed, offsetting, or otherwise different from forecast.
+**Decision:** Valid law, adequate funding, compliance, and competent administration may still produce delayed, weak, mixed, offsetting, or otherwise disappointing material outcomes.
 
-**Why:** Separates policy-mechanism uncertainty and material causality from political obstruction or administrative incompetence.
-
-**Current class:** Candidate architecture requirement.
+**Source:** `01`, `10`.
 
 ## D-022 — GL0 requires post-enactment governing agency
 
-**Decision:** An ordinary viable GL0 route must contain at least one strategically meaningful post-enactment governing decision before the election. Proposal design + enactment + passive waiting + election is insufficient.
+**Decision:** At least one strategically meaningful post-enactment decision must occur before the election. Commit 7 further requires a genuine modeled tradeoff rather than a costless dominant implementation option.
 
-**Why:** Prevents a causally correct architecture from producing a passive strategy game once legislation passes.
+**Source:** `01`, `11`, `16`.
 
-**Current class:** Candidate player-experience requirement.
+## D-023 — Every mutable canonical fact has one semantic owner
 
-## D-023 — Every canonical fact has one semantic owner
+**Decision:** Other representations of the same fact must be explicit references, projections, artifacts, indexes, caches, or historical occurrence records.
 
-**Decision:** Every mutable canonical fact has one semantic owner. Other representations of the same underlying fact must be explicit references, projections, in-world artifacts, indexes, caches, or historical records.
-
-**Why:** Prevents hidden duplicate authority and makes causal mutation ownership auditable.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`.
 
 ## D-024 — State is classified by semantic role
 
-**Decision:** Architecture distinguishes canonical current state, canonical historical records, in-world information artifacts, derived projections, session/control state, and rules/content configuration. These categories are semantic and need not map one-to-one to runtime base classes.
+**Decision:** Canonical current state, immutable occurrence history, in-world information artifacts, derived projections, session/control state, and rules/configuration remain distinct semantic roles.
 
-**Why:** Prevents reports, caches, UI models, player session state, or historical records from becoming accidental world truth.
+**Source:** `02`, `03`.
 
-**Current class:** Candidate architecture invariant.
+## D-025 — Geography and ordinary population are independently owned
 
-## D-025 — Geography and population are independently owned
+**Decision:** Geography owns spatial identity/topology; PopulationState owns canonical ordinary-population identity/weight/residence/core represented demographic/political state. Domain-specific material facts associated with that population remain with their material owners.
 
-**Decision:** Geography owns spatial identity/boundaries/topology. Population owns population weight, demographics, and residence linkage. Electoral maps reference geography; electorates are derived from population + geography + eligibility rules. Districts do not own copied people.
-
-**Why:** Allows redistricting and resolution changes without duplicating/moving population into political boundary objects.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `07`, `12`.
 
 ## D-026 — Material domains own material outcomes
 
-**Decision:** Laws, appropriations, programs, and administrative actions may create legitimate inputs into material systems, but the corresponding material domain owns the material response. For GL0, Housing owns construction/stock/affordability outcomes.
+**Decision:** Law/program/fiscal/administrative systems create legitimate inputs; the corresponding material domain owns material response.
 
-**Why:** Prevents policy/program objects from becoming direct material-effect modifiers and preserves competent implementation with uncertain material results.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `10`.
 
 ## D-027 — Cross-domain references preserve identity rather than clone state
 
-**Decision:** A subsystem referring to an entity/fact owned elsewhere stores a reference/relationship to canonical identity rather than a mutable shadow copy of the other subsystem's state.
+**Decision:** Cross-domain consumers reference canonical identity/facts instead of maintaining mutable shadow copies. Commit 7 additionally gives mutable subject associations one canonical owner.
 
-**Why:** Prevents later divergence such as district population versus canonical population or program project state versus physical project state.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `16`.
 
 ## D-028 — Derived projections are read-only
 
-**Decision:** UI metrics, summaries, electorates, forecasts, causal explanations, regime classifications, and other derived projections may be computed/cached but may not mutate canonical source state. Persisting a projection as something actors can later observe creates a provenance-bearing in-world artifact rather than a second owner.
+**Decision:** UI summaries, electorates, forecasts, regime labels, explanations, and other projections cannot mutate canonical source state; persisted projections become provenance-bearing artifacts.
 
-**Why:** Preserves one-way derivation and prevents convenience write-back into summaries/caches.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `08`.
 
 ## D-029 — Information artifacts own information, not their referents
 
-**Decision:** Polls, reports, claims, forecasts, memos, and releases can be canonical in-world artifacts owning their own content/provenance/access/history while remaining non-authoritative about the underlying material/legal/political state they describe.
+**Decision:** Reports, polls, claims, forecasts, memos, and releases own their own content/provenance/access/history, not underlying material/legal/political truth or recipient belief.
 
-**Why:** Allows information to be delayed, uncertain, wrong, revised, private, or politically contested without rewriting world truth.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `08`.
 
 ## D-030 — Historical records and current state are separate owners
 
-**Decision:** Historical records own the fact that an event/decision/transition occurred. Current-state domains own what is true now. Election records, vote records, old polls, grant records, and other history cannot substitute for current authoritative state.
+**Decision:** Immutable occurrence records own that something happened; current-state owners own what is true now.
 
-**Why:** Preserves path-dependent history and future career continuity without making history a mutable current-state store.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `06`, `09`, `10`.
 
 ## D-031 — Scheduling infrastructure is an index, not semantic authority
 
-**Decision:** Domain-owned effective dates, deadlines, obligations, expirations, and scheduled conditions remain authoritative in their owning domains. A future scheduler/event queue may index when they need processing but does not become the owner of their meaning.
+**Decision:** Domain owners retain deadlines/effective dates/expirations/conditions; scheduler/event-queue data is rebuildable indexing machinery.
 
-**Why:** Prevents central scheduling machinery from silently absorbing legal, fiscal, political, or material authority.
-
-**Current class:** Candidate architecture invariant; exact scheduling implementation deferred.
+**Source:** `02`, `03`, `09`.
 
 ## D-032 — Resolution deepens by refining owners
 
-**Decision:** Higher simulation resolution should refine the internal representation of an existing canonical owner where the semantic fact is the same. A low-resolution summary must not later become a second owner competing with a newly detailed system.
+**Decision:** Higher resolution refines existing semantic owners and preserves one-owner/joint-state semantics rather than creating a second authoritative representation.
 
-**Why:** Allows thin GL0 states, population, geography, agencies, information, and material domains to deepen without foundational truth migration.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `07`, `16`.
 
 ## D-033 — Fiscal authority, execution, and outcome are distinct
 
-**Decision:** Legal authorization/appropriation, actual public financial state, obligations, disbursements/expenditures, and material use/outcomes remain semantically distinct facts. Commit 3 will define the internal PoliticalOrder/public-finance primitives that own them.
+**Decision:** Authorization/appropriation, public financial state, obligation, disbursement, administrative state, and material use/outcome are separate facts with separate owners.
 
-**Why:** Prevents “law passed,” “money authorized,” “money spent,” and “program worked” from collapsing into one funded-policy state.
+**Source:** `03`, `04`, `10`.
 
-**Current class:** Candidate hard invariant.
+## D-034 — Applicable legal position is scoped/derived
 
-## D-034 — Applicable legal position is scoped/derived, not one global effect field
+**Decision:** Legal sources/orders own their text/scope/effective state; applicable legal position is derived for actor/action/place/time/context, not held in one global `currentLegalEffect` field.
 
-**Decision:** Legal sources/orders own their own text, scope, authority/procedural state, and effective dates. The applicable legal position for an actor/action/place/time is derived from relevant sources and scoped state. There is no universal `currentLegalEffect` boolean/value that owns legal reality for every context.
-
-**Why:** Preserves contested interpretation, scoped orders, future appeals, and institutional/legal disagreement without designing detailed judiciary procedure in Commit 2.
-
-**Current class:** Candidate hard invariant.
+**Source:** `03`, `04`, `06`, `09`.
 
 ## D-035 — Hypothetical evaluation cannot mutate live truth
 
-**Decision:** Proposal scoring, forecasts, and other “what if” analysis consume an explicit state/snapshot plus hypothetical change and produce a projection/artifact. They may not mutate-and-undo live state or become a parallel authoritative proposed-policy world.
+**Decision:** Forecasts/proposal scoring operate on isolated inputs/snapshots and produce projections/artifacts, never mutate-and-undo live canonical state.
 
-**Why:** Prevents forecast/actual divergence from becoming duplicate truth and keeps player analysis causally separate from world mutation.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `08`.
 
 ## D-036 — Policy is player-facing aggregation, not canonical ownership
 
-**Decision:** “Policy” may be used as player-facing language to aggregate related intent/proposal/legal/fiscal/program/material/information objects. No canonical all-purpose `Policy` owner may directly mutate those domains, and no single mandatory policy pipeline is assumed for every governing action.
+**Decision:** A player-facing policy can navigate related intent/proposal/legal/fiscal/program/material/information objects but cannot become an all-purpose mutation owner or mandatory universal pipeline.
 
-**Why:** Prevents the housing example from becoming a universal policy ontology and leaves room for executive actions, tax changes, automatic programs, appointments, judicial effects, and future domains.
-
-**Current class:** Candidate hard invariant.
+**Source:** `02`, `03`, `12`.
 
 ## D-037 — Historical occurrence history does not own mutable domain state
 
-**Decision:** `HistoricalRecord` owns immutable committed occurrence facts that a consequential event or transition happened. The originating domain retains ownership of mutable current/procedural state such as current certification state, current grant/award status, office assignment, payment state, proposal status, and other live domain facts. A global history index may reference domain occurrence records for chronology/query but may not duplicate or become the mutable owner of those facts.
+**Decision:** `HistoricalRecord` owns immutable committed occurrence facts; originating domains retain mutable current/procedural state. A global chronology/index may reference occurrences but does not become a mutable event-log god object.
 
-**Why:** Prevents `HistoricalRecord` from becoming an event-log god object and removes ambiguity between domain-owned records/state and immutable occurrence history.
-
-**Current class:** Candidate hard invariant.
+**Source:** `03`, `10`.
 
 ## D-038 — Legally operative program requirements remain legal-state truth
 
-**Decision:** Binding program requirements established by constitutions, statutes, regulations, orders, or other legally operative sources remain owned by the constitutional/legal order. Program/administrative state owns lawful operational configuration, workflow, application processing, discretionary parameters within delegated authority, determinations, staffing, and execution state. A concrete eligibility determination may derive from applicable legal requirements + lawful administrative configuration + applicant/project/state facts, but the program may not maintain a separately authoritative mutable copy of the legal rule that binds it.
+**Decision:** Binding program requirements remain LegalOrder truth. Administration owns lawful operational configuration, workflow, determinations, staffing/capacity, and execution—not a shadow copy of law.
 
-**Why:** Prevents statute/regulation requirements from being duplicated into program state and later diverging from the law the program is supposed to administer.
+**Source:** `03`, `04`.
 
-**Current class:** Candidate hard invariant.
+## D-039 — Intergovernmental participation is relational
 
-## D-039 — Intergovernmental participation is relational, not a unilateral state flag
+**Decision:** State intent, federal determinations, and active participation/agreement are separately owned facts; neither side's unilateral flag owns the full relationship.
 
-**Decision:** State application, acceptance of terms, refusal, withdrawal intent, and state-side commitments belong to the relevant state political/administrative owner. Federal eligibility determinations, acceptance, awards, or denials belong to the federal program/administrative owner. The active participation/agreement relationship is derived from or canonically represented by the applicable intergovernmental/program relationship under both sides' authoritative state and governing legal conditions; it is not owned solely by a state `participates=true` flag or a federal summary.
+**Source:** `03`, `04`, `11`.
 
-**Why:** Distinguishes a state's political choice from federal acceptance and from the bilateral relationship that actually authorizes/structures participation.
+## D-040 — Government structure and authority remain fact-split
 
-**Current class:** Candidate hard invariant.
+**Decision:** Jurisdiction, institution, office, office assignment, legal sources, procedure instances, fiscal state, administration, intergovernmental relationships, actors, elections, and judicial contests remain separate semantic owners.
+
+**Source:** `04`.
+
+## D-041 — Normative procedure requirements are legal-order truth
+
+**Decision:** LegalOrder owns normative procedure rules; institutions host/reference procedures and own operational capability; active instances own current proceeding facts; legally available transitions are derived.
+
+**Source:** `04`.
+
+## D-042 — Actor-private state and political relationship state are separately owned
+
+**Decision:** Actors own their own beliefs/evaluations/intentions/choices; canonical affiliations and negotiated commitments/coalitions are owned once by organization/relationship state and may be referenced by actors.
+
+**Source:** `05`.
+
+## D-043 — Operative judicial orders have one legal-order owner
+
+**Decision:** LegalContest owns case/procedure state and references orders. Each operative order has one canonical legal-order owner for text/subjects/scope/effective/status/stay/reversal/supersession/expiration; compliance is separately resolved.
+
+**Source:** `06`, `11`.
+
+## D-044 — Ordinary population is aggregate and correlation-preserving
+
+**Decision:** Ordinary population remains aggregate rather than individual-per-citizen, while preserving the joint structure needed by supported causal/electoral questions. Eligibility consumes canonical facts from their actual owners rather than determining ownership.
+
+**Source:** `07`, `12`.
+
+## D-045 — Lagged measurement has canonical process state
+
+**Decision:** In-progress measurements own captured observations/sample/progress/method/as-of context and committed result; later referent changes cannot silently replace already captured observations.
+
+**Source:** `08`, `09`.
+
+## D-046 — Belief, attribution, salience, preference, turnout, and ballots are distinct
+
+**Decision:** Information/exposure can influence recipient-owned political state, but no report/material outcome directly owns belief/credit/salience/preference/turnout, and no propensity/projection is an actual ballot/result.
+
+**Source:** `07`, `08`.
+
+## D-047 — Time advancement and canonical randomness are deterministic in causal semantics
+
+**Decision:** Same canonical inputs/decisions produce equivalent canonical outcomes independent of UI chunking, wall-clock cadence, incidental same-time iteration order, scheduler reconstruction, save/load boundaries, or global RNG consumption position.
+
+**Source:** `09`, `11`.
+
+## D-048 — Legal temporal scope does not rewrite non-legal occurrence history
+
+**Decision:** Legal effects may be prospective, retrospective, or otherwise bounded according to applicable authority, but retrospective legal effect does not delete prior material/fiscal/administrative/political occurrences; remedies proceed causally through their owners.
+
+**Source:** `09`.
+
+## D-049 — Housing owns current material housing state
+
+**Decision:** Housing owns current stock, pipeline/progress, material capacity/bottlenecks, and affordability/pressure. Administrative approval/funding does not equal physical completion; immutable housing occurrences remain historical-record truth.
+
+**Source:** `10`.
+
+## D-050 — The walking skeleton is a bounded vertical causal proof
+
+**Decision:** The first executable target must traverse politics -> law -> fiscal state -> administration -> federalism -> Housing -> post-enactment agency -> measurement/information -> electorate/election -> succession, plus deterministic hostile routes and an actually issued judicial order with independently resolved target response.
+
+**Source:** `11`.
+
+## D-051 — Cross-domain subject association has one owner
+
+**Decision:** When a domain-specific fact intrinsically describes a population subject, that fact's domain owns the canonical subject association. Reverse lookups are non-authoritative. If the association is itself an independent relationship fact, that relationship has one dedicated owner.
+
+**Why:** Prevents population/material mappings from diverging during aggregate refinement or cross-domain joins.
+
+**Current class:** Commit-7 candidate hard invariant.
+
+**Source:** `16`.
+
+## D-052 — Required post-enactment decision contains a real tradeoff
+
+**Decision:** At least one required post-enactment GL0 choice must involve genuine modeled scarcity, opportunity cost, risk, distributional conflict, timing conflict, or uncertainty using already accepted state; a costless dominant “spend more” option is insufficient.
+
+**Why:** Ensures the skeleton proves governing agency rather than merely a causal maintenance button without expanding into recurring micromanagement.
+
+**Current class:** Commit-7 candidate player-experience invariant.
+
+**Source:** `16`.
+
+## D-053 — Second-domain probe tests ontology without becoming a second game
+
+**Decision:** The unemployment-insurance-like probe exists only to expose hidden housing-specific ownership assumptions and does not authorize a playable labor/social-policy system or macroeconomy.
+
+**Source:** `12`.
+
+## D-054 — Architecture gate sequence is explicit
+
+**Decision:** Commit 6 = bounded whole-architecture audits; Commit 7 = one consolidated repair/final findings-only acceptance gate; only an accepted Commit-7 SHA marked `READY FOR WALKING SKELETON` authorizes Commit 8 first runtime code.
+
+**Source:** `12`, `16`.
+
+## D-055 — Exact SHA and owning documents control authority
+
+**Decision:** Exact SHA supplied for review is candidate authority; branch refs are convenience pointers. Numbered architecture documents own normative semantics; audits are evidence; `DECISIONS.md` and `OPEN_QUESTIONS.md` are navigation/index surfaces.
+
+**Current class:** Commit-7 candidate process invariant.
+
+**Source:** `16`, repository README.
