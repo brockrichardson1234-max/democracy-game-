@@ -32,7 +32,7 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 19 runtime candidate</p>
+        <p className="eyebrow">Commit 20 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -514,6 +514,14 @@ export const App = () => {
                 <dd>{unit.housingSalience}</dd>
               </div>
               <div>
+                <dt>Electoral preference</dt>
+                <dd>{unit.electoralPreference}</dd>
+              </div>
+              <div>
+                <dt>Turnout disposition</dt>
+                <dd>{unit.turnoutDisposition}</dd>
+              </div>
+              <div>
                 <dt>Processed information</dt>
                 <dd>
                   {unit.incorporatedArtifactIds.length === 0
@@ -524,6 +532,57 @@ export const App = () => {
             </dl>
           </div>
         ))}
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 20 developer/audit inspection</p>
+        <h1>Derived synthetic electorate</h1>
+        <p>
+          Exact development projection only; this is neither a poll nor actual election
+          participation.
+        </p>
+        <dl>
+          <div>
+            <dt>Contest / scheduled election</dt>
+            <dd>
+              {view.electoralAudit.contest.id} / day {view.electoralAudit.contest.scheduledElectionAt}
+            </dd>
+          </div>
+          <div>
+            <dt>Boundary Geography references</dt>
+            <dd>{view.electoralAudit.contest.geographyRegionIds.join(", ")}</dd>
+          </div>
+          <div>
+            <dt>Contest eligibility-rule reference</dt>
+            <dd>{view.electoralAudit.contest.eligibilityRuleId}</dd>
+          </div>
+          <div>
+            <dt>Legal-order eligibility requirement</dt>
+            <dd>{view.electoralAudit.contest.eligibilityRequirement}</dd>
+          </div>
+          <div>
+            <dt>Eligible represented weight</dt>
+            <dd>{view.electoralAudit.derivedElectorate.eligiblePopulationWeight}</dd>
+          </div>
+          <div>
+            <dt>Preference weight</dt>
+            <dd>
+              administration {view.electoralAudit.derivedElectorate.preferenceWeight.ADMINISTRATION};{" "}
+              opposition {view.electoralAudit.derivedElectorate.preferenceWeight.OPPOSITION}; undecided{" "}
+              {view.electoralAudit.derivedElectorate.preferenceWeight.UNDECIDED}; unresolved{" "}
+              {view.electoralAudit.derivedElectorate.preferenceWeight.UNRESOLVED}
+            </dd>
+          </div>
+          <div>
+            <dt>Turnout-disposition weight</dt>
+            <dd>
+              high {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.HIGH}; medium{" "}
+              {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.MEDIUM}; low{" "}
+              {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.LOW}; unresolved{" "}
+              {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.UNRESOLVED}
+            </dd>
+          </div>
+        </dl>
       </section>
     </main>
   );

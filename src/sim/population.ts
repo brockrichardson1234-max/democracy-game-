@@ -9,6 +9,7 @@ export const POPULATION_UNIT_A_ID = "gl0-population-unit-a";
 export const POPULATION_UNIT_B_ID = "gl0-population-unit-b";
 export const POPULATION_UNIT_C_ID = "gl0-population-unit-c";
 export const GL0_POPULATION_UNIT_WEIGHT = 100;
+export const POPULATION_ELECTORAL_RESPONSE_AT = 43;
 
 export type BaselinePoliticalDisposition =
   | "ADMINISTRATION_LEAN"
@@ -31,6 +32,14 @@ export interface HousingAttribution {
 
 export type HousingSalience = "LOW" | "MEDIUM" | "HIGH";
 
+export type ElectoralPreference =
+  | "UNRESOLVED"
+  | "ADMINISTRATION"
+  | "OPPOSITION"
+  | "UNDECIDED";
+
+export type TurnoutDisposition = "UNRESOLVED" | "LOW" | "MEDIUM" | "HIGH";
+
 /** One correlation-preserving ordinary-population aggregate, not an actor or audience. */
 export interface PopulationUnit {
   readonly id: string;
@@ -43,6 +52,8 @@ export interface PopulationUnit {
   readonly programPerformanceBelief: ProgramPerformanceBelief;
   readonly housingAttribution: HousingAttribution;
   readonly housingSalience: HousingSalience;
+  readonly electoralPreference: ElectoralPreference;
+  readonly turnoutDisposition: TurnoutDisposition;
 }
 
 /** Population-owned proof that one recipient processed one Information exposure. */
@@ -57,15 +68,21 @@ export interface PopulationInformationIncorporation {
 export interface PopulationState {
   readonly units: readonly PopulationUnit[];
   readonly informationIncorporations: readonly PopulationInformationIncorporation[];
+  readonly electoralDispositionResolvedAt: SimulationInstant | null;
 }
 
-export type PopulationOccurrence = {
-  readonly type: "PopulationInformationIncorporated";
-  readonly populationUnitId: string;
-  readonly exposureId: string;
-  readonly artifactId: string;
-  readonly at: SimulationInstant;
-};
+export type PopulationOccurrence =
+  | {
+      readonly type: "PopulationInformationIncorporated";
+      readonly populationUnitId: string;
+      readonly exposureId: string;
+      readonly artifactId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "PopulationElectoralDispositionResolved";
+      readonly at: SimulationInstant;
+    };
 
 export interface PopulationTransitionResult {
   readonly population: PopulationState;
@@ -109,6 +126,7 @@ export const createPopulationState = (
       housingAttribution: { ...unit.housingAttribution },
     })),
     informationIncorporations: [],
+    electoralDispositionResolvedAt: null,
   };
 };
 
@@ -127,6 +145,8 @@ export const createInitialPopulationState = (
       programPerformanceBelief: "UNKNOWN",
       housingAttribution: UNKNOWN_ATTRIBUTION,
       housingSalience: "LOW",
+      electoralPreference: "UNRESOLVED",
+      turnoutDisposition: "UNRESOLVED",
     },
     {
       id: POPULATION_UNIT_B_ID,
@@ -139,6 +159,8 @@ export const createInitialPopulationState = (
       programPerformanceBelief: "UNKNOWN",
       housingAttribution: UNKNOWN_ATTRIBUTION,
       housingSalience: "LOW",
+      electoralPreference: "UNRESOLVED",
+      turnoutDisposition: "UNRESOLVED",
     },
     {
       id: POPULATION_UNIT_C_ID,
@@ -151,6 +173,8 @@ export const createInitialPopulationState = (
       programPerformanceBelief: "UNKNOWN",
       housingAttribution: UNKNOWN_ATTRIBUTION,
       housingSalience: "LOW",
+      electoralPreference: "UNRESOLVED",
+      turnoutDisposition: "UNRESOLVED",
     },
   ]);
 
@@ -340,6 +364,7 @@ export const incorporateInformationExposure = (
         ...population.informationIncorporations,
         incorporation,
       ],
+      electoralDispositionResolvedAt: population.electoralDispositionResolvedAt,
     },
     occurrences: [
       {
@@ -350,5 +375,85 @@ export const incorporateInformationExposure = (
         at,
       },
     ],
+  };
+};
+
+const resolveElectoralPreference = (
+  unit: PopulationUnit,
+): Exclude<ElectoralPreference, "UNRESOLVED"> => {
+  if (
+    unit.programPerformanceBelief === "WORKING" &&
+    unit.housingAttribution.target === "FEDERAL_HOUSING_PROGRAM" &&
+    unit.housingAttribution.evaluation === "CREDIT"
+  ) {
+    return "ADMINISTRATION";
+  }
+  if (
+    unit.programPerformanceBelief === "INADEQUATE" &&
+    unit.housingAttribution.target === "FEDERAL_HOUSING_PROGRAM" &&
+    unit.housingAttribution.evaluation === "BLAME"
+  ) {
+    return "OPPOSITION";
+  }
+  if (
+    unit.programPerformanceBelief === "MIXED" ||
+    unit.programPerformanceBelief === "CONTESTED"
+  ) {
+    return "UNDECIDED";
+  }
+  if (unit.programPerformanceBelief === "UNKNOWN") {
+    if (unit.baselinePoliticalDisposition === "ADMINISTRATION_LEAN") {
+      return "ADMINISTRATION";
+    }
+    if (unit.baselinePoliticalDisposition === "OPPOSITION_LEAN") {
+      return "OPPOSITION";
+    }
+  }
+  return "UNDECIDED";
+};
+
+const resolveTurnoutDisposition = (
+  housingSalience: HousingSalience,
+  electoralPreference: Exclude<ElectoralPreference, "UNRESOLVED">,
+): Exclude<TurnoutDisposition, "UNRESOLVED"> => {
+  if (housingSalience === "LOW") return "LOW";
+  if (housingSalience === "MEDIUM") return "MEDIUM";
+  return electoralPreference === "ADMINISTRATION" || electoralPreference === "OPPOSITION"
+    ? "HIGH"
+    : "MEDIUM";
+};
+
+/** Population's bounded day-43 response using only recipient-owned political state. */
+export const resolvePopulationElectoralDisposition = (
+  population: PopulationState,
+  at: SimulationInstant,
+): PopulationTransitionResult => {
+  if (!Number.isFinite(at)) {
+    throw new Error("Population electoral-response time must be finite.");
+  }
+  if (at !== POPULATION_ELECTORAL_RESPONSE_AT) {
+    throw new Error(`Population electoral response is not due at simulation time ${at}.`);
+  }
+  if (population.electoralDispositionResolvedAt !== null) {
+    return { population, occurrences: [] };
+  }
+
+  return {
+    population: {
+      ...population,
+      units: population.units.map((unit) => {
+        const electoralPreference = resolveElectoralPreference(unit);
+        return {
+          ...unit,
+          electoralPreference,
+          turnoutDisposition: resolveTurnoutDisposition(
+            unit.housingSalience,
+            electoralPreference,
+          ),
+        };
+      }),
+      electoralDispositionResolvedAt: at,
+    },
+    occurrences: [{ type: "PopulationElectoralDispositionResolved", at }],
   };
 };

@@ -44,11 +44,22 @@ import type {
 } from "../sim/information";
 import type {
   BaselinePoliticalDisposition,
+  ElectoralPreference,
   HousingAttribution,
   HousingPressureBelief,
   HousingSalience,
   ProgramPerformanceBelief,
+  TurnoutDisposition,
 } from "../sim/population";
+import {
+  deriveElectorate,
+  GL0_EXECUTIVE_CONTEST_ID,
+  type DerivedElectorate,
+} from "../sim/electoral";
+import {
+  resolveElectoralEligibilityRule,
+  type ElectoralEligibilityRequirement,
+} from "../sim/electoral-law";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -69,6 +80,8 @@ export interface GameView {
   readonly publicInformationAudit: PublicInformationAuditProjection;
   /** Raw canonical Population truth for development, never player knowledge. */
   readonly populationAudit: PopulationAuditProjection;
+  /** Exact derived electorate for development; not a poll or player knowledge. */
+  readonly electoralAudit: ElectoralAuditProjection;
   readonly statePrograms: readonly StateProgramProjection[];
 }
 
@@ -165,6 +178,7 @@ export interface PublicInformationAuditProjection {
 
 export interface PopulationAuditProjection {
   readonly totalWeight: number;
+  readonly electoralDispositionResolvedAt: SimulationInstant | null;
   readonly units: readonly {
     readonly id: string;
     readonly weight: number;
@@ -176,8 +190,22 @@ export interface PopulationAuditProjection {
     readonly programPerformanceBelief: ProgramPerformanceBelief;
     readonly housingAttribution: HousingAttribution;
     readonly housingSalience: HousingSalience;
+    readonly electoralPreference: ElectoralPreference;
+    readonly turnoutDisposition: TurnoutDisposition;
     readonly incorporatedArtifactIds: readonly string[];
   }[];
+}
+
+export interface ElectoralAuditProjection {
+  readonly contest: {
+    readonly id: string;
+    readonly boundaryId: string;
+    readonly scheduledElectionAt: SimulationInstant;
+    readonly eligibilityRuleId: string;
+    readonly eligibilityRequirement: ElectoralEligibilityRequirement;
+    readonly geographyRegionIds: readonly string[];
+  };
+  readonly derivedElectorate: DerivedElectorate;
 }
 
 export interface StateProgramProjection {
@@ -273,6 +301,22 @@ const projectWorld = (world: WorldState): GameView => {
   if (housingGrantProgram !== null && housingGrantProgramLaw === null) {
     throw new Error("The housing grant program references an unknown enacted law.");
   }
+  const electoralContest = world.electoral.contests.find(
+    (contest) => contest.id === GL0_EXECUTIVE_CONTEST_ID,
+  );
+  if (electoralContest === undefined) {
+    throw new Error(`Missing synthetic electoral contest ${GL0_EXECUTIVE_CONTEST_ID}.`);
+  }
+  const electoralBoundary = world.electoral.boundaries.find(
+    (boundary) => boundary.id === electoralContest.boundaryId,
+  );
+  if (electoralBoundary === undefined) {
+    throw new Error(`Electoral contest ${electoralContest.id} references an unknown boundary.`);
+  }
+  const electoralEligibilityRule = resolveElectoralEligibilityRule(
+    world.governance.electoralEligibilityLegalOrder,
+    electoralContest.eligibilityRuleId,
+  );
 
   return {
     currentTime: world.time.current,
@@ -393,6 +437,7 @@ const projectWorld = (world: WorldState): GameView => {
     },
     populationAudit: {
       totalWeight: world.population.units.reduce((total, unit) => total + unit.weight, 0),
+      electoralDispositionResolvedAt: world.population.electoralDispositionResolvedAt,
       units: world.population.units.map((unit) => ({
         id: unit.id,
         weight: unit.weight,
@@ -404,10 +449,29 @@ const projectWorld = (world: WorldState): GameView => {
         programPerformanceBelief: unit.programPerformanceBelief,
         housingAttribution: { ...unit.housingAttribution },
         housingSalience: unit.housingSalience,
+        electoralPreference: unit.electoralPreference,
+        turnoutDisposition: unit.turnoutDisposition,
         incorporatedArtifactIds: world.population.informationIncorporations
           .filter((incorporation) => incorporation.populationUnitId === unit.id)
           .map((incorporation) => incorporation.artifactId),
       })),
+    },
+    electoralAudit: {
+      contest: {
+        id: electoralContest.id,
+        boundaryId: electoralContest.boundaryId,
+        scheduledElectionAt: electoralContest.scheduledElectionAt,
+        eligibilityRuleId: electoralContest.eligibilityRuleId,
+        eligibilityRequirement: electoralEligibilityRule.requirement,
+        geographyRegionIds: [...electoralBoundary.geographyRegionIds],
+      },
+      derivedElectorate: deriveElectorate(
+        world.electoral,
+        world.population,
+        world.governance.electoralEligibilityLegalOrder,
+        electoralContest.id,
+        world.time.current,
+      ),
     },
     statePrograms: stateJurisdictions.map((state) => {
       const administrativeState = stateProgramAdministrativeStates.find(

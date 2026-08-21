@@ -12,6 +12,10 @@ import {
   type GeographyState,
 } from "./geography";
 import {
+  createInitialElectoralState,
+  type ElectoralState,
+} from "./electoral";
+import {
   advanceHousing,
   createInitialHousingState,
   HOUSING_REGION_A_ID,
@@ -42,6 +46,8 @@ import {
 import {
   createInitialPopulationState,
   incorporateInformationExposure,
+  POPULATION_ELECTORAL_RESPONSE_AT,
+  resolvePopulationElectoralDisposition,
   type PopulationState,
 } from "./population";
 
@@ -68,6 +74,8 @@ export interface WorldState {
   readonly information: InformationState;
   /** Canonical aggregate ordinary population and recipient-owned political state. */
   readonly population: PopulationState;
+  /** Electoral-process state: contest/rule-ID/boundary references, never copied Population or law. */
+  readonly electoral: ElectoralState;
   /** Immutable committed occurrences. Owns only that something happened, never current state. */
   readonly history: readonly HistoricalOccurrence[];
 }
@@ -105,6 +113,13 @@ export const createDeterministicWorldFixture = (): WorldState => {
       informationAudienceAlphaId: PUBLIC_AUDIENCE_ALPHA_ID,
       informationAudienceBetaId: PUBLIC_AUDIENCE_BETA_ID,
       informationAudienceGammaId: PUBLIC_AUDIENCE_GAMMA_ID,
+    }),
+    electoral: createInitialElectoralState({
+      geographyRegionIds: [
+        GEOGRAPHY_REGION_A_ID,
+        GEOGRAPHY_REGION_B_ID,
+        GEOGRAPHY_REGION_C_ID,
+      ],
     }),
     history: [],
   };
@@ -240,6 +255,7 @@ export const advanceWorldTo = (
     OFFICIAL_HOUSING_REPORT_RELEASE_AT,
     ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
     OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
+    POPULATION_ELECTORAL_RESPONSE_AT,
     target,
   ]
     .filter((boundary) => boundary > world.time.current && boundary <= target)
@@ -312,6 +328,16 @@ export const advanceWorldTo = (
       );
       population = claimIncorporation.population;
       occurrences.push(...claimIncorporation.occurrences);
+    }
+
+    if (boundary === POPULATION_ELECTORAL_RESPONSE_AT) {
+      // All supported Information incorporation is already Population-owned by day 43.
+      const electoralResponse = resolvePopulationElectoralDisposition(
+        population,
+        boundary,
+      );
+      population = electoralResponse.population;
+      occurrences.push(...electoralResponse.occurrences);
     }
     cursor = boundary;
   }

@@ -540,9 +540,13 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
       housingSalience: "HIGH",
       incorporatedArtifactIds: [OFFICIAL_HOUSING_REPORT_ID, ADMINISTRATION_HOUSING_CLAIM_ID],
     });
-    expect(world.population.units.every((unit) => !("preference" in unit))).toBe(true);
+    expect(world.population.units.every((unit) => unit.electoralPreference === "UNRESOLVED")).toBe(
+      true,
+    );
+    expect(world.population.units.every((unit) => unit.turnoutDisposition === "UNRESOLVED")).toBe(
+      true,
+    );
     expect(world.population.units.every((unit) => !("approval" in unit))).toBe(true);
-    expect(world.population.units.every((unit) => !("turnout" in unit))).toBe(true);
     expect(world.governance).not.toHaveProperty("elections");
   });
 });
