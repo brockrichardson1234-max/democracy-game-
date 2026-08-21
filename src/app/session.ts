@@ -62,6 +62,14 @@ import {
   type ElectoralEligibilityRequirement,
   type ElectoralProcedureRequirement,
 } from "../sim/electoral-law";
+import {
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  resolveCurrentExecutiveOfficeholder,
+} from "../sim/executive";
+import {
+  resolveExecutiveSuccessionRule,
+  type ExecutiveSuccessionRequirement,
+} from "../sim/executive-law";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -84,6 +92,10 @@ export interface GameView {
   readonly populationAudit: PopulationAuditProjection;
   /** Exact derived electorate for development; not a poll or player knowledge. */
   readonly electoralAudit: ElectoralAuditProjection;
+  /** Raw canonical executive succession state for development. */
+  readonly executiveSuccessionAudit: ExecutiveSuccessionAuditProjection;
+  /** Non-canonical session permission state for development. */
+  readonly controlBindingAudit: ControlBindingAuditProjection;
   readonly statePrograms: readonly StateProgramProjection[];
 }
 
@@ -201,6 +213,7 @@ export interface PopulationAuditProjection {
 export interface ElectoralAuditProjection {
   readonly candidates: readonly {
     readonly id: string;
+    readonly actorId: string;
     readonly alignment: "ADMINISTRATION" | "OPPOSITION";
   }[];
   readonly contest: {
@@ -262,6 +275,48 @@ export interface ElectoralAuditProjection {
   };
 }
 
+export interface ExecutiveSuccessionAuditProjection {
+  readonly actors: readonly { readonly id: string }[];
+  readonly institutionId: string;
+  readonly office: {
+    readonly id: string;
+    readonly institutionId: string;
+    readonly successionRuleId: string;
+    readonly successionRequirement: ExecutiveSuccessionRequirement;
+  };
+  readonly currentOfficeAssignment: {
+    readonly officeId: string;
+    readonly actorId: string;
+    readonly effectiveAtSimulationTime: SimulationInstant;
+  };
+  readonly successorEntitlement: {
+    readonly id: string;
+    readonly sourceCertificationId: string;
+    readonly sourceResultId: string;
+    readonly sourceWinningCandidateId: string;
+    readonly entitledActorId: string;
+    readonly establishedAtSimulationTime: SimulationInstant;
+    readonly scheduledTransferAtSimulationTime: SimulationInstant;
+  } | null;
+  readonly transferResolvedAtSimulationTime: SimulationInstant | null;
+}
+
+export const GL0_EXECUTIVE_CONTROL_BINDING_ID = "gl0-executive-control-binding";
+export const GL0_EXECUTIVE_ADMINISTRATION_STRATEGIC_SURFACE =
+  "EXECUTIVE_ADMINISTRATION_STRATEGIC_SURFACE";
+
+export interface ControlBinding {
+  readonly id: string;
+  readonly decisionSurface: typeof GL0_EXECUTIVE_ADMINISTRATION_STRATEGIC_SURFACE;
+  readonly executiveOfficeId: string;
+  readonly boundOfficeholderActorId: string;
+  readonly status: "ACTIVE" | "ENDED";
+  readonly endedAtSimulationTime: SimulationInstant | null;
+  readonly endReason: "BOUND_OFFICEHOLDER_CHANGED" | null;
+}
+
+export type ControlBindingAuditProjection = ControlBinding;
+
 export interface StateProgramProjection {
   readonly id: string;
   readonly capacity: StateAdministrativeCapacity;
@@ -319,7 +374,55 @@ export interface GameSession {
   preserveHousingImplementationSupportReserve(): GameView;
 }
 
-const projectWorld = (world: WorldState): GameView => {
+export const createInitialControlBinding = (world: WorldState): ControlBinding => {
+  const executivePolitical = world.governance.executivePolitical;
+  const currentOfficeholder = resolveCurrentExecutiveOfficeholder(executivePolitical);
+  if (currentOfficeholder.id !== GL0_INCUMBENT_EXECUTIVE_ACTOR_ID) {
+    throw new Error("The GL0 session must begin bound to the incumbent executive actor.");
+  }
+  return {
+    id: GL0_EXECUTIVE_CONTROL_BINDING_ID,
+    decisionSurface: GL0_EXECUTIVE_ADMINISTRATION_STRATEGIC_SURFACE,
+    executiveOfficeId: executivePolitical.office.id,
+    boundOfficeholderActorId: currentOfficeholder.id,
+    status: "ACTIVE",
+    endedAtSimulationTime: null,
+    endReason: null,
+  };
+};
+
+/** Session-only reconciliation against canonical assignment; never writes to WorldState. */
+export const reconcileControlBinding = (
+  binding: ControlBinding,
+  world: WorldState,
+): ControlBinding => {
+  if (binding.status === "ENDED") return binding;
+  const assignment = world.governance.executivePolitical.currentOfficeAssignment;
+  if (
+    assignment.officeId === binding.executiveOfficeId &&
+    assignment.actorId === binding.boundOfficeholderActorId
+  ) {
+    return binding;
+  }
+  return {
+    ...binding,
+    status: "ENDED",
+    endedAtSimulationTime: assignment.effectiveAtSimulationTime,
+    endReason: "BOUND_OFFICEHOLDER_CHANGED",
+  };
+};
+
+export const assertActiveExecutiveControl = (
+  binding: ControlBinding,
+  world: WorldState,
+): void => {
+  const reconciled = reconcileControlBinding(binding, world);
+  if (reconciled.status !== "ACTIVE") {
+    throw new Error("No active ControlBinding: executive decision surface unavailable.");
+  }
+};
+
+const projectWorld = (world: WorldState, controlBinding: ControlBinding): GameView => {
   const {
     proposal,
     procedure,
@@ -374,6 +477,11 @@ const projectWorld = (world: WorldState): GameView => {
   const electoralProcedureRule = resolveElectoralProcedureRule(
     world.governance.electoralProcedureLegalOrder,
     electoralContest.procedureRuleId,
+  );
+  const executivePolitical = world.governance.executivePolitical;
+  const successionRule = resolveExecutiveSuccessionRule(
+    world.governance.executiveSuccessionLegalOrder,
+    executivePolitical.office.successionRuleId,
   );
   const electionProcesses = world.electoral.electionProcesses.filter(
     (process) => process.contestId === electoralContest.id,
@@ -584,6 +692,22 @@ const projectWorld = (world: WorldState): GameView => {
             : { ...electionProcess.certification },
       },
     },
+    executiveSuccessionAudit: {
+      actors: executivePolitical.actors.map((actor) => ({ ...actor })),
+      institutionId: executivePolitical.institution.id,
+      office: {
+        ...executivePolitical.office,
+        successionRequirement: successionRule.requirement,
+      },
+      currentOfficeAssignment: { ...executivePolitical.currentOfficeAssignment },
+      successorEntitlement:
+        executivePolitical.succession.successorEntitlement === null
+          ? null
+          : { ...executivePolitical.succession.successorEntitlement },
+      transferResolvedAtSimulationTime:
+        executivePolitical.succession.transferResolvedAtSimulationTime,
+    },
+    controlBindingAudit: { ...controlBinding },
     statePrograms: stateJurisdictions.map((state) => {
       const administrativeState = stateProgramAdministrativeStates.find(
         (candidate) => candidate.stateJurisdictionId === state.id,
@@ -725,72 +849,61 @@ const projectWorld = (world: WorldState): GameView => {
 
 export const createGameSession = (): GameSession => {
   let world = createDeterministicWorldFixture();
+  let controlBinding = createInitialControlBinding(world);
+
+  const commitWorld = (nextWorld: WorldState): GameView => {
+    world = nextWorld;
+    controlBinding = reconcileControlBinding(controlBinding, world);
+    return projectWorld(world, controlBinding);
+  };
+
+  const requireStrategicControl = (): void => {
+    assertActiveExecutiveControl(controlBinding, world);
+  };
 
   return {
-    getView: () => projectWorld(world),
-    advanceTo: (target) => {
-      world = advanceWorldTo(world, target);
-      return projectWorld(world);
-    },
+    getView: () => projectWorld(world, controlBinding),
+    advanceTo: (target) => commitWorld(advanceWorldTo(world, target)),
     submitHousingGrantProposal: (terms) => {
-      world = submitHousingGrantProposal(world, terms);
-      return projectWorld(world);
+      requireStrategicControl();
+      return commitWorld(submitHousingGrantProposal(world, terms));
     },
     amendHousingGrantProposal: (terms) => {
-      world = amendHousingGrantProposal(world, terms);
-      return projectWorld(world);
+      requireStrategicControl();
+      return commitWorld(amendHousingGrantProposal(world, terms));
     },
-    resolveHousingGrantProposalVote: () => {
-      world = resolveHousingGrantProposalVote(world);
-      return projectWorld(world);
-    },
-    recognizeHousingGrantFiscalAuthority: () => {
-      world = recognizeHousingGrantFiscalAuthority(world);
-      return projectWorld(world);
-    },
-    establishHousingGrantProgram: () => {
-      world = establishHousingGrantProgram(world);
-      return projectWorld(world);
-    },
-    resolveStateHousingGrantDecision: (stateId) => {
-      world = resolveStateHousingGrantDecision(world, stateId);
-      return projectWorld(world);
-    },
-    submitStateHousingGrantApplication: (stateId) => {
-      world = submitStateHousingGrantApplication(world, stateId);
-      return projectWorld(world);
-    },
-    resolveFederalHousingGrantApplication: (stateId) => {
-      world = resolveFederalHousingGrantApplication(world, stateId);
-      return projectWorld(world);
-    },
-    activateIntergovernmentalHousingGrantParticipation: (stateId) => {
-      world = activateIntergovernmentalHousingGrantParticipation(world, stateId);
-      return projectWorld(world);
-    },
-    createHousingGrantAward: (stateId) => {
-      world = createHousingGrantAward(world, stateId);
-      return projectWorld(world);
-    },
-    obligateHousingGrantAward: (stateId) => {
-      world = obligateHousingGrantAward(world, stateId);
-      return projectWorld(world);
-    },
-    disburseHousingGrantObligation: (stateId) => {
-      world = disburseHousingGrantObligation(world, stateId);
-      return projectWorld(world);
-    },
-    materializeHousingProjectFromDisbursement: (stateId) => {
-      world = materializeHousingProjectFromDisbursement(world, stateId);
-      return projectWorld(world);
-    },
+    resolveHousingGrantProposalVote: () =>
+      commitWorld(resolveHousingGrantProposalVote(world)),
+    recognizeHousingGrantFiscalAuthority: () =>
+      commitWorld(recognizeHousingGrantFiscalAuthority(world)),
+    establishHousingGrantProgram: () => commitWorld(establishHousingGrantProgram(world)),
+    resolveStateHousingGrantDecision: (stateId) =>
+      commitWorld(resolveStateHousingGrantDecision(world, stateId)),
+    submitStateHousingGrantApplication: (stateId) =>
+      commitWorld(submitStateHousingGrantApplication(world, stateId)),
+    resolveFederalHousingGrantApplication: (stateId) =>
+      commitWorld(resolveFederalHousingGrantApplication(world, stateId)),
+    activateIntergovernmentalHousingGrantParticipation: (stateId) =>
+      commitWorld(activateIntergovernmentalHousingGrantParticipation(world, stateId)),
+    createHousingGrantAward: (stateId) =>
+      commitWorld(createHousingGrantAward(world, stateId)),
+    obligateHousingGrantAward: (stateId) =>
+      commitWorld(obligateHousingGrantAward(world, stateId)),
+    disburseHousingGrantObligation: (stateId) =>
+      commitWorld(disburseHousingGrantObligation(world, stateId)),
+    materializeHousingProjectFromDisbursement: (stateId) =>
+      commitWorld(materializeHousingProjectFromDisbursement(world, stateId)),
     deployHousingImplementationSupportToStateC: () => {
-      world = resolveHousingImplementationResponse(world, "DEPLOY_SUPPORT_TO_C");
-      return projectWorld(world);
+      requireStrategicControl();
+      return commitWorld(
+        resolveHousingImplementationResponse(world, "DEPLOY_SUPPORT_TO_C"),
+      );
     },
     preserveHousingImplementationSupportReserve: () => {
-      world = resolveHousingImplementationResponse(world, "PRESERVE_SUPPORT_RESERVE");
-      return projectWorld(world);
+      requireStrategicControl();
+      return commitWorld(
+        resolveHousingImplementationResponse(world, "PRESERVE_SUPPORT_RESERVE"),
+      );
     },
   };
 };

@@ -26,13 +26,14 @@ export const App = () => {
 
   const { proposal, enactedLaw } = view.legislative;
   const { fiscal, housingGrantProgram, statePrograms } = view;
+  const hasStrategicControl = view.controlBindingAudit.status === "ACTIVE";
   const stateAProgram = statePrograms.find((state) => state.id === "state-a");
   const stateCProgram = statePrograms.find((state) => state.id === "state-c");
 
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 20 runtime candidate</p>
+        <p className="eyebrow">Commit 22 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -100,12 +101,14 @@ export const App = () => {
 
         <button
           type="button"
+          disabled={!hasStrategicControl}
           onClick={() => setView(session.submitHousingGrantProposal(INITIAL_PROPOSAL_TERMS))}
         >
           Submit initial proposal
         </button>
         <button
           type="button"
+          disabled={!hasStrategicControl}
           onClick={() => setView(session.amendHousingGrantProposal(COMPROMISE_PROPOSAL_TERMS))}
         >
           Offer compromise amendment
@@ -369,14 +372,14 @@ export const App = () => {
 
         <button
           type="button"
-          disabled={!view.implementationResponse.responseOpportunityReady}
+          disabled={!hasStrategicControl || !view.implementationResponse.responseOpportunityReady}
           onClick={() => setView(session.deployHousingImplementationSupportToStateC())}
         >
           Deploy support to State C
         </button>
         <button
           type="button"
-          disabled={!view.implementationResponse.responseOpportunityReady}
+          disabled={!hasStrategicControl || !view.implementationResponse.responseOpportunityReady}
           onClick={() => setView(session.preserveHousingImplementationSupportReserve())}
         >
           Preserve support reserve
@@ -641,6 +644,60 @@ export const App = () => {
                 ? "not yet"
                 : `${view.electoralAudit.electionProcess.certification.status}; source ${view.electoralAudit.electionProcess.certification.sourceResultId}`}
             </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 22 developer/audit inspection</p>
+        <h1>Executive succession and session control</h1>
+        <p>Raw canonical assignment plus non-canonical session permission state.</p>
+        <dl>
+          <div>
+            <dt>Executive institution / office</dt>
+            <dd>
+              {view.executiveSuccessionAudit.institutionId} /{" "}
+              {view.executiveSuccessionAudit.office.id}
+            </dd>
+          </div>
+          <div>
+            <dt>Current officeholder actor</dt>
+            <dd>{view.executiveSuccessionAudit.currentOfficeAssignment.actorId}</dd>
+          </div>
+          <div>
+            <dt>Candidate → actor references</dt>
+            <dd>
+              {view.electoralAudit.candidates
+                .map((candidate) => `${candidate.id} → ${candidate.actorId} (${candidate.alignment})`)
+                .join("; ")}
+            </dd>
+          </div>
+          <div>
+            <dt>Succession rule</dt>
+            <dd>
+              {view.executiveSuccessionAudit.office.successionRuleId}: {" "}
+              {view.executiveSuccessionAudit.office.successionRequirement}
+            </dd>
+          </div>
+          <div>
+            <dt>Successor entitlement</dt>
+            <dd>
+              {view.executiveSuccessionAudit.successorEntitlement === null
+                ? "none"
+                : `${view.executiveSuccessionAudit.successorEntitlement.entitledActorId}; established day ${view.executiveSuccessionAudit.successorEntitlement.establishedAtSimulationTime}; transfer day ${view.executiveSuccessionAudit.successorEntitlement.scheduledTransferAtSimulationTime}`}
+            </dd>
+          </div>
+          <div>
+            <dt>Control binding</dt>
+            <dd>
+              {view.controlBindingAudit.status}; actor {view.controlBindingAudit.boundOfficeholderActorId};{" "}
+              office {view.controlBindingAudit.executiveOfficeId}; surface {" "}
+              {view.controlBindingAudit.decisionSurface}
+            </dd>
+          </div>
+          <div>
+            <dt>Control ended</dt>
+            <dd>{view.controlBindingAudit.endedAtSimulationTime ?? "not ended"}</dd>
           </div>
         </dl>
       </section>

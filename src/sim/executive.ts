@@ -1,0 +1,277 @@
+import {
+  GL0_EXECUTIVE_CONTEST_ID,
+  type ElectoralState,
+} from "./electoral";
+import {
+  assertSuccessorTransferDue,
+  GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID,
+  resolveExecutiveSuccessionRule,
+  resolveSuccessorCandidateId,
+  type ExecutiveSuccessionLegalOrderState,
+} from "./executive-law";
+import type { SimulationInstant } from "./world";
+
+export const GL0_INCUMBENT_EXECUTIVE_ACTOR_ID = "gl0-incumbent-executive-actor";
+export const GL0_OPPOSITION_EXECUTIVE_ACTOR_ID = "gl0-opposition-executive-actor";
+export const GL0_EXECUTIVE_INSTITUTION_ID = "gl0-federal-executive-administration";
+export const GL0_EXECUTIVE_OFFICE_ID = "gl0-executive-office";
+export const GL0_SUCCESSOR_ENTITLEMENT_ID = "gl0-successor-entitlement";
+export const GL0_SUCCESSOR_ENTITLEMENT_AT = 62;
+export const GL0_EXECUTIVE_TRANSFER_AT = 63;
+
+export interface ExecutivePoliticalActor {
+  readonly id: string;
+}
+
+export interface ExecutiveInstitution {
+  readonly id: string;
+}
+
+export interface ExecutiveOffice {
+  readonly id: string;
+  readonly institutionId: string;
+  /** Reference only: the legal order owns normative succession requirements. */
+  readonly successionRuleId: string;
+}
+
+export interface ExecutiveOfficeAssignment {
+  readonly officeId: string;
+  readonly actorId: string;
+  readonly effectiveAtSimulationTime: SimulationInstant;
+}
+
+export interface SuccessorEntitlement {
+  readonly id: string;
+  readonly sourceCertificationId: string;
+  readonly sourceResultId: string;
+  readonly sourceWinningCandidateId: string;
+  readonly entitledActorId: string;
+  readonly establishedAtSimulationTime: SimulationInstant;
+  readonly scheduledTransferAtSimulationTime: SimulationInstant;
+}
+
+export interface ExecutiveSuccessionState {
+  readonly successorEntitlement: SuccessorEntitlement | null;
+  readonly transferResolvedAtSimulationTime: SimulationInstant | null;
+}
+
+/** Bounded canonical owner of executive people, institution, office, assignment, and succession. */
+export interface ExecutivePoliticalState {
+  readonly actors: readonly ExecutivePoliticalActor[];
+  readonly institution: ExecutiveInstitution;
+  readonly office: ExecutiveOffice;
+  readonly currentOfficeAssignment: ExecutiveOfficeAssignment;
+  readonly succession: ExecutiveSuccessionState;
+}
+
+export type ExecutivePoliticalOccurrence =
+  | {
+      readonly type: "SuccessorEntitlementEstablished";
+      readonly entitlementId: string;
+      readonly actorId: string;
+      readonly sourceCertificationId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "ExecutiveOfficeTransferred";
+      readonly officeId: string;
+      readonly outgoingActorId: string;
+      readonly incomingActorId: string;
+      readonly sourceEntitlementId: string;
+      readonly at: SimulationInstant;
+    };
+
+export interface ExecutivePoliticalTransitionResult {
+  readonly executivePolitical: ExecutivePoliticalState;
+  readonly occurrences: readonly ExecutivePoliticalOccurrence[];
+}
+
+export const createInitialExecutivePoliticalState = (): ExecutivePoliticalState => ({
+  actors: [
+    { id: GL0_INCUMBENT_EXECUTIVE_ACTOR_ID },
+    { id: GL0_OPPOSITION_EXECUTIVE_ACTOR_ID },
+  ],
+  institution: { id: GL0_EXECUTIVE_INSTITUTION_ID },
+  office: {
+    id: GL0_EXECUTIVE_OFFICE_ID,
+    institutionId: GL0_EXECUTIVE_INSTITUTION_ID,
+    successionRuleId: GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID,
+  },
+  currentOfficeAssignment: {
+    officeId: GL0_EXECUTIVE_OFFICE_ID,
+    actorId: GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+    effectiveAtSimulationTime: 0,
+  },
+  succession: {
+    successorEntitlement: null,
+    transferResolvedAtSimulationTime: null,
+  },
+});
+
+export const resolveCurrentExecutiveOfficeholder = (
+  executivePolitical: ExecutivePoliticalState,
+): ExecutivePoliticalActor => {
+  const assignment = executivePolitical.currentOfficeAssignment;
+  if (assignment.officeId !== executivePolitical.office.id) {
+    throw new Error(`Executive assignment references unknown office ${assignment.officeId}.`);
+  }
+  const actors = executivePolitical.actors.filter(
+    (actor) => actor.id === assignment.actorId,
+  );
+  if (actors.length !== 1) {
+    throw new Error(`Executive office requires exactly one current actor ${assignment.actorId}.`);
+  }
+  return actors[0];
+};
+
+const resolveCertifiedElection = (electoral: ElectoralState) => {
+  const processes = electoral.electionProcesses.filter(
+    (process) => process.contestId === GL0_EXECUTIVE_CONTEST_ID,
+  );
+  if (processes.length !== 1) {
+    throw new Error("Executive succession requires exactly one GL0 election process.");
+  }
+  const process = processes[0];
+  if (
+    process.status !== "CERTIFIED" ||
+    process.certification === null ||
+    process.result === null
+  ) {
+    throw new Error("Executive succession requires a certified election result.");
+  }
+  if (process.certification.sourceResultId !== process.result.id) {
+    throw new Error("Election certification does not reference its process result.");
+  }
+  return { process, result: process.result, certification: process.certification };
+};
+
+/**
+ * Day-62 executive-owner admission of a certified non-tie winner. The election
+ * remains frozen and candidate identity is resolved through its actor reference.
+ */
+export const establishExecutiveSuccessorEntitlement = (
+  executivePolitical: ExecutivePoliticalState,
+  electoral: ElectoralState,
+  legalOrder: ExecutiveSuccessionLegalOrderState,
+  at: SimulationInstant,
+): ExecutivePoliticalTransitionResult => {
+  if (at !== GL0_SUCCESSOR_ENTITLEMENT_AT) {
+    throw new Error(`Successor entitlement is not due at simulation time ${at}.`);
+  }
+  if (executivePolitical.succession.successorEntitlement !== null) {
+    return { executivePolitical, occurrences: [] };
+  }
+
+  const rule = resolveExecutiveSuccessionRule(
+    legalOrder,
+    executivePolitical.office.successionRuleId,
+  );
+  const { result, certification } = resolveCertifiedElection(electoral);
+  const successorCandidateId = resolveSuccessorCandidateId(
+    rule,
+    result.outcome,
+    result.winningCandidateId,
+  );
+  if (successorCandidateId === null) {
+    return { executivePolitical, occurrences: [] };
+  }
+
+  const candidates = electoral.candidates.filter(
+    (candidate) => candidate.id === successorCandidateId,
+  );
+  if (candidates.length !== 1) {
+    throw new Error(`Election winner ${successorCandidateId} is not one candidate.`);
+  }
+  const winningCandidate = candidates[0];
+  const contests = electoral.contests.filter(
+    (contest) => contest.id === result.contestId,
+  );
+  if (contests.length !== 1 || !contests[0].candidateIds.includes(winningCandidate.id)) {
+    throw new Error(`Election winner ${winningCandidate.id} is not a candidate in its contest.`);
+  }
+  const entitledActors = executivePolitical.actors.filter(
+    (actor) => actor.id === winningCandidate.actorId,
+  );
+  if (entitledActors.length !== 1) {
+    throw new Error(`Winning candidate references unknown actor ${winningCandidate.actorId}.`);
+  }
+
+  const entitlement: SuccessorEntitlement = {
+    id: GL0_SUCCESSOR_ENTITLEMENT_ID,
+    sourceCertificationId: certification.id,
+    sourceResultId: result.id,
+    sourceWinningCandidateId: winningCandidate.id,
+    entitledActorId: entitledActors[0].id,
+    establishedAtSimulationTime: at,
+    scheduledTransferAtSimulationTime: GL0_EXECUTIVE_TRANSFER_AT,
+  };
+  return {
+    executivePolitical: {
+      ...executivePolitical,
+      succession: {
+        ...executivePolitical.succession,
+        successorEntitlement: entitlement,
+      },
+    },
+    occurrences: [
+      {
+        type: "SuccessorEntitlementEstablished",
+        entitlementId: entitlement.id,
+        actorId: entitlement.entitledActorId,
+        sourceCertificationId: entitlement.sourceCertificationId,
+        at,
+      },
+    ],
+  };
+};
+
+/** Day-63 executive-owner office transfer from the previously established entitlement. */
+export const transferExecutiveOffice = (
+  executivePolitical: ExecutivePoliticalState,
+  legalOrder: ExecutiveSuccessionLegalOrderState,
+  at: SimulationInstant,
+): ExecutivePoliticalTransitionResult => {
+  if (at !== GL0_EXECUTIVE_TRANSFER_AT) {
+    throw new Error(`Executive office transfer is not due at simulation time ${at}.`);
+  }
+  if (executivePolitical.succession.transferResolvedAtSimulationTime !== null) {
+    return { executivePolitical, occurrences: [] };
+  }
+  const entitlement = executivePolitical.succession.successorEntitlement;
+  if (entitlement === null) return { executivePolitical, occurrences: [] };
+  const rule = resolveExecutiveSuccessionRule(
+    legalOrder,
+    executivePolitical.office.successionRuleId,
+  );
+  assertSuccessorTransferDue(rule, entitlement.scheduledTransferAtSimulationTime, at);
+  if (!executivePolitical.actors.some((actor) => actor.id === entitlement.entitledActorId)) {
+    throw new Error(`Successor entitlement references unknown actor ${entitlement.entitledActorId}.`);
+  }
+  const outgoingActorId = resolveCurrentExecutiveOfficeholder(executivePolitical).id;
+  const assignment: ExecutiveOfficeAssignment = {
+    officeId: executivePolitical.office.id,
+    actorId: entitlement.entitledActorId,
+    effectiveAtSimulationTime: at,
+  };
+
+  return {
+    executivePolitical: {
+      ...executivePolitical,
+      currentOfficeAssignment: assignment,
+      succession: {
+        ...executivePolitical.succession,
+        transferResolvedAtSimulationTime: at,
+      },
+    },
+    occurrences: [
+      {
+        type: "ExecutiveOfficeTransferred",
+        officeId: assignment.officeId,
+        outgoingActorId,
+        incomingActorId: assignment.actorId,
+        sourceEntitlementId: entitlement.id,
+        at,
+      },
+    ],
+  };
+};

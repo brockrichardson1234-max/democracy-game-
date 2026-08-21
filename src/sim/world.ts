@@ -21,6 +21,14 @@ import {
   type ElectoralState,
 } from "./electoral";
 import {
+  establishExecutiveSuccessorEntitlement,
+  GL0_EXECUTIVE_TRANSFER_AT,
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
+  GL0_SUCCESSOR_ENTITLEMENT_AT,
+  transferExecutiveOffice,
+} from "./executive";
+import {
   advanceHousing,
   createInitialHousingState,
   HOUSING_REGION_A_ID,
@@ -89,6 +97,7 @@ const BOOTSTRAP_BOUNDARY: SimulationInstant = 1;
 
 export const createDeterministicWorldFixture = (): WorldState => {
   const geography = createInitialGeographyState();
+  const governance = createInitialGovernanceState();
   const housing = createInitialHousingState({
     stateAId: STATE_A_ID,
     stateBId: STATE_B_ID,
@@ -104,7 +113,7 @@ export const createDeterministicWorldFixture = (): WorldState => {
       boundaryAt: BOOTSTRAP_BOUNDARY,
       resolved: false,
     },
-    governance: createInitialGovernanceState(),
+    governance,
     geography,
     housing,
     information: createInitialInformationState(housing.regions.map((region) => region.id)),
@@ -125,6 +134,8 @@ export const createDeterministicWorldFixture = (): WorldState => {
         GEOGRAPHY_REGION_B_ID,
         GEOGRAPHY_REGION_C_ID,
       ],
+      administrationCandidateActorId: GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+      oppositionCandidateActorId: GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
     }),
     history: [],
   };
@@ -263,6 +274,8 @@ export const advanceWorldTo = (
     POPULATION_ELECTORAL_RESPONSE_AT,
     GL0_EXECUTIVE_ELECTION_AT,
     GL0_EXECUTIVE_CERTIFICATION_AT,
+    GL0_SUCCESSOR_ENTITLEMENT_AT,
+    GL0_EXECUTIVE_TRANSFER_AT,
     target,
   ]
     .filter((boundary) => boundary > world.time.current && boundary <= target)
@@ -372,6 +385,35 @@ export const advanceWorldTo = (
       );
       electoral = certification.electoral;
       occurrences.push(...certification.occurrences);
+    }
+
+    if (boundary === GL0_SUCCESSOR_ENTITLEMENT_AT) {
+      // Certified result -> candidate reference -> executive actor entitlement.
+      const entitlement = establishExecutiveSuccessorEntitlement(
+        governance.executivePolitical,
+        electoral,
+        governance.executiveSuccessionLegalOrder,
+        boundary,
+      );
+      governance = {
+        ...governance,
+        executivePolitical: entitlement.executivePolitical,
+      };
+      occurrences.push(...entitlement.occurrences);
+    }
+
+    if (boundary === GL0_EXECUTIVE_TRANSFER_AT) {
+      // Entitlement is distinct from assignment; only this owner boundary changes the holder.
+      const transfer = transferExecutiveOffice(
+        governance.executivePolitical,
+        governance.executiveSuccessionLegalOrder,
+        boundary,
+      );
+      governance = {
+        ...governance,
+        executivePolitical: transfer.executivePolitical,
+      };
+      occurrences.push(...transfer.occurrences);
     }
     cursor = boundary;
   }

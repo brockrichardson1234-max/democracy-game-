@@ -6,6 +6,7 @@ import type { HousingImplementationResponseAction } from "./administration";
 import type { InformationOccurrence } from "./information";
 import type { PopulationOccurrence } from "./population";
 import type { ElectoralOccurrence } from "./electoral";
+import type { ExecutivePoliticalOccurrence } from "./executive";
 
 /**
  * Immutable committed occurrences. HistoricalRecord owns only the fact that
@@ -18,6 +19,7 @@ export type HistoricalOccurrence =
   | InformationOccurrence
   | PopulationOccurrence
   | ElectoralOccurrence
+  | ExecutivePoliticalOccurrence
   | {
       readonly type: "ProposalIntroduced";
       readonly proposalId: string;

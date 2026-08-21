@@ -71,6 +71,15 @@ import {
   type ElectoralEligibilityLegalOrderState,
   type ElectoralProcedureLegalOrderState,
 } from "./electoral-law";
+import {
+  createInitialExecutivePoliticalState,
+  GL0_EXECUTIVE_INSTITUTION_ID,
+  type ExecutivePoliticalState,
+} from "./executive";
+import {
+  createInitialExecutiveSuccessionLegalOrderState,
+  type ExecutiveSuccessionLegalOrderState,
+} from "./executive-law";
 
 export type HousingPoliticalClaimDecisionKind = "ADMINISTRATION" | "OPPOSITION";
 
@@ -87,6 +96,8 @@ export interface HousingPoliticalClaimDecision {
 
 export interface GovernanceState {
   readonly legislature: Legislature;
+  /** Canonical executive actors/institution/office/assignment/succession owner. */
+  readonly executivePolitical: ExecutivePoliticalState;
   readonly proposal: LegislativeProposal | null;
   readonly procedure: LegislativeProcedureInstance | null;
   readonly enactedLaws: readonly EnactedLaw[];
@@ -94,6 +105,8 @@ export interface GovernanceState {
   readonly electoralEligibilityLegalOrder: ElectoralEligibilityLegalOrderState;
   /** Legal-order owner of normative election resolution/certification procedure. */
   readonly electoralProcedureLegalOrder: ElectoralProcedureLegalOrderState;
+  /** Legal-order owner of normative ordinary executive succession requirements. */
+  readonly executiveSuccessionLegalOrder: ExecutiveSuccessionLegalOrderState;
   /** Public-finance owner: recognition is explicit and does not occur at enactment. */
   readonly publicFinance: PublicFinanceState;
   /** Fiscal-execution owner: null until the recognition transition creates its zero-obligation state. */
@@ -129,11 +142,13 @@ export const createInitialGovernanceState = (): GovernanceState => {
 
   return {
     legislature: createDeterministicLegislatureFixture(),
+    executivePolitical: createInitialExecutivePoliticalState(),
     proposal: null,
     procedure: null,
     enactedLaws: [],
     electoralEligibilityLegalOrder: createInitialElectoralEligibilityLegalOrderState(),
     electoralProcedureLegalOrder: createInitialElectoralProcedureLegalOrderState(),
+    executiveSuccessionLegalOrder: createInitialExecutiveSuccessionLegalOrderState(),
     publicFinance: createInitialPublicFinanceState(),
     fiscalExecution: null,
     administrativeInstitution,
@@ -158,7 +173,7 @@ export const createInitialGovernanceState = (): GovernanceState => {
  * intents through the bound ControlBinding, but the administration remains
  * the canonical originator of the resulting attempted action.
  */
-export const HOUSING_GRANT_ADMINISTRATION_ID = "gl0-federal-executive-administration";
+export const HOUSING_GRANT_ADMINISTRATION_ID = GL0_EXECUTIVE_INSTITUTION_ID;
 
 export interface HousingPoliticalClaimDecisionResult {
   readonly governance: GovernanceState;

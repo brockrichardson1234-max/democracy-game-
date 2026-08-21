@@ -16,6 +16,10 @@ import {
 import {
   GL0_ORDINARY_EXECUTIVE_ELECTION_PROCEDURE_RULE_ID,
 } from "../src/sim/electoral-law";
+import {
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
+} from "../src/sim/executive";
 import { STATE_A_ID, STATE_C_ID } from "../src/sim/federalism";
 import {
   activateIntergovernmentalHousingGrantParticipation,
@@ -138,8 +142,16 @@ describe("Commit 21 election participation, result, and certification", () => {
     const world = createDeterministicWorldFixture();
 
     expect(world.electoral.candidates).toEqual([
-      { id: GL0_ADMINISTRATION_CANDIDATE_ID, alignment: "ADMINISTRATION" },
-      { id: GL0_OPPOSITION_CANDIDATE_ID, alignment: "OPPOSITION" },
+      {
+        id: GL0_ADMINISTRATION_CANDIDATE_ID,
+        actorId: GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+        alignment: "ADMINISTRATION",
+      },
+      {
+        id: GL0_OPPOSITION_CANDIDATE_ID,
+        actorId: GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
+        alignment: "OPPOSITION",
+      },
     ]);
     expect(world.electoral.candidates.every((candidate) => !("officeId" in candidate))).toBe(true);
     expect(world.governance).not.toHaveProperty("officeAssignment");

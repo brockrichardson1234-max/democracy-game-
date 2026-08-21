@@ -34,6 +34,8 @@ export type ElectoralCandidateAlignment = "ADMINISTRATION" | "OPPOSITION";
 
 export interface ElectoralCandidate {
   readonly id: string;
+  /** Reference only: persistent person identity remains executive-political state. */
+  readonly actorId: string;
   readonly alignment: ElectoralCandidateAlignment;
 }
 
@@ -166,6 +168,8 @@ export interface ElectoralTransitionResult {
 
 export interface ElectoralFixtureReferences {
   readonly geographyRegionIds: readonly string[];
+  readonly administrationCandidateActorId: string;
+  readonly oppositionCandidateActorId: string;
 }
 
 export const createInitialElectoralState = (
@@ -177,6 +181,13 @@ export const createInitialElectoralState = (
   ) {
     throw new Error("The GL0 electoral boundary requires distinct Geography references.");
   }
+  if (
+    references.administrationCandidateActorId.length === 0 ||
+    references.oppositionCandidateActorId.length === 0 ||
+    references.administrationCandidateActorId === references.oppositionCandidateActorId
+  ) {
+    throw new Error("The GL0 election requires two distinct PoliticalActor references.");
+  }
 
   return {
     boundaries: [
@@ -186,8 +197,16 @@ export const createInitialElectoralState = (
       },
     ],
     candidates: [
-      { id: GL0_ADMINISTRATION_CANDIDATE_ID, alignment: "ADMINISTRATION" },
-      { id: GL0_OPPOSITION_CANDIDATE_ID, alignment: "OPPOSITION" },
+      {
+        id: GL0_ADMINISTRATION_CANDIDATE_ID,
+        actorId: references.administrationCandidateActorId,
+        alignment: "ADMINISTRATION",
+      },
+      {
+        id: GL0_OPPOSITION_CANDIDATE_ID,
+        actorId: references.oppositionCandidateActorId,
+        alignment: "OPPOSITION",
+      },
     ],
     contests: [
       {
