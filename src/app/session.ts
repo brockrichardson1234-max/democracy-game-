@@ -77,6 +77,7 @@ import {
   resolveExecutiveSuccessionRule,
   type ExecutiveSuccessionRequirement,
 } from "../sim/executive-law";
+import { parseGameSaveV1, serializeGameSaveV1 } from "./persistence";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -458,6 +459,7 @@ export interface StateProgramProjection {
 
 export interface GameSession {
   getView(): GameView;
+  save(): string;
   advanceTo(target: SimulationInstant): GameView;
   submitHousingGrantProposal(terms: ProposalTerms): GameView;
   amendHousingGrantProposal(terms: ProposalTerms): GameView;
@@ -1021,9 +1023,12 @@ const projectWorld = (world: WorldState, controlBinding: ControlBinding): GameVi
   };
 };
 
-export const createGameSession = (): GameSession => {
-  let world = createDeterministicWorldFixture();
-  let controlBinding = createInitialControlBinding(world);
+const createGameSessionFromState = (
+  initialWorld: WorldState,
+  initialControlBinding: ControlBinding,
+): GameSession => {
+  let world = initialWorld;
+  let controlBinding = reconcileControlBinding(initialControlBinding, world);
 
   const commitWorld = (nextWorld: WorldState): GameView => {
     world = nextWorld;
@@ -1037,6 +1042,7 @@ export const createGameSession = (): GameSession => {
 
   return {
     getView: () => projectWorld(world, controlBinding),
+    save: () => serializeGameSaveV1(world, controlBinding),
     advanceTo: (target) => commitWorld(advanceWorldTo(world, target)),
     submitHousingGrantProposal: (terms) => {
       requireStrategicControl();
@@ -1094,4 +1100,14 @@ export const createGameSession = (): GameSession => {
       );
     },
   };
+};
+
+export const createGameSession = (): GameSession => {
+  const world = createDeterministicWorldFixture();
+  return createGameSessionFromState(world, createInitialControlBinding(world));
+};
+
+export const createGameSessionFromSave = (serializedSave: string): GameSession => {
+  const restored = parseGameSaveV1(serializedSave);
+  return createGameSessionFromState(restored.world, restored.controlBinding);
 };
