@@ -78,12 +78,17 @@ import {
   type ExecutiveSuccessionRequirement,
 } from "../sim/executive-law";
 import { parseGameSaveV1, serializeGameSaveV1 } from "./persistence";
+import {
+  projectPlayerAdministrationView,
+  type PlayerAdministrationView,
+} from "./player-view";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
 export type { RecordedVote } from "../sim/legislative-procedure";
 export type { HousingGrantProgramStatus } from "../sim/administration";
 
+/** Developer/audit inspection projection. This is explicitly not player knowledge. */
 export interface GameView {
   readonly currentTime: SimulationInstant;
   readonly bootstrapBoundaryResolved: boolean;
@@ -458,6 +463,9 @@ export interface StateProgramProjection {
 }
 
 export interface GameSession {
+  /** Bounded institutional/player knowledge projection; never canonical state. */
+  getPlayerView(): PlayerAdministrationView;
+  /** Developer/audit inspection projection; never the player information contract. */
   getView(): GameView;
   save(): string;
   advanceTo(target: SimulationInstant): GameView;
@@ -1041,6 +1049,7 @@ const createGameSessionFromState = (
   };
 
   return {
+    getPlayerView: () => projectPlayerAdministrationView(world, controlBinding),
     getView: () => projectWorld(world, controlBinding),
     save: () => serializeGameSaveV1(world, controlBinding),
     advanceTo: (target) => commitWorld(advanceWorldTo(world, target)),
