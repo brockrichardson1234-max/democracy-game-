@@ -38,6 +38,13 @@ import {
   resolveHousingProjectEffectiveWorkUnitsPerDay,
   type HousingProjectStatus,
 } from "../sim/housing";
+import {
+  PUBLIC_AUDIENCE_ALPHA_ID,
+  PUBLIC_AUDIENCE_BETA_ID,
+  PUBLIC_AUDIENCE_GAMMA_ID,
+  type PoliticalClaimPosition,
+  type PublicAudienceId,
+} from "../sim/information";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -54,6 +61,8 @@ export interface GameView {
   readonly implementationResponse: HousingImplementationResponseProjection;
   /** Raw Information-domain truth for the developer inspection harness. */
   readonly officialHousingMeasurement: OfficialHousingMeasurementProjection;
+  /** Raw claim/provenance/distribution truth; explicitly not population belief. */
+  readonly publicInformation: PublicInformationProjection;
   readonly statePrograms: readonly StateProgramProjection[];
 }
 
@@ -125,6 +134,23 @@ export interface OfficialHousingMeasurementProjection {
     readonly accessClass: "PUBLIC";
     readonly regionalResults: readonly HousingObservationProjection[];
   } | null;
+}
+
+export interface PublicInformationProjection {
+  readonly temporaryAudienceFixture: true;
+  readonly claims: readonly {
+    readonly id: string;
+    readonly originType: "POLITICAL_ACTOR" | "INSTITUTION";
+    readonly speakerActorId: string | null;
+    readonly speakerInstitutionId: string | null;
+    readonly sourceArtifactIds: readonly string[];
+    readonly claimPosition: PoliticalClaimPosition;
+    readonly releasedAtSimulationTime: SimulationInstant;
+  }[];
+  readonly audiences: readonly {
+    readonly id: PublicAudienceId;
+    readonly exposedArtifactIds: readonly string[];
+  }[];
 }
 
 export interface StateProgramProjection {
@@ -315,6 +341,28 @@ const projectWorld = (world: WorldState): GameView => {
                 ...observation,
               })),
             },
+    },
+    publicInformation: {
+      temporaryAudienceFixture: true,
+      claims: world.information.politicalClaims.map((claim) => ({
+        id: claim.id,
+        originType: claim.originType,
+        speakerActorId: claim.speakerActorId,
+        speakerInstitutionId: claim.speakerInstitutionId,
+        sourceArtifactIds: [...claim.sourceArtifactIds],
+        claimPosition: claim.claimPosition,
+        releasedAtSimulationTime: claim.releasedAtSimulationTime,
+      })),
+      audiences: ([
+        PUBLIC_AUDIENCE_ALPHA_ID,
+        PUBLIC_AUDIENCE_BETA_ID,
+        PUBLIC_AUDIENCE_GAMMA_ID,
+      ] as const).map((audienceId) => ({
+        id: audienceId,
+        exposedArtifactIds: world.information.exposures
+          .filter((exposure) => exposure.audienceId === audienceId)
+          .map((exposure) => exposure.artifactId),
+      })),
     },
     statePrograms: stateJurisdictions.map((state) => {
       const administrativeState = stateProgramAdministrativeStates.find(

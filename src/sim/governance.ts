@@ -34,10 +34,19 @@ import {
 import {
   createDeterministicLegislatureFixture,
   decideActorVote,
+  OPPOSITION_CLAIM_SPEAKER_ACTOR_ID,
   resolveSeatHolder,
   type Legislature,
   type ProposalTerms,
 } from "./legislature";
+import {
+  ADMINISTRATION_HOUSING_CLAIM_ID,
+  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
+  OFFICIAL_HOUSING_REPORT_ID,
+  OPPOSITION_HOUSING_CLAIM_ID,
+  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
+  type PoliticalClaimDecision,
+} from "./information";
 import {
   createLegislativeProcedureInstance,
   resolveRequiredYeaVotes,
@@ -57,7 +66,7 @@ import {
   type StateProgramDecisionState,
 } from "./federalism";
 import type { EnactedLaw, LegislativeProposal } from "./proposal";
-import type { WorldState } from "./world";
+import type { SimulationInstant, WorldState } from "./world";
 
 export interface GovernanceState {
   readonly legislature: Legislature;
@@ -115,6 +124,53 @@ export const createInitialGovernanceState = (): GovernanceState => {
     intergovernmentalProgramRelationships: [],
     housingGrantAwards: [],
   };
+};
+
+/**
+ * The two bounded political sources choose their own fixture claims here.
+ * Information receives the decision and owns the resulting artifact.
+ */
+export const resolvePoliticalHousingClaimDecision = (
+  governance: GovernanceState,
+  at: SimulationInstant,
+): PoliticalClaimDecision | null => {
+  if (at === ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT) {
+    const institution = governance.administrativeInstitution;
+    if (institution === null) {
+      throw new Error("The administration Housing claim requires its canonical institution.");
+    }
+    return {
+      claimArtifactId: ADMINISTRATION_HOUSING_CLAIM_ID,
+      originType: "INSTITUTION",
+      speakerActorId: null,
+      speakerInstitutionId: institution.id,
+      sourceArtifactIds: [OFFICIAL_HOUSING_REPORT_ID],
+      claimSubject: "HOUSING_GRANT_PROGRAM_PERFORMANCE",
+      claimPosition: "PROGRAM_WORKING",
+      decidedAtSimulationTime: at,
+    };
+  }
+
+  if (at === OPPOSITION_HOUSING_CLAIM_RELEASE_AT) {
+    const oppositionActor = governance.legislature.actors.find(
+      (actor) => actor.id === OPPOSITION_CLAIM_SPEAKER_ACTOR_ID,
+    );
+    if (oppositionActor?.coalition !== "OPPOSITION_COALITION") {
+      throw new Error("The opposition Housing claim requires its canonical opposition actor.");
+    }
+    return {
+      claimArtifactId: OPPOSITION_HOUSING_CLAIM_ID,
+      originType: "POLITICAL_ACTOR",
+      speakerActorId: oppositionActor.id,
+      speakerInstitutionId: null,
+      sourceArtifactIds: [OFFICIAL_HOUSING_REPORT_ID],
+      claimSubject: "HOUSING_GRANT_PROGRAM_PERFORMANCE",
+      claimPosition: "PROGRAM_INADEQUATE",
+      decidedAtSimulationTime: at,
+    };
+  }
+
+  return null;
 };
 
 /**

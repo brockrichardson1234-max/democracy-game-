@@ -390,13 +390,13 @@ describe("Commit 17 Housing measurement and official report lag", () => {
     ]);
   });
 
-  it("19. report release mutates neither Housing nor political state and creates no exposure", () => {
+  it("19. report release and downstream distribution mutate neither Housing nor political state", () => {
     const day39 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 39);
     const day40 = advanceWorldTo(day39, 40);
 
     expect(day40.housing).toEqual(day39.housing);
     expect(day40.governance).toEqual(day39.governance);
-    expect(day40.information).not.toHaveProperty("exposures");
+    expect(day40.information.exposures).toHaveLength(2);
     expect(day40).not.toHaveProperty("population");
   });
 

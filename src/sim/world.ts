@@ -1,4 +1,8 @@
-import { createInitialGovernanceState, type GovernanceState } from "./governance";
+import {
+  createInitialGovernanceState,
+  resolvePoliticalHousingClaimDecision,
+  type GovernanceState,
+} from "./governance";
 import {
   GEOGRAPHY_REGION_A_ID,
   GEOGRAPHY_REGION_B_ID,
@@ -15,7 +19,9 @@ import type { HistoricalOccurrence } from "./history";
 import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "./federalism";
 import {
   HOUSING_MEASUREMENT_OBSERVATION_END,
+  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
   OFFICIAL_HOUSING_REPORT_RELEASE_AT,
+  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
   createInitialInformationState,
   resolveInformationBoundary,
   type InformationState,
@@ -92,6 +98,8 @@ export const advanceWorldTo = (
   const boundaries = [
     HOUSING_MEASUREMENT_OBSERVATION_END,
     OFFICIAL_HOUSING_REPORT_RELEASE_AT,
+    ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
+    OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
     target,
   ]
     .filter((boundary) => boundary >= world.time.current && boundary <= target)
@@ -113,6 +121,7 @@ export const advanceWorldTo = (
       information,
       housing,
       boundary,
+      resolvePoliticalHousingClaimDecision(world.governance, boundary),
     );
     information = informationAdvancement.information;
     occurrences.push(...informationAdvancement.occurrences);

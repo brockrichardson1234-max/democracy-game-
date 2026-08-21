@@ -14,6 +14,8 @@ export type LegislativeCoalition =
   | "OPPOSITION_COALITION"
   | "SWING_COALITION";
 
+export const OPPOSITION_CLAIM_SPEAKER_ACTOR_ID = "actor-opposition-1";
+
 /**
  * Actor-owned decision criteria. An actor votes YEA only when every
  * criterion it specifies is satisfied by the proposal terms currently before
@@ -90,7 +92,7 @@ export const createDeterministicLegislatureFixture = (): Legislature => {
     actor("actor-support-2", "SUPPORT_COALITION", noAdditionalCriteria),
     actor("actor-support-3", "SUPPORT_COALITION", noAdditionalCriteria),
     actor("actor-support-4", "SUPPORT_COALITION", noAdditionalCriteria),
-    actor("actor-opposition-1", "OPPOSITION_COALITION", requiresLenientParticipation),
+    actor(OPPOSITION_CLAIM_SPEAKER_ACTOR_ID, "OPPOSITION_COALITION", requiresLenientParticipation),
     actor("actor-opposition-2", "OPPOSITION_COALITION", requiresLenientParticipation),
     actor("actor-opposition-3", "OPPOSITION_COALITION", requiresLenientParticipation),
     actor("actor-opposition-4", "OPPOSITION_COALITION", requiresLenientParticipation),

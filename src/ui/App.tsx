@@ -430,6 +430,39 @@ export const App = () => {
           })}
         </dl>
       </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 18 developer / audit information</p>
+        <h1>Competing Claims and Public Exposure</h1>
+
+        <h2>Political claim artifacts</h2>
+        <dl>
+          {view.publicInformation.claims.map((claim) => (
+            <div key={claim.id}>
+              <dt>{claim.claimPosition}</dt>
+              <dd>
+                released day {claim.releasedAtSimulationTime}; source {claim.sourceArtifactIds.join(", ")};
+                speaker {claim.speakerActorId ?? claim.speakerInstitutionId}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <h2>Temporary GL0 distribution audiences (not PopulationState)</h2>
+        <dl>
+          {view.publicInformation.audiences.map((audience) => (
+            <div key={audience.id}>
+              <dt>{audience.id}</dt>
+              <dd>
+                {audience.exposedArtifactIds.length === 0
+                  ? "no recorded exposure"
+                  : audience.exposedArtifactIds.join(", ")}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p>Exposure records receipt only. No audience belief, attribution, approval, or election state exists.</p>
+      </section>
     </main>
   );
 };
