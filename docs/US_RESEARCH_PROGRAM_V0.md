@@ -312,7 +312,7 @@ Research only the constitutional/institutional facts required to instantiate GL0
 
 ### 6.2 P0 — legislative route
 
-Establish the formal and ordinary procedural route required by GL0 from policy proposal through chamber procedure, actor decisions, passage, enactment, and any signature/veto/override stages actually exercised by the first vertical.
+Establish the formal and ordinary procedural route required by GL0 from policy proposal through the bicameral Congress, including the distinct House and Senate chambers, chamber procedure, actor decisions, passage, inter-chamber reconciliation where required, enactment, and any signature/veto/override stages actually exercised by the first vertical.
 
 Research only exceptions that can materially affect the supported route.
 
@@ -390,11 +390,13 @@ Research must preserve the architecture distinction:
 
 > material truth != measurement != information artifact.
 
-### 6.8 P0 — public claims / interpretation seam
+### 6.8 P0 — public claims / interpretation and player-knowledge seam
 
 Research only enough ordinary practice to establish how institutions or political actors can publicly interpret or characterize official information in ways needed by the first vertical.
 
 The research need not build a complete media ecosystem. The minimum question is whether the supported distinction among underlying measurement, public claim, belief/attribution, and political reaction can be grounded without making public claims themselves canonical material truth.
+
+Also establish, without authoring configuration, what information the executive administration legitimately possesses through its institutional role and official artifacts. Preserve the `ControlBinding` boundary: evidence about institutional access and knowledge does not itself decide player permissions, hidden information, or interface presentation.
 
 ### 6.9 P0 — electorate, election, certification, succession
 
@@ -479,15 +481,127 @@ Examples:
 - extra policy domains;
 - content not exercised by the first vertical.
 
+### 6.15 Exactly four substantive research packets
+
+The workstreams above are executed through exactly four substantive packets. A workstream is not a separate packet or audit gate. Every P0 workstream has exactly one primary packet, although cross-cutting timing and architecture-fit questions may be referenced wherever needed.
+
+Primary mapping:
+
+| P0 workstream | Primary packet |
+|---|---|
+| 6.1 federal institutional frame | Packet A |
+| 6.2 legislative route | Packet A |
+| 6.3 fiscal authority and execution | Packet B |
+| 6.4 executive / administrative implementation | Packet B |
+| 6.5 federalism and state participation | Packet B |
+| 6.6 Housing material seam | Packet B |
+| 6.7 measurement, reporting, and information artifacts | Packet C |
+| 6.8 public claims / interpretation and player knowledge | Packet C |
+| 6.9 electorate, election, certification, succession | Packet A |
+| 6.10 contested-authority / judicial seam | Packet C |
+| 6.11 cross-seam calendars | Packet D |
+| 6.12 architecture-fit questions | Packet D |
+
+#### Packet A — U.S. Federal Political Structure
+
+**Purpose:** Establish the constitutional and institutional skeleton of the recognizable U.S. configuration.
+
+**Included questions:** Federal institutional topology; Congress, House, and Senate; the legislative route; executive office and administration; presidential term and succession; election, certification, and transfer; federalism and state identities/geography needed by these structures; and the timing relevant to these subjects.
+
+**Required inputs:** Accepted Architecture V0, accepted synthetic GL0, this research-program authority, and the packet's assigned P0 questions.
+
+**Dependencies:** None beyond the governing authorities.
+
+**Required source classes:** STRUCTURAL / CONSTITUTIONAL and LEGAL / PROCEDURAL evidence, supplemented by ADMINISTRATIVE / OPERATIONAL and ORDINARY PRACTICE evidence where the supported route requires them.
+
+**Expected outputs:** Standard packet output below, with atomic claims sufficient to establish the relevant institutional topology and routes.
+
+**Stopping rule:** Stop when the first vertical's federal political, legislative, electoral, succession, federalism-topology, and related timing seams are evidence-ready. Do not research unrelated institutions or political history.
+
+**Prohibited scope:** Selecting the detailed Housing-program analog; researching fiscal grant mechanics beyond institutional relationships; gameplay calibration; configuration authoring; runtime work.
+
+#### Packet B — Federal Finance + Housing Implementation
+
+**Purpose:** Establish the bounded fiscal, administrative, intergovernmental, and Housing implementation chain required by GL0.
+
+**Included questions:** Authorization, appropriation or budget authority as relevant; obligation, disbursement, and outlay concepts; unobligated balances and bounded executive discretion relevant to the hostile path; responsible federal institutions; candidate Housing program/grant analog comparison; state/subnational participation; application, determination, award, and implementation relationships; administrative capacity and uneven delivery; the bounded Housing material seam; and relevant fiscal/program timing.
+
+**Required inputs:** Packet A's institutional baseline plus the governing authorities and assigned P0 questions.
+
+**Dependencies:** Packet A.
+
+**Required source classes:** LEGAL / PROCEDURAL, ADMINISTRATIVE / OPERATIONAL, EMPIRICAL / DATA, ORDINARY PRACTICE, and supporting STRUCTURAL / CONSTITUTIONAL evidence.
+
+**Expected outputs:** Standard packet output below, including evidence-backed comparison of plausible analogs without selecting the configuration result.
+
+**Stopping rule:** Stop when the first vertical's fiscal-to-administrative-to-material causal chain is evidence-ready with bounded alternatives and uncertainties.
+
+**Prohibited scope:** Assuming the synthetic grant/state structure is real; selecting the final analog as configuration; completing the federal budget system, housing market, or fifty-state administrative model; gameplay calibration; runtime work. If the strongest real analog routes differently, record that evidence rather than forcing the synthetic route.
+
+#### Packet C — Judiciary + Information + Player Knowledge
+
+**Purpose:** Establish the bounded contested-authority, official-information, interpretation, and institutional-knowledge seams required by the first vertical.
+
+**Included questions:** A bounded contested executive-authority route; plausible forum; interim relief; operative judicial order; order receipt and compliance; appeal/stay seam; official Housing measurement and reporting; release lag and revisions; public claims and interpretation; what the executive administration legitimately knows; and related timing.
+
+**Required inputs:** Packet A and, where a concrete contested or measurement route requires it, the leading institutional mechanism emerging from Packet B.
+
+**Dependencies:** Packet A and the relevant bounded Packet B mechanism.
+
+**Required source classes:** LEGAL / PROCEDURAL, ADMINISTRATIVE / OPERATIONAL, EMPIRICAL / DATA, ORDINARY PRACTICE, and official information artifacts.
+
+**Expected outputs:** Standard packet output below, preserving the distinctions among order, receipt, compliance, material truth, measurement, public claim, institutional knowledge, and later player-control decisions.
+
+**Stopping rule:** Stop when one plausible contested-authority route and the required information/knowledge routes are evidence-ready for the first vertical.
+
+**Prohibited scope:** A complete federal-court hierarchy; a media ecosystem; public-opinion or persuasion calibration; player-interface design; configuration authoring; runtime work.
+
+#### Packet D — Implementation Data + Cross-Packet Synthesis
+
+**Purpose:** Establish reproducible implementation-data inputs and synthesize the four-packet evidence baseline into configuration readiness.
+
+**Included questions:** Authoritative implementation data-source inventory; state identifiers and geography acquisition strategy; chamber/seat/configuration sources; electoral data/configuration sources; bounded demographic/population-weight sources if needed; licensing/public-domain considerations; cross-packet contradiction and temporal-baseline reconciliation; claim/evidence ledger consolidation; cross-seam calendars; architecture-fit questions; and the completed U.S. Configuration Readiness Matrix.
+
+**Required inputs:** Completed outputs from Packets A–C and the governing authorities.
+
+**Dependencies:** Packets A–C.
+
+**Required source classes:** The source classes required by each consolidated claim, with particular attention to official datasets, source status, version, vintage, licensing, and retained provenance.
+
+**Expected outputs:** Standard packet output below plus the cross-packet synthesis, consolidated ledger, mutable-P0 register, unresolved-gap register, and completed readiness matrix.
+
+**Stopping rule:** Stop when cross-packet conflicts are bounded, required implementation sources are identified, all P0 questions have an auditable status, and every required readiness row can be evaluated.
+
+**Prohibited scope:** Replacing evidence from Packets A–C; silently resolving unsupported conflicts; authoring configuration values; performing P1/P2 calibration; runtime or UI work.
+
+#### Standard packet output
+
+Every packet produces the same numbered structure:
+
+1. Scope
+2. Questions answered
+3. Executive summary
+4. Claim/evidence ledger additions
+5. Primary-source findings
+6. Formal-rule versus ordinary-practice distinctions
+7. Contradictions, ambiguity, and supported bounds
+8. Facts relevant to accepted architecture seams
+9. Gameplay simplification candidates — explicitly **NON-EVIDENCE**
+10. Deferred questions
+11. Source inventory
+12. Evidence gaps
+
+Packet D additionally produces the cross-packet synthesis and U.S. Configuration Readiness Matrix. Packet completion does not create a separate audit gate; the exact combined evidence candidate is audited only after all four packets are complete.
+
 ---
 
 ## 7. Research execution method
 
-Future substantive research must proceed as bounded research packages, not open-ended essays.
+Future substantive research must proceed through the four bounded research packets, not open-ended essays.
 
-### Step 1 — select a required question
+### Step 1 — execute the assigned packet
 
-Start from one P0 question and identify the accepted Architecture V0/GL0 seam that makes it necessary.
+Start from one of Packets A–D, its mapped P0 questions, and the accepted Architecture V0/GL0 seams that make them necessary. A packet executor may decompose work internally, but must deliver one bounded packet output rather than create a gate per workstream.
 
 ### Step 2 — decompose before concluding
 
@@ -546,101 +660,189 @@ Prefer a narrower supported claim over a broad low-confidence claim. Use `SUPPOR
 
 ### Step 9 — stop at implementation-relevant resolution
 
-Stop when the P0 question is answered to the level necessary for the first vertical. Do not continue collecting interesting but unnecessary government facts.
+Stop when the packet's P0 questions are answered to the level necessary for the first vertical and its stated output and stopping rule are satisfied. Do not continue collecting interesting but unnecessary government facts.
 
 ---
 
-## 8. Evidence-to-configuration handoff
+## 8. Evidence readiness and configuration handoff
 
-Accepted research evidence becomes an input to the later U.S. Configuration Contract V0.
+Accepted research evidence becomes an input to the later U.S. Configuration Contract V0. Research documents may annotate claims with `architectureSeamRefs` pointing to already accepted concepts. Those references are traceability aids only; they do not create schemas, fields, owners, systems, actor types, or mechanics.
 
-Research documents may annotate claims with `architectureSeamRefs` pointing to already accepted concepts. Those references are **traceability aids only**. They do not create engine schemas, fields, owners, systems, processes, actor types, or mechanics.
+### 8.1 U.S. Configuration Readiness Matrix
 
-The later configuration contract must explicitly decide how accepted evidence instantiates accepted architecture.
+Packet D must produce a non-normative **U.S. Configuration Readiness Matrix**. The matrix asks only:
 
-### 8.1 Required handoff record
+> Do we possess enough accepted evidence to author configuration for this seam?
 
-For every implementation-critical configuration decision, the later configuration contract should be able to state:
+It must not answer which code or configuration value will be implemented.
 
-- accepted claim IDs relied upon;
-- accepted source IDs behind those claims;
-- relevant architecture seam(s);
-- any explicit gameplay simplification proposal;
-- whether the mapping is direct, aggregated, approximated, or deferred.
+Required schema:
 
-### 8.2 Architecture mismatch rule
+```yaml
+seamId: USR-SEAM-001
+architectureConcept: "accepted Architecture V0 concept"
+firstVerticalRequirement: "why the seam is or is not required"
+claimIds: []
+evidenceClassCoverage: []
+temporalBaseline: "..."
+readinessStatus: READY | READY_WITH_BOUNDS | NOT_READY | NOT_REQUIRED
+boundedUncertainty: "..."
+unresolvedDependencies: []
+notes: "non-normative evidence-readiness notes only"
+```
 
-If a well-supported institutional fact appears not to map cleanly into Architecture V0, research must create an `ARCHITECTURE_FIT_QUESTION` containing:
+The completed matrix must include at least these rows:
 
-- the supported evidence;
-- the exact accepted seam thought insufficient;
-- the minimum mismatch statement;
-- why the mismatch matters to the first vertical.
+- Jurisdiction;
+- Institution;
+- PoliticalActor;
+- Office;
+- OfficeAssignment;
+- Legislature;
+- Legislative chamber;
+- Legislative procedure;
+- Legal source;
+- PublicFinance;
+- FiscalExecution;
+- Administrative program/institution;
+- Intergovernmental relationship;
+- Geography;
+- Population;
+- Electoral boundary/process;
+- Election result/certification;
+- Executive succession/transfer;
+- Judiciary;
+- LegalContest;
+- JudicialOrder;
+- Administrative compliance;
+- Information artifact/measurement;
+- player institutional knowledge / `ControlBinding` boundary;
+- Time/transitions;
+- Housing material owner.
 
-Researchers must **not** repair that mismatch by:
+No required first-vertical row may remain `NOT_READY` at freeze. `NOT_REQUIRED` requires an explicit first-vertical rationale. `READY_WITH_BOUNDS` must identify the bounded uncertainty and why it remains safe for configuration authoring.
 
-- inventing new ontology;
-- changing state ownership;
-- adding a new system;
-- redefining an accepted seam;
-- embedding a U.S.-specific special case into research prose and treating it as architecture.
+### 8.2 Exact configuration handoff bundle
 
-The mismatch is escalated for later authority resolution: represent directly, deliberately simplify, defer, or separately reconsider architecture.
+The frozen evidence handoff to U.S. Configuration Contract V0 consists of:
+
+- accepted Architecture V0 SHA;
+- accepted synthetic GL0 runtime SHA;
+- accepted U.S. evidence-baseline SHA;
+- complete claim/evidence ledger;
+- Packet A–D outputs;
+- Packet D cross-packet synthesis;
+- completed U.S. Configuration Readiness Matrix;
+- freeze-time mutable-P0 revalidation record;
+- accepted gameplay simplification candidates, clearly marked **NON-EVIDENCE**;
+- bounded unresolved uncertainties;
+- deferred P1/P2 register;
+- resolved architecture-fit records;
+- every explicit `NOT_REQUIRED` rationale.
+
+For every later implementation-critical configuration decision, the configuration contract must identify accepted claim/source IDs, the relevant accepted seam, any explicit simplification, and whether the mapping is direct, aggregated, approximated, or deferred. The configuration author must not need another broad research phase. A newly discovered direct evidence gap may be routed back narrowly, but does not reopen the entire research program.
+
+### 8.3 Architecture-fit questions and reopening threshold
+
+An `ARCHITECTURE_FIT_QUESTION` does **not** reopen Architecture V0. It records supported claim IDs, the exact accepted seam or invariant thought insufficient, the minimum mismatch, and why it matters to the first vertical.
+
+Every fit question follows this required resolution order:
+
+1. **Represent through existing configuration.** Test whether the fact can instantiate already accepted concepts and owners.
+2. **Deliberately simplify with evidence.** Test a bounded compression that preserves the relevant causal relationship. The proposal remains **NON-EVIDENCE**.
+3. **Defer.** If the distinction is outside the first vertical, determine whether it can be deferred without making the supported route incorrect.
+4. **Architecture-reopen consideration.** Only after the first three alternatives fail may reopening even be considered.
+
+Reopen consideration additionally requires at least one demonstrated condition:
+
+- a direct contradiction with accepted Architecture V0;
+- a required canonical fact has no semantic owner;
+- duplicate ownership is unavoidable;
+- an accepted causal path is impossible without violating an invariant;
+- deterministic or persistence semantics cannot represent the required fact.
+
+Configuration awkwardness, a preference for a cleaner abstraction, greater realism from another design, or the existence of a U.S. special case does not qualify.
+
+Any escalation record must contain:
+
+- evidence claim IDs;
+- exact Architecture V0 seam/invariant;
+- attempted existing-configuration mapping and why it failed;
+- considered bounded simplification and why it failed;
+- considered deferral and why it failed;
+- exact qualifying reopen condition.
+
+Researchers and auditors do not reopen Architecture V0. They must not invent ontology, change ownership, add systems, redefine seams, or embed a U.S.-specific engine special case.
 
 ---
 
 ## 9. Freeze criteria
 
-The U.S. evidence baseline is frozen enough to authorize **U.S. Configuration Contract V0 authoring** only when all conditions below are met.
+The U.S. evidence baseline is frozen enough to authorize **U.S. Configuration Contract V0 authoring** only when all conditions below are met:
 
-1. The candidate evidence baseline is identified by an exact repository SHA/snapshot.
-2. Every P0 research question is `SUPPORTED`, `SUPPORTED_WITH_BOUNDS`, or explicitly `NOT_REQUIRED` with a recorded rationale.
-3. Every implementation-critical atomic claim has complete source provenance and pinpoint support.
-4. Every P0 claim has temporal, jurisdictional, institutional, and scope metadata.
-5. No unresolved implementation-critical contradiction remains.
-6. No unresolved `BLOCKER` or `MAJOR` audit finding remains.
-7. All required independent initial audit passes completed against the same evidence-baseline SHA.
-8. The one bounded research-repair phase, if findings required it, is complete.
-9. Findings-only rechecks closed every repair-required initial finding.
-10. Gameplay simplification proposals are visibly separated from evidence and trace to accepted evidence.
-11. All architecture-fit mismatches are either resolved by explicit authority or recorded as blocking the affected configuration path.
-12. P1/P2 deferred questions are recorded so the freeze is not mistaken for “research complete forever.”
-13. The temporal baseline is explicit, including a list of mutable P0 authorities/data vintages that may require staleness review before implementation if time has passed.
+1. The evidence candidate is identified by an exact repository SHA.
+2. All four research packets are complete.
+3. Packet D cross-packet synthesis is complete.
+4. Every P0 question is `SUPPORTED`, `SUPPORTED_WITH_BOUNDS`, or justified `NOT_REQUIRED`.
+5. Implementation-critical claim/source provenance and pinpoints are complete.
+6. Temporal, jurisdictional, institutional, and scope metadata are complete.
+7. Formal law and ordinary-practice distinctions are explicit.
+8. Contradictions and genuine uncertainty are explicitly represented.
+9. Exactly three independent first-pass audits—A, B, and C—completed against the same evidence SHA.
+10. Zero `BLOCKER` findings remain open.
+11. Zero `HIGH` findings remain open.
+12. The one bounded research repair, if required, is complete.
+13. Findings-only rechecks by the original auditors closed every repaired `BLOCKER` and `HIGH`.
+14. Every mutable P0 dependency has a completed freeze-time revalidation record.
+15. The Configuration Readiness Matrix has no unexplained required `NOT_READY` row.
+16. Gameplay simplifications remain separate **NON-EVIDENCE** proposals traceable to evidence.
+17. No hidden Architecture V0 contradiction or unresolved qualifying `ARCHITECTURE_FIT_QUESTION` blocks a required path.
+18. P1/P2 areas remain explicitly deferred and need not be completed.
+19. The frozen evidence authority is identified by exact repository SHA.
 
-Freeze means **sufficient evidence for configuration authoring**, not permanent truth and not implementation authorization.
+Freeze means sufficient evidence for configuration authoring, not permanent truth and not runtime implementation authorization.
 
 ---
 
-## 10. Change control and staleness
+## 10. Change control, staleness, and freeze-time revalidation
 
 The accepted evidence baseline is versioned by exact repository SHA.
 
-### 10.1 Staleness-sensitive claim classes
+### 10.1 Mutable P0 classes
 
-At minimum, the following receive explicit staleness attention:
+Every mutable P0 claim/source dependency must be revalidated at freeze time. Mutable classes include:
 
-- statutes/rules amended after baseline;
-- chamber rules and composition;
-- election administration rules;
-- agency regulations/guidance;
-- program eligibility/administrative rules;
+- current statutes or rules whose version can change;
+- chamber rules;
+- election-administration rules;
+- current administrative regulations or guidance;
+- active program materials;
+- official procedural manuals;
 - fiscal/program authorities;
-- empirical datasets and revisions;
-- temporary current-state facts.
+- current datasets and vintages;
+- other mutable P0 authority or temporary current-state facts.
 
-### 10.2 Reopen triggers
+### 10.2 Required revalidation record
 
-The evidence baseline is reopened only when one of these occurs:
+```yaml
+claimId: USR-CLM-0001
+sourceId: USR-SRC-0001
+mutableClass: "..."
+originalValidatedAt: "timestamp"
+freezeRevalidatedAt: "timestamp"
+result: UNCHANGED | CHANGED | UNAVAILABLE
+replacementSourceId: null
+claimImpact: "..."
+readinessImpact: "..."
+```
 
-- an implementation-critical source changes materially;
-- a later configuration audit finds an unsupported or mis-scoped dependency;
-- a court/statute/rule/regulation changes an implementation-critical claim;
-- new authoritative evidence resolves or creates a material contradiction;
-- the first vertical scope changes enough to require a previously deferred research question.
+`CHANGED` or `UNAVAILABLE` blocks freeze unless the evidence candidate updates or replaces the evidence, narrows the claim, records supported bounds, removes the dependency, or marks the affected required path `NOT_READY`. Revalidation is a freeze prerequisite, not an optional later staleness review.
 
-Reopening must produce a bounded delta: changed claims, changed sources, affected configuration decisions, and required re-audit surface.
+### 10.3 Evidence-baseline reopen triggers
 
-A new officeholder, election result, news event, or policy debate does not automatically reopen structural research unless the first vertical depends on that transient fact.
+After freeze, the evidence baseline is reopened only when an implementation-critical source changes materially, a configuration audit finds an unsupported dependency, new authoritative evidence creates or resolves a material contradiction, or first-vertical scope changes enough to require deferred research.
+
+Reopening produces a bounded delta: changed claims and sources, affected readiness rows and configuration decisions, and the required re-audit surface. A new officeholder, election result, news event, or policy debate does not automatically reopen structural research unless the first vertical depends on that transient fact.
 
 ---
 
@@ -664,22 +866,31 @@ This candidate does not authorize:
 
 ---
 
-## Appendix A — research package template
+## Appendix A — research packet template
 
 ```text
-Research package ID:
-Architecture/GL0 seam requiring it:
-Priority: P0 / P1 / P2
-Question:
-Out-of-scope boundaries:
-Expected evidence classes:
-Preferred authority tiers:
-Atomic claim IDs:
-Contrary/ambiguous evidence:
-Negative findings:
-Architecture-fit questions:
-Stopping rule:
+Research packet: A | B | C | D
+Purpose:
+Included mapped questions:
+Required inputs:
+Dependencies:
+Required source classes:
+Prohibited scope:
+Stopping rule satisfied:
 Researcher SHA/snapshot:
+
+1. Scope
+2. Questions answered
+3. Executive summary
+4. Claim/evidence ledger additions
+5. Primary-source findings
+6. Formal rule vs ordinary-practice distinctions
+7. Contradictions / ambiguity / supported bounds
+8. Facts relevant to accepted architecture seams
+9. Gameplay simplification candidates — NON-EVIDENCE
+10. Deferred questions
+11. Source inventory
+12. Evidence gaps
 ```
 
 ## Appendix B — mandatory researcher self-check before audit
@@ -696,3 +907,60 @@ Before handing a research baseline to independent audit, confirm:
 - unsupported negative claims are not presented as facts;
 - architecture-fit questions are recorded instead of silently redesigning the engine;
 - deferred calibration remains deferred unless formally promoted to P0.
+
+## Appendix C — Prompt 1: Research Packet Executor
+
+```text
+You are the U.S. RESEARCH PACKET EXECUTOR for Packet <A/B/C/D>.
+
+EXACT AUTHORITIES
+- Accepted Architecture V0 SHA: <sha>
+- Accepted synthetic GL0 runtime SHA: <sha>
+- U.S. Research Program V0 authority: <exact sha>
+- U.S. Research Audit Protocol V0 authority: <exact sha>
+- Evidence working-candidate base SHA: <exact sha>
+
+ROLE AND PERMITTED WORK
+Execute only Packet <A/B/C/D> as defined by U.S. Research Program V0. Research only its mapped P0 questions and necessary direct dependencies. Follow the claim-relative source hierarchy. Create or update atomic claim records, source records, dataset extensions, contradictions, bounds, architecture seam references, and packet outputs. Preserve contrary evidence. Distinguish STRUCTURAL / CONSTITUTIONAL, LEGAL / PROCEDURAL, ADMINISTRATIVE / OPERATIONAL, EMPIRICAL / DATA, ORDINARY PRACTICE, and GAMEPLAY SIMPLIFICATION PROPOSAL. Label every gameplay simplification NON-EVIDENCE.
+
+PROHIBITED WORK
+Do not research another packet except for a named direct dependency. Do not expand into P1/P2 work. Do not treat synthetic fixtures as U.S. facts. Do not select configuration values, author U.S. Configuration Contract V0, redesign or reopen Architecture V0, modify runtime/tests/UI, or perform an audit.
+
+OUTPUT
+Return the standard twelve-part packet output exactly as defined by the program, the exact artifact SHA, all ledger/source additions, unresolved evidence gaps, and an explicit packet-boundary attestation. Packet D must additionally return the cross-packet synthesis, consolidated ledger, mutable-P0 register, and U.S. Configuration Readiness Matrix.
+
+STOPPING CONDITION
+Stop when the assigned packet's required outputs and stopping rule are satisfied. If an essential dependency is unavailable or a qualifying architecture-fit question remains, record it precisely and stop; do not solve it by unauthorized expansion or configuration design.
+```
+
+## Appendix D — Prompt 8: U.S. Configuration Contract Author
+
+```text
+You are the U.S. CONFIGURATION CONTRACT V0 AUTHOR.
+
+BEGIN ONLY AFTER EVIDENCE FREEZE.
+
+EXACT AUTHORITIES AND INPUTS
+- Accepted Architecture V0 SHA: <sha>
+- Accepted synthetic GL0 runtime SHA: <sha>
+- Exact accepted U.S. evidence-baseline SHA: <sha>
+- Accepted U.S. Research Program V0 SHA: <sha>
+- Accepted U.S. Research Audit Protocol V0 SHA: <sha>
+- Complete accepted claim/evidence ledger: <artifact/path>
+- Packet A–D outputs and cross-packet synthesis: <artifacts/paths>
+- Completed U.S. Configuration Readiness Matrix: <artifact/path>
+- Freeze-time mutable-P0 revalidation record: <artifact/path>
+- Bounded uncertainties, accepted NON-EVIDENCE simplification candidates, deferred P1/P2 register, resolved architecture-fit records, and NOT_REQUIRED rationales: <artifacts/paths>
+
+ROLE AND PERMITTED WORK
+Translate accepted evidence into explicit U.S. configuration requirements for existing Architecture V0 seams. For every requirement, identify relied-on claim/source IDs, the accepted seam and semantic owner, the chosen direct/aggregated/approximated/deferred mapping, and any accepted gameplay simplification.
+
+PROHIBITED WORK
+Do not conduct another broad research phase. Do not turn a simplification into evidence. Do not silently alter Architecture V0, create a new canonical owner, hard-code the United States into generic ontology, modify runtime/tests/UI, or begin implementation. A newly discovered direct evidence gap must be routed back narrowly and must not reopen the entire research program.
+
+OUTPUT
+Produce U.S. Configuration Contract V0 as a separate authority candidate with exact upstream SHAs, evidence-to-requirement traceability, semantic-owner mapping, bounded uncertainties, explicit simplifications, deferred items, architecture-fit disposition, and its own independent-audit readiness statement.
+
+STOPPING CONDITION
+Stop at the configuration-contract candidate. Do not self-accept, implement, or reopen architecture. If a required readiness row proves unsupported, identify the exact gap and stop the affected path for narrow evidence routing.
+```

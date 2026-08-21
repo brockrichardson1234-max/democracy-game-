@@ -25,7 +25,7 @@ Each audit targets an **exact evidence-baseline repository SHA/snapshot**. Branc
 An auditor must record:
 
 - evidence-baseline SHA;
-- audit-pass identifier;
+- audit-lane identifier;
 - auditor identity/session identity;
 - protocol version/SHA used;
 - start/end timestamps if available;
@@ -34,9 +34,9 @@ An auditor must record:
 
 ### 1.1 Independence rule
 
-Initial audit passes must be genuinely independent.
+The three initial audits must be genuinely independent.
 
-Before completing its own pass, an auditor must not receive:
+Before completing its own lane, an auditor must not receive:
 
 - another auditor's verdict;
 - another auditor's finding list;
@@ -63,194 +63,147 @@ Acceptance requires a separate reviewer/authority after the required audit and r
 
 ---
 
-## 2. Required independent audit passes
+## 2. Exactly three required independent first-pass audits
 
-The initial audit set contains **six distinct attack surfaces**. They may be executed by six reviewers or by fewer reviewers only if each pass is completed independently and results are not inherited across passes before completion. At least three separate reviewer sessions/agents must participate overall.
+The initial audit set contains exactly three mandatory lanes. Each lane is performed by its own independent reviewer/session against the same exact evidence-baseline SHA and produces a separate report. Each auditor inspects the entire baseline sufficiently to test its lane; it may not inherit another auditor's initial conclusions before submitting its own report.
 
-Each pass must inspect the entire evidence baseline sufficiently to test its attack surface, not merely sample one convenient claim.
+### AUDIT A — Source / Fact Integrity
 
-### PASS A — legal / procedural authority audit
+Primary question:
 
-Attack implementation-critical STRUCTURAL / CONSTITUTIONAL and LEGAL / PROCEDURAL claims.
+> Are the research claims actually supported by authoritative, current, correctly interpreted evidence?
 
-Questions:
+Audit A owns source and factual-integrity attacks across evidence classes. It evaluates each claim according to the source type appropriate for that claim rather than demanding one source type for everything.
 
-- Is the cited source actually authoritative for the proposition?
-- Is primary authority available but omitted without justification?
-- Is a statute, rule, regulation, case, or chamber procedure current for the baseline date?
-- Is a source being used outside its jurisdiction or legal scope?
-- Does the claim omit a legally material exception?
-- Does the research confuse legal authority, claimed authority, operational behavior, and compliance?
-- Does it confuse proposal, procedure, enactment, appropriation, obligation, payment, or outcome?
-- Are judicial claims, orders, remedies, appeal posture, and compliance kept distinct?
+It attacks at least:
 
-This pass does not judge gameplay simplifications except where a simplification has been mislabeled as legal fact.
+- source existence, identity, authority, and status;
+- primary versus secondary appropriateness;
+- legal and procedural correctness;
+- source version, effective date, currentness, and temporal scope;
+- jurisdiction and institutional scope;
+- formal law versus ordinary practice;
+- guidance versus binding law;
+- empirical and dataset validity, including universe, geography, vintage, revision, method, transformation, and uncertainty;
+- quotation, paraphrase, pinpoint, and entailment fidelity;
+- claim-level provenance and synthesis dependencies;
+- contrary evidence and cherry-picking;
+- unsupported negative claims;
+- gameplay simplification mislabeled as fact.
 
-### PASS B — ordinary-practice / operational-reality audit
+### AUDIT B — Coverage / Adversarial Completeness
 
-Attack ADMINISTRATIVE / OPERATIONAL and ORDINARY PRACTICE claims.
+Primary question:
 
-Questions:
+> Did the research omit anything necessary to safely configure the first recognizable U.S. vertical?
 
-- Is formal legal permission being presented as ordinary behavior?
-- Is a manual/guidance document being mistaken for binding law?
-- Is a single anecdote generalized into a stable practice?
-- Is agency process described from official documentation that may not reflect actual ordinary operation?
-- Where practice varies, is the variation acknowledged?
-- Does a practice claim have enough independent support for its breadth?
-- Does the claim distinguish what institutions are permitted to do, required to do, normally do, and happened to do in one case?
+Audit B asks whether the baseline is complete enough, not encyclopedic. It attacks at least:
 
-### PASS C — empirical / data / temporal-validity audit
+- missing P0 Architecture V0/GL0 seams;
+- research overreach and underreach;
+- synthetic fixture assumptions promoted into U.S. facts;
+- a House route without the Senate or bicameral completion;
+- an election without certification, entitlement, transfer, or persistent succession;
+- appropriation without obligation, payment, or material consequence;
+- an agency/program route without a real legal and operational basis;
+- federalism or state participation assumed rather than evidenced;
+- a Housing analog that does not support the selected causal route;
+- a contested-authority route missing a plausible required procedural step;
+- official measurement without release, lag, revision, universe, or geography semantics;
+- implementation-data source gaps;
+- incompatible assumptions across Packets A–D;
+- P1/P2 work improperly made prerequisite, or necessary P0 work improperly deferred.
 
-Attack EMPIRICAL / DATA claims and quantitative ordinary-practice claims.
+### AUDIT C — Architecture / Configuration Fit
 
-Questions:
+Primary question:
 
-- Is the dataset/source real and retrievable?
-- Is the observation period appropriate?
-- Is the vintage/revision captured?
-- Are geography, universe, sample, denominator, and variable definitions correct?
-- Are transformed values reproducible?
-- Is uncertainty represented when material?
-- Is old evidence presented as current?
-- Are nominal/current/transient values being mistaken for structural facts?
-- Is false precision used where evidence supports only a range or qualitative relation?
-- Does the research confuse measurement with the underlying material state?
+> Can the accepted U.S. evidence be translated into Architecture V0 without silently corrupting ownership or hard-coding the United States into generic engine ontology?
 
-### PASS D — claim/source traceability and quotation-fidelity audit
+Audit C is a genuinely independent reviewer and report. It attacks at least:
 
-Attack the provenance chain.
+- U.S. configuration facts proposed as generic ontology;
+- actor, candidate, office, and office-assignment collapse;
+- House/Senate ownership mistakes;
+- jurisdiction versus geography confusion;
+- electoral geography shadow-owning Population;
+- legal rules placed in administrative state;
+- administrative program state owning material Housing outcomes;
+- election result or certification confused with office assignment;
+- judicial order confused with receipt, compliance, refusal, appeal, or stay;
+- public information or measurement confused with material truth;
+- U.S.-specific engine special cases;
+- configuration inconvenience mislabeled as an architecture contradiction;
+- readiness-matrix rows unsupported by the cited evidence.
 
-Questions:
+Audit C records qualifying architecture-fit questions but does not redesign or reopen Architecture V0.
 
-- Does every P0 claim have stable IDs?
-- Does every source ID resolve to the cited source?
-- Do pinpoint references exist and support the wording used?
-- Does the quoted or paraphrased text actually entail the claim?
-- Has context been omitted in a way that changes meaning?
-- Are synthesis claims traceable to supported atomic claims?
-- Is contrary evidence retained and linked?
-- Can an auditor reconstruct the claim without guessing what page, section, table, or version was meant?
-- Are mutable sources identified strongly enough to reconstruct the relied-on version later?
+### 2.1 First-pass independence
 
-### PASS E — scope / coverage / architecture-boundary audit
+All three auditors receive the same exact evidence-baseline SHA and governing program/protocol authorities. They work independently, do not receive the other first-pass reports before submitting their own, and produce separate reports. No majority vote decides truth or disposition. A supported serious finding survives even if the other two auditors missed it. The three reports become inputs to the later mechanical synthesis.
 
-Attack both under-research and overreach.
+### 2.2 Optional specialist
 
-Questions:
+At most one additional specialist review may be authorized. It is not automatic and is allowed only after completed research reveals one specific high-risk question materially exceeding the normal competence or scope of Audits A–C.
 
-- Are all P0 seams needed by accepted synthetic GL0 covered?
-- Is any implementation-critical seam silently relying on synthetic assumptions rather than U.S. evidence?
-- Has research expanded into areas irrelevant to the first U.S. vertical?
-- Are current politician identities being researched without necessity?
-- Has a P1 calibration question been incorrectly promoted into structural necessity?
-- Has a necessary P0 question been incorrectly deferred as calibration?
-- Is any research prose inventing engine ontology, changing ownership, adding a new subsystem, or treating U.S.-specific content as permanent architecture?
-- Are architecture-fit mismatches recorded instead of silently “solved” in the evidence layer?
+The authorization must state:
 
-### PASS F — simplification / synthesis / contradiction audit
+- the exact bounded question;
+- affected claim IDs;
+- why Audits A–C are insufficient;
+- exact bounded output expected.
 
-Attack the boundary among evidence, synthesis, and game-design proposal.
-
-Questions:
-
-- Is every gameplay simplification labeled as non-evidence?
-- Does each simplification cite the evidence being compressed?
-- Is the omitted/compressed reality stated explicitly?
-- Are multiple facts synthesized without creating unsupported new propositions?
-- Are conflicting authorities/evidence surfaced?
-- Has the research cherry-picked one side of a known dispute?
-- Are unresolved contradictions properly blocking where implementation-critical?
-- Are negative findings supported rather than inferred from failed searches?
+The specialist receives the same evidence SHA, produces only the named bounded output, and does not conduct a fourth general audit or restart the audit process.
 
 ---
 
 ## 3. Findings taxonomy and severity
 
-Every finding has one severity.
+The formal audit workflow recognizes exactly two severities.
 
 ### BLOCKER
 
-A defect that makes the candidate evidence baseline unsafe to freeze or impossible to audit reliably.
+The evidence baseline cannot safely support configuration because a central factual premise, source basis, required P0 seam, provenance chain, audit-independence rule, or architecture mapping is invalid or unusable.
 
-Examples:
+### HIGH
 
-- implementation-critical claim materially contradicted by controlling authority;
-- fabricated/nonexistent source or locator;
-- key P0 seam absent;
-- evidence and gameplay proposal systematically conflated;
-- unresolved architecture leakage that silently redesigns accepted architecture;
-- exact baseline cannot be reconstructed;
-- implementation-critical contradiction cannot currently be resolved.
+A material but bounded evidence, coverage, provenance, temporal, methodological, or architecture-fit defect could cause a substantially wrong U.S. configuration.
 
-A BLOCKER must be repaired or explicitly force the affected P0 path out of the candidate baseline.
+Only `BLOCKER` and `HIGH` may enter the formal finding schema, mechanical synthesis, required disposition, repair queue, findings-only recheck, or freeze gate.
 
-### MAJOR
-
-A material defect that can produce a wrong U.S. configuration but is bounded enough to repair.
-
-Examples:
-
-- wrong/outdated source for a P0 claim;
-- claim overstates source scope;
-- formal rule conflated with ordinary practice;
-- material legal/operational exception omitted;
-- empirical methodology/date mismatch;
-- unsupported implementation-critical synthesis;
-- gameplay simplification mislabeled as evidence;
-- source provenance insufficient for reliable verification.
-
-MAJOR findings must be closed before freeze.
-
-### MINOR
-
-A real defect that does not materially alter the first implementation path if left temporarily unresolved, but should be repaired when within bounded findings scope.
-
-Examples:
-
-- incomplete noncritical metadata;
-- imprecise wording where source and conclusion are otherwise sound;
-- weak but noncritical corroboration;
-- locator improvement that does not threaten entailment.
-
-MINOR findings do not independently block freeze unless the acceptance authority determines their accumulation creates a provenance/quality problem.
-
-### NOTE
-
-Nonblocking observation, deferred calibration suggestion, possible future research improvement, or explicitly out-of-scope issue.
-
-A NOTE is not repair authorization unless promoted by acceptance authority.
+Auditors may optionally provide a clearly separated **NONBLOCKING NOTES** section. Such observations are not findings: they have no finding ID or required repair, do not enter synthesis or disposition, are not rechecked, and cannot block freeze. No formal lower severity exists.
 
 ---
 
 ## 4. Required finding schema
 
-Every finding must contain:
+Every formal finding must contain:
 
 ```yaml
 findingId: USR-AUD-A-001
-passId: A | B | C | D | E | F
-severity: BLOCKER | MAJOR | MINOR | NOTE
+auditLane: A | B | C | SPECIALIST
+severity: BLOCKER | HIGH
 evidenceBaselineSha: "..."
 claimIds: []
 sourceIds: []
 artifactPaths: []
 summary: "one-sentence defect statement"
-attackType: "SOURCE_AUTHORITY | LOCATOR_FIDELITY | CLAIM_ENTAILMENT | CHERRY_PICKING | CONTRADICTORY_AUTHORITY | TEMPORAL_MISMATCH | JURISDICTION_MISMATCH | OUTDATED_RULE | OUTDATED_DATA | FALSE_PRECISION | MISSING_EXCEPTION | RULE_PRACTICE_CONFLATION | EVIDENCE_PROPOSAL_CONFLATION | ARCHITECTURE_LEAKAGE | OFFICEHOLDER_OVERFIT | UNSUPPORTED_NEGATIVE | COVERAGE_GAP | SCOPE_OVERREACH | OTHER"
-evidence: "what the auditor inspected and found"
-whyItMatters: "effect on first U.S. configuration/freeze"
-requiredRepair: "bounded condition that must become true; do not prescribe unrelated expansion"
-independentSourcesChecked: []
-status: OPEN | REPAIR_PROPOSED | RECHECK_PASS | RECHECK_FAIL | DEFERRED_NOTE
+exactDefect: "precise bounded defect"
+auditorEvidence: "what the auditor inspected and found"
+whyConfigurationIsThreatened: "material consequence for configuration/freeze"
+requiredRepair: "narrow condition that must become true"
+objectiveClosureTest: "reproducible findings-only test"
+architectureContradiction: YES | NO
+status: OPEN | REPAIRED_PENDING_RECHECK | RECHECK_PASS | RECHECK_FAIL
 ```
 
-A finding should state the defect precisely enough that the repair author can fix only the finding without guessing at a broader rewrite.
+A finding must be precise enough to repair and recheck without a broader rewrite or new general audit.
 
 ---
 
 ## 5. Adversarial test procedures
 
-Every pass uses the tests relevant to its attack surface. The procedures below are mandatory across the audit set.
+Each audit uses the tests relevant to its attack surface. The procedures below are mandatory across the audit set.
 
 ### 5.1 Source-existence test
 
@@ -261,7 +214,7 @@ For each sampled or implementation-critical source:
 - verify cited version/date;
 - verify the source is not merely a search snippet or secondary quotation pretending to be the original.
 
-Failure on an implementation-critical source is at least MAJOR and may be BLOCKER if the claim has no other valid support.
+Failure on an implementation-critical source is at least HIGH and may be BLOCKER if the claim has no other valid support.
 
 ### 5.2 Source-authority test
 
@@ -302,7 +255,7 @@ Attack:
 
 Search for contrary authority or materially different evidence, especially when the claim is contested, variable, or ordinary-practice based.
 
-An auditor should attempt at least one hostile search formulation for major P0 claims rather than repeating the researcher's search terms.
+An auditor should attempt at least one hostile search formulation for important P0 claims rather than repeating the researcher's search terms.
 
 ### 5.6 Contradictory-authority test
 
@@ -374,6 +327,8 @@ Flag research prose that:
 
 A real-world mismatch is evidence for an `ARCHITECTURE_FIT_QUESTION`, not research-author permission to redesign.
 
+Audit C must apply the program's ordered threshold: represent through existing configuration, then consider an evidence-backed NON-EVIDENCE simplification, then defer if outside the first vertical. Architecture-reopen consideration is permitted only if all three fail and the record demonstrates a direct Architecture V0 contradiction, an unowned required canonical fact, unavoidable duplicate ownership, an impossible accepted causal path/invariant, or an unrepresentable deterministic/persistence requirement. Awkward configuration, cleaner abstraction, extra realism, or a U.S. special case does not qualify. Auditors record the question; they do not reopen architecture.
+
 ### 5.14 Current-officeholder overfit test
 
 Search for unnecessary dependence on current names, partisan composition, temporary personalities, or one administration's transient practice where institutional structure would suffice.
@@ -386,7 +341,7 @@ A failed search is not proof of absence. Negative claims need appropriate affirm
 
 ### 5.16 Cross-claim consistency test
 
-Compare claims across packages for contradictory definitions, dates, jurisdictions, actor roles, or process sequence.
+Compare claims across packets for contradictory definitions, dates, jurisdictions, actor roles, or process sequence.
 
 The evidence baseline must not be locally correct but globally inconsistent.
 
@@ -398,44 +353,85 @@ Audits may use sampling for noncritical P1/P2 material, but **P0 implementation-
 
 At minimum:
 
-- PASS A reviews every P0 legal/procedural claim or a formally defined complete subset by research package;
-- PASS D verifies every P0 claim has reconstructible provenance, with direct locator/entailment checks on all implementation-critical claims;
-- PASS E checks every P0 research question against the accepted GL0 seams;
-- PASS F checks every simplification proposal and every unresolved contradiction.
+- Audit A verifies every implementation-critical P0 claim has reconstructible provenance and directly checks source identity, authority, locator, entailment, temporal/jurisdiction fit, and evidence-class interpretation;
+- Audit B checks every P0 question, all four packet outputs, cross-packet synthesis, implementation-data sources, and every required GL0 seam for omissions or incompatible assumptions;
+- Audit C checks every required readiness-matrix row, every architecture-fit record, and every proposed evidence-to-seam mapping for accepted ownership and boundary integrity;
+- an authorized specialist checks only its named question and affected claim IDs.
 
-Where the baseline becomes too large for one pass, divide it into explicit packages. Do not silently reduce coverage.
+Where a lane's baseline becomes too large for one reviewer context, it may divide its work internally by the four established packets while still producing one independent lane report. Do not create additional mandatory audits or silently reduce coverage.
 
 ---
 
 ## 7. Initial audit outputs
 
-Each independent pass produces:
+Each independent Audit A, B, and C produces:
 
 - exact evidence-baseline SHA audited;
-- pass verdict: `PASS`, `PASS_WITH_FINDINGS`, or `FAIL`;
+- lane verdict: `CLEAR`, `FINDINGS`, or `UNREVIEWABLE`;
 - finding list using the required schema;
 - claim/source coverage statement;
-- explicit statement that the pass was completed without seeing other initial auditors' conclusions.
+- explicit statement that the lane was completed without seeing the other initial auditors' conclusions;
+- optional NONBLOCKING NOTES in a separate section outside the formal finding list.
 
-`PASS` means no findings in that pass.
+`CLEAR` means no BLOCKER/HIGH findings in that lane.
 
-`PASS_WITH_FINDINGS` means one or more MINOR/NOTE findings, or repairable MAJOR findings if the overall baseline is not being accepted yet.
+`FINDINGS` means one or more BLOCKER/HIGH findings exist.
 
-`FAIL` means one or more BLOCKER findings or a defect that prevents meaningful completion of the pass.
+`UNREVIEWABLE` means a defect prevents meaningful completion of the lane and must itself be recorded as BLOCKER.
 
-Initial pass verdicts do **not** freeze the baseline.
+Initial lane verdicts do not freeze the baseline. Only the later freeze gate can do so.
 
 ---
 
-## 8. Bounded research-repair protocol
+## 8. Mechanical Research Findings Synthesis
 
-After all required independent initial audit passes finish, findings are collated once.
+After Audits A–C finish, exactly one **Research Findings Synthesis** creates the repair queue. It is not a fourth audit.
+
+The synthesizer receives only:
+
+- the exact evidence-baseline SHA;
+- Audit A report;
+- Audit B report;
+- Audit C report;
+- the optional specialist report, only if one was authorized.
+
+The synthesizer must not conduct research, create findings, change an original severity, dismiss a unique supported finding, vote findings away, redesign packets, author configuration, or redesign architecture.
+
+Its mechanical tasks are:
+
+1. validate that every report and finding references the same evidence SHA;
+2. preserve every original BLOCKER/HIGH finding and original ID;
+3. identify overlaps and create duplicate groups without erasing originals;
+4. identify genuine factual, legal, methodological, temporal, jurisdictional, scope, or severity disagreements;
+5. create one repair queue;
+6. preserve provenance from every queue item to all contributing original findings.
+
+Repair queue schema:
+
+```yaml
+repairQueueId: USR-RQ-001
+sourceFindingIds: []
+highestSeverity: BLOCKER | HIGH
+affectedClaimIds: []
+sharedDefect: "..."
+requiredClosureConditions: []
+auditorDisagreement: NONE | EVIDENCE_ADJUDICATION_REQUIRED
+status: OPEN | REPAIRED_PENDING_RECHECK | CLOSED
+```
+
+When duplicate findings have different severities, original severities remain unchanged and the highest severity controls queue ordering. A material disagreement becomes `EVIDENCE_ADJUDICATION_REQUIRED` with the exact finding IDs and conflicting evidence. It is not decided by majority vote; the bounded repair must resolve it through evidence or leave the affected path unable to freeze.
+
+---
+
+## 9. Bounded research-repair protocol
+
+After the three independent audits and the mechanical synthesis finish, the synthesized queue enters repair.
 
 There is exactly **one bounded research-repair phase** before findings-only rechecks.
 
-### 8.1 Repair scope
+### 9.1 Repair scope
 
-The repair author may change only what is necessary to resolve initial findings and directly dependent inconsistencies.
+The repair author may change only what is necessary to resolve synthesized open BLOCKER/HIGH findings and directly dependent inconsistencies.
 
 Allowed repair work includes:
 
@@ -451,7 +447,7 @@ Allowed repair work includes:
 - adding a missing P0 claim/question that an audit identified as a coverage gap;
 - recording an architecture-fit mismatch instead of leaking design into research.
 
-### 8.2 Prohibited opportunistic expansion
+### 9.2 Prohibited opportunistic expansion
 
 The repair phase may not use audit findings as an excuse to:
 
@@ -463,14 +459,15 @@ The repair phase may not use audit findings as an excuse to:
 - author the U.S. Configuration Contract;
 - implement runtime changes.
 
-Interesting new work becomes a deferred item unless it is necessary to close an initial finding.
+Interesting new work becomes a deferred item unless it is necessary to close a synthesized BLOCKER/HIGH.
 
-### 8.3 Preserve the audit trail
+### 9.3 Preserve the audit trail
 
 The repair candidate must preserve:
 
 - initial baseline SHA;
-- each initial finding;
+- each original finding and its synthesis/repair-queue links;
+- the synthesis artifact SHA;
 - repair commit SHA;
 - exact claim/source changes made for each finding;
 - any finding determined to be invalid, with a bounded evidence-backed explanation.
@@ -479,50 +476,56 @@ Do not erase old findings because prose changed.
 
 ---
 
-## 9. Findings-only rechecks
+## 10. Findings-only rechecks
 
-After the single repair commit, independent reviewers recheck **only the initial findings and directly affected dependencies**.
+After the single repair commit, each original auditor rechecks **only that auditor's own original findings and directly affected dependencies**. The optional specialist, if used, rechecks only its own findings.
 
-Preferably the original pass auditor performs the recheck. If unavailable, a new independent reviewer may do so using the original finding and both SHAs.
+Each rechecker receives the original evidence SHA, repaired exact SHA, their own finding IDs, the relevant repair diff, and repaired evidence. If an original auditor is unavailable, the project must explicitly authorize a replacement independent rechecker for only those findings; a replacement does not perform a general audit.
 
 Each finding receives one result:
 
 - `RECHECK_PASS` — required repair condition is satisfied;
 - `RECHECK_FAIL` — original defect remains or repair creates a directly related defect;
-- `DEFERRED_NOTE` — only if acceptance authority determines the issue was nonblocking/out of scope.
 
-### 9.1 New blocker discovered during recheck
+### 10.1 New serious defect discovered during recheck
 
 A recheck is not a second general audit, but a reviewer must not ignore a newly discovered severe defect that is directly visible while testing a repair.
 
-If a new `BLOCKER` or `MAJOR` is **caused by or directly coupled to the repair**, it is recorded as a recheck failure and the evidence baseline does not freeze.
+If a new `BLOCKER` or `HIGH` is **introduced by the repair inside the touched boundary**, it is recorded as a recheck failure and the evidence baseline does not freeze.
 
-Because the protocol permits only one bounded repair phase, such a failure returns the project to authority for an explicit decision on a new research-repair cycle. It may not be silently patched inside the recheck.
+Because the normal protocol permits only one bounded repair phase, such a failure stops this candidate from freezing. It may not be silently patched inside the recheck or converted into another automatic repair cycle.
 
-### 9.2 Out-of-scope improvement discovered during recheck
+### 10.2 Out-of-scope improvement discovered during recheck
 
-A genuinely unrelated improvement is recorded as a NOTE/deferred item and does not reopen the bounded repair.
+A genuinely unrelated improvement may be recorded as a nonblocking observation outside the finding workflow and does not reopen the bounded repair.
 
 ---
 
-## 10. Acceptance and freeze decision
+## 11. Acceptance and freeze decision
 
 The evidence baseline may be declared frozen enough for U.S. Configuration Contract V0 authoring only by a reviewer/authority independent of the design/research/repair author.
 
-The acceptance reviewer must verify:
+The acceptance reviewer must verify all of these conditions:
 
-1. exact repaired evidence-baseline SHA;
-2. exact audit protocol version/SHA;
-3. all required independent initial passes completed;
-4. independence attestations are present;
-5. every initial BLOCKER/MAJOR has `RECHECK_PASS` or an explicitly authorized scope disposition;
-6. no unresolved implementation-critical contradiction remains;
-7. P0 coverage satisfies `US_RESEARCH_PROGRAM_V0.md`;
-8. claim/source provenance is reconstructible;
-9. simplification proposals remain non-evidence;
-10. architecture-fit mismatches are not silently embedded as new architecture;
-11. temporal baseline/staleness metadata is complete;
-12. deferred P1/P2 work is recorded but does not masquerade as completed research.
+1. the evidence candidate is identified by an exact repository SHA;
+2. all four research packets are complete;
+3. Packet D cross-packet synthesis is complete;
+4. every P0 question is `SUPPORTED`, `SUPPORTED_WITH_BOUNDS`, or justified `NOT_REQUIRED`;
+5. implementation-critical claim/source provenance and pinpoints are complete;
+6. temporal, jurisdictional, institutional, and scope metadata are complete;
+7. formal law and ordinary-practice distinctions are explicit;
+8. contradictions and genuine uncertainty are explicitly represented;
+9. exactly three independent first-pass audits—A, B, and C—completed against the same evidence SHA with independence attestations;
+10. zero `BLOCKER` findings remain open;
+11. zero `HIGH` findings remain open;
+12. the one bounded research repair, if required, is complete;
+13. findings-only rechecks by the original auditors closed every repaired BLOCKER/HIGH;
+14. every mutable P0 dependency has a completed freeze-time revalidation record;
+15. the U.S. Configuration Readiness Matrix has no unexplained required `NOT_READY` row;
+16. gameplay simplifications remain separate **NON-EVIDENCE** proposals traceable to accepted evidence;
+17. no hidden Architecture V0 contradiction or unresolved qualifying architecture-fit question blocks a required path;
+18. P1/P2 work remains explicitly deferred and need not be completed;
+19. the frozen evidence authority is identified by exact repository SHA.
 
 The acceptance record must name the exact accepted evidence SHA.
 
@@ -530,39 +533,41 @@ A branch name, latest commit, prose summary, or researcher's statement that “e
 
 Freeze authorizes **U.S. Configuration Contract V0 authoring only**. It does not itself authorize runtime implementation.
 
+The accepted handoff is the exact bundle defined by `US_RESEARCH_PROGRAM_V0.md`: governing Architecture/runtime/evidence SHAs, complete ledger, Packet A–D outputs, Packet D synthesis, readiness matrix, mutable-P0 revalidation record, accepted NON-EVIDENCE simplification candidates, bounded uncertainties, deferred P1/P2 register, resolved architecture-fit records, and NOT_REQUIRED rationales. A direct new evidence gap may be routed back narrowly; it does not authorize another broad research phase.
+
 ---
 
-## 11. Anti-collusion and anti-anchoring safeguards
+## 12. Anti-collusion and anti-anchoring safeguards
 
-### 11.1 Blind initial findings
+### 12.1 Blind initial findings
 
-Until all initial passes are complete, findings remain isolated from other initial auditors where practical.
+Until Audits A–C are complete, findings remain isolated from the other initial auditors.
 
-### 11.2 Separate prompts by attack surface
+### 12.2 Separate prompts by attack surface
 
-Each pass receives only the shared baseline, program/protocol authority, and its own attack instructions. Do not seed it with another pass's suspected defects.
+Each auditor receives only the shared baseline, program/protocol authority, and its own lane instructions. Do not seed it with another auditor's suspected defects.
 
-### 11.3 No inherited severity
+### 12.3 No inherited severity
 
 A later auditor who independently discovers the same defect assigns severity from this protocol rather than copying another reviewer's label.
 
-### 11.4 Collation only after completion
+### 12.4 Synthesis only after completion
 
-The finding set is merged only after all required initial passes finish.
+The finding set enters mechanical synthesis only after Audits A–C finish.
 
 Duplicate findings may then be linked, but original independent wording and provenance remain preserved.
 
-### 11.5 Repair author separation
+### 12.5 Repair author separation
 
-Where possible, the person/session that performed a given independent pass should not perform the substantive repair for that same finding. If unavoidable, findings-only recheck must be performed by an independent reviewer.
+The repair author does not recheck or accept their own repair. Each original auditor rechecks their own findings.
 
-### 11.6 No consensus laundering
+### 12.6 No consensus laundering
 
 “Multiple reviewers agree” is not a substitute for source verification. A repeated unsupported conclusion remains unsupported.
 
 ---
 
-## 12. Disagreement handling
+## 13. Disagreement handling
 
 Auditor disagreement is expected and must be evidence-resolved rather than vote-resolved.
 
@@ -579,88 +584,180 @@ A majority vote cannot convert weak evidence into strong evidence.
 
 ---
 
-## 13. Audit attack map against the research program
+## 14. Audit attack map against the research program
 
-The six passes collectively answer the program's required control questions:
+The three audits collectively answer the program's required control questions:
 
-- **What facts need research?** PASS E attacks scope/coverage.
-- **Which are required before implementation?** PASS E attacks P0/P1 classification.
-- **What can wait?** PASS E/F attack improper promotion or deferral.
-- **What counts as evidence?** PASS A/B/C attack authority by evidence class.
-- **How are claims traced?** PASS D attacks ledger/source fidelity.
-- **How are law, practice, data, and simplification separated?** PASS A/B/C/F attack conflation.
-- **How do adversarial reviewers attack the research?** PASS A–F and Section 5 define distinct hostile tests.
-- **How are disagreements/findings repaired?** Sections 8, 9, and 12 define one repair plus recheck.
-- **When is the evidence frozen?** Section 10 defines the acceptance gate.
-- **How is architecture protected?** PASS E/F plus architecture-leakage testing prevent research from silently redesigning the engine.
+- **Are claims supported and traceable?** Audit A attacks source/fact integrity across law, practice, administration, data, time, jurisdiction, provenance, contradictions, and simplification labeling.
+- **Is the evidence complete enough?** Audit B attacks P0 coverage, four-packet completeness, implementation-data gaps, cross-packet consistency, and scope discipline.
+- **Can evidence map safely to accepted architecture?** Audit C independently attacks semantic ownership, readiness mapping, ontology leakage, configuration special cases, and false architecture contradictions.
+- **How are findings processed?** Section 8 mechanically synthesizes; Section 9 permits one bounded repair; Section 10 limits rechecks to original findings.
+- **When is evidence frozen?** Section 11 applies the same nineteen freeze conditions as the research program.
 
 ---
 
-## Appendix A — reusable independent audit prompt
+## Appendix A — Prompt 2: Audit A — Source / Fact Integrity
 
 ```text
-You are an INDEPENDENT U.S. RESEARCH AUDITOR.
+You are AUDIT A — the independent SOURCE / FACT INTEGRITY auditor.
 
-Authority:
-- accepted Architecture V0 SHA: <sha>
-- accepted synthetic GL0 runtime SHA: <sha>
+EXACT AUTHORITIES
+- Accepted Architecture V0 SHA: <sha>
+- Accepted synthetic GL0 runtime SHA: <sha>
 - U.S. Research Program V0 SHA: <sha>
 - U.S. Research Audit Protocol V0 SHA: <sha>
-- evidence baseline under review: <exact sha>
+- Exact evidence-baseline SHA under review: <sha>
 
-Complete ONLY audit pass <A/B/C/D/E/F>.
+INDEPENDENCE
+Do not read or receive Audit B, Audit C, specialist, author-response, or proposed-repair conclusions before submitting your first-pass report.
 
-Do not repair the evidence.
-Do not redesign architecture.
-Do not perform gameplay calibration.
-Do not accept the candidate on behalf of the project.
+PERMITTED WORK
+Inspect the complete baseline for source existence/authority/status, primary-versus-secondary appropriateness, legal and procedural accuracy, versions and temporal scope, jurisdiction, law/practice and guidance/law distinctions, empirical validity and dataset semantics, quotation/paraphrase fidelity, claim-level provenance, contrary evidence, unsupported negatives, and simplification/fact conflation. Perform bounded source checks required to test claims.
 
-Do not read or inherit findings from other initial audit passes before completing your pass.
+PROHIBITED WORK
+Do not repair evidence, conduct Audit B or C, author configuration, calibrate gameplay, redesign/reopen Architecture V0, or modify runtime/tests/UI.
 
-Attack the candidate adversarially according to the selected pass and mandatory tests in the protocol.
+OUTPUT
+Name the exact evidence SHA, inspected artifacts, coverage, independence attestation, and CLEAR/FINDINGS/UNREVIEWABLE verdict. Report only BLOCKER/HIGH findings using the formal schema. Optional nonblocking observations must be separated and are not findings.
 
-For every finding, output the required finding schema with exact claim IDs, source IDs, artifact paths, severity, evidence, why it matters, and a bounded required-repair condition.
-
-At the end report:
-- exact evidence SHA reviewed;
-- coverage completed;
-- PASS / PASS_WITH_FINDINGS / FAIL;
-- independence attestation.
+STOPPING CONDITION
+Stop after completing Audit A and submitting its independent report. Do not view the other first-pass reports or accept the baseline.
 ```
 
-## Appendix B — reusable findings-only recheck prompt
+## Appendix B — Prompt 3: Audit B — Coverage / Adversarial Completeness
 
 ```text
-You are an INDEPENDENT FINDINGS-ONLY RECHECKER.
+You are AUDIT B — the independent COVERAGE / ADVERSARIAL COMPLETENESS auditor.
 
-Original evidence baseline SHA: <sha>
-Repair candidate SHA: <sha>
-Original finding IDs: <ids>
+EXACT AUTHORITIES
+- Accepted Architecture V0 SHA: <sha>
+- Accepted synthetic GL0 runtime SHA: <sha>
+- U.S. Research Program V0 SHA: <sha>
+- U.S. Research Audit Protocol V0 SHA: <sha>
+- Exact evidence-baseline SHA under review: <sha>
 
-Recheck ONLY the listed findings and directly affected dependencies.
-Do not perform a new general audit.
-Do not silently repair anything.
+INDEPENDENCE
+Do not read or receive Audit A, Audit C, specialist, author-response, or proposed-repair conclusions before submitting your first-pass report.
 
-For each finding return RECHECK_PASS or RECHECK_FAIL and explain whether the exact required-repair condition is now satisfied.
+PERMITTED WORK
+Attack P0 completeness, missing GL0 seams, Packet A–D coverage, cross-packet contradictions, scope overreach/underreach, synthetic assumptions promoted to U.S. facts, implementation-data gaps, bicameral completion, election-to-transfer continuity, fiscal-to-material continuity, program/state/federalism grounding, bounded judicial route completeness, and measurement release semantics. Demand completeness sufficient for the first vertical, not encyclopedic research.
 
-If the repair directly creates a new BLOCKER/MAJOR, record it as a recheck failure and stop acceptance. Unrelated improvements become deferred NOTES.
+PROHIBITED WORK
+Do not repair evidence, conduct Audit A or C, demand P1/P2 completion, author configuration, redesign/reopen Architecture V0, or modify runtime/tests/UI.
 
-Do not accept the full evidence baseline yourself unless separately assigned as the independent acceptance authority.
+OUTPUT
+Name the exact evidence SHA, inspected artifacts, P0/packet/seam coverage, independence attestation, and CLEAR/FINDINGS/UNREVIEWABLE verdict. Report only BLOCKER/HIGH findings using the formal schema. Optional nonblocking observations stay outside the finding workflow.
+
+STOPPING CONDITION
+Stop after completing Audit B and submitting its independent report. Do not view the other first-pass reports or accept the baseline.
 ```
 
-## Appendix C — acceptance checklist
+## Appendix C — Prompt 4: Audit C — Architecture / Configuration Fit
 
-The independent acceptance reviewer must confirm:
+```text
+You are AUDIT C — the independent ARCHITECTURE / CONFIGURATION FIT auditor.
 
-- [ ] Exact evidence-baseline SHA is named.
-- [ ] All required initial audit passes targeted that baseline.
-- [ ] At least three independent reviewer sessions/agents participated overall.
-- [ ] Initial auditors did not inherit each other's conclusions before completion.
-- [ ] The one bounded repair SHA is named.
-- [ ] Every initial BLOCKER/MAJOR was rechecked.
-- [ ] No implementation-critical contradiction remains open.
-- [ ] P0 claim/source/temporal/jurisdiction provenance is complete.
-- [ ] No gameplay simplification is being counted as evidence.
-- [ ] No architecture mismatch was silently repaired in research.
-- [ ] Deferred calibration/enrichment remains explicitly deferred.
-- [ ] Freeze is stated as authorization for configuration-contract authoring, not runtime implementation.
+EXACT AUTHORITIES
+- Accepted Architecture V0 SHA: <sha>
+- Accepted synthetic GL0 runtime SHA: <sha>
+- U.S. Research Program V0 SHA: <sha>
+- U.S. Research Audit Protocol V0 SHA: <sha>
+- Exact evidence-baseline SHA under review: <sha>
+
+INDEPENDENCE
+Do not read or receive Audit A, Audit B, specialist, author-response, or proposed-repair conclusions before submitting your first-pass report.
+
+PERMITTED WORK
+Independently test whether accepted evidence and every required readiness row can map to existing Architecture V0 seams without corrupting generic ontology or semantic ownership. Protect actor/candidate/office/assignment distinctions; House/Senate and legislative ownership; jurisdiction/geography and geography/Population boundaries; law/administration/material boundaries; election-result/certification/office-transfer boundaries; judicial-order/receipt/compliance boundaries; information/measurement/material-truth boundaries; and the player institutional-knowledge/ControlBinding boundary. Test architecture-fit escalation records against the accepted reopening threshold.
+
+PROHIBITED WORK
+Do not redesign or reopen Architecture V0, choose configuration values, repair evidence, conduct Audit A or B, perform gameplay calibration, or modify runtime/tests/UI.
+
+OUTPUT
+Name the exact evidence SHA, inspected artifacts/readiness rows, coverage, independence attestation, and CLEAR/FINDINGS/UNREVIEWABLE verdict. Report only BLOCKER/HIGH findings using the formal schema, including architectureContradiction YES/NO. Optional nonblocking observations stay outside the finding workflow.
+
+STOPPING CONDITION
+Stop after completing Audit C and submitting its independent report. Do not view the other first-pass reports or accept the baseline.
+```
+
+## Appendix D — Prompt 5: Research Findings Synthesis
+
+```text
+You are the MECHANICAL RESEARCH FINDINGS SYNTHESIZER.
+
+EXACT INPUTS
+- Exact evidence-baseline SHA: <sha>
+- Audit A report: <artifact>
+- Audit B report: <artifact>
+- Audit C report: <artifact>
+- Optional authorized specialist report, or NONE: <artifact/NONE>
+- U.S. Research Audit Protocol V0 SHA: <sha>
+
+PERMITTED WORK
+Validate that all reports target the same SHA; preserve every original BLOCKER/HIGH and ID; identify overlaps; create duplicate groups without erasing originals; identify genuine disagreements; create one repair queue; preserve provenance from each queue item to every contributing finding. Preserve differing original severities and use the highest only for queue ordering. Mark material conflicts EVIDENCE_ADJUDICATION_REQUIRED.
+
+PROHIBITED WORK
+Do not conduct research, create findings, change original severity, dismiss a unique supported finding, vote findings away, audit the baseline, redesign packets/architecture, author configuration, or repair evidence.
+
+OUTPUT
+Return input validation, preserved finding inventory, duplicate groups, disagreement register, and repair queue using the required schema, plus an exact synthesis artifact identifier.
+
+STOPPING CONDITION
+Stop when every original BLOCKER/HIGH maps to exactly one or more preserved queue/provenance records. Do not begin repair.
+```
+
+## Appendix E — Prompt 6: Research Repair Author
+
+```text
+You are the ONE BOUNDED U.S. RESEARCH REPAIR AUTHOR.
+
+EXACT AUTHORITIES AND INPUTS
+- Accepted Architecture V0 SHA: <sha>
+- Accepted synthetic GL0 runtime SHA: <sha>
+- U.S. Research Program V0 SHA: <sha>
+- U.S. Research Audit Protocol V0 SHA: <sha>
+- Exact evidence candidate SHA: <sha>
+- Mechanical synthesis artifact: <artifact/sha>
+- Synthesized BLOCKER/HIGH repair queue and contributing original findings: <artifacts>
+
+PERMITTED WORK
+Repair only open BLOCKER/HIGH items and direct consistency dependencies. Where a finding requires it, gather missing authoritative evidence, replace weak sources, split/narrow claims, correct scope/time/jurisdiction, expose uncertainty, repair provenance/readiness mappings, or record a qualifying architecture-fit question. Preserve the full audit trail and map every change to source finding IDs.
+
+PROHIBITED WORK
+Do not expand unrelated research, perform deferred P1/P2 calibration, add current-politician content, create a second general research phase, redesign/reopen Architecture V0, author U.S. Configuration Contract V0, or modify runtime/tests/UI. Do not perform the recheck or self-accept.
+
+OUTPUT
+Produce one exact repair commit, per-finding change map, repaired evidence artifacts, diff boundary statement, and recheck inputs for each original auditor.
+
+STOPPING CONDITION
+Stop after the single bounded repair candidate is committed. Do not silently perform a second repair if a recheck later fails.
+```
+
+## Appendix F — Prompt 7: Findings-Only Recheck
+
+```text
+You are the ORIGINAL AUDITOR performing a FINDINGS-ONLY RECHECK for Audit <A/B/C/SPECIALIST>.
+
+EXACT INPUTS
+- Original evidence-baseline SHA: <sha>
+- Repaired evidence candidate SHA: <sha>
+- Your own original finding IDs: <ids>
+- Relevant repair diff and repaired evidence: <artifacts>
+- U.S. Research Audit Protocol V0 SHA: <sha>
+
+PERMITTED WORK
+Recheck only your listed original findings and directly affected dependencies. Apply each objectiveClosureTest and return RECHECK_PASS or RECHECK_FAIL with evidence. Record a new BLOCKER/HIGH only if the repair directly introduced a serious defect inside the touched boundary; treat it as RECHECK_FAIL.
+
+PROHIBITED WORK
+Do not perform a complete re-audit, inspect unrelated areas for improvements, inherit another auditor's findings, silently repair evidence, author configuration, redesign architecture, or accept the full baseline.
+
+OUTPUT
+For each original finding return its ID, repaired SHA, closure-test result, evidence, and RECHECK_PASS/RECHECK_FAIL. Include a touched-boundary attestation.
+
+STOPPING CONDITION
+Stop after rechecking your own findings. Unrelated observations remain outside the formal finding workflow and do not reopen repair.
+```
+
+## Appendix G — acceptance checklist
+
+The independent acceptance reviewer confirms all nineteen freeze conditions in Section 11, including exactly four completed packets, exactly three independent first-pass audits against one SHA, zero open BLOCKER/HIGH, one bounded repair if needed, original-auditor findings-only rechecks, completed mutable-P0 revalidation, a readiness matrix with no unexplained required NOT_READY row, explicit NON-EVIDENCE simplifications, and exact-SHA evidence authority. Freeze authorizes configuration-contract authoring only, not implementation.
