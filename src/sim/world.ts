@@ -1,6 +1,9 @@
 import {
   createInitialGovernanceState,
   originateHousingPoliticalClaimDecision,
+  resolveContestedAuthorityChallengeBoundary,
+  resolveContestedAuthorityComplianceBoundary,
+  resolveContestedAuthorityInterimReliefBoundary,
   type GovernanceState,
   type HousingPoliticalClaimDecisionKind,
 } from "./governance";
@@ -63,6 +66,11 @@ import {
   resolvePopulationElectoralDisposition,
   type PopulationState,
 } from "./population";
+import {
+  GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
+  GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
+  GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
+} from "./judiciary";
 
 export type SimulationInstant = number;
 
@@ -266,7 +274,16 @@ export const advanceWorldTo = (
   const resolvesBootstrapBoundary =
     !world.bootstrapTransition.resolved &&
     target >= world.bootstrapTransition.boundaryAt;
+  const hasDisputedHousingRedirectionAttempt =
+    world.governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0;
   const boundaries = [
+    ...(hasDisputedHousingRedirectionAttempt
+      ? [
+          GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
+          GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
+          GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
+        ]
+      : []),
     HOUSING_MEASUREMENT_OBSERVATION_END,
     OFFICIAL_HOUSING_REPORT_RELEASE_AT,
     ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
@@ -303,6 +320,40 @@ export const advanceWorldTo = (
     );
     information = informationAdvancement.information;
     occurrences.push(...informationAdvancement.occurrences);
+
+    if (
+      hasDisputedHousingRedirectionAttempt &&
+      boundary === GL0_HOUSING_REDIRECTION_CHALLENGE_AT
+    ) {
+      const challenge = resolveContestedAuthorityChallengeBoundary(governance, boundary);
+      governance = challenge.governance;
+      occurrences.push(...challenge.occurrences);
+    }
+
+    if (
+      hasDisputedHousingRedirectionAttempt &&
+      boundary === GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT
+    ) {
+      const interimRelief = resolveContestedAuthorityInterimReliefBoundary(
+        governance,
+        boundary,
+      );
+      governance = interimRelief.governance;
+      occurrences.push(...interimRelief.occurrences);
+    }
+
+    if (
+      hasDisputedHousingRedirectionAttempt &&
+      boundary === GL0_HOUSING_REDIRECTION_COMPLIANCE_AT
+    ) {
+      const compliance = resolveContestedAuthorityComplianceBoundary(
+        governance,
+        "COMPLY",
+        boundary,
+      );
+      governance = compliance.governance;
+      occurrences.push(...compliance.occurrences);
+    }
 
     if (boundary === OFFICIAL_HOUSING_REPORT_RELEASE_AT) {
       // Explicit dependency: report release above precedes same-time receipt.

@@ -5,13 +5,19 @@ import {
   createInitialFederalHousingImplementationSupportState,
   createFederalHousingAdministrationInstitution,
   createHousingGrantAwardForRelationship,
+  createInitialContestedHousingAdministrationState,
   establishHousingGrantProgramFromLaw,
+  receiveDisputedHousingRedirectionDirective,
+  receiveJudicialOrder,
+  resolveJudicialOrderCompliance,
   type AdministrativeInstitution,
+  type ContestedHousingAdministrationState,
   type HousingGrantAward,
   type HousingGrantProgram,
   type FederalHousingImplementationSupportState,
   type HousingImplementationResponseAction,
   type HousingImplementationResponseDecision,
+  type JudicialOrderComplianceChoice,
 } from "./administration";
 import {
   commitAvailablePublicFinance,
@@ -51,7 +57,7 @@ import {
   type LegislativeProcedureInstance,
   type RecordedVote,
 } from "./legislative-procedure";
-import { appendOccurrence } from "./history";
+import { appendOccurrence, type HistoricalOccurrence } from "./history";
 import {
   type FederalApplicationDetermination,
   type IntergovernmentalProgramRelationship,
@@ -74,12 +80,38 @@ import {
 import {
   createInitialExecutivePoliticalState,
   GL0_EXECUTIVE_INSTITUTION_ID,
+  resolveCurrentExecutiveOfficeholder,
   type ExecutivePoliticalState,
 } from "./executive";
 import {
   createInitialExecutiveSuccessionLegalOrderState,
   type ExecutiveSuccessionLegalOrderState,
 } from "./executive-law";
+import {
+  createInitialExecutiveAuthorityState,
+  GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT,
+  recordDisputedHousingFundsRedirectionAttempt,
+  recordExecutiveJudicialResponse,
+  type ExecutiveAuthorityState,
+  type ExecutiveJudicialResponseAction,
+} from "./executive-authority";
+import {
+  admitHousingRedirectionContest,
+  autonomouslyGrantInterimRelief,
+  createInitialJudiciaryState,
+  fileJudicialReviewRequest,
+  fileStateAHousingRedirectionClaim,
+  GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
+  GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
+  GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
+  referenceJudicialOrder,
+  type JudiciaryState,
+} from "./judiciary";
+import {
+  createInitialJudicialLegalOrderState,
+  issueScopedTemporaryHousingRedirectionOrder,
+  type JudicialLegalOrderState,
+} from "./judicial-law";
 
 export type HousingPoliticalClaimDecisionKind = "ADMINISTRATION" | "OPPOSITION";
 
@@ -98,6 +130,12 @@ export interface GovernanceState {
   readonly legislature: Legislature;
   /** Canonical executive actors/institution/office/assignment/succession owner. */
   readonly executivePolitical: ExecutivePoliticalState;
+  /** Executive/political owner of disputed attempts and later executive responses. */
+  readonly executiveAuthority: ExecutiveAuthorityState;
+  /** Generic court/office/judge plus current claim and contest procedure state. */
+  readonly judiciary: JudiciaryState;
+  /** Single legal-order owner of operative judicial requirements and orders. */
+  readonly judicialLegalOrder: JudicialLegalOrderState;
   readonly proposal: LegislativeProposal | null;
   readonly procedure: LegislativeProcedureInstance | null;
   readonly enactedLaws: readonly EnactedLaw[];
@@ -113,6 +151,8 @@ export interface GovernanceState {
   readonly fiscalExecution: FiscalExecutionState | null;
   /** Canonical federal administrative institution that can operate the program. */
   readonly administrativeInstitution: AdministrativeInstitution | null;
+  /** Agency-owned directive handling, order receipt, and compliance facts. */
+  readonly contestedHousingAdministration: ContestedHousingAdministrationState;
   /** Institution-owned operational implementation-support capacity. */
   readonly housingImplementationSupport: FederalHousingImplementationSupportState;
   /** Program/administrative-owned resolution of the single GL0 response opportunity. */
@@ -143,6 +183,9 @@ export const createInitialGovernanceState = (): GovernanceState => {
   return {
     legislature: createDeterministicLegislatureFixture(),
     executivePolitical: createInitialExecutivePoliticalState(),
+    executiveAuthority: createInitialExecutiveAuthorityState(),
+    judiciary: createInitialJudiciaryState(),
+    judicialLegalOrder: createInitialJudicialLegalOrderState(),
     proposal: null,
     procedure: null,
     enactedLaws: [],
@@ -152,6 +195,7 @@ export const createInitialGovernanceState = (): GovernanceState => {
     publicFinance: createInitialPublicFinanceState(),
     fiscalExecution: null,
     administrativeInstitution,
+    contestedHousingAdministration: createInitialContestedHousingAdministrationState(),
     housingImplementationSupport:
       createInitialFederalHousingImplementationSupportState(administrativeInstitution),
     housingImplementationResponseDecision: null,
@@ -1231,5 +1275,306 @@ export const resolveHousingImplementationResponse = (
             housingRegionId: acceptedSupport.housingRegionId,
             at: acceptedSupport.effectiveAtSimulationTime,
           }),
+  };
+};
+
+/**
+ * Day-6 player-originated executive attempt followed by the target agency's
+ * separate receipt/preparation transition. Neither step enters a fiscal,
+ * award, disbursement, or Housing mutation boundary.
+ */
+export const attemptDisputedHousingFundsRedirection = (world: WorldState): WorldState => {
+  if (world.time.current !== 6) {
+    throw new Error("The bounded disputed Housing redirection attempt is available on day 6.");
+  }
+  if (world.governance.housingImplementationResponseDecision === null) {
+    throw new Error("The day-5 Housing implementation response must precede the disputed attempt.");
+  }
+  const program = world.governance.housingGrantProgram;
+  const publicFinance = world.governance.publicFinance.housingGrant;
+  const institution = world.governance.administrativeInstitution;
+  if (program === null) {
+    throw new Error("The disputed redirection requires an established Housing grant program.");
+  }
+  if (publicFinance === null || publicFinance.id !== program.publicFinanceRef) {
+    throw new Error("The disputed redirection requires the program's recognized public finance.");
+  }
+  if (publicFinance.availableAmount < GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT) {
+    throw new Error("Insufficient uncommitted Housing appropriation authority for the attempt.");
+  }
+  if (institution === null || institution.id !== program.operatorInstitutionId) {
+    throw new Error("The target federal Housing administration must exist and operate the program.");
+  }
+
+  const initiatingActor = resolveCurrentExecutiveOfficeholder(
+    world.governance.executivePolitical,
+  );
+  const attempted = recordDisputedHousingFundsRedirectionAttempt(
+    world.governance.executiveAuthority,
+    {
+      initiatingActorId: initiatingActor.id,
+      executiveOfficeId: world.governance.executivePolitical.office.id,
+      targetInstitutionId: institution.id,
+      federalProgramId: program.id,
+      publicFinanceRef: publicFinance.id,
+      disputedAmount: GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT,
+    },
+    world.time.current,
+  );
+  const received = receiveDisputedHousingRedirectionDirective(
+    world.governance.contestedHousingAdministration,
+    attempted.attempt,
+    institution,
+    world.time.current,
+  );
+  const attemptedHistory = appendOccurrence(world.history, {
+    type: "ExecutiveFundsRedirectionAttempted",
+    attemptId: attempted.attempt.id,
+    initiatingActorId: attempted.attempt.initiatingActorId,
+    targetInstitutionId: attempted.attempt.targetInstitutionId,
+    disputedAmount: attempted.attempt.disputedAmount,
+    claimedLegalBasis: attempted.attempt.claimedLegalBasis,
+    at: world.time.current,
+  });
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      executiveAuthority: attempted.state,
+      contestedHousingAdministration: received.state,
+    },
+    history: appendOccurrence(attemptedHistory, {
+      type: "AdministrativeRedirectionInstructionReceived",
+      attemptId: attempted.attempt.id,
+      targetInstitutionId: received.administrativeState.targetInstitutionId,
+      at: world.time.current,
+    }),
+  };
+};
+
+export interface ContestedAuthorityBoundaryResult {
+  readonly governance: GovernanceState;
+  readonly occurrences: readonly HistoricalOccurrence[];
+}
+
+const requireSingleDisputedAttempt = (governance: GovernanceState) => {
+  const attempts = governance.executiveAuthority.disputedHousingFundsRedirectionAttempts;
+  if (attempts.length !== 1) {
+    throw new Error("The hostile judicial route requires exactly one disputed executive attempt.");
+  }
+  return attempts[0];
+};
+
+/** Explicit same-time order: LegalClaimFiled -> LegalContestAdmitted. */
+export const resolveContestedAuthorityChallengeBoundary = (
+  governance: GovernanceState,
+  at: SimulationInstant,
+): ContestedAuthorityBoundaryResult => {
+  if (at !== GL0_HOUSING_REDIRECTION_CHALLENGE_AT) {
+    throw new Error(`The legal challenge boundary is not due at ${at}.`);
+  }
+  const attempt = requireSingleDisputedAttempt(governance);
+  const filing = fileStateAHousingRedirectionClaim(
+    governance.judiciary,
+    attempt.id,
+    attempt.targetInstitutionId,
+    at,
+  );
+  const admission = admitHousingRedirectionContest(filing.judiciary, filing.claim, at);
+  return {
+    governance: { ...governance, judiciary: admission.judiciary },
+    occurrences: [
+      {
+        type: "LegalClaimFiled",
+        legalClaimId: filing.claim.id,
+        claimantJurisdictionId: filing.claim.claimantJurisdictionId,
+        challengedAttemptId: filing.claim.challengedAttemptId,
+        at,
+      },
+      {
+        type: "LegalContestAdmitted",
+        contestId: admission.contest.id,
+        legalClaimId: filing.claim.id,
+        forumInstitutionId: admission.contest.forumInstitutionId,
+        at,
+      },
+    ],
+  };
+};
+
+/** Explicit same-time order: decision -> legal-order issuance -> agency delivery. */
+export const resolveContestedAuthorityInterimReliefBoundary = (
+  governance: GovernanceState,
+  at: SimulationInstant,
+): ContestedAuthorityBoundaryResult => {
+  if (at !== GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT) {
+    throw new Error(`The interim-relief boundary is not due at ${at}.`);
+  }
+  const attempt = requireSingleDisputedAttempt(governance);
+  const contests = governance.judiciary.legalContests;
+  if (contests.length !== 1) {
+    throw new Error("Interim relief requires exactly one admitted legal contest.");
+  }
+  const decided = autonomouslyGrantInterimRelief(
+    governance.judiciary,
+    contests[0].id,
+    at,
+  );
+  const issued = issueScopedTemporaryHousingRedirectionOrder(
+    governance.judicialLegalOrder,
+    contests[0].interimReliefRuleId,
+    decided.decision,
+    attempt.targetInstitutionId,
+    attempt.id,
+    at,
+  );
+  const judiciary = referenceJudicialOrder(
+    decided.judiciary,
+    contests[0].id,
+    issued.order.id,
+  );
+  const delivered = receiveJudicialOrder(
+    governance.contestedHousingAdministration,
+    issued.order,
+    at,
+  );
+  return {
+    governance: {
+      ...governance,
+      judiciary,
+      judicialLegalOrder: issued.legalOrder,
+      contestedHousingAdministration: delivered.state,
+    },
+    occurrences: [
+      {
+        type: "InterimReliefDecided",
+        decisionId: decided.decision.id,
+        contestId: decided.decision.contestId,
+        judgeActorId: decided.decision.judgeActorId,
+        outcome: decided.decision.outcome,
+        at,
+      },
+      {
+        type: "JudicialOrderIssued",
+        orderId: issued.order.id,
+        sourceDecisionId: issued.order.sourceDecisionId,
+        subjectInstitutionId: issued.order.subjectInstitutionId,
+        challengedAttemptId: issued.order.challengedAttemptId,
+        at,
+      },
+      {
+        type: "JudicialOrderDelivered",
+        orderId: delivered.receipt.orderId,
+        recipientInstitutionId: delivered.receipt.recipientInstitutionId,
+        at,
+      },
+    ],
+  };
+};
+
+/** Agency-owned day-9 response seam; the normal fixture selects COMPLY. */
+export const resolveContestedAuthorityComplianceBoundary = (
+  governance: GovernanceState,
+  response: JudicialOrderComplianceChoice,
+  at: SimulationInstant,
+): ContestedAuthorityBoundaryResult => {
+  if (at !== GL0_HOUSING_REDIRECTION_COMPLIANCE_AT) {
+    throw new Error(`Judicial-order compliance is not due at simulation time ${at}.`);
+  }
+  const orders = governance.judicialLegalOrder.operativeOrders;
+  if (orders.length !== 1) {
+    throw new Error("Agency compliance requires exactly one operative judicial order.");
+  }
+  const resolved = resolveJudicialOrderCompliance(
+    governance.contestedHousingAdministration,
+    orders[0],
+    response,
+    at,
+  );
+  return {
+    governance: {
+      ...governance,
+      contestedHousingAdministration: resolved.state,
+    },
+    occurrences: [
+      {
+        type: "JudicialOrderComplianceResolved",
+        orderId: resolved.complianceResponse.orderId,
+        institutionId: resolved.complianceResponse.institutionId,
+        response: resolved.complianceResponse.response,
+        at,
+      },
+    ],
+  };
+};
+
+/**
+ * Post-compliance executive strategic response. Review filing creates only a
+ * pending request; neither response mutates the legal-order-owned order.
+ */
+export const resolveExecutiveJudicialResponse = (
+  world: WorldState,
+  action: ExecutiveJudicialResponseAction,
+): WorldState => {
+  const attempts = world.governance.executiveAuthority.disputedHousingFundsRedirectionAttempts;
+  const orders = world.governance.judicialLegalOrder.operativeOrders;
+  const complianceResponses =
+    world.governance.contestedHousingAdministration.judicialOrderComplianceResponses;
+  if (attempts.length !== 1 || orders.length !== 1 || complianceResponses.length !== 1) {
+    throw new Error("Executive judicial response requires a resolved agency order response.");
+  }
+  if (
+    action === "APPEAL_WHILE_COMPLYING" &&
+    complianceResponses[0].response !== "COMPLY"
+  ) {
+    throw new Error("APPEAL_WHILE_COMPLYING requires the agency to be complying.");
+  }
+  const actor = resolveCurrentExecutiveOfficeholder(world.governance.executivePolitical);
+  const recorded = recordExecutiveJudicialResponse(
+    world.governance.executiveAuthority,
+    attempts[0].id,
+    orders[0].id,
+    actor.id,
+    action,
+    world.time.current,
+  );
+  let judiciary = world.governance.judiciary;
+  let history = appendOccurrence(world.history, {
+    type: "ExecutiveJudicialResponseRecorded",
+    sourceAttemptId: attempts[0].id,
+    orderId: orders[0].id,
+    action,
+    at: world.time.current,
+  });
+  if (action === "APPEAL_WHILE_COMPLYING") {
+    const contests = judiciary.legalContests;
+    if (contests.length !== 1) {
+      throw new Error("Judicial review requires exactly one underlying legal contest.");
+    }
+    const review = fileJudicialReviewRequest(
+      judiciary,
+      contests[0].id,
+      actor.id,
+      orders[0].id,
+      world.time.current,
+    );
+    judiciary = review.judiciary;
+    history = appendOccurrence(history, {
+      type: "JudicialReviewRequested",
+      requestId: review.request.id,
+      contestId: review.request.contestId,
+      sourceOrderId: review.request.sourceOrderId,
+      requestingActorId: review.request.requestingActorId,
+      at: world.time.current,
+    });
+  }
+  return {
+    ...world,
+    governance: {
+      ...world.governance,
+      executiveAuthority: recorded.state,
+      judiciary,
+    },
+    history,
   };
 };

@@ -7,6 +7,10 @@ import type { InformationOccurrence } from "./information";
 import type { PopulationOccurrence } from "./population";
 import type { ElectoralOccurrence } from "./electoral";
 import type { ExecutivePoliticalOccurrence } from "./executive";
+import type { JudicialOrderComplianceChoice } from "./administration";
+import type {
+  ExecutiveJudicialResponseAction,
+} from "./executive-authority";
 
 /**
  * Immutable committed occurrences. HistoricalRecord owns only the fact that
@@ -153,6 +157,79 @@ export type HistoricalOccurrence =
       readonly sourceDeploymentId: string;
       readonly projectId: string;
       readonly housingRegionId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "ExecutiveFundsRedirectionAttempted";
+      readonly attemptId: string;
+      readonly initiatingActorId: string;
+      readonly targetInstitutionId: string;
+      readonly disputedAmount: number;
+      readonly claimedLegalBasis: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "AdministrativeRedirectionInstructionReceived";
+      readonly attemptId: string;
+      readonly targetInstitutionId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "LegalClaimFiled";
+      readonly legalClaimId: string;
+      readonly claimantJurisdictionId: string;
+      readonly challengedAttemptId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "LegalContestAdmitted";
+      readonly contestId: string;
+      readonly legalClaimId: string;
+      readonly forumInstitutionId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "InterimReliefDecided";
+      readonly decisionId: string;
+      readonly contestId: string;
+      readonly judgeActorId: string;
+      readonly outcome: "GRANT";
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "JudicialOrderIssued";
+      readonly orderId: string;
+      readonly sourceDecisionId: string;
+      readonly subjectInstitutionId: string;
+      readonly challengedAttemptId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "JudicialOrderDelivered";
+      readonly orderId: string;
+      readonly recipientInstitutionId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "JudicialOrderComplianceResolved";
+      readonly orderId: string;
+      readonly institutionId: string;
+      readonly response: JudicialOrderComplianceChoice;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "ExecutiveJudicialResponseRecorded";
+      readonly sourceAttemptId: string;
+      readonly orderId: string;
+      readonly action: ExecutiveJudicialResponseAction;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "JudicialReviewRequested";
+      readonly requestId: string;
+      readonly contestId: string;
+      readonly sourceOrderId: string;
+      readonly requestingActorId: string;
       readonly at: SimulationInstant;
     };
 

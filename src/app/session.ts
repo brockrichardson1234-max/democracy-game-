@@ -7,6 +7,7 @@ import {
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
+  attemptDisputedHousingFundsRedirection,
   createHousingGrantAward,
   disburseHousingGrantObligation,
   establishHousingGrantProgram,
@@ -14,6 +15,7 @@ import {
   obligateHousingGrantAward,
   recognizeHousingGrantFiscalAuthority,
   resolveHousingImplementationResponse,
+  resolveExecutiveJudicialResponse,
   resolveFederalHousingGrantApplication,
   resolveStateHousingGrantDecision,
   resolveHousingGrantProposalVote,
@@ -28,7 +30,12 @@ import {
   availableHousingImplementationSupportUnits,
   type HousingGrantProgramStatus,
   type HousingImplementationResponseAction,
+  type JudicialOrderComplianceChoice,
 } from "../sim/administration";
+import type {
+  DisputedHousingFundsRedirectionAttemptStatus,
+  ExecutiveJudicialResponseAction,
+} from "../sim/executive-authority";
 import type {
   FederalApplicationDeterminationOutcome,
   StateAdministrativeCapacity,
@@ -84,6 +91,8 @@ export interface GameView {
   readonly fiscal: FiscalProjection | null;
   readonly housingGrantProgram: HousingGrantProgramProjection | null;
   readonly implementationResponse: HousingImplementationResponseProjection;
+  /** Raw hostile-route state for developer/audit inspection, not player knowledge. */
+  readonly contestedAuthorityAudit: ContestedAuthorityAuditProjection;
   /** Raw Information-domain truth for the developer inspection harness. */
   readonly officialHousingMeasurement: OfficialHousingMeasurementProjection;
   /** Raw claim/distribution truth; explicitly not a player knowledge view. */
@@ -141,6 +150,99 @@ export interface HousingImplementationResponseProjection {
   readonly availableSupportUnits: number;
   readonly resolvedAction: HousingImplementationResponseAction | null;
   readonly targetStateJurisdictionId: string | null;
+}
+
+export interface ContestedAuthorityAuditProjection {
+  readonly executiveAttempt: {
+    readonly id: string;
+    readonly initiatingActorId: string;
+    readonly executiveOfficeId: string;
+    readonly targetInstitutionId: string;
+    readonly federalProgramId: string;
+    readonly publicFinanceRef: string;
+    readonly disputedAmount: number;
+    readonly claimedLegalBasis: string;
+    readonly attemptedAtSimulationTime: SimulationInstant;
+    readonly status: DisputedHousingFundsRedirectionAttemptStatus;
+  } | null;
+  readonly judiciary: {
+    readonly institutionId: string;
+    readonly officeId: string;
+    readonly judgeActorId: string;
+    readonly officeAssignment: {
+      readonly officeId: string;
+      readonly actorId: string;
+      readonly effectiveAtSimulationTime: SimulationInstant;
+    };
+  };
+  readonly legalClaim: {
+    readonly id: string;
+    readonly claimantJurisdictionId: string;
+    readonly challengedAttemptId: string;
+    readonly targetInstitutionId: string;
+    readonly claimedGround: string;
+    readonly requestedRemedy: string;
+    readonly filedAtSimulationTime: SimulationInstant;
+  } | null;
+  readonly legalContest: {
+    readonly id: string;
+    readonly forumInstitutionId: string;
+    readonly claimantJurisdictionId: string;
+    readonly challengedAttemptId: string;
+    readonly targetInstitutionId: string;
+    readonly legalClaimId: string;
+    readonly proceduralStage: "INTERIM_RELIEF_PENDING" | "MERITS_PENDING";
+    readonly interimReliefDecision: {
+      readonly id: string;
+      readonly judgeActorId: string;
+      readonly outcome: "GRANT";
+      readonly decisionSource: "AUTONOMOUS_DETERMINISTIC_FIXTURE";
+      readonly decidedAtSimulationTime: SimulationInstant;
+    } | null;
+    readonly judicialOrderIds: readonly string[];
+    readonly reviewRequest: {
+      readonly id: string;
+      readonly requestingActorId: string;
+      readonly sourceOrderId: string;
+      readonly filedAtSimulationTime: SimulationInstant;
+    } | null;
+  } | null;
+  readonly judicialOrder: {
+    readonly id: string;
+    readonly sourceContestId: string;
+    readonly sourceDecisionId: string;
+    readonly subjectInstitutionId: string;
+    readonly challengedAttemptId: string;
+    readonly directive: string;
+    readonly issuedAtSimulationTime: SimulationInstant;
+    readonly effectiveAtSimulationTime: SimulationInstant;
+    readonly temporalScope: string;
+    readonly orderType: "INTERIM";
+    readonly status: "ACTIVE";
+  } | null;
+  readonly agency: {
+    readonly redirectionStatus: "PREPARING_REDIRECTION" | "HALTED_BY_JUDICIAL_ORDER" | null;
+    readonly directiveReceivedAtSimulationTime: SimulationInstant | null;
+    readonly orderReceipt: {
+      readonly orderId: string;
+      readonly recipientInstitutionId: string;
+      readonly receivedAtSimulationTime: SimulationInstant;
+    } | null;
+    readonly complianceResponse: {
+      readonly orderId: string;
+      readonly institutionId: string;
+      readonly response: JudicialOrderComplianceChoice;
+      readonly resolvedAtSimulationTime: SimulationInstant;
+    } | null;
+  };
+  readonly executiveResponse: {
+    readonly id: string;
+    readonly sourceAttemptId: string;
+    readonly orderId: string;
+    readonly respondingActorId: string;
+    readonly action: ExecutiveJudicialResponseAction;
+    readonly respondedAtSimulationTime: SimulationInstant;
+  } | null;
 }
 
 export interface HousingObservationProjection {
@@ -372,6 +474,9 @@ export interface GameSession {
   materializeHousingProjectFromDisbursement(stateId: string): GameView;
   deployHousingImplementationSupportToStateC(): GameView;
   preserveHousingImplementationSupportReserve(): GameView;
+  attemptDisputedHousingFundsRedirection(): GameView;
+  backDownFromDisputedHousingFundsRedirection(): GameView;
+  appealHousingRedirectionOrderWhileComplying(): GameView;
 }
 
 export const createInitialControlBinding = (world: WorldState): ControlBinding => {
@@ -439,6 +544,10 @@ const projectWorld = (world: WorldState, controlBinding: ControlBinding): GameVi
     housingGrantAwards,
     housingImplementationSupport,
     housingImplementationResponseDecision,
+    executiveAuthority,
+    judiciary,
+    judicialLegalOrder,
+    contestedHousingAdministration,
   } = world.governance;
   const { projects: housingProjects, regions: housingRegions } = world.housing;
   const measurement = world.information.housingMeasurement;
@@ -490,6 +599,17 @@ const projectWorld = (world: WorldState, controlBinding: ControlBinding): GameVi
     throw new Error(`Electoral contest ${electoralContest.id} requires one election process.`);
   }
   const electionProcess = electionProcesses[0];
+  const executiveAttempt =
+    executiveAuthority.disputedHousingFundsRedirectionAttempts[0] ?? null;
+  const legalClaim = judiciary.legalClaims[0] ?? null;
+  const legalContest = judiciary.legalContests[0] ?? null;
+  const judicialOrder = judicialLegalOrder.operativeOrders[0] ?? null;
+  const administrativeRedirection =
+    contestedHousingAdministration.disputedRedirections[0] ?? null;
+  const orderReceipt = contestedHousingAdministration.judicialOrderReceipts[0] ?? null;
+  const complianceResponse =
+    contestedHousingAdministration.judicialOrderComplianceResponses[0] ?? null;
+  const executiveResponse = executiveAuthority.judicialResponses[0] ?? null;
 
   return {
     currentTime: world.time.current,
@@ -553,6 +673,60 @@ const projectWorld = (world: WorldState, controlBinding: ControlBinding): GameVi
       resolvedAction: housingImplementationResponseDecision?.action ?? null,
       targetStateJurisdictionId:
         housingImplementationResponseDecision?.targetStateJurisdictionId ?? null,
+    },
+    contestedAuthorityAudit: {
+      executiveAttempt: executiveAttempt === null ? null : { ...executiveAttempt },
+      judiciary: {
+        institutionId: judiciary.institution.id,
+        officeId: judiciary.office.id,
+        judgeActorId: judiciary.judgeActor.id,
+        officeAssignment: { ...judiciary.officeAssignment },
+      },
+      legalClaim: legalClaim === null ? null : { ...legalClaim },
+      legalContest:
+        legalContest === null
+          ? null
+          : {
+              id: legalContest.id,
+              forumInstitutionId: legalContest.forumInstitutionId,
+              claimantJurisdictionId: legalContest.claimantJurisdictionId,
+              challengedAttemptId: legalContest.challengedAttemptId,
+              targetInstitutionId: legalContest.targetInstitutionId,
+              legalClaimId: legalContest.legalClaimId,
+              proceduralStage: legalContest.proceduralStage,
+              interimReliefDecision:
+                legalContest.interimReliefDecision === null
+                  ? null
+                  : {
+                      id: legalContest.interimReliefDecision.id,
+                      judgeActorId: legalContest.interimReliefDecision.judgeActorId,
+                      outcome: legalContest.interimReliefDecision.outcome,
+                      decisionSource: legalContest.interimReliefDecision.decisionSource,
+                      decidedAtSimulationTime:
+                        legalContest.interimReliefDecision.decidedAtSimulationTime,
+                    },
+              judicialOrderIds: [...legalContest.judicialOrderIds],
+              reviewRequest:
+                legalContest.reviewRequest === null
+                  ? null
+                  : {
+                      id: legalContest.reviewRequest.id,
+                      requestingActorId: legalContest.reviewRequest.requestingActorId,
+                      sourceOrderId: legalContest.reviewRequest.sourceOrderId,
+                      filedAtSimulationTime:
+                        legalContest.reviewRequest.filedAtSimulationTime,
+                    },
+            },
+      judicialOrder: judicialOrder === null ? null : { ...judicialOrder },
+      agency: {
+        redirectionStatus: administrativeRedirection?.status ?? null,
+        directiveReceivedAtSimulationTime:
+          administrativeRedirection?.receivedAtSimulationTime ?? null,
+        orderReceipt: orderReceipt === null ? null : { ...orderReceipt },
+        complianceResponse:
+          complianceResponse === null ? null : { ...complianceResponse },
+      },
+      executiveResponse: executiveResponse === null ? null : { ...executiveResponse },
     },
     officialHousingMeasurement: {
       id: measurement.id,
@@ -903,6 +1077,20 @@ export const createGameSession = (): GameSession => {
       requireStrategicControl();
       return commitWorld(
         resolveHousingImplementationResponse(world, "PRESERVE_SUPPORT_RESERVE"),
+      );
+    },
+    attemptDisputedHousingFundsRedirection: () => {
+      requireStrategicControl();
+      return commitWorld(attemptDisputedHousingFundsRedirection(world));
+    },
+    backDownFromDisputedHousingFundsRedirection: () => {
+      requireStrategicControl();
+      return commitWorld(resolveExecutiveJudicialResponse(world, "BACK_DOWN"));
+    },
+    appealHousingRedirectionOrderWhileComplying: () => {
+      requireStrategicControl();
+      return commitWorld(
+        resolveExecutiveJudicialResponse(world, "APPEAL_WHILE_COMPLYING"),
       );
     },
   };

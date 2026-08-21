@@ -1,4 +1,6 @@
 import type { PublicFinanceState } from "./fiscal";
+import type { DisputedHousingFundsRedirectionAttempt } from "./executive-authority";
+import type { JudicialOrder } from "./judicial-law";
 import type { EnactedLaw } from "./proposal";
 import type { SimulationInstant } from "./world";
 
@@ -12,6 +14,158 @@ export const FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID =
 export const createFederalHousingAdministrationInstitution = (): AdministrativeInstitution => ({
   id: FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
 });
+
+export type DisputedRedirectionAdministrativeStatus =
+  | "PREPARING_REDIRECTION"
+  | "HALTED_BY_JUDICIAL_ORDER";
+
+/** Agency-owned fact that an executive directive entered administrative handling. */
+export interface DisputedRedirectionAdministrativeState {
+  readonly sourceAttemptId: string;
+  readonly targetInstitutionId: string;
+  readonly status: DisputedRedirectionAdministrativeStatus;
+  readonly receivedAtSimulationTime: SimulationInstant;
+}
+
+/** Agency-owned receipt; the legal-order owner cannot declare its own delivery. */
+export interface JudicialOrderReceipt {
+  readonly orderId: string;
+  readonly recipientInstitutionId: string;
+  readonly receivedAtSimulationTime: SimulationInstant;
+}
+
+export type JudicialOrderComplianceChoice = "COMPLY" | "REFUSE";
+
+/** Agency-owned response fact, deliberately distinct from operative order status. */
+export interface JudicialOrderComplianceResponse {
+  readonly orderId: string;
+  readonly institutionId: string;
+  readonly response: JudicialOrderComplianceChoice;
+  readonly resolvedAtSimulationTime: SimulationInstant;
+}
+
+export interface ContestedHousingAdministrationState {
+  readonly disputedRedirections: readonly DisputedRedirectionAdministrativeState[];
+  readonly judicialOrderReceipts: readonly JudicialOrderReceipt[];
+  readonly judicialOrderComplianceResponses: readonly JudicialOrderComplianceResponse[];
+}
+
+export const createInitialContestedHousingAdministrationState =
+  (): ContestedHousingAdministrationState => ({
+    disputedRedirections: [],
+    judicialOrderReceipts: [],
+    judicialOrderComplianceResponses: [],
+  });
+
+export const receiveDisputedHousingRedirectionDirective = (
+  state: ContestedHousingAdministrationState,
+  attempt: DisputedHousingFundsRedirectionAttempt,
+  institution: AdministrativeInstitution,
+  at: SimulationInstant,
+): {
+  readonly state: ContestedHousingAdministrationState;
+  readonly administrativeState: DisputedRedirectionAdministrativeState;
+} => {
+  if (attempt.targetInstitutionId !== institution.id) {
+    throw new Error(`Disputed directive does not target institution ${institution.id}.`);
+  }
+  if (state.disputedRedirections.some((entry) => entry.sourceAttemptId === attempt.id)) {
+    throw new Error(`Institution already received disputed attempt ${attempt.id}.`);
+  }
+  const administrativeState: DisputedRedirectionAdministrativeState = {
+    sourceAttemptId: attempt.id,
+    targetInstitutionId: institution.id,
+    status: "PREPARING_REDIRECTION",
+    receivedAtSimulationTime: at,
+  };
+  return {
+    state: {
+      ...state,
+      disputedRedirections: [...state.disputedRedirections, administrativeState],
+    },
+    administrativeState,
+  };
+};
+
+export const receiveJudicialOrder = (
+  state: ContestedHousingAdministrationState,
+  order: JudicialOrder,
+  at: SimulationInstant,
+): { readonly state: ContestedHousingAdministrationState; readonly receipt: JudicialOrderReceipt } => {
+  if (order.subjectInstitutionId !== FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID) {
+    throw new Error(`Judicial order ${order.id} does not address the federal Housing administration.`);
+  }
+  if (
+    !state.disputedRedirections.some(
+      (entry) => entry.sourceAttemptId === order.challengedAttemptId,
+    )
+  ) {
+    throw new Error(`Order ${order.id} references an unreceived executive attempt.`);
+  }
+  if (state.judicialOrderReceipts.some((receipt) => receipt.orderId === order.id)) {
+    throw new Error(`Judicial order ${order.id} has already been received.`);
+  }
+  const receipt: JudicialOrderReceipt = {
+    orderId: order.id,
+    recipientInstitutionId: order.subjectInstitutionId,
+    receivedAtSimulationTime: at,
+  };
+  return {
+    state: {
+      ...state,
+      judicialOrderReceipts: [...state.judicialOrderReceipts, receipt],
+    },
+    receipt,
+  };
+};
+
+export const resolveJudicialOrderCompliance = (
+  state: ContestedHousingAdministrationState,
+  order: JudicialOrder,
+  response: JudicialOrderComplianceChoice,
+  at: SimulationInstant,
+): {
+  readonly state: ContestedHousingAdministrationState;
+  readonly complianceResponse: JudicialOrderComplianceResponse;
+} => {
+  if (!state.judicialOrderReceipts.some((receipt) => receipt.orderId === order.id)) {
+    throw new Error(`Institution cannot resolve compliance before receiving order ${order.id}.`);
+  }
+  if (
+    state.judicialOrderComplianceResponses.some(
+      (candidate) => candidate.orderId === order.id,
+    )
+  ) {
+    throw new Error(`Compliance already resolved for judicial order ${order.id}.`);
+  }
+  if (response !== "COMPLY" && response !== "REFUSE") {
+    throw new Error(`Unsupported judicial-order response ${String(response)}.`);
+  }
+  const complianceResponse: JudicialOrderComplianceResponse = {
+    orderId: order.id,
+    institutionId: order.subjectInstitutionId,
+    response,
+    resolvedAtSimulationTime: at,
+  };
+  return {
+    state: {
+      disputedRedirections:
+        response === "COMPLY"
+          ? state.disputedRedirections.map((entry) =>
+              entry.sourceAttemptId === order.challengedAttemptId
+                ? { ...entry, status: "HALTED_BY_JUDICIAL_ORDER" }
+                : entry,
+            )
+          : state.disputedRedirections,
+      judicialOrderReceipts: state.judicialOrderReceipts,
+      judicialOrderComplianceResponses: [
+        ...state.judicialOrderComplianceResponses,
+        complianceResponse,
+      ],
+    },
+    complianceResponse,
+  };
+};
 
 export type HousingImplementationResponseAction =
   | "DEPLOY_SUPPORT_TO_C"
