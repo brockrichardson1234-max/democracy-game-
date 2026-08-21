@@ -1,4 +1,9 @@
-import { createInitialGovernanceState, type GovernanceState } from "./governance";
+import {
+  createInitialGovernanceState,
+  originateHousingPoliticalClaimDecision,
+  type GovernanceState,
+  type HousingPoliticalClaimDecisionKind,
+} from "./governance";
 import {
   GEOGRAPHY_REGION_A_ID,
   GEOGRAPHY_REGION_B_ID,
@@ -14,9 +19,19 @@ import {
 import type { HistoricalOccurrence } from "./history";
 import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "./federalism";
 import {
+  ADMINISTRATION_HOUSING_CLAIM_ID,
+  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
   HOUSING_MEASUREMENT_OBSERVATION_END,
+  OFFICIAL_HOUSING_REPORT_ID,
   OFFICIAL_HOUSING_REPORT_RELEASE_AT,
+  OPPOSITION_HOUSING_CLAIM_ID,
+  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
+  PUBLIC_AUDIENCE_ALPHA_ID,
+  PUBLIC_AUDIENCE_BETA_ID,
+  PUBLIC_AUDIENCE_GAMMA_ID,
   createInitialInformationState,
+  exposeInformationArtifact,
+  releasePoliticalClaim,
   resolveInformationBoundary,
   type InformationState,
 } from "./information";
@@ -80,6 +95,80 @@ const assertValidTarget = (world: WorldState, target: SimulationInstant): void =
   }
 };
 
+const exposeArtifactToFixtureAudiences = (
+  information: InformationState,
+  artifactId: string,
+  audienceIds: readonly string[],
+  at: SimulationInstant,
+): { readonly information: InformationState; readonly occurrences: HistoricalOccurrence[] } => {
+  let nextInformation = information;
+  const occurrences: HistoricalOccurrence[] = [];
+  for (const audienceId of audienceIds) {
+    const exposure = exposeInformationArtifact(nextInformation, artifactId, audienceId, at);
+    nextInformation = exposure.information;
+    occurrences.push(...exposure.occurrences);
+  }
+  return { information: nextInformation, occurrences };
+};
+
+const releaseFixturePoliticalClaim = (
+  governance: GovernanceState,
+  information: InformationState,
+  kind: HousingPoliticalClaimDecisionKind,
+  at: SimulationInstant,
+): {
+  readonly governance: GovernanceState;
+  readonly information: InformationState;
+  readonly occurrences: HistoricalOccurrence[];
+} => {
+  const sourceReport = information.artifacts.find(
+    (artifact) => artifact.id === OFFICIAL_HOUSING_REPORT_ID,
+  );
+  if (sourceReport === undefined) {
+    throw new Error(`${kind} Housing claim requires the released official Housing report.`);
+  }
+
+  const decisionResult = originateHousingPoliticalClaimDecision(
+    governance,
+    kind,
+    sourceReport.id,
+    at,
+  );
+  const decision = decisionResult.decision;
+  const claimArtifactId =
+    kind === "ADMINISTRATION"
+      ? ADMINISTRATION_HOUSING_CLAIM_ID
+      : OPPOSITION_HOUSING_CLAIM_ID;
+  const claimRelease = releasePoliticalClaim(
+    information,
+    {
+      claimArtifactId,
+      sourceDecisionId: decision.id,
+      origin: decision.origin,
+      sourceArtifactIds: decision.sourceArtifactIds,
+      federalProgramId: decision.federalProgramId,
+      claimPosition: decision.claimPosition,
+    },
+    at,
+  );
+  const audienceIds =
+    kind === "ADMINISTRATION"
+      ? [PUBLIC_AUDIENCE_ALPHA_ID, PUBLIC_AUDIENCE_GAMMA_ID]
+      : [PUBLIC_AUDIENCE_BETA_ID, PUBLIC_AUDIENCE_GAMMA_ID];
+  const exposure = exposeArtifactToFixtureAudiences(
+    claimRelease.information,
+    claimArtifactId,
+    audienceIds,
+    at,
+  );
+
+  return {
+    governance: decisionResult.governance,
+    information: exposure.information,
+    occurrences: [...claimRelease.occurrences, ...exposure.occurrences],
+  };
+};
+
 export const advanceWorldTo = (
   world: WorldState,
   target: SimulationInstant,
@@ -92,13 +181,16 @@ export const advanceWorldTo = (
   const boundaries = [
     HOUSING_MEASUREMENT_OBSERVATION_END,
     OFFICIAL_HOUSING_REPORT_RELEASE_AT,
+    ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
+    OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
     target,
   ]
-    .filter((boundary) => boundary >= world.time.current && boundary <= target)
+    .filter((boundary) => boundary > world.time.current && boundary <= target)
     .filter((boundary, index, all) => all.indexOf(boundary) === index)
     .sort((left, right) => left - right);
 
   let cursor = world.time.current;
+  let governance = world.governance;
   let housing = world.housing;
   let information = world.information;
   const occurrences: HistoricalOccurrence[] = [];
@@ -116,12 +208,44 @@ export const advanceWorldTo = (
     );
     information = informationAdvancement.information;
     occurrences.push(...informationAdvancement.occurrences);
+
+    if (boundary === OFFICIAL_HOUSING_REPORT_RELEASE_AT) {
+      // Explicit dependency: report release above precedes same-time receipt.
+      const reportExposure = exposeArtifactToFixtureAudiences(
+        information,
+        OFFICIAL_HOUSING_REPORT_ID,
+        [PUBLIC_AUDIENCE_ALPHA_ID, PUBLIC_AUDIENCE_BETA_ID],
+        boundary,
+      );
+      information = reportExposure.information;
+      occurrences.push(...reportExposure.occurrences);
+    }
+
+    if (
+      governance.housingGrantProgram !== null &&
+      (boundary === ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT ||
+        boundary === OPPOSITION_HOUSING_CLAIM_RELEASE_AT)
+    ) {
+      // Political decision -> Information artifact -> same-time exposures.
+      const claim = releaseFixturePoliticalClaim(
+        governance,
+        information,
+        boundary === ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT
+          ? "ADMINISTRATION"
+          : "OPPOSITION",
+        boundary,
+      );
+      governance = claim.governance;
+      information = claim.information;
+      occurrences.push(...claim.occurrences);
+    }
     cursor = boundary;
   }
 
   return {
     ...world,
     time: { current: target },
+    governance,
     housing,
     information,
     history: [...world.history, ...occurrences],

@@ -7,6 +7,13 @@ export const OFFICIAL_HOUSING_REPORT_ID = "gl0-official-housing-report";
 export const HOUSING_MEASUREMENT_OBSERVATION_START = 0;
 export const HOUSING_MEASUREMENT_OBSERVATION_END = 30;
 export const OFFICIAL_HOUSING_REPORT_RELEASE_AT = 40;
+export const ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT = 41;
+export const OPPOSITION_HOUSING_CLAIM_RELEASE_AT = 42;
+export const ADMINISTRATION_HOUSING_CLAIM_ID = "gl0-administration-housing-claim";
+export const OPPOSITION_HOUSING_CLAIM_ID = "gl0-opposition-housing-claim";
+export const PUBLIC_AUDIENCE_ALPHA_ID = "gl0-public-audience-alpha";
+export const PUBLIC_AUDIENCE_BETA_ID = "gl0-public-audience-beta";
+export const PUBLIC_AUDIENCE_GAMMA_ID = "gl0-public-audience-gamma";
 
 export type HousingMeasurementStatus = "SCHEDULED" | "CAPTURED" | "COMPLETED";
 
@@ -48,9 +55,62 @@ export interface OfficialHousingReport {
   readonly regionalResults: readonly HousingRegionalObservation[];
 }
 
+export type PoliticalClaimPosition = "PROGRAM_WORKING" | "PROGRAM_INADEQUATE";
+
+export type PoliticalClaimOrigin =
+  | {
+      readonly originType: "ADMINISTRATION";
+      readonly administrationId: string;
+    }
+  | {
+      readonly originType: "ACTOR";
+      readonly actorId: string;
+    };
+
+/** Information-owned public interpretation, never Housing or report truth. */
+export interface PoliticalClaimArtifact {
+  readonly id: string;
+  readonly artifactType: "POLITICAL_CLAIM";
+  readonly sourceDecisionId: string;
+  readonly origin: PoliticalClaimOrigin;
+  readonly sourceArtifactIds: readonly string[];
+  readonly federalProgramId: string;
+  readonly claimSubject: "HOUSING_GRANT_PROGRAM_PERFORMANCE";
+  readonly claimPosition: PoliticalClaimPosition;
+  readonly createdAtSimulationTime: SimulationInstant;
+  readonly releasedAtSimulationTime: SimulationInstant;
+  readonly accessClass: "PUBLIC";
+}
+
+/** Temporary GL0 distribution target; explicitly not a Population subject. */
+export interface InformationAudience {
+  readonly id: string;
+  readonly audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE";
+}
+
+/** Receipt only: this record owns no belief, attribution, or preference. */
+export interface InformationExposure {
+  readonly id: string;
+  readonly artifactId: string;
+  readonly audienceId: string;
+  readonly exposedAtSimulationTime: SimulationInstant;
+}
+
+export interface PoliticalClaimReleaseInput {
+  readonly claimArtifactId: string;
+  readonly sourceDecisionId: string;
+  readonly origin: PoliticalClaimOrigin;
+  readonly sourceArtifactIds: readonly string[];
+  readonly federalProgramId: string;
+  readonly claimPosition: PoliticalClaimPosition;
+}
+
 export interface InformationState {
   readonly housingMeasurement: HousingMeasurementProcess;
   readonly artifacts: readonly OfficialHousingReport[];
+  readonly politicalClaims: readonly PoliticalClaimArtifact[];
+  readonly audiences: readonly InformationAudience[];
+  readonly exposures: readonly InformationExposure[];
 }
 
 export type InformationOccurrence =
@@ -63,6 +123,19 @@ export type InformationOccurrence =
       readonly type: "OfficialHousingReportReleased";
       readonly artifactId: string;
       readonly sourceMeasurementId: string;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "PoliticalClaimReleased";
+      readonly artifactId: string;
+      readonly sourceDecisionId: string;
+      readonly claimPosition: PoliticalClaimPosition;
+      readonly at: SimulationInstant;
+    }
+  | {
+      readonly type: "InformationArtifactExposed";
+      readonly artifactId: string;
+      readonly audienceId: string;
       readonly at: SimulationInstant;
     };
 
@@ -91,6 +164,22 @@ export const createInitialInformationState = (
       result: null,
     },
     artifacts: [],
+    politicalClaims: [],
+    audiences: [
+      {
+        id: PUBLIC_AUDIENCE_ALPHA_ID,
+        audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE",
+      },
+      {
+        id: PUBLIC_AUDIENCE_BETA_ID,
+        audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE",
+      },
+      {
+        id: PUBLIC_AUDIENCE_GAMMA_ID,
+        audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE",
+      },
+    ],
+    exposures: [],
   };
 };
 
@@ -205,4 +294,128 @@ export const resolveInformationBoundary = (
     return releaseOfficialHousingReport(information, at);
   }
   return { information, occurrences: [] };
+};
+
+const resolveReleasedArtifact = (
+  information: InformationState,
+  artifactId: string,
+): OfficialHousingReport | PoliticalClaimArtifact | null =>
+  information.artifacts.find((artifact) => artifact.id === artifactId) ??
+  information.politicalClaims.find((artifact) => artifact.id === artifactId) ??
+  null;
+
+/** Information's admission boundary for a political source's claim decision. */
+export const releasePoliticalClaim = (
+  information: InformationState,
+  input: PoliticalClaimReleaseInput,
+  at: SimulationInstant,
+): InformationBoundaryResult => {
+  if (!Number.isFinite(at)) {
+    throw new Error("Political claim release time must be finite.");
+  }
+  if (
+    information.politicalClaims.some(
+      (claim) => claim.id === input.claimArtifactId || claim.sourceDecisionId === input.sourceDecisionId,
+    )
+  ) {
+    throw new Error(`Political claim ${input.claimArtifactId} already exists.`);
+  }
+  if (input.sourceArtifactIds.length !== 1) {
+    throw new Error("The GL0 political claim requires exactly one source artifact.");
+  }
+
+  const source = information.artifacts.find(
+    (artifact) => artifact.id === input.sourceArtifactIds[0],
+  );
+  if (source === undefined) {
+    throw new Error(
+      `Political claim ${input.claimArtifactId} references a nonexistent official report.`,
+    );
+  }
+  if (source.releasedAtSimulationTime > at) {
+    throw new Error(
+      `Political claim ${input.claimArtifactId} cannot precede source report release.`,
+    );
+  }
+
+  const claim: PoliticalClaimArtifact = {
+    id: input.claimArtifactId,
+    artifactType: "POLITICAL_CLAIM",
+    sourceDecisionId: input.sourceDecisionId,
+    origin: input.origin,
+    sourceArtifactIds: [...input.sourceArtifactIds],
+    federalProgramId: input.federalProgramId,
+    claimSubject: "HOUSING_GRANT_PROGRAM_PERFORMANCE",
+    claimPosition: input.claimPosition,
+    createdAtSimulationTime: at,
+    releasedAtSimulationTime: at,
+    accessClass: "PUBLIC",
+  };
+
+  return {
+    information: {
+      ...information,
+      politicalClaims: [...information.politicalClaims, claim],
+    },
+    occurrences: [
+      {
+        type: "PoliticalClaimReleased",
+        artifactId: claim.id,
+        sourceDecisionId: claim.sourceDecisionId,
+        claimPosition: claim.claimPosition,
+        at,
+      },
+    ],
+  };
+};
+
+/** Information-owned exposure mutation; PUBLIC availability is not receipt. */
+export const exposeInformationArtifact = (
+  information: InformationState,
+  artifactId: string,
+  audienceId: string,
+  at: SimulationInstant,
+): InformationBoundaryResult => {
+  if (!Number.isFinite(at)) {
+    throw new Error("Information exposure time must be finite.");
+  }
+  const artifact = resolveReleasedArtifact(information, artifactId);
+  if (artifact === null) {
+    throw new Error(`Cannot expose unknown information artifact ${artifactId}.`);
+  }
+  if (!information.audiences.some((audience) => audience.id === audienceId)) {
+    throw new Error(`Cannot expose information to unknown audience ${audienceId}.`);
+  }
+  if (artifact.releasedAtSimulationTime > at) {
+    throw new Error(`Information artifact ${artifactId} cannot be exposed before release.`);
+  }
+  if (
+    information.exposures.some(
+      (exposure) => exposure.artifactId === artifactId && exposure.audienceId === audienceId,
+    )
+  ) {
+    throw new Error(`Information artifact ${artifactId} was already exposed to ${audienceId}.`);
+  }
+
+  const exposure: InformationExposure = {
+    id: `gl0-exposure-${artifactId}-to-${audienceId}`,
+    artifactId,
+    audienceId,
+    exposedAtSimulationTime: at,
+  };
+
+  return {
+    information: {
+      ...information,
+      exposures: [...information.exposures, exposure],
+    },
+    occurrences: [
+      {
+        type: "InformationArtifactExposed",
+        artifactId,
+        audienceId,
+        at,
+      },
+    ],
+  };
 };

@@ -32,7 +32,7 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 17 runtime candidate</p>
+        <p className="eyebrow">Commit 18 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -428,6 +428,41 @@ export const App = () => {
               </div>
             );
           })}
+        </dl>
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 18 developer/audit inspection</p>
+        <h1>Competing claims and public exposure</h1>
+        <p>Raw Information truth below is not population belief or player knowledge.</p>
+
+        <h2>Political claim artifacts</h2>
+        <dl>
+          {view.publicInformationAudit.claims.map((claim) => (
+            <div key={claim.id}>
+              <dt>{claim.claimPosition}</dt>
+              <dd>
+                day {claim.releasedAtSimulationTime}; source {claim.sourceArtifactIds.join(", ")};{" "}
+                {claim.origin.originType === "ADMINISTRATION"
+                  ? `administration ${claim.origin.administrationId}`
+                  : `actor ${claim.origin.actorId}`}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <h2>Temporary GL0 distribution audiences</h2>
+        <dl>
+          {view.publicInformationAudit.audiences.map((audience) => (
+            <div key={audience.id}>
+              <dt>{audience.id}</dt>
+              <dd>
+                {audience.exposedArtifactIds.length === 0
+                  ? "no received artifacts"
+                  : audience.exposedArtifactIds.join(", ")}
+              </dd>
+            </div>
+          ))}
         </dl>
       </section>
     </main>

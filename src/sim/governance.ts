@@ -34,10 +34,17 @@ import {
 import {
   createDeterministicLegislatureFixture,
   decideActorVote,
+  GL0_OPPOSITION_CLAIM_ACTOR_ID,
   resolveSeatHolder,
   type Legislature,
   type ProposalTerms,
 } from "./legislature";
+import {
+  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
+  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
+  type PoliticalClaimOrigin,
+  type PoliticalClaimPosition,
+} from "./information";
 import {
   createLegislativeProcedureInstance,
   resolveRequiredYeaVotes,
@@ -57,7 +64,20 @@ import {
   type StateProgramDecisionState,
 } from "./federalism";
 import type { EnactedLaw, LegislativeProposal } from "./proposal";
-import type { WorldState } from "./world";
+import type { SimulationInstant, WorldState } from "./world";
+
+export type HousingPoliticalClaimDecisionKind = "ADMINISTRATION" | "OPPOSITION";
+
+/** PoliticalOrder-owned decision to issue one bounded public interpretation. */
+export interface HousingPoliticalClaimDecision {
+  readonly id: string;
+  readonly kind: HousingPoliticalClaimDecisionKind;
+  readonly origin: PoliticalClaimOrigin;
+  readonly sourceArtifactIds: readonly string[];
+  readonly federalProgramId: string;
+  readonly claimPosition: PoliticalClaimPosition;
+  readonly decidedAtSimulationTime: SimulationInstant;
+}
 
 export interface GovernanceState {
   readonly legislature: Legislature;
@@ -90,6 +110,8 @@ export interface GovernanceState {
   readonly intergovernmentalProgramRelationships: readonly IntergovernmentalProgramRelationship[];
   /** Federal program/administrative-owned award records; distinct from fiscal obligation/disbursement. */
   readonly housingGrantAwards: readonly HousingGrantAward[];
+  /** Political sources own these decisions; Information owns resulting claim artifacts. */
+  readonly housingPoliticalClaimDecisions: readonly HousingPoliticalClaimDecision[];
 }
 
 export const createInitialGovernanceState = (): GovernanceState => {
@@ -114,6 +136,7 @@ export const createInitialGovernanceState = (): GovernanceState => {
     federalApplicationDeterminations: [],
     intergovernmentalProgramRelationships: [],
     housingGrantAwards: [],
+    housingPoliticalClaimDecisions: [],
   };
 };
 
@@ -123,7 +146,73 @@ export const createInitialGovernanceState = (): GovernanceState => {
  * intents through the bound ControlBinding, but the administration remains
  * the canonical originator of the resulting attempted action.
  */
-const HOUSING_GRANT_ADMINISTRATION_ID = "gl0-federal-executive-administration";
+export const HOUSING_GRANT_ADMINISTRATION_ID = "gl0-federal-executive-administration";
+
+export interface HousingPoliticalClaimDecisionResult {
+  readonly governance: GovernanceState;
+  readonly decision: HousingPoliticalClaimDecision;
+}
+
+/**
+ * The political source's bounded decision boundary. It records an intent to
+ * issue a claim but cannot create or validate the Information artifact that
+ * the claim will cite.
+ */
+export const originateHousingPoliticalClaimDecision = (
+  governance: GovernanceState,
+  kind: HousingPoliticalClaimDecisionKind,
+  sourceArtifactId: string,
+  at: SimulationInstant,
+): HousingPoliticalClaimDecisionResult => {
+  const expectedAt =
+    kind === "ADMINISTRATION"
+      ? ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT
+      : OPPOSITION_HOUSING_CLAIM_RELEASE_AT;
+  if (at !== expectedAt) {
+    throw new Error(`${kind} Housing claim decision is not due at simulation time ${at}.`);
+  }
+  if (governance.housingGrantProgram === null) {
+    throw new Error("A Housing grant program must exist before a program-performance claim.");
+  }
+  if (sourceArtifactId.length === 0) {
+    throw new Error("A Housing political claim decision requires a source artifact reference.");
+  }
+  if (governance.housingPoliticalClaimDecisions.some((decision) => decision.kind === kind)) {
+    throw new Error(`${kind} Housing political claim decision already exists.`);
+  }
+
+  const origin: PoliticalClaimOrigin =
+    kind === "ADMINISTRATION"
+      ? { originType: "ADMINISTRATION", administrationId: HOUSING_GRANT_ADMINISTRATION_ID }
+      : { originType: "ACTOR", actorId: GL0_OPPOSITION_CLAIM_ACTOR_ID };
+  if (
+    origin.originType === "ACTOR" &&
+    !governance.legislature.actors.some((actor) => actor.id === origin.actorId)
+  ) {
+    throw new Error(`Opposition claim origin actor ${origin.actorId} does not exist.`);
+  }
+
+  const decision: HousingPoliticalClaimDecision = {
+    id: `gl0-${kind.toLowerCase()}-housing-claim-decision`,
+    kind,
+    origin,
+    sourceArtifactIds: [sourceArtifactId],
+    federalProgramId: governance.housingGrantProgram.id,
+    claimPosition: kind === "ADMINISTRATION" ? "PROGRAM_WORKING" : "PROGRAM_INADEQUATE",
+    decidedAtSimulationTime: at,
+  };
+
+  return {
+    governance: {
+      ...governance,
+      housingPoliticalClaimDecisions: [
+        ...governance.housingPoliticalClaimDecisions,
+        decision,
+      ],
+    },
+    decision,
+  };
+};
 
 const HOUSING_GRANT_PROPOSAL_ID = "gl0-housing-grant-proposal";
 

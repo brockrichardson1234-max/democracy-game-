@@ -14,6 +14,9 @@ export type LegislativeCoalition =
   | "OPPOSITION_COALITION"
   | "SWING_COALITION";
 
+/** Existing bounded opposition speaker used by the GL0 public-claim fixture. */
+export const GL0_OPPOSITION_CLAIM_ACTOR_ID = "actor-opposition-1";
+
 /**
  * Actor-owned decision criteria. An actor votes YEA only when every
  * criterion it specifies is satisfied by the proposal terms currently before
