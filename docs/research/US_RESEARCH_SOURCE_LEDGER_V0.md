@@ -1,6 +1,6 @@
 # U.S. Research Source Ledger V0
 
-Status: Packets A–C working evidence candidate. This ledger is not a U.S. configuration and has not undergone the three independent research audits.
+Status: Combined Packets A–D evidence candidate. This ledger is not a U.S. configuration, has not undergone the three independent research audits, and is not frozen evidence.
 
 Research baseline date: **2026-08-21**
 
@@ -850,19 +850,151 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Stable identifier: [“The HOME Program Is Ripe For A Fresh Look From This Committee”](https://financialservices.house.gov/news/documentsingle.aspx?DocumentID=410809)
 - Packet C pinpoint used: committee-chair characterization of HOME's role and claimed administrative/cost shortcomings as a distinct public-claim channel
 
+### USR-SRC-0085 — Census ANSI state and state-equivalent codes
+
+- Issuing body: U.S. Census Bureau, Geography Division
+- Tier / type: Tier 1; official geographic identifier reference
+- Authority status: primary official Census reference for ANSI state codes, USPS abbreviations, names, and GNIS identifiers; it is not a source of constitutional status or legal boundary adjudication
+- Publication / effective date: page current when retrieved 2026-08-21; code changes are maintained as ANSI/GNIS reference data
+- Version or vintage: web table retrieved 2026-08-21
+- Stable identifier: [ANSI and FIPS Codes for States](https://www.census.gov/library/reference/code-lists/ansi/ansi-codes-for-states.html)
+- Packet D pinpoints used: table columns `STATE`, `STUSAB`, `STATE_NAME`, and `STATENS`; rows for the 50 states and District of Columbia, including District of Columbia code `11` and abbreviation `DC`
+
+### USR-SRC-0086 — Census geographic identifiers and GEOIDs
+
+- Issuing body: U.S. Census Bureau, Geography Division
+- Tier / type: Tier 1; official geographic identifier methodology
+- Authority status: primary official explanation of Census geographic codes and concatenated GEOIDs; identifiers describe Census geographic entities and do not themselves decide jurisdictional authority
+- Publication / effective date: page current when retrieved 2026-08-21
+- Version or vintage: web guidance retrieved 2026-08-21
+- Stable identifier: [Understanding Geographic Identifiers (GEOIDs)](https://www.census.gov/programs-surveys/geography/guidance/geo-identifiers.html)
+- Packet D pinpoints used: distinction among Census geographic codes, ANSI codes, and GNIS codes; construction of full GEOIDs by concatenating component codes
+
+### USR-SRC-0087 — 2025 TIGER/Line Shapefiles and record layouts
+
+- Issuing body: U.S. Census Bureau, Geography Division
+- Tier / type: Tier 1; official geographic boundary data product and technical documentation
+- Authority status: primary official statistical-boundary product; boundaries support data collection and tabulation and are expressly not legal land descriptions
+- Publication / effective date: 2025 files released September 23, 2025; boundaries and names generally reflect January 1, 2025
+- Version or vintage: 2025 TIGER/Line; retrieved 2026-08-21
+- Stable identifiers: [2025 TIGER/Line Shapefiles](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html); [2025 technical documentation, record layouts](https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc_F-S.pdf)
+- Packet D pinpoints used: product vintage/release statement; State and Equivalent Entities and 119th Congressional District file coverage; record-layout fields `STATEFP`, `CD119FP`, and `GEOID`
+
+### USR-SRC-0088 — 2025 Census cartographic boundary files
+
+- Issuing body: U.S. Census Bureau, Geography Division
+- Tier / type: Tier 1; official generalized geographic-boundary product
+- Authority status: primary official source for lower-resolution state and congressional-district geometry intended for thematic mapping; it is less detailed than TIGER/Line and not a legal land description
+- Publication / effective date: 2025 product page current when retrieved 2026-08-21
+- Version or vintage: 2025; retrieved 2026-08-21
+- Stable identifier: [2025 Cartographic Boundary Files](https://www.census.gov/geographies/mapping-files/2025/geo/carto-boundary-file.html)
+- Packet D pinpoints used: State and Equivalent and 119th Congressional District layers; shapefile and KML formats; 1:500,000, 1:5,000,000, and 1:20,000,000 resolutions
+
+### USR-SRC-0089 — Census 119th Congressional District data products
+
+- Issuing body: U.S. Census Bureau, Redistricting and Voting Rights Data Office
+- Tier / type: Tier 1; official congressional-district product documentation
+- Authority status: primary official Census record of state-provided 119th Congress district boundaries and associated data products; it does not establish current officeholder identity
+- Publication / effective date: maps identify the 119th Congress period as January 2025 through January 2027
+- Version or vintage: 119th Congress / `cd119`; retrieved 2026-08-21
+- Stable identifier: [119th Congressional Districts](https://www.census.gov/programs-surveys/decennial-census/about/rdo/congressional-districts.119th_Congress.html)
+- Packet D pinpoints used: state-submitted district boundaries; `cd119` geography; relationship of district products to the 119th Congress
+
+### USR-SRC-0090 — 2020 Census apportionment results
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; official decennial-apportionment data product
+- Authority status: primary official source for the current apportionment of 435 House seats among the 50 states; the District of Columbia and territories are excluded from House apportionment
+- Publication / effective date: apportionment results delivered April 26, 2021
+- Version or vintage: 2020 Census apportionment; retrieved 2026-08-21
+- Stable identifier: [2020 Census Apportionment Results](https://www.census.gov/data/tables/2020/dec/2020-apportionment-data.html)
+- Packet D pinpoints used: 435 representatives apportioned among the 50 states; apportionment table and methodology; exclusion of DC and territories from apportionment population
+
+### USR-SRC-0091 — National Archives current Electoral College allocation
+
+- Issuing body: National Archives and Records Administration, Office of the Federal Register
+- Tier / type: Tier 1; official federal Electoral College administration reference
+- Authority status: primary official source for the elector allocation applicable to the 2024 and 2028 presidential elections; it reports allocation rather than determining the underlying constitutional rule
+- Publication / effective date: allocation based on the 2020 Census; applies to the 2024 and 2028 presidential elections
+- Version or vintage: 2020-apportionment electoral allocation; retrieved 2026-08-21
+- Stable identifier: [Distribution of Electoral Votes](https://www.archives.gov/electoral-college/allocation)
+- Packet D pinpoints used: 538 total electoral votes; 270 majority threshold; state allocations; District of Columbia allocation of three
+
+### USR-SRC-0092 — Vintage 2025 state population estimates
+
+- Issuing body: U.S. Census Bureau, Population Estimates Program
+- Tier / type: Tier 1; official demographic dataset
+- Authority status: primary official estimate series for total resident population of states, the District of Columbia, and Puerto Rico; estimates are vintage-specific and are not voter-eligibility counts
+- Publication / effective date: estimates through July 1, 2025; product available when retrieved 2026-08-21
+- Version or vintage: Vintage 2025 postcensal estimates; retrieved 2026-08-21
+- Stable identifier: [State Population Totals and Components of Change: 2020–2025](https://www.census.gov/data/datasets/time-series/demo/popest/2020s-state-total.html)
+- Packet D pinpoints used: state/DC coverage; annual July 1 estimates; Census statement that each new vintage revises the complete time series
+
+### USR-SRC-0093 — Vintage 2025 state population characteristics
+
+- Issuing body: U.S. Census Bureau, Population Estimates Program
+- Tier / type: Tier 1; official demographic dataset
+- Authority status: primary official source for state-level age characteristics, including population age 18 and older; age 18-plus is not equivalent to legal voter eligibility or citizen voting-age population
+- Publication / effective date: estimates through July 1, 2025
+- Version or vintage: Vintage 2025; retrieved 2026-08-21
+- Stable identifier: [State Population by Characteristics: 2020–2025](https://www.census.gov/data/tables/time-series/demo/popest/2020s-state-detail.html)
+- Packet D pinpoints used: annual state/DC age tables and 18-and-older population fields
+
+### USR-SRC-0094 — Census Data API and ACS 2024 API metadata
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; official data-access documentation and dataset metadata
+- Authority status: primary official documentation for reproducible API extraction and the named ACS vintage; API availability is an acquisition route, not a requirement for live runtime access
+- Publication / effective date: API guidance and dataset metadata current when retrieved 2026-08-21
+- Version or vintage: API guidance retrieved 2026-08-21; ACS 2024 five-year/one-year catalog entries as applicable
+- Stable identifiers: [Census Data API User Guide](https://www.census.gov/data/developers/guidance/api-user-guide.html); [2024 ACS API catalog](https://api.census.gov/data/2024/acs.html)
+- Packet D pinpoints used: API queries bind variables to a named dataset and geography; dataset metadata identifies the ACS year/product rather than an undifferentiated current value
+
+### USR-SRC-0095 — 2025 TIGER/Line legal disclaimer and citation guidance
+
+- Issuing body: U.S. Census Bureau, Geography Division
+- Tier / type: Tier 1; official product legal/citation documentation
+- Authority status: primary official statement of TIGER/Line product limits, reproduction treatment, citation request, and trademark conditions
+- Publication / effective date: 2025 technical documentation
+- Version or vintage: 2025 TIGER/Line, chapter 1; retrieved 2026-08-21
+- Stable identifier: [2025 TIGER/Line Technical Documentation, Chapter 1](https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2025/TGRSHP2025_TechDoc_Ch1.pdf)
+- Packet D pinpoints used: §§1.1–1.2, including statistical-use/not-legal-description disclaimer, TIGER/Line trademark restriction, government-work reproduction statement, and source-citation request
+
+### USR-SRC-0096 — 17 U.S.C. § 105, United States Government works
+
+- Issuing body: Office of the Law Revision Counsel, U.S. House of Representatives
+- Tier / type: Tier 1; official positive-law U.S. Code text
+- Authority status: controlling statutory text because Title 17 has been enacted into positive law; the provision does not establish that every item on a federal website is a United States Government work
+- Publication / effective date: current preliminary Code text retrieved 2026-08-21
+- Version or vintage: preliminary edition, retrieved 2026-08-21
+- Stable identifier: [17 U.S.C. § 105](https://uscode.house.gov/view.xhtml?req=%28title%3A17+section%3A105+edition%3Aprelim%29)
+- Packet D pinpoint used: §105 (copyright protection under Title 17 unavailable for United States Government works, subject to the provision's terms)
+
+### USR-SRC-0097 — Current 24 CFR part 92 and indefinite-delay notice
+
+- Issuing body: U.S. Department of Housing and Urban Development / Office of the Federal Register
+- Tier / type: Tier 1; current regulatory compilation plus official Federal Register rulemaking record
+- Authority status: the annual CFR edition is the official legal edition; the eCFR is a current, continuously updated but unofficial editorial compilation. The Federal Register notice is the primary official publication of the identified delayed amendments
+- Publication / effective date: eCFR current through August 19, 2026 when retrieved; 91 FR 23014 published April 29, 2026
+- Version or vintage: eCFR retrieved 2026-08-21; FR Doc. 2026-08339
+- Stable identifiers: [24 CFR part 92, current eCFR](https://www.ecfr.gov/current/title-24/subtitle-A/part-92); [91 FR 23014, FR Doc. 2026-08339](https://www.federalregister.gov/documents/2026/04/29/2026-08339/home-investment-partnerships-program-further-program-updates-and-streamlining)
+- Packet D pinpoints used: §§92.205(e), 92.454, and 92.500; editorial notes at §§92.250 and 92.253; 91 FR 23014–23015 indefinitely delaying the specified amendments pending future rulemaking
+
 ## Source-tier count
 
-- Tier 1: **60**
+- Tier 1: **73**
 - Tier 2: **24**
 - Tier 3: **0**
 - Tier 4: **0**
-- Total: **84**
+- Total: **97**
 
 No Tier 3 source was necessary because the bounded ordinary-practice claims are supported by CRS procedural syntheses tied to chamber rules and precedents. No Tier 4 source is relied upon.
 
 Packet B likewise adds no Tier 3 calibration evidence: its empirical sources establish the existence and bounded character of financing layers, administrative/project pipelines, and geographic/project variation, not numerical causal coefficients.
 
 Packet C adds no Tier 3 calibration evidence. Its bounded ordinary-practice conclusions use governing rules, official operational documentation, and primary institutional communication artifacts; claim framing is not treated as evidence of effectiveness or representativeness.
+
+Packet D adds only primary official implementation-source, data-product, legal-status, and current-transition evidence. It does not ingest data or convert source availability into a live runtime dependency.
 
 ## Excluded or bounded source observations
 
@@ -879,3 +1011,8 @@ Packet C adds no Tier 3 calibration evidence. Its bounded ordinary-practice conc
 - The 2024 PR20 and ACS artifacts are dated vintages; later releases do not retroactively change what those artifacts stated, and implementation-current use requires Packet D/freeze validation.
 - Census's 2026 notice that the 2025 ACS one-year release date was undetermined is temporary current state and must be freeze-time revalidated.
 - Official HUD and House committee communications establish provenance and channel for political characterization only; their substantive policy claims are not relied upon as empirical Housing truth.
+- Census geographic products support reproducible identifiers and statistical geometry but are not legal land descriptions; their selected vintage must be frozen explicitly.
+- Title 17 §105 applies to United States Government works, not automatically to every third-party asset displayed on a federal site. Product-specific terms remain controlling for acquisition and redistribution decisions.
+- Vintage 2025 population estimates revise the full post-2020 series and do not establish voter eligibility, citizenship, political behavior, or district-level electorate state.
+- The Census API is an acquisition mechanism. Packet D identifies an offline, versioned extraction path and does not make the eventual runtime depend on live Census service availability.
+- Current eCFR part 92 continues to mix operative text, legacy terminology, and editorially identified delayed amendments. Packet D narrows transition claims provision by provision and retains them in the mutable-P0 register.
