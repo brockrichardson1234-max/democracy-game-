@@ -1,6 +1,6 @@
 # U.S. Research Source Ledger V0
 
-Status: Combined Packets A–D evidence candidate. This ledger is not a U.S. configuration, has not undergone the three independent research audits, and is not frozen evidence.
+Status: Single bounded-repair candidate over independently audited A–D baseline `8d3a5c4ff1d906d4bbc5f965fc737d7175b802c2`. New/changed evidence is not findings-only rechecked, is not configuration, and is not frozen.
 
 Research baseline date: **2026-08-21**
 
@@ -758,7 +758,7 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Publication / effective date: current pages and 2026 release schedule as retrieved
 - Version or vintage: retrieved 2026-08-21; site listed final 2025 annual data posted 2026-05-14
 - Stable identifiers: [Building Permits Survey](https://www.census.gov/construction/bps/index.html); [BPS Methodology](https://www.census.gov/construction/bps/methodology.html)
-- Packet C pinpoints used: survey definition, universe/sample, geography, collection timing, monthly release, late reports/corrections, and annual revision/benchmarking
+- Packet C pinpoints used: survey definition, universe/contact distinction, post-January-2022 non-probability entire-universe estimation, reported/imputed/annual/SOC/third-party inputs, geography, collection timing, release, error limits, revisions, and annual processing; the former “8,400-office probability sample” characterization is corrected
 
 ### USR-SRC-0076 — Census Bureau, Survey of Construction methodology
 
@@ -980,13 +980,157 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Stable identifiers: [24 CFR part 92, current eCFR](https://www.ecfr.gov/current/title-24/subtitle-A/part-92); [91 FR 23014, FR Doc. 2026-08339](https://www.federalregister.gov/documents/2026/04/29/2026-08339/home-investment-partnerships-program-further-program-updates-and-streamlining)
 - Packet D pinpoints used: §§92.205(e), 92.454, and 92.500; editorial notes at §§92.250 and 92.253; 91 FR 23014–23015 indefinitely delaying the specified amendments pending future rulemaking
 
+### USR-SRC-0098 — Current Census Building Permits Survey methodology
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; primary official statistical methodology
+- Authority status: current Census description of BPS design, estimation, and quality limits; mutable methodology, not legal authority
+- Publication / vintage: methodology retrieved 2026-08-21; post-January-2022 design
+- Stable identifiers: [BPS methodology](https://www.census.gov/construction/bps/methodology.html); [BPS program page](https://www.census.gov/construction/bps/index.html)
+- Repair pinpoints: “Universe,” “Survey Design,” “Data Collection,” “Estimation,” and “Quality Measures”: about 19,900-place universe, about 8,400 monthly contacts, entire-universe non-probability estimates, imputation/annual reporters/SOC/third-party inputs, unquantifiable sampling error, and response/nonsampling limitations
+
+### USR-SRC-0099 — Consolidated Appropriations Act, 2024, P.L. 118-42
+
+- Issuing body: United States Congress / Government Publishing Office
+- Tier / type: Tier 1; enacted appropriations law
+- Authority status: controlling enacted FY2024 budget authority
+- Publication / effective date: enacted 2024-03-09
+- Stable identifier: [Public Law 118-42](https://www.govinfo.gov/app/details/PLAW-118publ42)
+- Repair pinpoint: Division F, title II, HOME Investment Partnerships Program, $1.25 billion available through September 30, 2027
+
+### USR-SRC-0100 — OMB FY2024 HUD HOME apportionment
+
+- Issuing body: Office of Management and Budget
+- Tier / type: Tier 1; official public apportionment record
+- Authority status: approved executive fiscal-execution instrument; does not itself create recipient entitlement or payment
+- Publication / vintage: approved 2024-04-05; retrieved 2026-08-21
+- Stable identifier: [FY2024 HUD HOME apportionment JSON](https://apportionment-public.max.gov/Fiscal%20Year%202024/Department%20of%20Housing%20and%20Urban%20Development/JSON/FY2024_Agency%3DHUD_Bureau%3DCOMP%26D_Account%3D086-02052024-04-05-12.01.json)
+- Repair pinpoints: P.L. 118-42 authority, TAS 086-0205, line 1100 FY2024/2027 discretionary appropriation, line 6011 HOME, $1.25 billion, and approval metadata
+
+### USR-SRC-0101 — HUD CPD Notice 24-01, FY2024 formula-allocation instructions
+
+- Issuing body: U.S. Department of Housing and Urban Development, Community Planning and Development
+- Tier / type: Tier 1; official program notice
+- Authority status: administrative implementation guidance subject to statute/regulation
+- Publication date: 2024
+- Stable identifier: [CPD Notice 24-01](https://www.hud.gov/sites/dfiles/OCHCO/documents/2024-01cpdn.pdf)
+- Repair pinpoints: FY2024 formula allocations, consolidated/action-plan submission sequence, and deadline keyed to allocation announcement
+
+### USR-SRC-0102 — USAspending Arapahoe County FY2024 HOME award
+
+- Issuing body: U.S. Department of the Treasury, USAspending.gov; HUD award data
+- Tier / type: Tier 1; official federal spending record
+- Authority status: primary award/obligation/outlay reporting record; mutable current fields are not Housing completion
+- Version / vintage: award FAIN M24-DC080221, retrieved 2026-08-21
+- Stable identifiers: [award page](https://www.usaspending.gov/award/ASST_NON_M24-DC080221_086); [award API](https://api.usaspending.gov/api/v2/awards/ASST_NON_M24-DC080221_086/)
+- Repair pinpoints: recipient, Assistance Listing 14.239, signed/start date 2024-09-25, $617,268.07 obligation, outlay/subaward fields, and HOME purpose description
+
+### USR-SRC-0103 — Arapahoe County 2024 Annual Action Plan
+
+- Issuing body: Arapahoe County, Colorado
+- Tier / type: Tier 1; official participating-jurisdiction plan
+- Authority status: primary local plan/recommendation artifact; not proof of federal payment or physical completion
+- Publication / vintage: program year 2024
+- Stable identifier: [2024 Annual Action Plan](https://files.arapahoeco.gov/Community%20Resources/community%20impact/2024%20Annual%20Action%20Plan.pdf)
+- Repair pinpoints: HOME CHDO and multifamily recommendations; $180,000 recaptured HOME recommendation for the Stables; described site, planned units, and layered financing
+
+### USR-SRC-0104 — HOME consortium qualification rule and HUD management guide
+
+- Issuing body: U.S. Department of Housing and Urban Development / Office of the Federal Register
+- Tier / type: Tier 1; current regulation and official program guidance
+- Authority status: 24 C.F.R. §92.101 is regulatory authority; guide is implementation guidance
+- Version / vintage: current rule and 2024 guide, retrieved 2026-08-21
+- Stable identifiers: [24 C.F.R. §92.101](https://www.ecfr.gov/current/title-24/subtitle-A/part-92/subpart-B/section-92.101); [HUD HOME Consortium Management Guide](https://www.hud.gov/sites/documents/20606_200608_guide.pdf)
+- Repair pinpoints: three-year qualification, signed participation, representative/PJ relation, renewal withdrawal, formula-geography consequence, continuing existing-project duties, and possible state HOME route outside a consortium
+
+### USR-SRC-0105 — Arapahoe/Englewood HOME consortium qualification records
+
+- Issuing body: Arapahoe County and City of Englewood, Colorado
+- Tier / type: Tier 1; official local-government agreement/legislative records
+- Authority status: primary evidence of the named consortium's participation choices; not generally controlling law
+- Version / vintage: FY2025–FY2027 renewal materials and 2025–2029 consolidated plan
+- Stable identifiers: [Arapahoe 2025–2029 Consolidated Plan](https://files.arapahoeco.gov/Community%20Resources/Housing/Arapahoe%20County%202025-2029%20ConPlan%20FINAL%20%287.31.2025%29.pdf?t=202508211558390); [Englewood renewal ordinance materials](https://englewoodgov.civicweb.net/document/425043/Ordinance%20approving%20an%20amendment%20to%20the%20Intergo.pdf?handle=DF23280518B647C09F93749FBF1B7B3E)
+- Repair pinpoints: member ratification for FY2025–FY2027, election of inclusion/exclusion, representative relation, and removal of Greenwood Village and Glendale from the renewed agreement
+
+### USR-SRC-0106 — HUD final BABA waiver for the Stables Affordable Housing Project
+
+- Issuing body: U.S. Department of Housing and Urban Development
+- Tier / type: Tier 1; final project-specific administrative waiver
+- Authority status: official final nonavailability determination for identified inputs and project; not a general market rule
+- Publication / vintage: FY2024 project; retrieved 2026-08-21
+- Stable identifier: [Final nonavailability waiver](https://www.hud.gov/sites/default/files/Main/documents/Final-Nonavailability-Waiver-CO-DOLA-Arapahoe-Co-HVAC-W-0000102.pdf)
+- Repair pinpoints: project/recipient/FAIN identity, 85-unit affordable project, HOME/HTF and total infrastructure amounts, unavailable compliant HVAC inputs, waiver scope, and findings that denial risked delay/halt, habitability, and occupancy certification
+
+### USR-SRC-0107 — HUD Build America, Buy America waiver process
+
+- Issuing body: U.S. Department of Housing and Urban Development
+- Tier / type: Tier 1; official administrative program/process pages
+- Authority status: official description of domestic-preference implementation and waiver bases/process
+- Version / vintage: current pages retrieved 2026-08-21
+- Stable identifiers: [HUD BABA](https://www.hud.gov/hud-partners/baba); [HUD waiver process archive](https://archives.hud.gov/initiatives/baba/waiver.cfm)
+- Repair pinpoints: domestic-preference application, nonavailability/public-interest/unreasonable-cost bases, request/public-comment/review, and approval/denial alternatives
+
+### USR-SRC-0108 — 42 U.S.C. §3532, HUD Secretary and department
+
+- Issuing body: Office of the Law Revision Counsel, U.S. House of Representatives
+- Tier / type: Tier 1; official U.S. Code text
+- Authority status: controlling statutory text subject to Code currency
+- Version / vintage: preliminary Code retrieved 2026-08-21
+- Stable identifier: [42 U.S.C. §3532](https://uscode.house.gov/view.xhtml?edition=prelim&num=0&req=granuleid%3AUSC-prelim-title42-section3532)
+- Repair pinpoints: HUD as executive department; Secretary appointment and departmental supervision/direction
+
+### USR-SRC-0109 — CRS HOME Investment Partnerships Program overview
+
+- Issuing body: Congressional Research Service
+- Tier / type: Tier 2; high-authority congressional synthesis
+- Authority status: nonbinding synthesis tied to statute, regulations, and official program data
+- Publication / vintage: R40118, updated 2025-04-25
+- Stable identifier: [HOME Investment Partnerships Program](https://www.congress.gov/crs-product/R40118)
+- Repair pinpoints: formula recipient topology, eligible construction/rehabilitation/acquisition uses, rental/homebuyer/owner-rehabilitation completions, affordability restrictions, and LIHTC layering
+
+### USR-SRC-0110 — CRS housing-supply policy overview
+
+- Issuing body: Congressional Research Service
+- Tier / type: Tier 2; high-authority institutional synthesis
+- Authority status: nonbinding synthesis of housing-stock, demand, construction-input, finance, labor, land, and regulatory mechanisms
+- Publication / vintage: R47617, current page retrieved 2026-08-21
+- Stable identifier: [Housing supply overview](https://www.congress.gov/crs-product/R47617)
+- Repair pinpoints: stock-versus-flow, local variation, input/labor/finance constraints, construction latency, and reasons a bounded project need not produce a strong regional affordability effect
+
+### USR-SRC-0111 — Census CVAP special tabulation and ACS Housing tables
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; official statistical products and metadata
+- Authority status: primary estimates with ACS universes, sampling error, and margins of error; not legal voter-eligibility determinations
+- Version / vintage: 2020–2024 CVAP special tab and 2024 ACS five-year APIs
+- Stable identifiers: [CVAP](https://www.census.gov/programs-surveys/decennial-census/about/voting-rights/cvap.html); [CVAP documentation](https://www2.census.gov/programs-surveys/decennial/rdo/technical-documentation/special-tabulation/CVAP_2020-2024_ACS_documentation_v1.pdf); [B25008 API metadata](https://api.census.gov/data/2024/acs/acs5/groups/B25008.html); [B25106 API metadata](https://api.census.gov/data/2024/acs/acs5/groups/B25106.html)
+- Repair pinpoints: CVAP state/DC geography and citizenship-voting-age universe; B25008 owner/renter population in occupied units; B25106 tenure/housing-cost household universes and estimates/MOEs
+
+### USR-SRC-0112 — Official presidential-voting eligibility guidance
+
+- Issuing body: USAGov, U.S. Election Assistance Commission, and U.S. Department of Justice
+- Tier / type: Tier 1; official federal public guidance and statutory compilation
+- Authority status: authoritative eligibility boundary guidance; state law controls many details
+- Version / vintage: current pages retrieved 2026-08-21
+- Stable identifiers: [USAGov who can vote](https://www.usa.gov/who-can-vote); [EAC registration guidance](https://www.eac.gov/how-do-i-register-to-vote); [DOJ Title 52 voting statutes](https://www.justice.gov/crt/title-52-voting-and-elections-subtitle-i-and-ii)
+- Repair pinpoints: citizenship, age, state residence, registration and North Dakota exception, variable felony/incapacity restrictions, and presidential voting residence protection
+
+### USR-SRC-0113 — HUD News and opt-in mailing lists
+
+- Issuing body: U.S. Department of Housing and Urban Development
+- Tier / type: Tier 1; primary official communication-channel documentation
+- Authority status: evidence of publication/distribution channel, not audience reach, receipt, belief, or substantive truth
+- Version / vintage: current pages retrieved 2026-08-21
+- Stable identifiers: [HUD News](https://www.hud.gov/news); [HUD mailing lists](https://www.hud.gov/subscribe/mailinglist); [HUD News signup](https://www.hud.gov/subscribe/signup1?email=&list=HUD-NEWS-L&listname=HUD+News)
+- Repair pinpoints: public newsroom, HUD News distribution of press communications to media/public, opt-in signup and confirmation, and program-specific list descriptions
+
 ## Source-tier count
 
-- Tier 1: **73**
-- Tier 2: **24**
+- Tier 1: **87**
+- Tier 2: **26**
 - Tier 3: **0**
 - Tier 4: **0**
-- Total: **97**
+- Total: **113**
 
 No Tier 3 source was necessary because the bounded ordinary-practice claims are supported by CRS procedural syntheses tied to chamber rules and precedents. No Tier 4 source is relied upon.
 

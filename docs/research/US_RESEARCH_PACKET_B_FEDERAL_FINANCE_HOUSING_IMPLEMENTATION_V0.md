@@ -1,6 +1,6 @@
 # U.S. Research Packet B — Federal Finance + Housing Implementation V0
 
-Status: **Packet B evidence candidate. Not independently audited, frozen, or configuration authority.**
+Status: **Single bounded-repair candidate over audited baseline `8d3a5c4f`. Not findings-only rechecked, frozen, or configuration authority.**
 
 Exact authorities:
 
@@ -75,7 +75,7 @@ Packet B claim statuses:
 - `CONFLICTED`: 0
 - `NOT_ESTABLISHED`: 0
 
-All are `NOT_AUDITED`. `SUPPORTED_WITH_BOUNDS` records a safe limit, not invented certainty: current HOME statute/regulation alignment is transitional; GAO's HTF financing sample is not nationally generalizable; Hawaii does not establish common state refusal; qualitative delay evidence does not supply coefficients; and HUD has not yet fully implemented the July 2026 statutory changes.
+At original Packet B authoring all were `NOT_AUDITED`; they later entered audited baseline `8d3a5c4f`. The bounded-repair claims remain `NOT_FINDINGS_ONLY_RECHECKED`. `SUPPORTED_WITH_BOUNDS` records a safe limit, not invented certainty: current HOME statute/regulation alignment is transitional; GAO's HTF financing sample is not nationally generalizable; Hawaii does not establish common state refusal; qualitative delay evidence does not supply coefficients; and HUD has not yet fully implemented the July 2026 statutory changes.
 
 ### D. Fiscal Stage Terminology Crosswalk
 
@@ -317,3 +317,43 @@ The current HOME legal transition remains `SUPPORTED_WITH_BOUNDS`, not silently 
 - Packet A records remain unchanged; no Packet C or D work, research audit, configuration, runtime, UI, or architecture change occurred.
 
 Packet B stops here.
+
+## 13. Single bounded-repair addendum — one FY2024 HOME route
+
+This section is the only post-audit evidence repair to Packet B. It descends from `8d3a5c4ff1d906d4bbc5f965fc737d7175b802c2`, does not reopen Architecture V0, and supersedes only earlier assertions that the candidate already contained a real fiscal cohort, a same-program participation branch, an ordinary HUD decision family, or an independently constrained material response. (`USR-CLM-0221`–`0230`)
+
+### A. FY2024 HOME fiscal cohort (`USR-RQ-002`)
+
+The named cohort is FY2024 HOME, not HOME authorization in the abstract:
+
+1. P.L. 118-42 supplied $1.25 billion of HOME budget authority available through September 30, 2027. Authorization and this appropriation remain distinct. (`USR-CLM-0221`; `USR-SRC-0099`)
+2. OMB approved HUD's account apportionment on April 5, 2024. It identifies P.L. 118-42, TAS 086-0205, the FY2024/2027 appropriation line, and the HOME category. Apportionment is neither award nor payment. (`USR-CLM-0222`; `USR-SRC-0100`)
+3. HUD's formula/allocation and plan process preceded the grant instrument. For one exact recipient, USAspending identifies Arapahoe County Government award `ASST_NON_M24-DC080221_086`, FAIN `M24-DC080221`, signed/started September 25, 2024, with a $617,268.07 federal obligation. (`USR-CLM-0223`; `USR-SRC-0101`–`0102`)
+4. Any current outlay or subaward fields are later mutable records, not retroactive budget authority and not physical completion. Arapahoe's action plan separately identifies local project recommendations/commitments. Draw, recipient expenditure, construction, completion, usable units, and Housing consequence remain separate events and owners. (`USR-CLM-0223`–`0224`; `USR-SRC-0102`–`0103`, `0106`)
+
+This synthesis closes the dependency recorded in `USR-CLM-0042`: the first recognizable route can use ordinary enacted discretionary appropriations without assuming reconciliation, and authorization is never used as budget authority. The old claim remains in history and is not silently rewritten.
+
+### B. Same-program participation/nonparticipation (`USR-RQ-001`)
+
+The repaired branches use HOME alone. At three-year consortium qualification/renewal, a named local government elects inclusion and signs the agreement; the Arapahoe consortium, acting through its representative, qualifies as the participating jurisdiction and federal formula/grant counterparty. Englewood's FY2025–FY2027 materials and the consolidated plan evidence the inclusion branch. (`USR-CLM-0225`; `USR-SRC-0104`–`0105`)
+
+The nonparticipation branch is election of exclusion/nonexecution at renewal. The named record removed Greenwood Village and Glendale from the renewed relationship. The excluded geography is not part of that consortium's new formula basis and receives no new project capacity through that consortium agreement. Existing projects and affordability duties survive, and the locality may remain reachable by state HOME or another lawful route. This is not a finding of “no federal activity in the state,” and CDBG refusal evidence is not used. (`USR-CLM-0226`; `USR-SRC-0104`–`0105`)
+
+| Branch | Recipient identity/action | Federal relationship/status | Agreement result | Downstream consequence |
+|---|---|---|---|---|
+| Participate | Named local government elects inclusion and executes renewal | Member geography enters qualified HOME consortium represented by Arapahoe County | Three-year consortium agreement | Eligible for new HOME activity through that consortium, subject to plan/project stages |
+| Do not participate | Named local government elects exclusion or does not execute renewal | Geography is excluded from that consortium's new qualification/formula relation | No renewed consortium agreement for that member | No new HOME project capacity through that relationship; old duties and other lawful HOME routes remain |
+
+### C. Ordinary administration-to-HUD choice (`USR-RQ-005`)
+
+HUD is an executive department directed by its Secretary; presidential control is institutionally mediated rather than a direct President-to-program edit. Within the same route, HUD's project-specific Build America, Buy America nonavailability waiver supplies a recognizable ordinary post-enactment decision family. (`USR-CLM-0227`; `USR-SRC-0108`)
+
+For the Stables Affordable Housing Project, HUD/MIAO could grant the supported waiver, accepting limited foreign HVAC inputs to preserve construction and occupancy, or deny it, enforcing the domestic preference while risking delay, halt, habitability, and occupancy certification. The final waiver identifies Arapahoe County, FAIN `M-24-DC-08-0221`, HOME funding, an 85-unit project, and the physical inputs. The alternatives compete over real compliance, supply, timing, and operational risk; neither is costlessly dominant. No invented executive token, direct presidential edit, or hostile unlawful route is used as the ordinary choice. (`USR-CLM-0228`; `USR-SRC-0106`–`0107`)
+
+### D. Material Housing response and mixed-outcome bound (`USR-RQ-004`)
+
+The material path is HOME-assisted construction/rehabilitation/preservation → physical development → delayed completed/restored/preserved units → usable stock or retained affordability → bounded local availability/affordability consequence. Project commitment, draw, IDIS record, and official report remain evidence about upstream stages, never canonical physical truth. (`USR-CLM-0224`, `0229`)
+
+The Stables waiver supplies an independent physical constraint: compliant HVAC inputs were unavailable, and denial could delay or halt construction and prevent habitability/occupancy certification. CRS separately supports construction-cost, labor/material, finance, land/regulatory, stock, and demand constraints. A lawful well-run project therefore can have weak or mixed regional consequences through latency, small scale, preservation rather than net addition, other unit loss, or offsetting demand. This establishes mechanisms only—no elasticity, duration, state ranking, or gameplay coefficient. (`USR-CLM-0230`; `USR-SRC-0106`, `0110`)
+
+Packet B repair trace: `USR-RQ-001` → `0225`–`0226`; `USR-RQ-002` → `0221`–`0224`; `USR-RQ-004` → `0229`–`0230`; `USR-RQ-005` → `0227`–`0228`. Readiness rows `010`–`013` and `026` are reevaluated in Packet D and the readiness matrix.

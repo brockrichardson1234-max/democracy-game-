@@ -1,6 +1,6 @@
 # U.S. Research Packet C — Judiciary + Information + Player Knowledge V0
 
-Status: **Packet C working evidence candidate. Not independently audited, not frozen evidence, and not configuration authority.**
+Status: **Single bounded-repair candidate over audited baseline `8d3a5c4f`. Not findings-only rechecked, frozen evidence, or configuration authority.**
 
 Research baseline date: **2026-08-21**
 
@@ -46,7 +46,7 @@ The executive administration can plausibly know its own program, grant, fiscal, 
 
 ## 4. Claim/evidence ledger additions
 
-Packet C appends `USR-CLM-0143`–`USR-CLM-0201` to the shared claim ledger and `USR-SRC-0057`–`USR-SRC-0084` to the shared source ledger. All new claims remain `NOT_AUDITED`.
+Packet C originally appended `USR-CLM-0143`–`USR-CLM-0201` and `USR-SRC-0057`–`USR-SRC-0084`; those records later entered audited baseline `8d3a5c4f`. Changed `0180` and repair claims remain `NOT_FINDINGS_ONLY_RECHECKED`.
 
 ### A. Selected Contested-Authority Route Evidence Chain
 
@@ -315,3 +315,36 @@ The official information route is evidence-ready as a composite rather than a ma
 - Captured/unreleased information is not automatically public or administration-wide knowledge.
 - Packet A and B records remain substantively unchanged.
 - Packet D, audits, configuration, runtime, UI, and architecture changes remain out of scope.
+
+## 13. Single bounded-repair addendum
+
+This section descends from audited baseline `8d3a5c4ff1d906d4bbc5f965fc737d7175b802c2` and supplies only the A-001, B-006, and B-007 repairs.
+
+### A. Correct current BPS methodology (`USR-RQ-006`)
+
+The earlier comparison's phrase “monthly sample of roughly 8,400 permit-issuing offices” is corrected. About 8,400 is the count of high-activity places Census contacts monthly, not a probability sample drawn from the approximately 19,900-place permit universe. Beginning January 2022, BPS monthly aggregates are non-probability entire-universe tabulations/estimates combining received reports with imputation for nonreporters and places not contacted monthly. Annual reporters, Survey of Construction inputs for documented areas, and documented third-party inputs also enter the estimation process. (`USR-CLM-0180`, `0240`; `USR-SRC-0075`, `0098`)
+
+Because the current design is non-probability, sampling error cannot be quantified. Response and other nonsampling errors, corrections, annual processing, and mutable vintage remain material. The broader use strategy remains bounded: BPS measures permit authorizations, SOC measures starts/completions, ACS supports sampled stock/affordability measures, and IDIS/HUD records program stages. None singly owns material Housing truth. (`USR-CLM-0179`–`0192`, `0216`, `0240`)
+
+### B. One exact hostile HOME route (`USR-RQ-007`)
+
+The repaired route fixes every formerly open dimension to one coherent pre-award action:
+
+| Element | Exact bounded route |
+|---|---|
+| Directive/action and stage | HUD issues a final written determination rejecting Arapahoe County's HOME consortium requalification before award and directs the associated formula amount out of that consortium relationship. |
+| Claimant/status/injury | Arapahoe County, as consortium representative, loses PJ status, the formula allocation/grant opportunity, and capacity for downstream projects in the renewed relationship. |
+| Finality/reviewability | The determination consummates HUD's process and has immediate legal consequences by foreclosing the agreement and reallocation path; Bennett finality and APA §§702/704/706 remain adjudicative requirements. |
+| Cause/forum/venue | APA review under 28 U.S.C. §1331 in the U.S. District Court for the District of Colorado, with §1391(e) venue. The rule and qualification materials supply the claimed standard to review. |
+| Prospective interim relief | After Rule 65(a) notice, seek §705/Rule 65 relief preserving the identified amount, enjoining rejection/reallocation as to the plaintiff relationship, and requiring lawful reconsideration pending review. The order targets the HUD Secretary/responsible officials and must be specific under Rule 65(d). |
+| Compliance/appeal/stay | HUD officials receive and comply or seek modification; an injunction ruling is separately appealable under §1292(a)(1) to the Tenth Circuit. A stay is not automatic and is ordinarily sought first in district court under FRAP 8, with Nken factors governing. |
+
+This is one action, claimant, injury, stage, and jurisdiction theory—not a withhold/divert, state/local, allocation/award/payment menu. It seeks prospective nonmoney qualification review. A demand for money due under an executed grant agreement would be a different claim and triggers the retained *Department of Education v. California*/Tucker Act boundary; it is not forced into this APA path. (`USR-CLM-0234`–`0236`; `USR-SRC-0057`–`0068`, `0104`–`0105`)
+
+### C. Bounded public exposure (`USR-RQ-008`)
+
+One supported public route is official HOME award/project/completion claim → HUD public newsroom artifact → public webpage visitors plus confirmed opt-in HUD News subscribers. HUD documents the newsroom, mailing-list purpose, signup, and confirmation channel. (`USR-CLM-0237`; `USR-SRC-0113`)
+
+Public availability is not receipt; delivery is not opening or reading; receipt/exposure is not belief, persuasion, or a direct mutation of Population. Later work may project only an evidenced bounded audience such as confirmed deliveries or measured visits. It may not treat every citizen as exposed, infer algorithmic diffusion, or invent a persuasion magnitude. (`USR-CLM-0238`)
+
+Packet C repair trace: `USR-RQ-006` → `0180`, `0240`; `USR-RQ-007` → `0234`–`0236`; `USR-RQ-008` → `0237`–`0238`. Readiness rows `020`, `023`–`025` are reevaluated in Packet D and the readiness matrix.
