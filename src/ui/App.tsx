@@ -561,6 +561,21 @@ export const App = () => {
             <dd>{view.electoralAudit.contest.eligibilityRequirement}</dd>
           </div>
           <div>
+            <dt>Contest procedure-rule reference</dt>
+            <dd>{view.electoralAudit.contest.procedureRuleId}</dd>
+          </div>
+          <div>
+            <dt>Legal-order procedure requirement</dt>
+            <dd>{view.electoralAudit.contest.procedureRequirement}</dd>
+          </div>
+          <div>
+            <dt>Election-process status</dt>
+            <dd>
+              {view.electoralAudit.electionProcess.status}; certification boundary day{" "}
+              {view.electoralAudit.electionProcess.scheduledCertificationAt}
+            </dd>
+          </div>
+          <div>
             <dt>Eligible represented weight</dt>
             <dd>{view.electoralAudit.derivedElectorate.eligiblePopulationWeight}</dd>
           </div>
@@ -580,6 +595,51 @@ export const App = () => {
               {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.MEDIUM}; low{" "}
               {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.LOW}; unresolved{" "}
               {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.UNRESOLVED}
+            </dd>
+          </div>
+          <div>
+            <dt>Actual participating weight</dt>
+            <dd>
+              {view.electoralAudit.electionProcess.result?.totalParticipatingWeight ??
+                "not resolved"}
+            </dd>
+          </div>
+          <div>
+            <dt>Ballot count</dt>
+            <dd>
+              {view.electoralAudit.electionProcess.result === null
+                ? "not resolved"
+                : `administration ${
+                    view.electoralAudit.electionProcess.result.candidateVoteWeights.find(
+                      (entry) =>
+                        entry.candidateId ===
+                        view.electoralAudit.contest.candidateIds[0],
+                    )?.voteWeight ?? 0
+                  }; opposition ${
+                    view.electoralAudit.electionProcess.result.candidateVoteWeights.find(
+                      (entry) =>
+                        entry.candidateId ===
+                        view.electoralAudit.contest.candidateIds[1],
+                    )?.voteWeight ?? 0
+                  }; blank ${view.electoralAudit.electionProcess.result.blankBallotWeight}`}
+            </dd>
+          </div>
+          <div>
+            <dt>Outcome / winner</dt>
+            <dd>
+              {view.electoralAudit.electionProcess.result === null
+                ? "not resolved"
+                : `${view.electoralAudit.electionProcess.result.outcome} / ${
+                    view.electoralAudit.electionProcess.result.winningCandidateId ?? "none"
+                  }`}
+            </dd>
+          </div>
+          <div>
+            <dt>Certification</dt>
+            <dd>
+              {view.electoralAudit.electionProcess.certification === null
+                ? "not yet"
+                : `${view.electoralAudit.electionProcess.certification.status}; source ${view.electoralAudit.electionProcess.certification.sourceResultId}`}
             </dd>
           </div>
         </dl>

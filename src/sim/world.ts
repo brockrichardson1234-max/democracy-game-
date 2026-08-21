@@ -12,7 +12,12 @@ import {
   type GeographyState,
 } from "./geography";
 import {
+  certifyElection,
   createInitialElectoralState,
+  GL0_EXECUTIVE_CERTIFICATION_AT,
+  GL0_EXECUTIVE_CONTEST_ID,
+  GL0_EXECUTIVE_ELECTION_AT,
+  resolveElection,
   type ElectoralState,
 } from "./electoral";
 import {
@@ -256,6 +261,8 @@ export const advanceWorldTo = (
     ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
     OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
     POPULATION_ELECTORAL_RESPONSE_AT,
+    GL0_EXECUTIVE_ELECTION_AT,
+    GL0_EXECUTIVE_CERTIFICATION_AT,
     target,
   ]
     .filter((boundary) => boundary > world.time.current && boundary <= target)
@@ -267,6 +274,7 @@ export const advanceWorldTo = (
   let housing = world.housing;
   let information = world.information;
   let population = world.population;
+  let electoral = world.electoral;
   const occurrences: HistoricalOccurrence[] = [];
 
   for (const boundary of boundaries) {
@@ -339,6 +347,32 @@ export const advanceWorldTo = (
       population = electoralResponse.population;
       occurrences.push(...electoralResponse.occurrences);
     }
+
+    if (boundary === GL0_EXECUTIVE_ELECTION_AT) {
+      // Material and all prior Population response state are canonical before balloting.
+      const election = resolveElection(
+        electoral,
+        population,
+        governance.electoralEligibilityLegalOrder,
+        governance.electoralProcedureLegalOrder,
+        GL0_EXECUTIVE_CONTEST_ID,
+        boundary,
+      );
+      electoral = election.electoral;
+      occurrences.push(...election.occurrences);
+    }
+
+    if (boundary === GL0_EXECUTIVE_CERTIFICATION_AT) {
+      // Certification consumes only the frozen result, never current Population.
+      const certification = certifyElection(
+        electoral,
+        governance.electoralProcedureLegalOrder,
+        GL0_EXECUTIVE_CONTEST_ID,
+        boundary,
+      );
+      electoral = certification.electoral;
+      occurrences.push(...certification.occurrences);
+    }
     cursor = boundary;
   }
 
@@ -349,6 +383,7 @@ export const advanceWorldTo = (
     housing,
     information,
     population,
+    electoral,
     history: [...world.history, ...occurrences],
     bootstrapTransition: resolvesBootstrapBoundary
       ? { ...world.bootstrapTransition, resolved: true }

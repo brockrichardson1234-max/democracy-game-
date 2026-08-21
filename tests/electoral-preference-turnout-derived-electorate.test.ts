@@ -470,17 +470,19 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
     expect(meaningfulDownstreamHistory(chunked)).toEqual(meaningfulDownstreamHistory(direct));
   });
 
-  it("22. reaches scheduled election day without ballots, result, winner, or transfer", () => {
-    const day60 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60);
-    const contest = day60.electoral.contests[0];
+  it("22. remains scheduled immediately before election without ballots, result, winner, or transfer", () => {
+    const day59 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 59);
+    const contest = day59.electoral.contests[0];
+    const process = day59.electoral.electionProcesses[0];
 
-    expect(day60.time.current).toBe(GL0_EXECUTIVE_ELECTION_AT);
+    expect(day59.time.current).toBe(GL0_EXECUTIVE_ELECTION_AT - 1);
     expect(contest.scheduledElectionAt).toBe(GL0_EXECUTIVE_ELECTION_AT);
     expect(contest).not.toHaveProperty("ballots");
     expect(contest).not.toHaveProperty("result");
     expect(contest).not.toHaveProperty("winner");
-    expect(day60.history.some((occurrence) => occurrence.type.includes("Election"))).toBe(false);
-    expect(day60.governance).not.toHaveProperty("successor");
+    expect(process).toMatchObject({ status: "SCHEDULED", result: null, certification: null });
+    expect(day59.history.some((occurrence) => occurrence.type.includes("Election"))).toBe(false);
+    expect(day59.governance).not.toHaveProperty("successor");
   });
 
   it("23. exposes exact Population and derived-electorate developer projections", () => {

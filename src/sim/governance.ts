@@ -67,7 +67,9 @@ import type { EnactedLaw, LegislativeProposal } from "./proposal";
 import type { SimulationInstant, WorldState } from "./world";
 import {
   createInitialElectoralEligibilityLegalOrderState,
+  createInitialElectoralProcedureLegalOrderState,
   type ElectoralEligibilityLegalOrderState,
+  type ElectoralProcedureLegalOrderState,
 } from "./electoral-law";
 
 export type HousingPoliticalClaimDecisionKind = "ADMINISTRATION" | "OPPOSITION";
@@ -90,6 +92,8 @@ export interface GovernanceState {
   readonly enactedLaws: readonly EnactedLaw[];
   /** Legal-order owner of normative electoral eligibility; contests reference these rules. */
   readonly electoralEligibilityLegalOrder: ElectoralEligibilityLegalOrderState;
+  /** Legal-order owner of normative election resolution/certification procedure. */
+  readonly electoralProcedureLegalOrder: ElectoralProcedureLegalOrderState;
   /** Public-finance owner: recognition is explicit and does not occur at enactment. */
   readonly publicFinance: PublicFinanceState;
   /** Fiscal-execution owner: null until the recognition transition creates its zero-obligation state. */
@@ -129,6 +133,7 @@ export const createInitialGovernanceState = (): GovernanceState => {
     procedure: null,
     enactedLaws: [],
     electoralEligibilityLegalOrder: createInitialElectoralEligibilityLegalOrderState(),
+    electoralProcedureLegalOrder: createInitialElectoralProcedureLegalOrderState(),
     publicFinance: createInitialPublicFinanceState(),
     fiscalExecution: null,
     administrativeInstitution,

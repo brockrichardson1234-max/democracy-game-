@@ -58,7 +58,9 @@ import {
 } from "../sim/electoral";
 import {
   resolveElectoralEligibilityRule,
+  resolveElectoralProcedureRule,
   type ElectoralEligibilityRequirement,
+  type ElectoralProcedureRequirement,
 } from "../sim/electoral-law";
 
 export type { ProposalTerms } from "../sim/legislature";
@@ -197,15 +199,67 @@ export interface PopulationAuditProjection {
 }
 
 export interface ElectoralAuditProjection {
+  readonly candidates: readonly {
+    readonly id: string;
+    readonly alignment: "ADMINISTRATION" | "OPPOSITION";
+  }[];
   readonly contest: {
     readonly id: string;
     readonly boundaryId: string;
     readonly scheduledElectionAt: SimulationInstant;
     readonly eligibilityRuleId: string;
     readonly eligibilityRequirement: ElectoralEligibilityRequirement;
+    readonly procedureRuleId: string;
+    readonly procedureRequirement: ElectoralProcedureRequirement;
+    readonly candidateIds: readonly string[];
     readonly geographyRegionIds: readonly string[];
   };
   readonly derivedElectorate: DerivedElectorate;
+  readonly electionProcess: {
+    readonly id: string;
+    readonly scheduledCertificationAt: SimulationInstant;
+    readonly status: "SCHEDULED" | "RESOLVED" | "CERTIFIED";
+    readonly electorateSnapshot: {
+      readonly asOfSimulationTime: SimulationInstant;
+      readonly units: readonly {
+        readonly populationUnitId: string;
+        readonly eligibleWeight: number;
+        readonly electoralPreference: ElectoralPreference;
+        readonly turnoutDisposition: TurnoutDisposition;
+      }[];
+    } | null;
+    readonly participationRecords: readonly {
+      readonly populationUnitId: string;
+      readonly eligibleWeight: number;
+      readonly turnoutDispositionAtElection: Exclude<TurnoutDisposition, "UNRESOLVED">;
+      readonly participatingWeight: number;
+    }[];
+    readonly ballots: readonly {
+      readonly populationUnitId: string;
+      readonly ballotWeight: number;
+      readonly selection: string;
+    }[];
+    readonly result: {
+      readonly id: string;
+      readonly resolvedAtSimulationTime: SimulationInstant;
+      readonly totalEligibleWeight: number;
+      readonly totalParticipatingWeight: number;
+      readonly validCandidateBallotWeight: number;
+      readonly blankBallotWeight: number;
+      readonly candidateVoteWeights: readonly {
+        readonly candidateId: string;
+        readonly voteWeight: number;
+      }[];
+      readonly outcome: "ADMINISTRATION_WIN" | "OPPOSITION_WIN" | "TIE";
+      readonly winningCandidateId: string | null;
+    } | null;
+    readonly certification: {
+      readonly id: string;
+      readonly sourceResultId: string;
+      readonly certifiedAtSimulationTime: SimulationInstant;
+      readonly status: "CERTIFIED";
+    } | null;
+  };
 }
 
 export interface StateProgramProjection {
@@ -317,6 +371,17 @@ const projectWorld = (world: WorldState): GameView => {
     world.governance.electoralEligibilityLegalOrder,
     electoralContest.eligibilityRuleId,
   );
+  const electoralProcedureRule = resolveElectoralProcedureRule(
+    world.governance.electoralProcedureLegalOrder,
+    electoralContest.procedureRuleId,
+  );
+  const electionProcesses = world.electoral.electionProcesses.filter(
+    (process) => process.contestId === electoralContest.id,
+  );
+  if (electionProcesses.length !== 1) {
+    throw new Error(`Electoral contest ${electoralContest.id} requires one election process.`);
+  }
+  const electionProcess = electionProcesses[0];
 
   return {
     currentTime: world.time.current,
@@ -457,12 +522,16 @@ const projectWorld = (world: WorldState): GameView => {
       })),
     },
     electoralAudit: {
+      candidates: world.electoral.candidates.map((candidate) => ({ ...candidate })),
       contest: {
         id: electoralContest.id,
         boundaryId: electoralContest.boundaryId,
         scheduledElectionAt: electoralContest.scheduledElectionAt,
         eligibilityRuleId: electoralContest.eligibilityRuleId,
         eligibilityRequirement: electoralEligibilityRule.requirement,
+        procedureRuleId: electoralContest.procedureRuleId,
+        procedureRequirement: electoralProcedureRule.requirement,
+        candidateIds: [...electoralContest.candidateIds],
         geographyRegionIds: [...electoralBoundary.geographyRegionIds],
       },
       derivedElectorate: deriveElectorate(
@@ -472,6 +541,48 @@ const projectWorld = (world: WorldState): GameView => {
         electoralContest.id,
         world.time.current,
       ),
+      electionProcess: {
+        id: electionProcess.id,
+        scheduledCertificationAt: electionProcess.scheduledCertificationAt,
+        status: electionProcess.status,
+        electorateSnapshot:
+          electionProcess.electorateSnapshot === null
+            ? null
+            : {
+                asOfSimulationTime:
+                  electionProcess.electorateSnapshot.asOfSimulationTime,
+                units: electionProcess.electorateSnapshot.units.map((unit) => ({
+                  ...unit,
+                })),
+              },
+        participationRecords: electionProcess.participationRecords.map((record) => ({
+          ...record,
+        })),
+        ballots: electionProcess.ballots.map((ballot) => ({ ...ballot })),
+        result:
+          electionProcess.result === null
+            ? null
+            : {
+                id: electionProcess.result.id,
+                resolvedAtSimulationTime:
+                  electionProcess.result.resolvedAtSimulationTime,
+                totalEligibleWeight: electionProcess.result.totalEligibleWeight,
+                totalParticipatingWeight:
+                  electionProcess.result.totalParticipatingWeight,
+                validCandidateBallotWeight:
+                  electionProcess.result.validCandidateBallotWeight,
+                blankBallotWeight: electionProcess.result.blankBallotWeight,
+                candidateVoteWeights: electionProcess.result.candidateVoteWeights.map(
+                  (candidateWeight) => ({ ...candidateWeight }),
+                ),
+                outcome: electionProcess.result.outcome,
+                winningCandidateId: electionProcess.result.winningCandidateId,
+              },
+        certification:
+          electionProcess.certification === null
+            ? null
+            : { ...electionProcess.certification },
+      },
     },
     statePrograms: stateJurisdictions.map((state) => {
       const administrativeState = stateProgramAdministrativeStates.find(
