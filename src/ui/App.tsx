@@ -32,7 +32,7 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 18 runtime candidate</p>
+        <p className="eyebrow">Commit 19 runtime candidate</p>
         <h1>Headless simulation is alive.</h1>
         <p>
           The renderer is showing an application-layer projection. Canonical world
@@ -464,6 +464,66 @@ export const App = () => {
             </div>
           ))}
         </dl>
+      </section>
+
+      <section className="card">
+        <p className="eyebrow">Commit 19 developer/audit inspection</p>
+        <h1>Population belief, attribution, and salience</h1>
+        <p>
+          Raw canonical Population state for development only; this is not player-facing
+          knowledge.
+        </p>
+        <p>Total represented population weight: {view.populationAudit.totalWeight}</p>
+
+        {view.populationAudit.units.map((unit) => (
+          <div key={unit.id}>
+            <h2>{unit.id}</h2>
+            <dl>
+              <div>
+                <dt>Weight / baseline</dt>
+                <dd>
+                  {unit.weight} / {unit.baselinePoliticalDisposition}
+                </dd>
+              </div>
+              <div>
+                <dt>Residence / Housing reference</dt>
+                <dd>
+                  {unit.residenceGeographyId} / {unit.housingRegionId}
+                </dd>
+              </div>
+              <div>
+                <dt>Information audience</dt>
+                <dd>{unit.informationAudienceId}</dd>
+              </div>
+              <div>
+                <dt>Housing pressure belief</dt>
+                <dd>{unit.housingPressureBelief}</dd>
+              </div>
+              <div>
+                <dt>Program-performance belief</dt>
+                <dd>{unit.programPerformanceBelief}</dd>
+              </div>
+              <div>
+                <dt>Attribution</dt>
+                <dd>
+                  {unit.housingAttribution.target} / {unit.housingAttribution.evaluation}
+                </dd>
+              </div>
+              <div>
+                <dt>Housing salience</dt>
+                <dd>{unit.housingSalience}</dd>
+              </div>
+              <div>
+                <dt>Processed information</dt>
+                <dd>
+                  {unit.incorporatedArtifactIds.length === 0
+                    ? "none"
+                    : unit.incorporatedArtifactIds.join(", ")}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        ))}
       </section>
     </main>
   );

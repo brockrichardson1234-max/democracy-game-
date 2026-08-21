@@ -42,6 +42,13 @@ import type {
   PoliticalClaimOrigin,
   PoliticalClaimPosition,
 } from "../sim/information";
+import type {
+  BaselinePoliticalDisposition,
+  HousingAttribution,
+  HousingPressureBelief,
+  HousingSalience,
+  ProgramPerformanceBelief,
+} from "../sim/population";
 
 export type { ProposalTerms } from "../sim/legislature";
 export type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
@@ -60,6 +67,8 @@ export interface GameView {
   readonly officialHousingMeasurement: OfficialHousingMeasurementProjection;
   /** Raw claim/distribution truth; explicitly not a player knowledge view. */
   readonly publicInformationAudit: PublicInformationAuditProjection;
+  /** Raw canonical Population truth for development, never player knowledge. */
+  readonly populationAudit: PopulationAuditProjection;
   readonly statePrograms: readonly StateProgramProjection[];
 }
 
@@ -151,6 +160,23 @@ export interface PublicInformationAuditProjection {
     readonly artifactId: string;
     readonly audienceId: string;
     readonly exposedAtSimulationTime: SimulationInstant;
+  }[];
+}
+
+export interface PopulationAuditProjection {
+  readonly totalWeight: number;
+  readonly units: readonly {
+    readonly id: string;
+    readonly weight: number;
+    readonly residenceGeographyId: string;
+    readonly housingRegionId: string;
+    readonly informationAudienceId: string;
+    readonly baselinePoliticalDisposition: BaselinePoliticalDisposition;
+    readonly housingPressureBelief: HousingPressureBelief;
+    readonly programPerformanceBelief: ProgramPerformanceBelief;
+    readonly housingAttribution: HousingAttribution;
+    readonly housingSalience: HousingSalience;
+    readonly incorporatedArtifactIds: readonly string[];
   }[];
 }
 
@@ -363,6 +389,24 @@ const projectWorld = (world: WorldState): GameView => {
         artifactId: exposure.artifactId,
         audienceId: exposure.audienceId,
         exposedAtSimulationTime: exposure.exposedAtSimulationTime,
+      })),
+    },
+    populationAudit: {
+      totalWeight: world.population.units.reduce((total, unit) => total + unit.weight, 0),
+      units: world.population.units.map((unit) => ({
+        id: unit.id,
+        weight: unit.weight,
+        residenceGeographyId: unit.residenceGeographyId,
+        housingRegionId: unit.housingRegionId,
+        informationAudienceId: unit.informationAudienceId,
+        baselinePoliticalDisposition: unit.baselinePoliticalDisposition,
+        housingPressureBelief: unit.housingPressureBelief,
+        programPerformanceBelief: unit.programPerformanceBelief,
+        housingAttribution: { ...unit.housingAttribution },
+        housingSalience: unit.housingSalience,
+        incorporatedArtifactIds: world.population.informationIncorporations
+          .filter((incorporation) => incorporation.populationUnitId === unit.id)
+          .map((incorporation) => incorporation.artifactId),
       })),
     },
     statePrograms: stateJurisdictions.map((state) => {

@@ -337,23 +337,29 @@ describe("Commit 18 competing claims and public exposure", () => {
     ).toBe(true);
   });
 
-  it("18. orders each same-time release before its exposure occurrences", () => {
+  it("18. orders each same-time release before exposure and later incorporation", () => {
     const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
 
     expect(day42.history.filter((entry) => entry.at === 40).map((entry) => entry.type)).toEqual([
       "OfficialHousingReportReleased",
       "InformationArtifactExposed",
       "InformationArtifactExposed",
+      "PopulationInformationIncorporated",
+      "PopulationInformationIncorporated",
     ]);
     expect(day42.history.filter((entry) => entry.at === 41).map((entry) => entry.type)).toEqual([
       "PoliticalClaimReleased",
       "InformationArtifactExposed",
       "InformationArtifactExposed",
+      "PopulationInformationIncorporated",
+      "PopulationInformationIncorporated",
     ]);
     expect(day42.history.filter((entry) => entry.at === 42).map((entry) => entry.type)).toEqual([
       "PoliticalClaimReleased",
       "InformationArtifactExposed",
       "InformationArtifactExposed",
+      "PopulationInformationIncorporated",
+      "PopulationInformationIncorporated",
     ]);
   });
 
@@ -372,7 +378,7 @@ describe("Commit 18 competing claims and public exposure", () => {
     expect(meaningfulInformationHistory(chunked)).toEqual(meaningfulInformationHistory(direct));
   });
 
-  it("20. exposes audit projections without creating belief, approval, population, or election state", () => {
+  it("20. exposes audit projections without putting belief, approval, or elections in Information", () => {
     const session = createGameSession();
     session.submitHousingGrantProposal(INITIAL_TERMS);
     session.amendHousingGrantProposal(COMPROMISE_TERMS);
@@ -396,7 +402,7 @@ describe("Commit 18 competing claims and public exposure", () => {
 
     expect(view.publicInformationAudit.claims).toHaveLength(2);
     expect(view.publicInformationAudit.exposures).toHaveLength(6);
-    expect(world).not.toHaveProperty("population");
+    expect(world.population.units).toHaveLength(3);
     expect(world.information).not.toHaveProperty("beliefs");
     expect(world.information).not.toHaveProperty("approval");
     expect(world.governance).not.toHaveProperty("elections");

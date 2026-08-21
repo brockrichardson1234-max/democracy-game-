@@ -14,6 +14,9 @@ import {
 import {
   advanceHousing,
   createInitialHousingState,
+  HOUSING_REGION_A_ID,
+  HOUSING_REGION_B_ID,
+  HOUSING_REGION_C_ID,
   type HousingState,
 } from "./housing";
 import type { HistoricalOccurrence } from "./history";
@@ -33,8 +36,14 @@ import {
   exposeInformationArtifact,
   releasePoliticalClaim,
   resolveInformationBoundary,
+  type InformationExposure,
   type InformationState,
 } from "./information";
+import {
+  createInitialPopulationState,
+  incorporateInformationExposure,
+  type PopulationState,
+} from "./population";
 
 export type SimulationInstant = number;
 
@@ -57,6 +66,8 @@ export interface WorldState {
   readonly housing: HousingState;
   /** Canonical measurement process and information artifacts; never Housing truth. */
   readonly information: InformationState;
+  /** Canonical aggregate ordinary population and recipient-owned political state. */
+  readonly population: PopulationState;
   /** Immutable committed occurrences. Owns only that something happened, never current state. */
   readonly history: readonly HistoricalOccurrence[];
 }
@@ -84,6 +95,17 @@ export const createDeterministicWorldFixture = (): WorldState => {
     geography,
     housing,
     information: createInitialInformationState(housing.regions.map((region) => region.id)),
+    population: createInitialPopulationState({
+      geographyRegionAId: GEOGRAPHY_REGION_A_ID,
+      geographyRegionBId: GEOGRAPHY_REGION_B_ID,
+      geographyRegionCId: GEOGRAPHY_REGION_C_ID,
+      housingRegionAId: HOUSING_REGION_A_ID,
+      housingRegionBId: HOUSING_REGION_B_ID,
+      housingRegionCId: HOUSING_REGION_C_ID,
+      informationAudienceAlphaId: PUBLIC_AUDIENCE_ALPHA_ID,
+      informationAudienceBetaId: PUBLIC_AUDIENCE_BETA_ID,
+      informationAudienceGammaId: PUBLIC_AUDIENCE_GAMMA_ID,
+    }),
     history: [],
   };
 };
@@ -100,15 +122,48 @@ const exposeArtifactToFixtureAudiences = (
   artifactId: string,
   audienceIds: readonly string[],
   at: SimulationInstant,
-): { readonly information: InformationState; readonly occurrences: HistoricalOccurrence[] } => {
+): {
+  readonly information: InformationState;
+  readonly exposures: readonly InformationExposure[];
+  readonly occurrences: HistoricalOccurrence[];
+} => {
   let nextInformation = information;
+  const exposures: InformationExposure[] = [];
   const occurrences: HistoricalOccurrence[] = [];
   for (const audienceId of audienceIds) {
     const exposure = exposeInformationArtifact(nextInformation, artifactId, audienceId, at);
     nextInformation = exposure.information;
+    const createdExposure = nextInformation.exposures.find(
+      (candidate) => candidate.artifactId === artifactId && candidate.audienceId === audienceId,
+    );
+    if (createdExposure === undefined) {
+      throw new Error(`Information failed to create exposure for ${artifactId} and ${audienceId}.`);
+    }
+    exposures.push(createdExposure);
     occurrences.push(...exposure.occurrences);
   }
-  return { information: nextInformation, occurrences };
+  return { information: nextInformation, exposures, occurrences };
+};
+
+const incorporateFixtureExposures = (
+  population: PopulationState,
+  information: InformationState,
+  exposures: readonly InformationExposure[],
+  at: SimulationInstant,
+): { readonly population: PopulationState; readonly occurrences: HistoricalOccurrence[] } => {
+  let nextPopulation = population;
+  const occurrences: HistoricalOccurrence[] = [];
+  for (const exposure of exposures) {
+    const incorporation = incorporateInformationExposure(
+      nextPopulation,
+      information,
+      exposure,
+      at,
+    );
+    nextPopulation = incorporation.population;
+    occurrences.push(...incorporation.occurrences);
+  }
+  return { population: nextPopulation, occurrences };
 };
 
 const releaseFixturePoliticalClaim = (
@@ -119,6 +174,7 @@ const releaseFixturePoliticalClaim = (
 ): {
   readonly governance: GovernanceState;
   readonly information: InformationState;
+  readonly exposures: readonly InformationExposure[];
   readonly occurrences: HistoricalOccurrence[];
 } => {
   const sourceReport = information.artifacts.find(
@@ -165,6 +221,7 @@ const releaseFixturePoliticalClaim = (
   return {
     governance: decisionResult.governance,
     information: exposure.information,
+    exposures: exposure.exposures,
     occurrences: [...claimRelease.occurrences, ...exposure.occurrences],
   };
 };
@@ -193,6 +250,7 @@ export const advanceWorldTo = (
   let governance = world.governance;
   let housing = world.housing;
   let information = world.information;
+  let population = world.population;
   const occurrences: HistoricalOccurrence[] = [];
 
   for (const boundary of boundaries) {
@@ -219,6 +277,14 @@ export const advanceWorldTo = (
       );
       information = reportExposure.information;
       occurrences.push(...reportExposure.occurrences);
+      const reportIncorporation = incorporateFixtureExposures(
+        population,
+        information,
+        reportExposure.exposures,
+        boundary,
+      );
+      population = reportIncorporation.population;
+      occurrences.push(...reportIncorporation.occurrences);
     }
 
     if (
@@ -238,6 +304,14 @@ export const advanceWorldTo = (
       governance = claim.governance;
       information = claim.information;
       occurrences.push(...claim.occurrences);
+      const claimIncorporation = incorporateFixtureExposures(
+        population,
+        information,
+        claim.exposures,
+        boundary,
+      );
+      population = claimIncorporation.population;
+      occurrences.push(...claimIncorporation.occurrences);
     }
     cursor = boundary;
   }
@@ -248,6 +322,7 @@ export const advanceWorldTo = (
     governance,
     housing,
     information,
+    population,
     history: [...world.history, ...occurrences],
     bootstrapTransition: resolvesBootstrapBoundary
       ? { ...world.bootstrapTransition, resolved: true }

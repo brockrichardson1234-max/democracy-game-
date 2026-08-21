@@ -400,7 +400,8 @@ describe("Commit 17 Housing measurement and official report lag", () => {
       "gl0-public-audience-alpha",
       "gl0-public-audience-beta",
     ]);
-    expect(day40).not.toHaveProperty("population");
+    expect(day40.information).not.toHaveProperty("beliefs");
+    expect(day40.population.informationIncorporations).toHaveLength(2);
   });
 
   it("20. exposes scheduled, captured, and released states in the dev projection", () => {
