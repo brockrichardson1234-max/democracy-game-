@@ -1,6 +1,6 @@
 # U.S. Research Source Ledger V0
 
-Status: Packets A–B working evidence candidate. This ledger is not a U.S. configuration and has not undergone the three independent research audits.
+Status: Packets A–C working evidence candidate. This ledger is not a U.S. configuration and has not undergone the three independent research audits.
 
 Research baseline date: **2026-08-21**
 
@@ -570,17 +570,299 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Stable identifier: [Principles of Federal Appropriations Law, fourth edition, chapter 2](https://www.gao.gov/assets/gao-16-464sp.pdf)
 - Packet B pinpoints used: constitutional/statutory framework for appropriations and Impoundment Control Act overview
 
+### USR-SRC-0057 — Administrative Procedure Act, 5 U.S.C. chapter 7
+
+- Issuing body: Office of the Law Revision Counsel, U.S. House of Representatives
+- Tier / type: Tier 1; federal statutory compilation
+- Authority status: Title 5 is positive law; cited sections are legal evidence of the law
+- Publication / effective date: provision-specific enactment/amendment dates; preliminary Code through 2026-08-11 when retrieved
+- Version or vintage: preliminary edition, retrieved 2026-08-21
+- Stable identifier: [5 U.S.C. chapter 7](https://uscode.house.gov/view.xhtml?edition=prelim&num=0&path=%2Fprelim%40title5%2Fpart1%2Fchapter7&req=granuleid%3AUSC-prelim-title5-chapter7)
+- Packet C pinpoints used: §§701(a), 702, 704, 705, and 706
+
+### USR-SRC-0058 — Federal jurisdiction, venue, and interlocutory-appeal statutes
+
+- Issuing body: Office of the Law Revision Counsel, U.S. House of Representatives
+- Tier / type: Tier 1; federal statutory compilation
+- Authority status: Title 28 is positive law; cited sections are legal evidence of the law
+- Publication / effective date: provision-specific; preliminary Code through 2026-08-11 when retrieved
+- Version or vintage: preliminary edition, retrieved 2026-08-21
+- Stable identifiers: [28 U.S.C. §1331](https://uscode.house.gov/view.xhtml?req=%28title%3A28+section%3A1331+edition%3Aprelim%29); [28 U.S.C. §1391](https://uscode.house.gov/view.xhtml?req=%28title%3A28+section%3A1391+edition%3Aprelim%29); [28 U.S.C. §1292](https://uscode.house.gov/view.xhtml?edition=prelim&hl=false&path=%2Fprelim%40title28%2Fpart4%2Fchapter83&req=granuleid%3AUSC-prelim-title28-section1292)
+- Packet C pinpoints used: §§1331, 1391(e), and 1292(a)(1)
+
+### USR-SRC-0059 — Federal Rules of Civil Procedure
+
+- Issuing body: Administrative Office of the U.S. Courts
+- Tier / type: Tier 1; official current federal procedural rules
+- Authority status: governing federal civil rules, subject to statutes and controlling decisions
+- Publication / effective date: current compilation includes amendments effective December 1, 2025
+- Version or vintage: official PDF last modified 2026-05-26; retrieved 2026-08-21
+- Stable identifiers: [Federal Rules of Civil Procedure](https://www.uscourts.gov/forms-rules/current-rules-practice-procedure/federal-rules-civil-procedure); [official PDF](https://www.uscourts.gov/sites/default/files/document/federal-rules-of-civil-procedure.pdf)
+- Packet C pinpoints used: Rules 62(c), 65(a)–(d)
+
+### USR-SRC-0060 — Federal Rules of Appellate Procedure
+
+- Issuing body: Administrative Office of the U.S. Courts
+- Tier / type: Tier 1; official current federal procedural rules
+- Authority status: governing federal appellate rules, subject to statutes and controlling decisions
+- Publication / effective date: current compilation includes amendments effective December 1, 2025
+- Version or vintage: official PDF last modified 2026-05-26; retrieved 2026-08-21
+- Stable identifiers: [Federal Rules of Appellate Procedure](https://www.uscourts.gov/forms-rules/current-rules-practice-procedure/federal-rules-appellate-procedure); [official PDF](https://www.uscourts.gov/sites/default/files/document/federal-rules-of-appellate-procedure.pdf)
+- Packet C pinpoint used: Rule 8(a)
+
+### USR-SRC-0061 — *Winter v. Natural Resources Defense Council*, 555 U.S. 7 (2008)
+
+- Issuing body: Supreme Court of the United States; official U.S. Reports via GovInfo
+- Tier / type: Tier 1; controlling judicial precedent and official reporter
+- Authority status: controlling Supreme Court authority on preliminary-injunction standard
+- Publication / effective date: decided 2008; U.S. Reports volume 555
+- Version or vintage: official reporter PDF retrieved 2026-08-21
+- Stable identifier: [555 U.S. 7](https://www.govinfo.gov/app/details/USREPORTS-555/USREPORTS-555-7)
+- Packet C pinpoints used: pp. 20 and 24
+
+### USR-SRC-0062 — *Nken v. Holder*, 556 U.S. 418 (2009)
+
+- Issuing body: Supreme Court of the United States; official U.S. Reports via GovInfo
+- Tier / type: Tier 1; controlling judicial precedent and official reporter
+- Authority status: controlling Supreme Court authority distinguishing and governing a stay pending review
+- Publication / effective date: decided 2009; U.S. Reports volume 556
+- Version or vintage: official reporter PDF retrieved 2026-08-21
+- Stable identifier: [556 U.S. 418](https://www.govinfo.gov/app/details/USREPORTS-556/USREPORTS-556-418)
+- Packet C pinpoints used: pp. 426–435
+
+### USR-SRC-0063 — *FDA v. Alliance for Hippocratic Medicine*, 602 U.S. 367 (2024)
+
+- Issuing body: Supreme Court of the United States
+- Tier / type: Tier 1; controlling judicial precedent
+- Authority status: controlling Supreme Court standing authority
+- Publication / effective date: decided 2024
+- Version or vintage: official slip-opinion PDF retrieved 2026-08-21
+- Stable identifier: [No. 23-235 opinion](https://www.supremecourt.gov/opinions/23pdf/23-235_n7ip.pdf)
+- Packet C pinpoints used: slip op. pp. 5–10
+
+### USR-SRC-0064 — *Bennett v. Spear*, 520 U.S. 154 (1997)
+
+- Issuing body: Supreme Court of the United States; official U.S. Reports via GovInfo
+- Tier / type: Tier 1; controlling judicial precedent and official reporter
+- Authority status: controlling Supreme Court APA-finality authority
+- Publication / effective date: decided 1997; U.S. Reports volume 520
+- Version or vintage: official reporter PDF retrieved 2026-08-21
+- Stable identifier: [520 U.S. 154](https://www.govinfo.gov/app/details/USREPORTS-520/USREPORTS-520-154)
+- Packet C pinpoints used: pp. 177–178
+
+### USR-SRC-0065 — *Lincoln v. Vigil*, 508 U.S. 182 (1993)
+
+- Issuing body: Supreme Court of the United States; official U.S. Reports via GovInfo
+- Tier / type: Tier 1; controlling judicial precedent and official reporter
+- Authority status: controlling Supreme Court authority on committed discretion in lump-sum allocation
+- Publication / effective date: decided 1993; U.S. Reports volume 508
+- Version or vintage: official reporter PDF retrieved 2026-08-21
+- Stable identifier: [508 U.S. 182](https://www.govinfo.gov/app/details/USREPORTS-508/USREPORTS-508-182)
+- Packet C pinpoints used: pp. 190–193
+
+### USR-SRC-0066 — *Department of Education v. California*, 604 U.S. 650 (2025)
+
+- Issuing body: Supreme Court of the United States
+- Tier / type: Tier 1; controlling Supreme Court order
+- Authority status: controlling disposition and jurisdiction/remedy guidance for the grant-payment posture before the Court; emergency-order posture retained
+- Publication / effective date: decided April 4, 2025
+- Version or vintage: official opinion PDF retrieved 2026-08-21
+- Stable identifier: [No. 24A910 order](https://www.supremecourt.gov/opinions/24pdf/24a910_f2bh.pdf)
+- Packet C pinpoints used: per curiam pp. 1–4
+
+### USR-SRC-0067 — *City and County of San Francisco v. Trump*, 897 F.3d 1225 (9th Cir. 2018)
+
+- Issuing body: U.S. Court of Appeals for the Ninth Circuit
+- Tier / type: Tier 1; official federal appellate opinion
+- Authority status: controlling within the Ninth Circuit on its issues; used only as a bounded local-government grant-withholding analog, not nationwide HOME authority
+- Publication / effective date: filed August 1, 2018
+- Version or vintage: official court PDF retrieved 2026-08-21
+- Stable identifier: [No. 17-17478 opinion](https://cdn.ca9.uscourts.gov/datastore/opinions/2018/08/01/17-17478.pdf)
+- Packet C pinpoints used: pp. 1233–1239 and 1244–1245
+
+### USR-SRC-0068 — *Trump v. CASA, Inc.*, 606 U.S. 831 (2025)
+
+- Issuing body: Supreme Court of the United States
+- Tier / type: Tier 1; controlling judicial precedent
+- Authority status: controlling Supreme Court authority on universal-injunction remedial scope addressed by the opinion
+- Publication / effective date: decided June 27, 2025
+- Version or vintage: official opinion PDF retrieved 2026-08-21
+- Stable identifier: [Nos. 24A884 et al. opinion](https://www.supremecourt.gov/opinions/24pdf/24a884_new_g314.pdf)
+- Packet C pinpoints used: slip op. pp. 1–5 and 24–25
+
+### USR-SRC-0069 — GAO decision B-329739, withholding of appropriated funds
+
+- Issuing body: U.S. Government Accountability Office, Office of General Counsel
+- Tier / type: Tier 2; high-authority institutional legal decision/synthesis
+- Authority status: official GAO appropriations-law decision; not judicial precedent
+- Publication / effective date: December 10, 2018
+- Version or vintage: web decision retrieved 2026-08-21
+- Stable identifier: [B-329739](https://www.gao.gov/products/b-329739)
+- Packet C pinpoints used: decision summary, pp. 5–7 discussion, and conclusion distinguishing policy withholding from programmatic delay
+
+### USR-SRC-0070 — 28 U.S.C. §516, conduct of litigation reserved to DOJ
+
+- Issuing body: Office of the Law Revision Counsel, U.S. House of Representatives
+- Tier / type: Tier 1; federal statutory compilation
+- Authority status: Title 28 is positive law; legal evidence of the law
+- Publication / effective date: codified from 1966 enactment; preliminary Code through 2026-08-11 when retrieved
+- Version or vintage: preliminary edition, retrieved 2026-08-21
+- Stable identifier: [28 U.S.C. §516](https://uscode.house.gov/view.xhtml?req=%28title%3A28+section%3A516+edition%3Aprelim%29)
+- Packet C pinpoint used: full section
+
+### USR-SRC-0071 — U.S. Courts, Case Management/Electronic Case Files FAQ
+
+- Issuing body: Administrative Office of the U.S. Courts
+- Tier / type: Tier 1; primary official operational documentation
+- Authority status: official description of federal CM/ECF operation; not a source of substantive judicial jurisdiction or remedy law
+- Publication / effective date: current web documentation
+- Version or vintage: retrieved 2026-08-21
+- Stable identifier: [CM/ECF FAQs](https://www.uscourts.gov/court-records/file-a-case-cm-ecf/faqs-case-management-electronic-case-files-cm-ecf)
+- Packet C pinpoints used: case-file function, registered-user filing, and Notice of Electronic Filing sections
+
+### USR-SRC-0072 — HUD, IDIS Online Reports User Guide
+
+- Issuing body: Department of Housing and Urban Development, Office of Community Planning and Development
+- Tier / type: Tier 2; official operational manual
+- Authority status: high-authority system/report documentation; governing statutes, regulations, and award terms control legal obligations
+- Publication / effective date: document edition as posted; report definitions are system-operational
+- Version or vintage: PDF retrieved 2026-08-21
+- Stable identifier: [IDIS Online Reports User Guide](https://files.hudexchange.info/resources/documents/IDIS-Online-Reports-User-Guide.pdf)
+- Packet C pinpoints used: chs. 2–4; access roles; PR20 and PR22 descriptions/fields
+
+### USR-SRC-0073 — HUD HOME National Production Report (PR20), 2024-12-31
+
+- Issuing body: Department of Housing and Urban Development
+- Tier / type: Tier 1; primary official administrative report artifact
+- Authority status: official dated IDIS-derived program report; not legal authority and not comprehensive Housing-market truth
+- Publication / effective date: generated 2025-01-02 for data through 2024-12-31
+- Version or vintage: 2024-12-31 snapshot, retrieved 2026-08-21
+- Stable identifier: [HOME PR20, 2024-12-31](https://files.hudexchange.info/reports/published/HOME_Prod_Natl_20241231.pdf)
+- Packet C pinpoints used: report header and authorized/committed/disbursed/production columns
+
+### USR-SRC-0074 — HUD FY2024 Annual Performance Report
+
+- Issuing body: Department of Housing and Urban Development
+- Tier / type: Tier 1; primary official annual performance artifact
+- Authority status: official agency performance report; underlying program systems and methods bound its measures
+- Publication / effective date: January 17, 2025; FY2024 reporting
+- Version or vintage: FY2024 PDF retrieved 2026-08-21
+- Stable identifier: [HUD FY2024 Annual Performance Report](https://archives.hud.gov/reports/apr/HUD_FY_2024_Annual_Performance_Report_1.17.25.pdf)
+- Packet C pinpoints used: HOME/HTF completed-unit performance tables and IDIS source notes
+
+### USR-SRC-0075 — Census Bureau, Building Permits Survey
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; primary official statistical program, methodology, and release pages
+- Authority status: official permit-authorization estimates and methods; not starts, completions, or legal authority
+- Publication / effective date: current pages and 2026 release schedule as retrieved
+- Version or vintage: retrieved 2026-08-21; site listed final 2025 annual data posted 2026-05-14
+- Stable identifiers: [Building Permits Survey](https://www.census.gov/construction/bps/index.html); [BPS Methodology](https://www.census.gov/construction/bps/methodology.html)
+- Packet C pinpoints used: survey definition, universe/sample, geography, collection timing, monthly release, late reports/corrections, and annual revision/benchmarking
+
+### USR-SRC-0076 — Census Bureau, Survey of Construction methodology
+
+- Issuing body: U.S. Census Bureau, jointly releasing New Residential Construction statistics with HUD
+- Tier / type: Tier 1; primary official statistical methodology
+- Authority status: official methodology for starts/completions estimates; sample and revision limitations apply
+- Publication / effective date: current methodology as retrieved
+- Version or vintage: retrieved 2026-08-21
+- Stable identifier: [Survey of Construction Methodology](https://www.census.gov/construction/soc/methodology.html)
+- Packet C pinpoints used: permit-linked sample, starts/completions concepts, national/region geography, preliminary estimates, and two-month revision practice
+
+### USR-SRC-0077 — Census Bureau, guidance on ACS estimates and comparison
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; primary official statistical guidance
+- Authority status: official ACS methodology/use guidance; individual release tables retain their own vintage
+- Publication / effective date: current guidance as retrieved
+- Version or vintage: retrieved 2026-08-21
+- Stable identifiers: [Understanding and Using ACS Estimates](https://www.census.gov/programs-surveys/acs/guidance/estimates.html); [Comparing ACS Data](https://www.census.gov/programs-surveys/acs/guidance/comparing-acs-data.html)
+- Packet C pinpoints used: sample estimates and margins of error; one-year/12-month and five-year/60-month products; 65,000 threshold and all-area coverage
+
+### USR-SRC-0078 — 2024 ACS one-year table B25070
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; primary official statistical data table
+- Authority status: official sample estimate with published margins of error and defined universe
+- Publication / effective date: 2024 ACS one-year release
+- Version or vintage: 2024 one-year vintage, retrieved 2026-08-21
+- Stable identifier: [ACS 2024 B25070](https://data.census.gov/table/ACSDT1Y2024.B25070)
+- Packet C pinpoints used: table universe, gross-rent-as-percent-of-income categories, estimate and margin-of-error fields
+
+### USR-SRC-0079 — Census Bureau, 2026 ACS updates
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; primary official current-status notice
+- Authority status: official statement of ACS production/release status; mutable current information
+- Publication / effective date: August 6, 2026 update
+- Version or vintage: retrieved 2026-08-21
+- Stable identifier: [2026 ACS Updates](https://www.census.gov/programs-surveys/acs/news/updates/2026.html)
+- Packet C pinpoint used: statement that a release date for 2025 ACS one-year data had not yet been determined
+
+### USR-SRC-0080 — Department of Commerce DAO 216-19, Public Availability of Statistical Information
+
+- Issuing body: U.S. Department of Commerce
+- Tier / type: Tier 1; primary official administrative policy
+- Authority status: operative departmental administrative order governing statistical-release conduct; statute and binding regulations control in conflict
+- Publication / effective date: current directive as posted
+- Version or vintage: retrieved 2026-08-21
+- Stable identifier: [DAO 216-19](https://www.commerce.gov/opog/directives/DAO_216-19)
+- Packet C pinpoints used: §§5–6 on equitable, announced release and separation of statistical information from policy interpretation
+
+### USR-SRC-0081 — 13 U.S.C. §9, Census information confidentiality
+
+- Issuing body: Office of the Law Revision Counsel, U.S. House of Representatives
+- Tier / type: Tier 1; federal statutory compilation
+- Authority status: Title 13 is positive law; legal evidence of the law
+- Publication / effective date: provision-specific; preliminary Code through 2026-08-11 when retrieved
+- Version or vintage: preliminary edition, retrieved 2026-08-21
+- Stable identifier: [13 U.S.C. §9](https://uscode.house.gov/view.xhtml?req=%28title%3A13+section%3A9+edition%3Aprelim%29)
+- Packet C pinpoint used: §9(a)
+
+### USR-SRC-0082 — Census Bureau, 2024 ACS release schedule and embargo procedure
+
+- Issuing body: U.S. Census Bureau
+- Tier / type: Tier 1; primary official release schedule and access procedure
+- Authority status: official product-specific release documentation; does not establish access outside listed holders/procedures
+- Publication / effective date: 2024 ACS release cycle
+- Version or vintage: retrieved 2026-08-21
+- Stable identifier: [2024 ACS Release Schedule](https://www.census.gov/programs-surveys/acs/news/data-releases/2024/release-schedule.html)
+- Packet C pinpoints used: release dates and media embargo conditions
+
+### USR-SRC-0083 — HUD accomplishments communication, 2026
+
+- Issuing body: Department of Housing and Urban Development
+- Tier / type: Tier 1; primary official public communication artifact
+- Authority status: authoritative only for the fact and provenance of HUD's own public policy claims; not independent proof that the claims are true
+- Publication / effective date: 2026 communication current when retrieved
+- Version or vintage: retrieved 2026-08-21
+- Stable identifier: [HUD Accomplishments 2026](https://www.hud.gov/HUD-Accomplishments-2026)
+- Packet C pinpoint used: official agency characterization of Housing-policy performance as a public-claim channel
+
+### USR-SRC-0084 — House Financial Services Committee HOME-program communication
+
+- Issuing body: U.S. House Committee on Financial Services
+- Tier / type: Tier 1; primary official congressional communication artifact
+- Authority status: authoritative only for the fact and provenance of the Senator's public claim; not independent proof of underlying Housing effects
+- Publication / effective date: July 16, 2025
+- Version or vintage: retrieved 2026-08-21
+- Stable identifier: [“The HOME Program Is Ripe For A Fresh Look From This Committee”](https://financialservices.house.gov/news/documentsingle.aspx?DocumentID=410809)
+- Packet C pinpoint used: committee-chair characterization of HOME's role and claimed administrative/cost shortcomings as a distinct public-claim channel
+
 ## Source-tier count
 
-- Tier 1: **34**
-- Tier 2: **22**
+- Tier 1: **60**
+- Tier 2: **24**
 - Tier 3: **0**
 - Tier 4: **0**
-- Total: **56**
+- Total: **84**
 
 No Tier 3 source was necessary because the bounded ordinary-practice claims are supported by CRS procedural syntheses tied to chamber rules and precedents. No Tier 4 source is relied upon.
 
 Packet B likewise adds no Tier 3 calibration evidence: its empirical sources establish the existence and bounded character of financing layers, administrative/project pipelines, and geographic/project variation, not numerical causal coefficients.
+
+Packet C adds no Tier 3 calibration evidence. Its bounded ordinary-practice conclusions use governing rules, official operational documentation, and primary institutional communication artifacts; claim framing is not treated as evidence of effectiveness or representativeness.
 
 ## Excluded or bounded source observations
 
@@ -592,3 +874,8 @@ Packet B likewise adds no Tier 3 calibration evidence: its empirical sources est
 - GAO-23-105370 expressly limits its 12-grantee/70-project financing observations; Packet B does not generalize its approximate HTF financing share nationally.
 - HUD's Hawaii CDBG statement documents a real program-specific nonadministration arrangement, not a national frequency or general state-refusal rule.
 - The HUD LIHTC database is retained as a future implementation-data source candidate only; Packet B did not ingest or freeze its records.
+- *Department of Education v. California* arose on an emergency application and is retained as a serious grant-contract jurisdiction/remedy bound, not a categorical holding that every federal grant dispute belongs in the Court of Federal Claims.
+- *City and County of San Francisco v. Trump* is a Ninth Circuit grant-withholding analog, not controlling national or HOME-specific authority.
+- The 2024 PR20 and ACS artifacts are dated vintages; later releases do not retroactively change what those artifacts stated, and implementation-current use requires Packet D/freeze validation.
+- Census's 2026 notice that the 2025 ACS one-year release date was undetermined is temporary current state and must be freeze-time revalidated.
+- Official HUD and House committee communications establish provenance and channel for political characterization only; their substantive policy claims are not relied upon as empirical Housing truth.
