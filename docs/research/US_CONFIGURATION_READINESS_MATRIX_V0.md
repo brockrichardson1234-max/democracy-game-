@@ -1,6 +1,6 @@
 # U.S. Configuration Readiness Matrix V0
 
-Status: **ONE-TIME PROTOCOL-EXCEPTION REPAIR CANDIDATE OVER EXACT BASE `9c2b8be012038e5581526923e5c564ac9e65c39c` — NOT FINDINGS-ONLY RECHECKED — NOT FROZEN — NOT CONFIGURATION AUTHORITY.**
+Status: **STEP 2 FREEZE-TIME REVALIDATION COMPLETE OVER EXACT EVIDENCE BASE `fc2c8ab4a2df9e2c90175aa45060d8772265a82f` — ALL ORIGINAL FINDINGS CLOSED — NOT FROZEN — NOT CONFIGURATION AUTHORITY.**
 
 Research baseline date: **2026-08-21**
 
@@ -56,7 +56,7 @@ This matrix asks only whether the combined A–D evidence candidate is sufficien
 - `NOT_REQUIRED`: **0**
 - Total required rows: **26**
 
-There is no unexplained required `NOT_READY` row. No row is declared `NOT_REQUIRED`. B-002 remains open pending findings-only recheck against the corrected product-resolution criterion; this readiness assessment does not self-close the finding. This is not an evidence freeze or authorization to write configuration.
+There is no unexplained required `NOT_READY` row. No row is declared `NOT_REQUIRED`. The original Audit B reviewer returned `RECHECK_PASS` for B-002, B-007, and B-008 against exact SHA `fc2c8ab4a2df9e2c90175aa45060d8772265a82f`; every original `BLOCKER`/`HIGH` is closed. All 27 mutable-P0 records were freeze-time revalidated in `US_RESEARCH_FREEZE_REVALIDATION_V0.md`. This is not an evidence freeze or authorization to write configuration.
 
 ## Architecture-reopen threshold result
 

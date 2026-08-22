@@ -46,13 +46,19 @@ Project authority explicitly authorized, for this evidence lineage only, one add
 
 Before authorizing this exception repair, project authority issued a product-resolution directive for `USR-AUD-B-002`. The directive preserved the original finding's substantive concern but corrected the P0 closure resolution: the first U.S. vertical must prove the institutional/fiscal causal stages and owners, not forensically reconcile one named municipal activity from an exact IDIS/LOCCS voucher through one city check into one building. Different authoritative sources may establish different stages if each is labeled by scope and no continuous same-dollar chain is implied. This directive changed the acceptance test; it did not declare the finding closed.
 
-Candidate-author assessment, which is not a recheck or self-acceptance:
+Candidate-author assessment before recheck, which was not a recheck or self-acceptance:
 
-- `USR-AUD-B-002`: **OBJECTIVE CLOSURE EVIDENCE SUPPLIED FOR RECHECK UNDER THE CORRECTED P0 CRITERION.** Program-general authority establishes recipient commitment/activity/draw/expenditure mechanics; funding-cohort, recipient, project, and material examples corroborate distinct stages without pretending to trace the same dollars continuously. The finding remains open until Audit B rechecks it.
+- `USR-AUD-B-002`: **OBJECTIVE CLOSURE EVIDENCE SUPPLIED FOR RECHECK UNDER THE CORRECTED P0 CRITERION.** Program-general authority establishes recipient commitment/activity/draw/expenditure mechanics; funding-cohort, recipient, project, and material examples corroborate distinct stages without pretending to trace the same dollars continuously. At that point the finding remained open until Audit B rechecked it.
 - `USR-AUD-B-007`: **OBJECTIVE CLOSURE EVIDENCE SUPPLIED FOR RECHECK.** One named official plan/Palms claim is traced through official agenda publication/distribution to a nine-participant recorded Council event, with reading and belief bounds.
 - `USR-AUD-B-008`: **OBJECTIVE CLOSURE EVIDENCE SUPPLIED FOR RECHECK.** The chronology is mechanically ordered across the term and post-transfer years and honestly positions the two unobserved B-002 stages as event-driven gaps.
 
-Only the original Audit B findings-only rechecker may determine closure status against the exact exception-repair SHA.
+The original Audit B findings-only rechecker subsequently reviewed exact exception-repair SHA `fc2c8ab4a2df9e2c90175aa45060d8772265a82f` and returned:
+
+- `USR-AUD-B-002`: **RECHECK_PASS**
+- `USR-AUD-B-007`: **RECHECK_PASS**
+- `USR-AUD-B-008`: **RECHECK_PASS**
+
+All original Audit A/B findings are therefore **CLOSED**. Audit C remains **CLEAR**. This Step 1 disposition is recorded for freeze provenance; it is not re-audited by the Step 2 author.
 
 ## Change audit trail
 
@@ -64,7 +70,8 @@ Only the original Audit B findings-only rechecker may determine closure status a
 - Exception consistency corrections: temporal metadata in `USR-CLM-0228` and `USR-SRC-0106`, and infeasible ordering in `USR-CLM-0239`; no other old claim/source is changed.
 - New mutable-P0 record: `USR-MP0-027`; total **27**.
 - Exception-affected readiness rows reevaluated: `011`, `023`–`026`; row `011` is `READY_WITH_BOUNDS` under the corrected product-resolution criterion, while no closed finding's readiness basis is reopened.
-- **FREEZE-TIME REVALIDATION IS NOT COMPLETE.**
+- Step 2 added only `USR-SRC-0120` as the official replacement locator for the inaccessible direct-PDF component of `USR-SRC-0104`; claim propositions `0225`–`0226` were not changed.
+- Freeze-time mutable-P0 revalidation is complete in `US_RESEARCH_FREEZE_REVALIDATION_V0.md`: 27 records, 26 `UNCHANGED`, one narrowly restored locator dependency `CHANGED`, and zero `UNAVAILABLE`. Independent evidence freeze remains pending.
 
 ## Boundary attestation
 

@@ -1,6 +1,6 @@
 # U.S. Research Packet D — Implementation Data + Cross-Packet Synthesis V0
 
-Status: **One-time protocol-exception repair candidate over exact first-repair base `9c2b8be012038e5581526923e5c564ac9e65c39c`. Not findings-only rechecked, frozen evidence, or configuration authority.**
+Status: **STEP 2 FREEZE-TIME REVALIDATION COMPLETE OVER EXACT EVIDENCE BASE `fc2c8ab4a2df9e2c90175aa45060d8772265a82f`. All original findings are closed; this remains an unfrozen evidence candidate and is not configuration authority.**
 
 Research baseline date: **2026-08-21**
 
@@ -8,7 +8,7 @@ Exact research-program authority: `6267f805f37f646f4e8c651ea8ac54c65b715e99`
 
 Exact Packet D base: `98099597d544f67e3294ada098ef99fcf83388bd`
 
-Architecture traceability is non-normative. Gameplay simplification candidates are explicitly **NON-EVIDENCE**. Packet D prepares—but does not perform—freeze-time revalidation.
+Architecture traceability is non-normative. Gameplay simplification candidates are explicitly **NON-EVIDENCE**. Freeze-time mutable-P0 revalidation is recorded separately in `US_RESEARCH_FREEZE_REVALIDATION_V0.md`; no evidence-freeze decision is made here.
 
 ## 1. Scope
 
@@ -37,13 +37,13 @@ Housing implementation inputs remain a bounded composite. IDIS/HUD records groun
 
 Targeted current-source reconciliation did not remove the HOME transition bound. The current eCFR still carries provisions rooted in pre-July-2026 statutory deadlines and now also marks selected 2025 rule amendments as delayed indefinitely by 91 FR 23014. Public Law 119-101 remains controlling for its statutory amendments; current Part 92 remains operative except where displaced or delayed, and guidance must be provision-by-provision rather than treated as timeless. Claims `0109`, `0112`, and `0140` remain `SUPPORTED_WITH_BOUNDS`; no Packet B claim is silently broadened. (`USR-CLM-0217`)
 
-Packet C's ACS status also remains bounded: the official update still says the 2025 one-year release date is undetermined, so claim `0187` remains `SUPPORTED_WITH_BOUNDS` and freeze-revalidation remains mandatory. (`USR-CLM-0218`)
+Packet C's ACS status also remains bounded: the official update still says the 2025 one-year release date is undetermined, so claim `0187` remains `SUPPORTED_WITH_BOUNDS`. Freeze-time revalidation on 2026-08-22 confirmed that this bound remains current. (`USR-CLM-0218`; `USR-MP0-018`)
 
 The systematic A/B/C comparison found no genuine factual or authority conflict. Seven apparent or temporal tensions are recorded rather than hidden: state versus local recipient, two obligation vocabularies, certification terminology, HOME statute/regulation timing, claimant granularity, administrative completion versus material Housing, and internal versus public knowledge. Each is compatible after owner, stage, scope, or date is preserved. No earlier claim status changes. (`USR-CLM-0219`)
 
 The combined evidence supports a recognizable U.S. causal chain through bicameral enactment, distinct fiscal stages, HUD/HOME administration, real state/local recipient relationships, downstream project delivery, delayed official artifacts and public claims, separate Population state, election/count/transfer, and one bounded legal-contest/order/compliance route. The strongest differences from synthetic GL0 are configuration questions—not research failures: real Congress is bicameral and large; HOME is formula/plan/agreement-based rather than state application/award competition; recipient and project layers are plural; official information is composite; and legal relief is claimant-, order-, and procedure-specific. (`USR-CLM-0220`)
 
-All 12 P0 workstreams are supported or supported with explicit bounds under the B-002 product-resolution directive. Fiscal-execution workstream 6.3 is supported by an owner-qualified composite proof: program-general law and operations establish the causal stages, while funding-cohort, recipient, project, and material examples corroborate distinct stages without asserting a continuous same-dollar provenance chain. All 26 readiness rows are `READY` or `READY_WITH_BOUNDS`. Twelve architecture-fit questions remain non-normative configuration/simplification decisions. **NO QUALIFYING ARCHITECTURE V0 CONTRADICTION IDENTIFIED.** B-002 nevertheless remains open until the authorized Audit B findings-only recheck; these are candidate-author readiness assessments, not acceptance or freeze.
+All 12 P0 workstreams are supported or supported with explicit bounds under the B-002 product-resolution directive. Fiscal-execution workstream 6.3 is supported by an owner-qualified composite proof: program-general law and operations establish the causal stages, while funding-cohort, recipient, project, and material examples corroborate distinct stages without asserting a continuous same-dollar provenance chain. All 26 readiness rows are `READY` or `READY_WITH_BOUNDS`. Twelve architecture-fit questions remain non-normative configuration/simplification decisions. **NO QUALIFYING ARCHITECTURE V0 CONTRADICTION IDENTIFIED.** The original Audit B reviewer returned `RECHECK_PASS` for B-002, B-007, and B-008 against `fc2c8ab4a2df9e2c90175aa45060d8772265a82f`; all original findings are closed. Freeze-time revalidation is complete, but independent evidence freeze has not occurred.
 
 ## 4. Claim/evidence ledger additions
 
@@ -170,9 +170,9 @@ Genuine unresolved contradictions: **0**. Existing claim-status changes: **0**. 
 
 Architecture-reopen assessment: **NO QUALIFYING ARCHITECTURE V0 CONTRADICTION IDENTIFIED.** None shows a direct contradiction, ownerless canonical fact, unavoidable duplicate ownership, impossible accepted causal path, or deterministic/persistence defect. Researchers have not reopened Architecture V0.
 
-### E. Mutable-P0 dependency register — preparation only
+### E. Mutable-P0 dependency register — freeze-time revalidated
 
-`lastValidatedAt` below is Packet D research time. `freezeRevalidatedAt` is intentionally absent. Each record must be rechecked after any audit repair and before freeze.
+`lastValidatedAt` below is Packet D research time. Every record was rechecked on 2026-08-22 against exact evidence base `fc2c8ab4a2df9e2c90175aa45060d8772265a82f`; the required per-record fields, checked authorities, results, and impacts are in `US_RESEARCH_FREEZE_REVALIDATION_V0.md`.
 
 | Record | Claim IDs | Source IDs | Mutable class / reason | Current version or vintage | Last validated | Required revalidation method | Readiness rows affected |
 |---|---|---|---|---|---|---|---|
@@ -197,14 +197,14 @@ Architecture-reopen assessment: **NO QUALIFYING ARCHITECTURE V0 CONTRADICTION ID
 | USR-MP0-019 | `0193`–`0196`, `0201` | `0080`–`0082` | Statistical confidentiality/release/access policy | Current law/policy and 2024 procedure | 2026-08-21 | Confirm Code, DAO, and product-specific access rules | 023–025 |
 | USR-MP0-020 | `0199` | `0083`–`0084` | Temporary public-claim artifacts | 2025/2026 examples | 2026-08-21 | Confirm retained artifacts remain available or archive/hash them | 003, 023–024 |
 | USR-MP0-021 | `0221`–`0224` | `0099`–`0103` | FY2024 appropriation/apportionment/award and mutable spending record | P.L. 118-42; 2024-04-05 apportionment; 2024-09-25 award | 2026-08-21 | Reopen enacted text and OMB record; archive/hash allocation, award, obligation, outlay, and plan artifacts | 010–013, 025–026 |
-| USR-MP0-022 | `0225`–`0226` | `0104`–`0105` | Current HOME consortium rule/guidance and named renewal records | Current §92.101; FY2025–FY2027 renewal | 2026-08-21 | Confirm rule/guidance status and archive/hash named agreements/plan | 012–013, 020, 025 |
+| USR-MP0-022 | `0225`–`0226` | `0104`–`0105`, `0120` | Current HOME consortium rule/guidance and named renewal records | Current §92.101; FY2025–FY2027 renewal; HUD-2006-08 official archive replacement | 2026-08-21 | Confirm rule/guidance status and archive/hash named agreements/plan | 012–013, 020, 025 |
 | USR-MP0-023 | `0228`–`0230` | `0106`–`0110` | Project scope, final waiver, BABA process, and material-supply synthesis | Stables tied to FY2024 FAIN; 2026 final waiver; current BABA pages | 2026-08-21 | Confirm final status/scope and archive waiver; recheck current process and synthesis editions | 012, 025–026 |
 | USR-MP0-024 | `0231`–`0233` | `0092`–`0094`, `0111`–`0112` | Population/CVAP/ACS vintages and mutable eligibility rules | Vintage 2025 Population; 2020–2024 CVAP; 2024 ACS five-year | 2026-08-21 | Freeze files/APIs/hashes, universes/MOEs, state/DC joins, and current eligibility bounds | 014–016, 023, 025–026 |
 | USR-MP0-025 | `0237`–`0238` | `0113` | Current HUD newsroom and mailing-list channel | Current web/signup pages | 2026-08-21 | Confirm channel mechanics; archive/hash relied-on pages; select only evidenced exposure measure | 023–025 |
 | USR-MP0-026 | `0234`–`0236`, `0239`–`0240` | `0057`–`0068`, `0098`–`0101` | Current legal/procedural rules, calendar instruments, and BPS method | 2024 cohort; current law/rules/methodology | 2026-08-21 | Reopen statutes/rules/precedent and BPS method; verify term/cycle dates and no superseding route fact | 020–026 |
 | USR-MP0-027 | `0241`–`0247` | `0114`–`0119` | Funding-cohort, recipient, project, official-publication, and chronology examples | FY2024 award; 2024 plan; 2025 expenditure/permits; planned 2026 completion | 2026-08-21 | Archive/hash award, agenda/minutes, register/audit, environmental and permit records; recheck mutable aggregate outlay and planned status while preserving each example's scope and never treating it as an exact draw, completion, or continuous same-dollar chain | 011, 023–026 |
 
-Mutable-P0 records: **27**. Freeze-time revalidation is **NOT complete**.
+Mutable-P0 records: **27**. Freeze-time revalidation is **COMPLETE**: `UNCHANGED` **26**, `CHANGED` **1**, `UNAVAILABLE` **0**. The one changed locator dependency was narrowly restored by `USR-SRC-0120`. Independent evidence freeze remains pending.
 
 ### F. P0 question-status matrix
 
@@ -212,7 +212,7 @@ Mutable-P0 records: **27**. Freeze-time revalidation is **NOT complete**.
 |---|---|---|---|---|---|
 | 6.1 Federal institutional frame | A/D | `0001`–`0008`, `0073`–`0075`, `0210` | SUPPORTED | Bounded first-vertical institutions only | Required institution/jurisdiction rows ready |
 | 6.2 Legislative route | A | `0009`–`0043` | SUPPORTED_WITH_BOUNDS | Committees, cloture, reconciliation, amendment exchange are compression choices | Procedure row ready with bounds |
-| 6.3 Fiscal authority/execution | B/D | `0079`–`0102`, `0129`–`0141`, `0175`–`0178`, `0221`–`0224`, `0241`–`0244` | SUPPORTED | Program-general evidence establishes the owner-qualified stages; cohort/recipient/project examples corroborate them without same-dollar reconstruction | FiscalExecution row 011 ready with documented HOME-transition bounds; B-002 remains open only pending recheck of the corrected P0 criterion |
+| 6.3 Fiscal authority/execution | B/D | `0079`–`0102`, `0129`–`0141`, `0175`–`0178`, `0221`–`0224`, `0241`–`0244` | SUPPORTED | Program-general evidence establishes the owner-qualified stages; cohort/recipient/project examples corroborate them without same-dollar reconstruction | FiscalExecution row 011 ready with documented HOME-transition bounds; B-002 received `RECHECK_PASS` against the exact Step 2 base |
 | 6.4 Executive/administrative implementation | B/D | `0092`–`0112`, `0140`–`0142`, `0217`, `0227`–`0228` | SUPPORTED_WITH_BOUNDS | Ordinary HUD waiver family established; current HOME/BABA transition mutable | Program row ready with freeze bounds |
 | 6.5 Federalism/state participation | B/C/D | `0093`–`0097`, `0114`–`0119`, `0132`–`0133`, `0145`–`0148`, `0225`–`0226` | SUPPORTED_WITH_BOUNDS | Same-HOME branch established; old duties/other lawful routes persist | Intergovernmental row ready with bounds |
 | 6.6 Housing material seam | B/C/D | `0098`–`0108`, `0120`–`0122`, `0134`–`0142`, `0175`–`0192`, `0216`, `0224`, `0228`–`0230`, `0233`, `0244` | SUPPORTED_WITH_BOUNDS | Physical latency/mixed mechanisms and Palms permit transition established; completion/magnitudes remain bounded | Material owner ready; data row bounded |
@@ -223,7 +223,7 @@ Mutable-P0 records: **27**. Freeze-time revalidation is **NOT complete**.
 | 6.11 Cross-seam calendars | A/B/C/D | `0076`–`0078`, `0084`, `0101`–`0112`, `0157`–`0198`, `0221`–`0247` | SUPPORTED | Corrected multi-year chronology; heterogeneous cycles, event-driven program stages, and variable material latency remain explicit without invented project-specific dates | B-008 objective ordering supplied; time row ready with bounds |
 | 6.12 Architecture-fit questions | A/B/C/D | AFQs `A001`–`A003`, `B001`–`B004`, `C001`–`C005`; supporting claims above | SUPPORTED_WITH_BOUNDS | Twelve later mapping/compression decisions; no qualifying contradiction | No reopen; affected rows ready with bounds |
 
-P0 workstream counts: `SUPPORTED` **3**; `SUPPORTED_WITH_BOUNDS` **9**; `NOT_REQUIRED` **0**; `NOT_ESTABLISHED` **0**; `CONFLICTED` **0**. Blocking P0 evidence gaps: **0**. B-002 remains procedurally open pending findings-only recheck.
+P0 workstream counts: `SUPPORTED` **3**; `SUPPORTED_WITH_BOUNDS` **9**; `NOT_REQUIRED` **0**; `NOT_ESTABLISHED` **0**; `CONFLICTED` **0**. Blocking P0 evidence gaps: **0**. All original Audit A/B findings are closed and Audit C remains CLEAR.
 
 ## 8. Facts relevant to accepted architecture seams
 
@@ -351,8 +351,8 @@ The combined source ledger records source status, file/API/product format, vinta
 - All 26 required readiness seams appear in the separate matrix.
 - All 12 AFQ IDs resolve to their source packet and supporting claims.
 - Simplification candidates remain **NON-EVIDENCE** and outside readiness support.
-- B-002's corrected composite-evidence criterion and still-open recheck status are explicit; no `NOT_READY`, `NOT_ESTABLISHED`, `NOT_REQUIRED`, or `CONFLICTED` result is hidden.
-- Mutable-P0 freeze-time revalidation is prepared but expressly incomplete.
+- B-002's corrected composite-evidence criterion and `RECHECK_PASS` disposition are explicit; no `NOT_READY`, `NOT_ESTABLISHED`, `NOT_REQUIRED`, or `CONFLICTED` result is hidden.
+- Mutable-P0 freeze-time revalidation is complete in `US_RESEARCH_FREEZE_REVALIDATION_V0.md`; independent evidence freeze is expressly pending.
 - No audit, freeze, configuration, runtime, UI, or architecture work occurred.
 
 ### C. Packet D stopping-rule result
@@ -402,9 +402,9 @@ The coherent route is an owner-qualified composite, not a transaction reconstruc
 
 Only the three exception findings and direct dependencies were reevaluated. P0 counts are `SUPPORTED` **3**, `SUPPORTED_WITH_BOUNDS` **9**, and zero `NOT_ESTABLISHED`, `NOT_REQUIRED`, or `CONFLICTED`. The 26 readiness rows are `READY` **12**, `READY_WITH_BOUNDS` **14**, and zero `NOT_READY` or `NOT_REQUIRED`.
 
-Row `011` is `READY_WITH_BOUNDS` because composite authoritative evidence establishes every required owner-qualified stage without requiring same-dollar municipal reconciliation. Row `025` remains `READY_WITH_BOUNDS` on the corrected mechanically ordered chronology. Rows `023`–`024` retain their prior statuses and now cite the named artifact/audience evidence. B-002 remains open for recheck; no closed finding or unrelated row was reopened.
+Row `011` is `READY_WITH_BOUNDS` because composite authoritative evidence establishes every required owner-qualified stage without requiring same-dollar municipal reconciliation. Row `025` remains `READY_WITH_BOUNDS` on the corrected mechanically ordered chronology. Rows `023`–`024` retain their prior statuses and cite the named artifact/audience evidence. B-002, B-007, and B-008 received `RECHECK_PASS`; no closed finding or unrelated row was reopened.
 
-Exception record `USR-MP0-027` brings the mutable-P0 total to **27**. **FREEZE-TIME REVALIDATION IS NOT COMPLETE.**
+Exception record `USR-MP0-027` brings the mutable-P0 total to **27**. **FREEZE-TIME REVALIDATION IS COMPLETE; INDEPENDENT EVIDENCE FREEZE IS NOT.**
 
 ### E. Repair boundary and architecture result
 

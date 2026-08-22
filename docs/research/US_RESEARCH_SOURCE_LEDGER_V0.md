@@ -1039,8 +1039,8 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Issuing body: U.S. Department of Housing and Urban Development / Office of the Federal Register
 - Tier / type: Tier 1; current regulation and official program guidance
 - Authority status: 24 C.F.R. §92.101 is regulatory authority; guide is implementation guidance
-- Version / vintage: current rule and 2024 guide, retrieved 2026-08-21
-- Stable identifiers: [24 C.F.R. §92.101](https://www.ecfr.gov/current/title-24/subtitle-A/part-92/subpart-B/section-92.101); [HUD HOME Consortium Management Guide](https://www.hud.gov/sites/documents/20606_200608_guide.pdf)
+- Version / vintage: current rule; direct guide locator retrieved 2026-08-21 and found inaccessible at freeze revalidation 2026-08-22
+- Stable identifiers: [24 C.F.R. §92.101](https://www.ecfr.gov/current/title-24/subtitle-A/part-92/subpart-B/section-92.101); superseded locator record: [HUD HOME Consortium Management Guide](https://www.hud.gov/sites/documents/20606_200608_guide.pdf); replacement support: `USR-SRC-0120`
 - Repair pinpoints: three-year qualification, signed participation, representative/PJ relation, renewal withdrawal, formula-geography consequence, continuing existing-project duties, and possible state HOME route outside a consortium
 
 ### USR-SRC-0105 — Arapahoe/Englewood HOME consortium qualification records
@@ -1178,13 +1178,22 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Stable identifier: [TABS2025005871 project details](https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025005871)
 - Exception-repair pinpoints: Palms at Morris Apartments leasing/community facilities, 2212 Morris Avenue, TG 110 Palms at Morris LP owner, new construction, planned 2025-04-01 start and 2026-10-01 completion
 
+### USR-SRC-0120 — Official HUD replacement record for HOME consortium guidance
+
+- Issuing body: U.S. Department of Housing and Urban Development
+- Tier / type: Tier 1; current regulation/current official program page plus official retained-guide provenance
+- Authority status: 24 C.F.R. §92.503 is regulatory authority; HUD's current consortia page is official program guidance; the archive landing page preserves HUD-2006-08 provenance
+- Version / vintage: current rule/program page and HUD-2006-08 official archive; freeze-revalidated 2026-08-22
+- Stable identifiers: [24 C.F.R. §92.503](https://www.ecfr.gov/current/title-24/subtitle-A/part-92/subpart-K/section-92.503); [current HUD consortia program page](https://www.hud.gov/hud-partners/community-affordable-housing-programs); [HUD-2006-08 archive landing page](https://archives.hud.gov/offices/cpd/affordablehousing/modelguides/200608.cfm)
+- Freeze-revalidation pinpoints: consortium access to HOME funding, representative/lead-entity responsibility, continuing program-income/repayment/affordability duties, and retained provenance for the guide; replaces the inaccessible direct-PDF locator in `USR-SRC-0104` without changing the relied-on proposition
+
 ## Source-tier count
 
-- Tier 1: **93**
+- Tier 1: **94**
 - Tier 2: **26**
 - Tier 3: **0**
 - Tier 4: **0**
-- Total: **119**
+- Total: **120**
 
 No Tier 3 source was necessary because the bounded ordinary-practice claims are supported by CRS procedural syntheses tied to chamber rules and precedents. No Tier 4 source is relied upon.
 
