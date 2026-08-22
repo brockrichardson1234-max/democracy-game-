@@ -2,6 +2,7 @@ import { bootstrapGovernmentConfiguration } from "../../configuration/bootstrap"
 import type {
   ConfigurationIdentity,
   GovernmentConfiguration,
+  GovernmentStructureDescriptor,
   ScheduledTransitionDescriptor,
 } from "../../configuration/types";
 import type { WorldSeed, WorldState } from "../../sim/world";
@@ -66,6 +67,106 @@ export const createSyntheticTransitionSchedule = (
   { id: transitionId(identities, "transfer"), kind: "EXECUTIVE_OFFICE_TRANSFER", at: GL0_EXECUTIVE_TRANSFER_AT, order: 0 },
 ];
 
+const createSyntheticStructure = (
+  identities: SyntheticFixtureIdentities,
+): GovernmentStructureDescriptor => {
+  const contentPrefix = identities === GL0_FIXTURE_IDENTITIES ? "gl0-" : identities.namespace;
+  const actorPrefix = identities === GL0_FIXTURE_IDENTITIES ? "" : identities.namespace;
+  const actorIds = [
+    `${actorPrefix}actor-support-1`,
+    `${actorPrefix}actor-support-2`,
+    `${actorPrefix}actor-support-3`,
+    `${actorPrefix}actor-support-4`,
+    identities.oppositionClaimActorId,
+    `${actorPrefix}actor-opposition-2`,
+    `${actorPrefix}actor-opposition-3`,
+    `${actorPrefix}actor-opposition-4`,
+    `${actorPrefix}actor-swing-1`,
+    `${actorPrefix}actor-swing-2`,
+    `${actorPrefix}actor-swing-3`,
+  ];
+  const seatPrefix = identities === GL0_FIXTURE_IDENTITIES ? "" : identities.namespace;
+  const officeIds = actorIds.map((_, index) => `${seatPrefix}seat-${index + 1}`);
+  const legislatureId = `${contentPrefix}legislature`;
+  const chamberId = `${contentPrefix}single-chamber`;
+  const legislatureInstitutionId = `${contentPrefix}legislature-institution`;
+  const chamberInstitutionId = `${contentPrefix}single-chamber-institution`;
+  const jurisdictionIds = [identities.stateAId, identities.stateBId, identities.stateCId];
+  return {
+    provenanceArtifacts: [],
+    jurisdictions: jurisdictionIds.map((id, index) => ({
+      id,
+      label: `Synthetic jurisdiction ${index + 1}`,
+      kind: "SYNTHETIC_SUBNATIONAL",
+      externalIdentifiers: [],
+      provenanceArtifactId: null,
+    })),
+    institutions: [
+      {
+        id: legislatureInstitutionId,
+        label: "Synthetic legislature",
+        kind: "LEGISLATURE",
+        jurisdictionId: jurisdictionIds[0],
+      },
+      {
+        id: chamberInstitutionId,
+        label: "Synthetic chamber",
+        kind: "LEGISLATIVE_CHAMBER",
+        jurisdictionId: jurisdictionIds[0],
+      },
+    ],
+    legislatures: [
+      {
+        id: legislatureId,
+        label: "Synthetic legislature",
+        institutionId: legislatureInstitutionId,
+        chamberIds: [chamberId],
+      },
+    ],
+    chambers: [
+      {
+        id: chamberId,
+        label: "Synthetic chamber",
+        institutionId: chamberInstitutionId,
+        legislatureId,
+        seatCount: 11,
+      },
+    ],
+    geographies: [],
+    staggerGroups: [],
+    offices: officeIds.map((id, index) => ({
+      id,
+      label: `Synthetic legislative office ${index + 1}`,
+      kind: "LEGISLATIVE_MEMBER",
+      institutionId: chamberInstitutionId,
+      chamberId,
+      constituency: { kind: "JURISDICTION", id: jurisdictionIds[index % jurisdictionIds.length] },
+      term: {
+        duration: { value: GL0_EXECUTIVE_TRANSFER_AT, unit: "SYNTHETIC_DAYS" },
+        ordinaryBoundaryAt: `day-${GL0_EXECUTIVE_TRANSFER_AT}`,
+        staggerGroupId: null,
+      },
+    })),
+    actors: actorIds.map((id, index) => ({
+      id,
+      label: `Synthetic legislative actor ${index + 1}`,
+      role: "LEGISLATIVE",
+      classification: "SYNTHETIC_FIXTURE",
+    })),
+    assignments: officeIds.map((officeId, index) => ({
+      id: `${contentPrefix}topology-assignment-${index + 1}`,
+      officeId,
+      actorId: actorIds[index],
+      effectiveFrom: "day-0",
+      effectiveUntil: null,
+      currentAtScenarioStart: true,
+      classification: "SYNTHETIC_FIXTURE",
+    })),
+    administrations: [],
+    relations: [],
+  };
+};
+
 export const createSyntheticGovernmentConfiguration = (
   identity: ConfigurationIdentity,
   identities: SyntheticFixtureIdentities = GL0_FIXTURE_IDENTITIES,
@@ -74,11 +175,7 @@ export const createSyntheticGovernmentConfiguration = (
   identity,
   capability: "PLAYABLE_CAUSAL_WORLD",
   calendar: { kind: "SYNTHETIC_DAY_NUMBER", epoch: "day-0" },
-  structure: {
-    legislatureId: identities === GL0_FIXTURE_IDENTITIES ? "gl0-legislature" : `${identities.namespace}legislature`,
-    chambers: [{ id: identities === GL0_FIXTURE_IDENTITIES ? "gl0-single-chamber" : `${identities.namespace}single-chamber`, seatCount: 11 }],
-    jurisdictionIds: [identities.stateAId, identities.stateBId, identities.stateCId],
-  },
+  structure: createSyntheticStructure(identities),
   transitions: createSyntheticTransitionSchedule(identities),
   runtimeSeed: createSyntheticWorldSeed(identities, courtRoute),
 });
@@ -88,7 +185,7 @@ export const GL0_SYNTHETIC_CONFIGURATION = createSyntheticGovernmentConfiguratio
   configurationVersion: "1.0.0",
   scenarioId: "gl0-accepted-causal-vertical",
   scenarioVersion: "1.0.0",
-  configurationHash: "42e904d1b43d0139474b24ef32367ffbbb02cebc2f8b3517b170920e8b664ca9",
+  configurationHash: "55317cc00f4dfa8842a41fbcb3729dddea8689f888a21a4abb6b304b40b4dc1c",
 });
 
 /** Backward-compatible accepted-fixture entry point over production composition. */

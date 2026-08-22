@@ -1,0 +1,2888 @@
+{
+  "metadata": {
+    "artifactId": "us.topology.house-district-identities-119-v1",
+    "vintage": "2025 119th Congressional Districts, 1:500,000 identity extract",
+    "transformationVersion": "i2-us-topology-v1",
+    "contentSha256": "0f66e84a3311111a05780eb68667b9a9f3853b0d8513e9d485a4d9200cc2c6b0",
+    "sources": [
+      {
+        "sourceId": "USR-SRC-0088",
+        "product": "Census 2025 Cartographic Boundary Files, 119th Congressional Districts, 1:500,000",
+        "locator": "https://www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_cd119_500k.zip",
+        "retrievedAt": "2026-08-22",
+        "rawSha256": "8e804518d333d67e24e25c61767c6a7c78fd0a0852179e8cc19c36fd66011010"
+      },
+      {
+        "sourceId": "USR-SRC-0090",
+        "product": "2020 Census Apportionment Table 1",
+        "locator": "https://www2.census.gov/programs-surveys/decennial/2020/data/apportionment/apportionment-2020-table01.xlsx",
+        "retrievedAt": "2026-08-22",
+        "rawSha256": "93e7e77a222f078c0af32457af2ecc7bcae2bcb9db0cedca4ad93ff3f99b55bf"
+      }
+    ]
+  },
+  "districts": [
+    {
+      "stateFips": "01",
+      "districtCode": "01",
+      "geoid": "0101",
+      "stateJurisdictionId": "us.jurisdiction.state.01"
+    },
+    {
+      "stateFips": "01",
+      "districtCode": "02",
+      "geoid": "0102",
+      "stateJurisdictionId": "us.jurisdiction.state.01"
+    },
+    {
+      "stateFips": "01",
+      "districtCode": "03",
+      "geoid": "0103",
+      "stateJurisdictionId": "us.jurisdiction.state.01"
+    },
+    {
+      "stateFips": "01",
+      "districtCode": "04",
+      "geoid": "0104",
+      "stateJurisdictionId": "us.jurisdiction.state.01"
+    },
+    {
+      "stateFips": "01",
+      "districtCode": "05",
+      "geoid": "0105",
+      "stateJurisdictionId": "us.jurisdiction.state.01"
+    },
+    {
+      "stateFips": "01",
+      "districtCode": "06",
+      "geoid": "0106",
+      "stateJurisdictionId": "us.jurisdiction.state.01"
+    },
+    {
+      "stateFips": "01",
+      "districtCode": "07",
+      "geoid": "0107",
+      "stateJurisdictionId": "us.jurisdiction.state.01"
+    },
+    {
+      "stateFips": "02",
+      "districtCode": "00",
+      "geoid": "0200",
+      "stateJurisdictionId": "us.jurisdiction.state.02"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "01",
+      "geoid": "0401",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "02",
+      "geoid": "0402",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "03",
+      "geoid": "0403",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "04",
+      "geoid": "0404",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "05",
+      "geoid": "0405",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "06",
+      "geoid": "0406",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "07",
+      "geoid": "0407",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "08",
+      "geoid": "0408",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "04",
+      "districtCode": "09",
+      "geoid": "0409",
+      "stateJurisdictionId": "us.jurisdiction.state.04"
+    },
+    {
+      "stateFips": "05",
+      "districtCode": "01",
+      "geoid": "0501",
+      "stateJurisdictionId": "us.jurisdiction.state.05"
+    },
+    {
+      "stateFips": "05",
+      "districtCode": "02",
+      "geoid": "0502",
+      "stateJurisdictionId": "us.jurisdiction.state.05"
+    },
+    {
+      "stateFips": "05",
+      "districtCode": "03",
+      "geoid": "0503",
+      "stateJurisdictionId": "us.jurisdiction.state.05"
+    },
+    {
+      "stateFips": "05",
+      "districtCode": "04",
+      "geoid": "0504",
+      "stateJurisdictionId": "us.jurisdiction.state.05"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "01",
+      "geoid": "0601",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "02",
+      "geoid": "0602",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "03",
+      "geoid": "0603",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "04",
+      "geoid": "0604",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "05",
+      "geoid": "0605",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "06",
+      "geoid": "0606",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "07",
+      "geoid": "0607",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "08",
+      "geoid": "0608",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "09",
+      "geoid": "0609",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "10",
+      "geoid": "0610",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "11",
+      "geoid": "0611",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "12",
+      "geoid": "0612",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "13",
+      "geoid": "0613",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "14",
+      "geoid": "0614",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "15",
+      "geoid": "0615",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "16",
+      "geoid": "0616",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "17",
+      "geoid": "0617",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "18",
+      "geoid": "0618",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "19",
+      "geoid": "0619",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "20",
+      "geoid": "0620",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "21",
+      "geoid": "0621",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "22",
+      "geoid": "0622",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "23",
+      "geoid": "0623",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "24",
+      "geoid": "0624",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "25",
+      "geoid": "0625",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "26",
+      "geoid": "0626",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "27",
+      "geoid": "0627",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "28",
+      "geoid": "0628",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "29",
+      "geoid": "0629",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "30",
+      "geoid": "0630",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "31",
+      "geoid": "0631",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "32",
+      "geoid": "0632",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "33",
+      "geoid": "0633",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "34",
+      "geoid": "0634",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "35",
+      "geoid": "0635",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "36",
+      "geoid": "0636",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "37",
+      "geoid": "0637",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "38",
+      "geoid": "0638",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "39",
+      "geoid": "0639",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "40",
+      "geoid": "0640",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "41",
+      "geoid": "0641",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "42",
+      "geoid": "0642",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "43",
+      "geoid": "0643",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "44",
+      "geoid": "0644",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "45",
+      "geoid": "0645",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "46",
+      "geoid": "0646",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "47",
+      "geoid": "0647",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "48",
+      "geoid": "0648",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "49",
+      "geoid": "0649",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "50",
+      "geoid": "0650",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "51",
+      "geoid": "0651",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "06",
+      "districtCode": "52",
+      "geoid": "0652",
+      "stateJurisdictionId": "us.jurisdiction.state.06"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "01",
+      "geoid": "0801",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "02",
+      "geoid": "0802",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "03",
+      "geoid": "0803",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "04",
+      "geoid": "0804",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "05",
+      "geoid": "0805",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "06",
+      "geoid": "0806",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "07",
+      "geoid": "0807",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "08",
+      "districtCode": "08",
+      "geoid": "0808",
+      "stateJurisdictionId": "us.jurisdiction.state.08"
+    },
+    {
+      "stateFips": "09",
+      "districtCode": "01",
+      "geoid": "0901",
+      "stateJurisdictionId": "us.jurisdiction.state.09"
+    },
+    {
+      "stateFips": "09",
+      "districtCode": "02",
+      "geoid": "0902",
+      "stateJurisdictionId": "us.jurisdiction.state.09"
+    },
+    {
+      "stateFips": "09",
+      "districtCode": "03",
+      "geoid": "0903",
+      "stateJurisdictionId": "us.jurisdiction.state.09"
+    },
+    {
+      "stateFips": "09",
+      "districtCode": "04",
+      "geoid": "0904",
+      "stateJurisdictionId": "us.jurisdiction.state.09"
+    },
+    {
+      "stateFips": "09",
+      "districtCode": "05",
+      "geoid": "0905",
+      "stateJurisdictionId": "us.jurisdiction.state.09"
+    },
+    {
+      "stateFips": "10",
+      "districtCode": "00",
+      "geoid": "1000",
+      "stateJurisdictionId": "us.jurisdiction.state.10"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "01",
+      "geoid": "1201",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "02",
+      "geoid": "1202",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "03",
+      "geoid": "1203",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "04",
+      "geoid": "1204",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "05",
+      "geoid": "1205",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "06",
+      "geoid": "1206",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "07",
+      "geoid": "1207",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "08",
+      "geoid": "1208",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "09",
+      "geoid": "1209",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "10",
+      "geoid": "1210",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "11",
+      "geoid": "1211",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "12",
+      "geoid": "1212",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "13",
+      "geoid": "1213",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "14",
+      "geoid": "1214",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "15",
+      "geoid": "1215",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "16",
+      "geoid": "1216",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "17",
+      "geoid": "1217",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "18",
+      "geoid": "1218",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "19",
+      "geoid": "1219",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "20",
+      "geoid": "1220",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "21",
+      "geoid": "1221",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "22",
+      "geoid": "1222",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "23",
+      "geoid": "1223",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "24",
+      "geoid": "1224",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "25",
+      "geoid": "1225",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "26",
+      "geoid": "1226",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "27",
+      "geoid": "1227",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "12",
+      "districtCode": "28",
+      "geoid": "1228",
+      "stateJurisdictionId": "us.jurisdiction.state.12"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "01",
+      "geoid": "1301",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "02",
+      "geoid": "1302",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "03",
+      "geoid": "1303",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "04",
+      "geoid": "1304",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "05",
+      "geoid": "1305",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "06",
+      "geoid": "1306",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "07",
+      "geoid": "1307",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "08",
+      "geoid": "1308",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "09",
+      "geoid": "1309",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "10",
+      "geoid": "1310",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "11",
+      "geoid": "1311",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "12",
+      "geoid": "1312",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "13",
+      "geoid": "1313",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "13",
+      "districtCode": "14",
+      "geoid": "1314",
+      "stateJurisdictionId": "us.jurisdiction.state.13"
+    },
+    {
+      "stateFips": "15",
+      "districtCode": "01",
+      "geoid": "1501",
+      "stateJurisdictionId": "us.jurisdiction.state.15"
+    },
+    {
+      "stateFips": "15",
+      "districtCode": "02",
+      "geoid": "1502",
+      "stateJurisdictionId": "us.jurisdiction.state.15"
+    },
+    {
+      "stateFips": "16",
+      "districtCode": "01",
+      "geoid": "1601",
+      "stateJurisdictionId": "us.jurisdiction.state.16"
+    },
+    {
+      "stateFips": "16",
+      "districtCode": "02",
+      "geoid": "1602",
+      "stateJurisdictionId": "us.jurisdiction.state.16"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "01",
+      "geoid": "1701",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "02",
+      "geoid": "1702",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "03",
+      "geoid": "1703",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "04",
+      "geoid": "1704",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "05",
+      "geoid": "1705",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "06",
+      "geoid": "1706",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "07",
+      "geoid": "1707",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "08",
+      "geoid": "1708",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "09",
+      "geoid": "1709",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "10",
+      "geoid": "1710",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "11",
+      "geoid": "1711",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "12",
+      "geoid": "1712",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "13",
+      "geoid": "1713",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "14",
+      "geoid": "1714",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "15",
+      "geoid": "1715",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "16",
+      "geoid": "1716",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "17",
+      "districtCode": "17",
+      "geoid": "1717",
+      "stateJurisdictionId": "us.jurisdiction.state.17"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "01",
+      "geoid": "1801",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "02",
+      "geoid": "1802",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "03",
+      "geoid": "1803",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "04",
+      "geoid": "1804",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "05",
+      "geoid": "1805",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "06",
+      "geoid": "1806",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "07",
+      "geoid": "1807",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "08",
+      "geoid": "1808",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "18",
+      "districtCode": "09",
+      "geoid": "1809",
+      "stateJurisdictionId": "us.jurisdiction.state.18"
+    },
+    {
+      "stateFips": "19",
+      "districtCode": "01",
+      "geoid": "1901",
+      "stateJurisdictionId": "us.jurisdiction.state.19"
+    },
+    {
+      "stateFips": "19",
+      "districtCode": "02",
+      "geoid": "1902",
+      "stateJurisdictionId": "us.jurisdiction.state.19"
+    },
+    {
+      "stateFips": "19",
+      "districtCode": "03",
+      "geoid": "1903",
+      "stateJurisdictionId": "us.jurisdiction.state.19"
+    },
+    {
+      "stateFips": "19",
+      "districtCode": "04",
+      "geoid": "1904",
+      "stateJurisdictionId": "us.jurisdiction.state.19"
+    },
+    {
+      "stateFips": "20",
+      "districtCode": "01",
+      "geoid": "2001",
+      "stateJurisdictionId": "us.jurisdiction.state.20"
+    },
+    {
+      "stateFips": "20",
+      "districtCode": "02",
+      "geoid": "2002",
+      "stateJurisdictionId": "us.jurisdiction.state.20"
+    },
+    {
+      "stateFips": "20",
+      "districtCode": "03",
+      "geoid": "2003",
+      "stateJurisdictionId": "us.jurisdiction.state.20"
+    },
+    {
+      "stateFips": "20",
+      "districtCode": "04",
+      "geoid": "2004",
+      "stateJurisdictionId": "us.jurisdiction.state.20"
+    },
+    {
+      "stateFips": "21",
+      "districtCode": "01",
+      "geoid": "2101",
+      "stateJurisdictionId": "us.jurisdiction.state.21"
+    },
+    {
+      "stateFips": "21",
+      "districtCode": "02",
+      "geoid": "2102",
+      "stateJurisdictionId": "us.jurisdiction.state.21"
+    },
+    {
+      "stateFips": "21",
+      "districtCode": "03",
+      "geoid": "2103",
+      "stateJurisdictionId": "us.jurisdiction.state.21"
+    },
+    {
+      "stateFips": "21",
+      "districtCode": "04",
+      "geoid": "2104",
+      "stateJurisdictionId": "us.jurisdiction.state.21"
+    },
+    {
+      "stateFips": "21",
+      "districtCode": "05",
+      "geoid": "2105",
+      "stateJurisdictionId": "us.jurisdiction.state.21"
+    },
+    {
+      "stateFips": "21",
+      "districtCode": "06",
+      "geoid": "2106",
+      "stateJurisdictionId": "us.jurisdiction.state.21"
+    },
+    {
+      "stateFips": "22",
+      "districtCode": "01",
+      "geoid": "2201",
+      "stateJurisdictionId": "us.jurisdiction.state.22"
+    },
+    {
+      "stateFips": "22",
+      "districtCode": "02",
+      "geoid": "2202",
+      "stateJurisdictionId": "us.jurisdiction.state.22"
+    },
+    {
+      "stateFips": "22",
+      "districtCode": "03",
+      "geoid": "2203",
+      "stateJurisdictionId": "us.jurisdiction.state.22"
+    },
+    {
+      "stateFips": "22",
+      "districtCode": "04",
+      "geoid": "2204",
+      "stateJurisdictionId": "us.jurisdiction.state.22"
+    },
+    {
+      "stateFips": "22",
+      "districtCode": "05",
+      "geoid": "2205",
+      "stateJurisdictionId": "us.jurisdiction.state.22"
+    },
+    {
+      "stateFips": "22",
+      "districtCode": "06",
+      "geoid": "2206",
+      "stateJurisdictionId": "us.jurisdiction.state.22"
+    },
+    {
+      "stateFips": "23",
+      "districtCode": "01",
+      "geoid": "2301",
+      "stateJurisdictionId": "us.jurisdiction.state.23"
+    },
+    {
+      "stateFips": "23",
+      "districtCode": "02",
+      "geoid": "2302",
+      "stateJurisdictionId": "us.jurisdiction.state.23"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "01",
+      "geoid": "2401",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "02",
+      "geoid": "2402",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "03",
+      "geoid": "2403",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "04",
+      "geoid": "2404",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "05",
+      "geoid": "2405",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "06",
+      "geoid": "2406",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "07",
+      "geoid": "2407",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "24",
+      "districtCode": "08",
+      "geoid": "2408",
+      "stateJurisdictionId": "us.jurisdiction.state.24"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "01",
+      "geoid": "2501",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "02",
+      "geoid": "2502",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "03",
+      "geoid": "2503",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "04",
+      "geoid": "2504",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "05",
+      "geoid": "2505",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "06",
+      "geoid": "2506",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "07",
+      "geoid": "2507",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "08",
+      "geoid": "2508",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "25",
+      "districtCode": "09",
+      "geoid": "2509",
+      "stateJurisdictionId": "us.jurisdiction.state.25"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "01",
+      "geoid": "2601",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "02",
+      "geoid": "2602",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "03",
+      "geoid": "2603",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "04",
+      "geoid": "2604",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "05",
+      "geoid": "2605",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "06",
+      "geoid": "2606",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "07",
+      "geoid": "2607",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "08",
+      "geoid": "2608",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "09",
+      "geoid": "2609",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "10",
+      "geoid": "2610",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "11",
+      "geoid": "2611",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "12",
+      "geoid": "2612",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "26",
+      "districtCode": "13",
+      "geoid": "2613",
+      "stateJurisdictionId": "us.jurisdiction.state.26"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "01",
+      "geoid": "2701",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "02",
+      "geoid": "2702",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "03",
+      "geoid": "2703",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "04",
+      "geoid": "2704",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "05",
+      "geoid": "2705",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "06",
+      "geoid": "2706",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "07",
+      "geoid": "2707",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "27",
+      "districtCode": "08",
+      "geoid": "2708",
+      "stateJurisdictionId": "us.jurisdiction.state.27"
+    },
+    {
+      "stateFips": "28",
+      "districtCode": "01",
+      "geoid": "2801",
+      "stateJurisdictionId": "us.jurisdiction.state.28"
+    },
+    {
+      "stateFips": "28",
+      "districtCode": "02",
+      "geoid": "2802",
+      "stateJurisdictionId": "us.jurisdiction.state.28"
+    },
+    {
+      "stateFips": "28",
+      "districtCode": "03",
+      "geoid": "2803",
+      "stateJurisdictionId": "us.jurisdiction.state.28"
+    },
+    {
+      "stateFips": "28",
+      "districtCode": "04",
+      "geoid": "2804",
+      "stateJurisdictionId": "us.jurisdiction.state.28"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "01",
+      "geoid": "2901",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "02",
+      "geoid": "2902",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "03",
+      "geoid": "2903",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "04",
+      "geoid": "2904",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "05",
+      "geoid": "2905",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "06",
+      "geoid": "2906",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "07",
+      "geoid": "2907",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "29",
+      "districtCode": "08",
+      "geoid": "2908",
+      "stateJurisdictionId": "us.jurisdiction.state.29"
+    },
+    {
+      "stateFips": "30",
+      "districtCode": "01",
+      "geoid": "3001",
+      "stateJurisdictionId": "us.jurisdiction.state.30"
+    },
+    {
+      "stateFips": "30",
+      "districtCode": "02",
+      "geoid": "3002",
+      "stateJurisdictionId": "us.jurisdiction.state.30"
+    },
+    {
+      "stateFips": "31",
+      "districtCode": "01",
+      "geoid": "3101",
+      "stateJurisdictionId": "us.jurisdiction.state.31"
+    },
+    {
+      "stateFips": "31",
+      "districtCode": "02",
+      "geoid": "3102",
+      "stateJurisdictionId": "us.jurisdiction.state.31"
+    },
+    {
+      "stateFips": "31",
+      "districtCode": "03",
+      "geoid": "3103",
+      "stateJurisdictionId": "us.jurisdiction.state.31"
+    },
+    {
+      "stateFips": "32",
+      "districtCode": "01",
+      "geoid": "3201",
+      "stateJurisdictionId": "us.jurisdiction.state.32"
+    },
+    {
+      "stateFips": "32",
+      "districtCode": "02",
+      "geoid": "3202",
+      "stateJurisdictionId": "us.jurisdiction.state.32"
+    },
+    {
+      "stateFips": "32",
+      "districtCode": "03",
+      "geoid": "3203",
+      "stateJurisdictionId": "us.jurisdiction.state.32"
+    },
+    {
+      "stateFips": "32",
+      "districtCode": "04",
+      "geoid": "3204",
+      "stateJurisdictionId": "us.jurisdiction.state.32"
+    },
+    {
+      "stateFips": "33",
+      "districtCode": "01",
+      "geoid": "3301",
+      "stateJurisdictionId": "us.jurisdiction.state.33"
+    },
+    {
+      "stateFips": "33",
+      "districtCode": "02",
+      "geoid": "3302",
+      "stateJurisdictionId": "us.jurisdiction.state.33"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "01",
+      "geoid": "3401",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "02",
+      "geoid": "3402",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "03",
+      "geoid": "3403",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "04",
+      "geoid": "3404",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "05",
+      "geoid": "3405",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "06",
+      "geoid": "3406",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "07",
+      "geoid": "3407",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "08",
+      "geoid": "3408",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "09",
+      "geoid": "3409",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "10",
+      "geoid": "3410",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "11",
+      "geoid": "3411",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "34",
+      "districtCode": "12",
+      "geoid": "3412",
+      "stateJurisdictionId": "us.jurisdiction.state.34"
+    },
+    {
+      "stateFips": "35",
+      "districtCode": "01",
+      "geoid": "3501",
+      "stateJurisdictionId": "us.jurisdiction.state.35"
+    },
+    {
+      "stateFips": "35",
+      "districtCode": "02",
+      "geoid": "3502",
+      "stateJurisdictionId": "us.jurisdiction.state.35"
+    },
+    {
+      "stateFips": "35",
+      "districtCode": "03",
+      "geoid": "3503",
+      "stateJurisdictionId": "us.jurisdiction.state.35"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "01",
+      "geoid": "3601",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "02",
+      "geoid": "3602",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "03",
+      "geoid": "3603",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "04",
+      "geoid": "3604",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "05",
+      "geoid": "3605",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "06",
+      "geoid": "3606",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "07",
+      "geoid": "3607",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "08",
+      "geoid": "3608",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "09",
+      "geoid": "3609",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "10",
+      "geoid": "3610",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "11",
+      "geoid": "3611",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "12",
+      "geoid": "3612",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "13",
+      "geoid": "3613",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "14",
+      "geoid": "3614",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "15",
+      "geoid": "3615",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "16",
+      "geoid": "3616",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "17",
+      "geoid": "3617",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "18",
+      "geoid": "3618",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "19",
+      "geoid": "3619",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "20",
+      "geoid": "3620",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "21",
+      "geoid": "3621",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "22",
+      "geoid": "3622",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "23",
+      "geoid": "3623",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "24",
+      "geoid": "3624",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "25",
+      "geoid": "3625",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "36",
+      "districtCode": "26",
+      "geoid": "3626",
+      "stateJurisdictionId": "us.jurisdiction.state.36"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "01",
+      "geoid": "3701",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "02",
+      "geoid": "3702",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "03",
+      "geoid": "3703",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "04",
+      "geoid": "3704",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "05",
+      "geoid": "3705",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "06",
+      "geoid": "3706",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "07",
+      "geoid": "3707",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "08",
+      "geoid": "3708",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "09",
+      "geoid": "3709",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "10",
+      "geoid": "3710",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "11",
+      "geoid": "3711",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "12",
+      "geoid": "3712",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "13",
+      "geoid": "3713",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "37",
+      "districtCode": "14",
+      "geoid": "3714",
+      "stateJurisdictionId": "us.jurisdiction.state.37"
+    },
+    {
+      "stateFips": "38",
+      "districtCode": "00",
+      "geoid": "3800",
+      "stateJurisdictionId": "us.jurisdiction.state.38"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "01",
+      "geoid": "3901",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "02",
+      "geoid": "3902",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "03",
+      "geoid": "3903",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "04",
+      "geoid": "3904",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "05",
+      "geoid": "3905",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "06",
+      "geoid": "3906",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "07",
+      "geoid": "3907",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "08",
+      "geoid": "3908",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "09",
+      "geoid": "3909",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "10",
+      "geoid": "3910",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "11",
+      "geoid": "3911",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "12",
+      "geoid": "3912",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "13",
+      "geoid": "3913",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "14",
+      "geoid": "3914",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "39",
+      "districtCode": "15",
+      "geoid": "3915",
+      "stateJurisdictionId": "us.jurisdiction.state.39"
+    },
+    {
+      "stateFips": "40",
+      "districtCode": "01",
+      "geoid": "4001",
+      "stateJurisdictionId": "us.jurisdiction.state.40"
+    },
+    {
+      "stateFips": "40",
+      "districtCode": "02",
+      "geoid": "4002",
+      "stateJurisdictionId": "us.jurisdiction.state.40"
+    },
+    {
+      "stateFips": "40",
+      "districtCode": "03",
+      "geoid": "4003",
+      "stateJurisdictionId": "us.jurisdiction.state.40"
+    },
+    {
+      "stateFips": "40",
+      "districtCode": "04",
+      "geoid": "4004",
+      "stateJurisdictionId": "us.jurisdiction.state.40"
+    },
+    {
+      "stateFips": "40",
+      "districtCode": "05",
+      "geoid": "4005",
+      "stateJurisdictionId": "us.jurisdiction.state.40"
+    },
+    {
+      "stateFips": "41",
+      "districtCode": "01",
+      "geoid": "4101",
+      "stateJurisdictionId": "us.jurisdiction.state.41"
+    },
+    {
+      "stateFips": "41",
+      "districtCode": "02",
+      "geoid": "4102",
+      "stateJurisdictionId": "us.jurisdiction.state.41"
+    },
+    {
+      "stateFips": "41",
+      "districtCode": "03",
+      "geoid": "4103",
+      "stateJurisdictionId": "us.jurisdiction.state.41"
+    },
+    {
+      "stateFips": "41",
+      "districtCode": "04",
+      "geoid": "4104",
+      "stateJurisdictionId": "us.jurisdiction.state.41"
+    },
+    {
+      "stateFips": "41",
+      "districtCode": "05",
+      "geoid": "4105",
+      "stateJurisdictionId": "us.jurisdiction.state.41"
+    },
+    {
+      "stateFips": "41",
+      "districtCode": "06",
+      "geoid": "4106",
+      "stateJurisdictionId": "us.jurisdiction.state.41"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "01",
+      "geoid": "4201",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "02",
+      "geoid": "4202",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "03",
+      "geoid": "4203",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "04",
+      "geoid": "4204",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "05",
+      "geoid": "4205",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "06",
+      "geoid": "4206",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "07",
+      "geoid": "4207",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "08",
+      "geoid": "4208",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "09",
+      "geoid": "4209",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "10",
+      "geoid": "4210",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "11",
+      "geoid": "4211",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "12",
+      "geoid": "4212",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "13",
+      "geoid": "4213",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "14",
+      "geoid": "4214",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "15",
+      "geoid": "4215",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "16",
+      "geoid": "4216",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "42",
+      "districtCode": "17",
+      "geoid": "4217",
+      "stateJurisdictionId": "us.jurisdiction.state.42"
+    },
+    {
+      "stateFips": "44",
+      "districtCode": "01",
+      "geoid": "4401",
+      "stateJurisdictionId": "us.jurisdiction.state.44"
+    },
+    {
+      "stateFips": "44",
+      "districtCode": "02",
+      "geoid": "4402",
+      "stateJurisdictionId": "us.jurisdiction.state.44"
+    },
+    {
+      "stateFips": "45",
+      "districtCode": "01",
+      "geoid": "4501",
+      "stateJurisdictionId": "us.jurisdiction.state.45"
+    },
+    {
+      "stateFips": "45",
+      "districtCode": "02",
+      "geoid": "4502",
+      "stateJurisdictionId": "us.jurisdiction.state.45"
+    },
+    {
+      "stateFips": "45",
+      "districtCode": "03",
+      "geoid": "4503",
+      "stateJurisdictionId": "us.jurisdiction.state.45"
+    },
+    {
+      "stateFips": "45",
+      "districtCode": "04",
+      "geoid": "4504",
+      "stateJurisdictionId": "us.jurisdiction.state.45"
+    },
+    {
+      "stateFips": "45",
+      "districtCode": "05",
+      "geoid": "4505",
+      "stateJurisdictionId": "us.jurisdiction.state.45"
+    },
+    {
+      "stateFips": "45",
+      "districtCode": "06",
+      "geoid": "4506",
+      "stateJurisdictionId": "us.jurisdiction.state.45"
+    },
+    {
+      "stateFips": "45",
+      "districtCode": "07",
+      "geoid": "4507",
+      "stateJurisdictionId": "us.jurisdiction.state.45"
+    },
+    {
+      "stateFips": "46",
+      "districtCode": "00",
+      "geoid": "4600",
+      "stateJurisdictionId": "us.jurisdiction.state.46"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "01",
+      "geoid": "4701",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "02",
+      "geoid": "4702",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "03",
+      "geoid": "4703",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "04",
+      "geoid": "4704",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "05",
+      "geoid": "4705",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "06",
+      "geoid": "4706",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "07",
+      "geoid": "4707",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "08",
+      "geoid": "4708",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "47",
+      "districtCode": "09",
+      "geoid": "4709",
+      "stateJurisdictionId": "us.jurisdiction.state.47"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "01",
+      "geoid": "4801",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "02",
+      "geoid": "4802",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "03",
+      "geoid": "4803",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "04",
+      "geoid": "4804",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "05",
+      "geoid": "4805",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "06",
+      "geoid": "4806",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "07",
+      "geoid": "4807",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "08",
+      "geoid": "4808",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "09",
+      "geoid": "4809",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "10",
+      "geoid": "4810",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "11",
+      "geoid": "4811",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "12",
+      "geoid": "4812",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "13",
+      "geoid": "4813",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "14",
+      "geoid": "4814",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "15",
+      "geoid": "4815",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "16",
+      "geoid": "4816",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "17",
+      "geoid": "4817",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "18",
+      "geoid": "4818",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "19",
+      "geoid": "4819",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "20",
+      "geoid": "4820",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "21",
+      "geoid": "4821",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "22",
+      "geoid": "4822",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "23",
+      "geoid": "4823",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "24",
+      "geoid": "4824",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "25",
+      "geoid": "4825",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "26",
+      "geoid": "4826",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "27",
+      "geoid": "4827",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "28",
+      "geoid": "4828",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "29",
+      "geoid": "4829",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "30",
+      "geoid": "4830",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "31",
+      "geoid": "4831",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "32",
+      "geoid": "4832",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "33",
+      "geoid": "4833",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "34",
+      "geoid": "4834",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "35",
+      "geoid": "4835",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "36",
+      "geoid": "4836",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "37",
+      "geoid": "4837",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "48",
+      "districtCode": "38",
+      "geoid": "4838",
+      "stateJurisdictionId": "us.jurisdiction.state.48"
+    },
+    {
+      "stateFips": "49",
+      "districtCode": "01",
+      "geoid": "4901",
+      "stateJurisdictionId": "us.jurisdiction.state.49"
+    },
+    {
+      "stateFips": "49",
+      "districtCode": "02",
+      "geoid": "4902",
+      "stateJurisdictionId": "us.jurisdiction.state.49"
+    },
+    {
+      "stateFips": "49",
+      "districtCode": "03",
+      "geoid": "4903",
+      "stateJurisdictionId": "us.jurisdiction.state.49"
+    },
+    {
+      "stateFips": "49",
+      "districtCode": "04",
+      "geoid": "4904",
+      "stateJurisdictionId": "us.jurisdiction.state.49"
+    },
+    {
+      "stateFips": "50",
+      "districtCode": "00",
+      "geoid": "5000",
+      "stateJurisdictionId": "us.jurisdiction.state.50"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "01",
+      "geoid": "5101",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "02",
+      "geoid": "5102",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "03",
+      "geoid": "5103",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "04",
+      "geoid": "5104",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "05",
+      "geoid": "5105",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "06",
+      "geoid": "5106",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "07",
+      "geoid": "5107",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "08",
+      "geoid": "5108",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "09",
+      "geoid": "5109",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "10",
+      "geoid": "5110",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "51",
+      "districtCode": "11",
+      "geoid": "5111",
+      "stateJurisdictionId": "us.jurisdiction.state.51"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "01",
+      "geoid": "5301",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "02",
+      "geoid": "5302",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "03",
+      "geoid": "5303",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "04",
+      "geoid": "5304",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "05",
+      "geoid": "5305",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "06",
+      "geoid": "5306",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "07",
+      "geoid": "5307",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "08",
+      "geoid": "5308",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "09",
+      "geoid": "5309",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "53",
+      "districtCode": "10",
+      "geoid": "5310",
+      "stateJurisdictionId": "us.jurisdiction.state.53"
+    },
+    {
+      "stateFips": "54",
+      "districtCode": "01",
+      "geoid": "5401",
+      "stateJurisdictionId": "us.jurisdiction.state.54"
+    },
+    {
+      "stateFips": "54",
+      "districtCode": "02",
+      "geoid": "5402",
+      "stateJurisdictionId": "us.jurisdiction.state.54"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "01",
+      "geoid": "5501",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "02",
+      "geoid": "5502",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "03",
+      "geoid": "5503",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "04",
+      "geoid": "5504",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "05",
+      "geoid": "5505",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "06",
+      "geoid": "5506",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "07",
+      "geoid": "5507",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "55",
+      "districtCode": "08",
+      "geoid": "5508",
+      "stateJurisdictionId": "us.jurisdiction.state.55"
+    },
+    {
+      "stateFips": "56",
+      "districtCode": "00",
+      "geoid": "5600",
+      "stateJurisdictionId": "us.jurisdiction.state.56"
+    }
+  ],
+  "apportionment": [
+    {
+      "stateFips": "01",
+      "stateUsps": "AL",
+      "votingSeats": 7
+    },
+    {
+      "stateFips": "02",
+      "stateUsps": "AK",
+      "votingSeats": 1
+    },
+    {
+      "stateFips": "04",
+      "stateUsps": "AZ",
+      "votingSeats": 9
+    },
+    {
+      "stateFips": "05",
+      "stateUsps": "AR",
+      "votingSeats": 4
+    },
+    {
+      "stateFips": "06",
+      "stateUsps": "CA",
+      "votingSeats": 52
+    },
+    {
+      "stateFips": "08",
+      "stateUsps": "CO",
+      "votingSeats": 8
+    },
+    {
+      "stateFips": "09",
+      "stateUsps": "CT",
+      "votingSeats": 5
+    },
+    {
+      "stateFips": "10",
+      "stateUsps": "DE",
+      "votingSeats": 1
+    },
+    {
+      "stateFips": "12",
+      "stateUsps": "FL",
+      "votingSeats": 28
+    },
+    {
+      "stateFips": "13",
+      "stateUsps": "GA",
+      "votingSeats": 14
+    },
+    {
+      "stateFips": "15",
+      "stateUsps": "HI",
+      "votingSeats": 2
+    },
+    {
+      "stateFips": "16",
+      "stateUsps": "ID",
+      "votingSeats": 2
+    },
+    {
+      "stateFips": "17",
+      "stateUsps": "IL",
+      "votingSeats": 17
+    },
+    {
+      "stateFips": "18",
+      "stateUsps": "IN",
+      "votingSeats": 9
+    },
+    {
+      "stateFips": "19",
+      "stateUsps": "IA",
+      "votingSeats": 4
+    },
+    {
+      "stateFips": "20",
+      "stateUsps": "KS",
+      "votingSeats": 4
+    },
+    {
+      "stateFips": "21",
+      "stateUsps": "KY",
+      "votingSeats": 6
+    },
+    {
+      "stateFips": "22",
+      "stateUsps": "LA",
+      "votingSeats": 6
+    },
+    {
+      "stateFips": "23",
+      "stateUsps": "ME",
+      "votingSeats": 2
+    },
+    {
+      "stateFips": "24",
+      "stateUsps": "MD",
+      "votingSeats": 8
+    },
+    {
+      "stateFips": "25",
+      "stateUsps": "MA",
+      "votingSeats": 9
+    },
+    {
+      "stateFips": "26",
+      "stateUsps": "MI",
+      "votingSeats": 13
+    },
+    {
+      "stateFips": "27",
+      "stateUsps": "MN",
+      "votingSeats": 8
+    },
+    {
+      "stateFips": "28",
+      "stateUsps": "MS",
+      "votingSeats": 4
+    },
+    {
+      "stateFips": "29",
+      "stateUsps": "MO",
+      "votingSeats": 8
+    },
+    {
+      "stateFips": "30",
+      "stateUsps": "MT",
+      "votingSeats": 2
+    },
+    {
+      "stateFips": "31",
+      "stateUsps": "NE",
+      "votingSeats": 3
+    },
+    {
+      "stateFips": "32",
+      "stateUsps": "NV",
+      "votingSeats": 4
+    },
+    {
+      "stateFips": "33",
+      "stateUsps": "NH",
+      "votingSeats": 2
+    },
+    {
+      "stateFips": "34",
+      "stateUsps": "NJ",
+      "votingSeats": 12
+    },
+    {
+      "stateFips": "35",
+      "stateUsps": "NM",
+      "votingSeats": 3
+    },
+    {
+      "stateFips": "36",
+      "stateUsps": "NY",
+      "votingSeats": 26
+    },
+    {
+      "stateFips": "37",
+      "stateUsps": "NC",
+      "votingSeats": 14
+    },
+    {
+      "stateFips": "38",
+      "stateUsps": "ND",
+      "votingSeats": 1
+    },
+    {
+      "stateFips": "39",
+      "stateUsps": "OH",
+      "votingSeats": 15
+    },
+    {
+      "stateFips": "40",
+      "stateUsps": "OK",
+      "votingSeats": 5
+    },
+    {
+      "stateFips": "41",
+      "stateUsps": "OR",
+      "votingSeats": 6
+    },
+    {
+      "stateFips": "42",
+      "stateUsps": "PA",
+      "votingSeats": 17
+    },
+    {
+      "stateFips": "44",
+      "stateUsps": "RI",
+      "votingSeats": 2
+    },
+    {
+      "stateFips": "45",
+      "stateUsps": "SC",
+      "votingSeats": 7
+    },
+    {
+      "stateFips": "46",
+      "stateUsps": "SD",
+      "votingSeats": 1
+    },
+    {
+      "stateFips": "47",
+      "stateUsps": "TN",
+      "votingSeats": 9
+    },
+    {
+      "stateFips": "48",
+      "stateUsps": "TX",
+      "votingSeats": 38
+    },
+    {
+      "stateFips": "49",
+      "stateUsps": "UT",
+      "votingSeats": 4
+    },
+    {
+      "stateFips": "50",
+      "stateUsps": "VT",
+      "votingSeats": 1
+    },
+    {
+      "stateFips": "51",
+      "stateUsps": "VA",
+      "votingSeats": 11
+    },
+    {
+      "stateFips": "53",
+      "stateUsps": "WA",
+      "votingSeats": 10
+    },
+    {
+      "stateFips": "54",
+      "stateUsps": "WV",
+      "votingSeats": 2
+    },
+    {
+      "stateFips": "55",
+      "stateUsps": "WI",
+      "votingSeats": 8
+    },
+    {
+      "stateFips": "56",
+      "stateUsps": "WY",
+      "votingSeats": 1
+    }
+  ]
+}

@@ -23,7 +23,7 @@ const importRules = [
   },
   {
     root: "src/configuration",
-    forbidden: ["src/content", "../content", "src/ui", "../ui", "electron", "react", "react-dom"],
+    forbidden: ["src/content", "../content", "src/ui", "../ui", "electron", "react", "react-dom", "node:"],
     reason: "production configuration loading/bootstrap cannot depend on a named content package or presentation",
   },
   {
@@ -114,15 +114,51 @@ for (const file of await listSourceFiles(join(root, "src/sim"))) {
 
 const genericConfigurationFiles = [
   ...(await listSourceFiles(join(root, "src/sim"))),
+  ...(await listSourceFiles(join(root, "src/configuration"))),
+];
+const configurationIdentityBranchFiles = [
+  ...(await listSourceFiles(join(root, "src/sim"))),
   join(root, "src/configuration/bootstrap.ts"),
 ];
-for (const file of genericConfigurationFiles) {
+for (const file of configurationIdentityBranchFiles) {
   const source = stripComments(await readFile(file, "utf8"));
   if (
     /(?:if|switch)\s*\([^)]*(?:configurationId|scenarioId)[^)]*\)/m.test(source) ||
     /(?:configurationId|scenarioId)\s*={2,3}/m.test(source)
   ) {
     violations.push(`${relative(root, file)} branches on configuration/scenario identity`);
+  }
+}
+
+const genericTopologyExecutionTokens = [
+  "United States",
+  "House",
+  "Senate",
+  "President",
+  "Vice President",
+  "HUD",
+  "OMB",
+  "NARA",
+  "Census",
+  "DOJ",
+  "District of Colorado",
+  "Tenth Circuit",
+];
+for (const file of genericConfigurationFiles) {
+  const source = stripComments(await readFile(file, "utf8"));
+  for (const token of genericTopologyExecutionTokens) {
+    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${escaped}\\b`, "i").test(source)) {
+      violations.push(`${relative(root, file)} contains U.S.-specific topology dependency ${token}`);
+    }
+  }
+}
+for (const file of await listSourceFiles(join(root, "src/configuration"))) {
+  const source = stripComments(await readFile(file, "utf8"));
+  for (const numericToken of [435, 100, 50, 52]) {
+    if (new RegExp(`(^|[^0-9_])${numericToken}([^0-9_]|$)`).test(source)) {
+      violations.push(`${relative(root, file)} contains U.S.-specific topology number ${numericToken}`);
+    }
   }
 }
 

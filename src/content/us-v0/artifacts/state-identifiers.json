@@ -1,0 +1,325 @@
+{
+  "metadata": {
+    "artifactId": "us.topology.state-identifiers-v1",
+    "vintage": "Census ANSI/FIPS/GNIS reference retrieved 2026-08-22",
+    "transformationVersion": "i2-us-topology-v1",
+    "contentSha256": "b54b3a9f7a444a7df0ff37b841f1b5b0aeccebaf6e74b8a4291db9562801bb0d",
+    "sources": [
+      {
+        "sourceId": "USR-SRC-0085",
+        "product": "Census National FIPS and GNIS Codes File",
+        "locator": "https://www2.census.gov/geo/docs/reference/state.txt",
+        "retrievedAt": "2026-08-22",
+        "rawSha256": "bea4e03f71a1fa0045ae732aabad11fa541e5932b071c2369bb0d325e8cba5a0"
+      }
+    ]
+  },
+  "records": [
+    {
+      "stateFips": "01",
+      "stateUsps": "AL",
+      "officialName": "Alabama",
+      "gnisId": "01779775"
+    },
+    {
+      "stateFips": "02",
+      "stateUsps": "AK",
+      "officialName": "Alaska",
+      "gnisId": "01785533"
+    },
+    {
+      "stateFips": "04",
+      "stateUsps": "AZ",
+      "officialName": "Arizona",
+      "gnisId": "01779777"
+    },
+    {
+      "stateFips": "05",
+      "stateUsps": "AR",
+      "officialName": "Arkansas",
+      "gnisId": "00068085"
+    },
+    {
+      "stateFips": "06",
+      "stateUsps": "CA",
+      "officialName": "California",
+      "gnisId": "01779778"
+    },
+    {
+      "stateFips": "08",
+      "stateUsps": "CO",
+      "officialName": "Colorado",
+      "gnisId": "01779779"
+    },
+    {
+      "stateFips": "09",
+      "stateUsps": "CT",
+      "officialName": "Connecticut",
+      "gnisId": "01779780"
+    },
+    {
+      "stateFips": "10",
+      "stateUsps": "DE",
+      "officialName": "Delaware",
+      "gnisId": "01779781"
+    },
+    {
+      "stateFips": "11",
+      "stateUsps": "DC",
+      "officialName": "District of Columbia",
+      "gnisId": "01702382"
+    },
+    {
+      "stateFips": "12",
+      "stateUsps": "FL",
+      "officialName": "Florida",
+      "gnisId": "00294478"
+    },
+    {
+      "stateFips": "13",
+      "stateUsps": "GA",
+      "officialName": "Georgia",
+      "gnisId": "01705317"
+    },
+    {
+      "stateFips": "15",
+      "stateUsps": "HI",
+      "officialName": "Hawaii",
+      "gnisId": "01779782"
+    },
+    {
+      "stateFips": "16",
+      "stateUsps": "ID",
+      "officialName": "Idaho",
+      "gnisId": "01779783"
+    },
+    {
+      "stateFips": "17",
+      "stateUsps": "IL",
+      "officialName": "Illinois",
+      "gnisId": "01779784"
+    },
+    {
+      "stateFips": "18",
+      "stateUsps": "IN",
+      "officialName": "Indiana",
+      "gnisId": "00448508"
+    },
+    {
+      "stateFips": "19",
+      "stateUsps": "IA",
+      "officialName": "Iowa",
+      "gnisId": "01779785"
+    },
+    {
+      "stateFips": "20",
+      "stateUsps": "KS",
+      "officialName": "Kansas",
+      "gnisId": "00481813"
+    },
+    {
+      "stateFips": "21",
+      "stateUsps": "KY",
+      "officialName": "Kentucky",
+      "gnisId": "01779786"
+    },
+    {
+      "stateFips": "22",
+      "stateUsps": "LA",
+      "officialName": "Louisiana",
+      "gnisId": "01629543"
+    },
+    {
+      "stateFips": "23",
+      "stateUsps": "ME",
+      "officialName": "Maine",
+      "gnisId": "01779787"
+    },
+    {
+      "stateFips": "24",
+      "stateUsps": "MD",
+      "officialName": "Maryland",
+      "gnisId": "01714934"
+    },
+    {
+      "stateFips": "25",
+      "stateUsps": "MA",
+      "officialName": "Massachusetts",
+      "gnisId": "00606926"
+    },
+    {
+      "stateFips": "26",
+      "stateUsps": "MI",
+      "officialName": "Michigan",
+      "gnisId": "01779789"
+    },
+    {
+      "stateFips": "27",
+      "stateUsps": "MN",
+      "officialName": "Minnesota",
+      "gnisId": "00662849"
+    },
+    {
+      "stateFips": "28",
+      "stateUsps": "MS",
+      "officialName": "Mississippi",
+      "gnisId": "01779790"
+    },
+    {
+      "stateFips": "29",
+      "stateUsps": "MO",
+      "officialName": "Missouri",
+      "gnisId": "01779791"
+    },
+    {
+      "stateFips": "30",
+      "stateUsps": "MT",
+      "officialName": "Montana",
+      "gnisId": "00767982"
+    },
+    {
+      "stateFips": "31",
+      "stateUsps": "NE",
+      "officialName": "Nebraska",
+      "gnisId": "01779792"
+    },
+    {
+      "stateFips": "32",
+      "stateUsps": "NV",
+      "officialName": "Nevada",
+      "gnisId": "01779793"
+    },
+    {
+      "stateFips": "33",
+      "stateUsps": "NH",
+      "officialName": "New Hampshire",
+      "gnisId": "01779794"
+    },
+    {
+      "stateFips": "34",
+      "stateUsps": "NJ",
+      "officialName": "New Jersey",
+      "gnisId": "01779795"
+    },
+    {
+      "stateFips": "35",
+      "stateUsps": "NM",
+      "officialName": "New Mexico",
+      "gnisId": "00897535"
+    },
+    {
+      "stateFips": "36",
+      "stateUsps": "NY",
+      "officialName": "New York",
+      "gnisId": "01779796"
+    },
+    {
+      "stateFips": "37",
+      "stateUsps": "NC",
+      "officialName": "North Carolina",
+      "gnisId": "01027616"
+    },
+    {
+      "stateFips": "38",
+      "stateUsps": "ND",
+      "officialName": "North Dakota",
+      "gnisId": "01779797"
+    },
+    {
+      "stateFips": "39",
+      "stateUsps": "OH",
+      "officialName": "Ohio",
+      "gnisId": "01085497"
+    },
+    {
+      "stateFips": "40",
+      "stateUsps": "OK",
+      "officialName": "Oklahoma",
+      "gnisId": "01102857"
+    },
+    {
+      "stateFips": "41",
+      "stateUsps": "OR",
+      "officialName": "Oregon",
+      "gnisId": "01155107"
+    },
+    {
+      "stateFips": "42",
+      "stateUsps": "PA",
+      "officialName": "Pennsylvania",
+      "gnisId": "01779798"
+    },
+    {
+      "stateFips": "44",
+      "stateUsps": "RI",
+      "officialName": "Rhode Island",
+      "gnisId": "01219835"
+    },
+    {
+      "stateFips": "45",
+      "stateUsps": "SC",
+      "officialName": "South Carolina",
+      "gnisId": "01779799"
+    },
+    {
+      "stateFips": "46",
+      "stateUsps": "SD",
+      "officialName": "South Dakota",
+      "gnisId": "01785534"
+    },
+    {
+      "stateFips": "47",
+      "stateUsps": "TN",
+      "officialName": "Tennessee",
+      "gnisId": "01325873"
+    },
+    {
+      "stateFips": "48",
+      "stateUsps": "TX",
+      "officialName": "Texas",
+      "gnisId": "01779801"
+    },
+    {
+      "stateFips": "49",
+      "stateUsps": "UT",
+      "officialName": "Utah",
+      "gnisId": "01455989"
+    },
+    {
+      "stateFips": "50",
+      "stateUsps": "VT",
+      "officialName": "Vermont",
+      "gnisId": "01779802"
+    },
+    {
+      "stateFips": "51",
+      "stateUsps": "VA",
+      "officialName": "Virginia",
+      "gnisId": "01779803"
+    },
+    {
+      "stateFips": "53",
+      "stateUsps": "WA",
+      "officialName": "Washington",
+      "gnisId": "01779804"
+    },
+    {
+      "stateFips": "54",
+      "stateUsps": "WV",
+      "officialName": "West Virginia",
+      "gnisId": "01779805"
+    },
+    {
+      "stateFips": "55",
+      "stateUsps": "WI",
+      "officialName": "Wisconsin",
+      "gnisId": "01779806"
+    },
+    {
+      "stateFips": "56",
+      "stateUsps": "WY",
+      "officialName": "Wyoming",
+      "gnisId": "01779807"
+    }
+  ]
+}

@@ -26,10 +26,12 @@ describe("I1 production configuration boundary", () => {
   it("loads and hash-verifies the accepted synthetic configuration", () => {
     const loaded = loadGovernmentConfiguration(GL0_SYNTHETIC_CONFIGURATION);
     expect(loaded.loaded).toBe(true);
-    expect(loaded.structure.chambers).toEqual([
-      { id: "gl0-single-chamber", seatCount: 11 },
-    ]);
-    expect(loaded.structure.jurisdictionIds).toHaveLength(3);
+    expect(loaded.structure.chambers).toHaveLength(1);
+    expect(loaded.structure.chambers[0]).toMatchObject({
+      id: "gl0-single-chamber",
+      seatCount: 11,
+    });
+    expect(loaded.structure.jurisdictions).toHaveLength(3);
     assertDeclaredConfigurationHash(loaded, sha256For(GL0_SYNTHETIC_CONFIGURATION));
   });
 
@@ -41,10 +43,13 @@ describe("I1 production configuration boundary", () => {
     expect(bootstrap.world?.configuration).toEqual(GL0_SYNTHETIC_CONFIGURATION.identity);
   });
 
-  it("boots a structurally different, explicitly incomplete U.S. proof through the same boundary", () => {
+  it("boots a structurally different, non-playable U.S. topology through the same boundary", () => {
     const bootstrap = bootstrapGovernmentConfiguration(US_V0_STRUCTURAL_CONFIGURATION);
     expect(bootstrap.configuration.structure.chambers).toHaveLength(2);
-    expect(bootstrap.configuration.structure.chambers.every((chamber) => chamber.seatCount === null)).toBe(true);
+    expect(bootstrap.configuration.structure.chambers.map((chamber) => chamber.seatCount)).toEqual([
+      435,
+      100,
+    ]);
     expect(bootstrap.configuration.calendar.kind).toBe("REAL_CALENDAR");
     expect(bootstrap.configuration.capability).toBe("STRUCTURAL_PROOF_ONLY");
     expect(bootstrap.playable).toBe(false);
@@ -61,10 +66,10 @@ describe("I1 production configuration boundary", () => {
       ...US_V0_STRUCTURAL_CONFIGURATION,
       structure: {
         ...US_V0_STRUCTURAL_CONFIGURATION.structure,
-        chambers: [
-          { id: "duplicate", seatCount: null },
-          { id: "duplicate", seatCount: null },
-        ],
+        chambers: US_V0_STRUCTURAL_CONFIGURATION.structure.chambers.map((chamber) => ({
+          ...chamber,
+          id: "duplicate",
+        })),
       },
     } satisfies GovernmentConfiguration<never>;
     expect(() => loadGovernmentConfiguration(duplicateChamber)).toThrow(/unique IDs/);
@@ -99,7 +104,10 @@ describe("I1 production configuration boundary", () => {
       ...GL0_SYNTHETIC_CONFIGURATION,
       structure: {
         ...GL0_SYNTHETIC_CONFIGURATION.structure,
-        chambers: [{ id: "gl0-single-chamber", seatCount: 12 }],
+        chambers: GL0_SYNTHETIC_CONFIGURATION.structure.chambers.map((chamber) => ({
+          ...chamber,
+          seatCount: 12,
+        })),
       },
     } satisfies GovernmentConfiguration;
     expect(sha256For(changed)).not.toBe(GL0_SYNTHETIC_CONFIGURATION.identity.configurationHash);

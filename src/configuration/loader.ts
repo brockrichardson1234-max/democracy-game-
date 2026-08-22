@@ -1,4 +1,5 @@
 import { canonicalConfigurationContent } from "./canonical";
+import { validateGovernmentStructure } from "./topology-validation";
 import type {
   GovernmentConfiguration,
   LoadedGovernmentConfiguration,
@@ -233,23 +234,7 @@ export const loadGovernmentConfiguration = <TRuntimeSeed>(
     throw new Error("Configuration configurationHash must be a lowercase SHA-256 value.");
   }
   requireNonempty(configuration.calendar.epoch, "calendar.epoch");
-  requireNonempty(configuration.structure.legislatureId, "structure.legislatureId");
-  requireUnique(configuration.structure.jurisdictionIds, "structure.jurisdictionIds");
-  requireUnique(
-    configuration.structure.chambers.map((chamber) => chamber.id),
-    "structure.chambers",
-  );
-  if (configuration.structure.chambers.length === 0) {
-    throw new Error("Configuration must declare at least one legislative chamber.");
-  }
-  for (const chamber of configuration.structure.chambers) {
-    if (
-      chamber.seatCount !== null &&
-      (!Number.isInteger(chamber.seatCount) || chamber.seatCount <= 0)
-    ) {
-      throw new Error(`Configuration chamber ${chamber.id} has an invalid seat count.`);
-    }
-  }
+  validateGovernmentStructure(configuration.structure);
 
   requireUnique(
     configuration.transitions.map((transition) => transition.id),

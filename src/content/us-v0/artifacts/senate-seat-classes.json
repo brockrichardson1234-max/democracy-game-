@@ -1,0 +1,633 @@
+{
+  "metadata": {
+    "artifactId": "us.topology.senate-seat-classes-v1",
+    "vintage": "Official Senate class records retrieved 2026-08-22",
+    "transformationVersion": "i2-us-topology-v1",
+    "contentSha256": "2abf8e77c03c12d9fd99a64cc999ceb60675c3efede3081cb46faa88472260a0",
+    "sources": [
+      {
+        "sourceId": "USR-SRC-0010",
+        "product": "Official Senate Class I record",
+        "locator": "https://www.senate.gov/senators/Class_I.htm",
+        "retrievedAt": "2026-08-22",
+        "rawSha256": "cfed4b2ffad38fd9edbee4a3a437e0478e6deb934b44db79ff340f818063b3d1"
+      },
+      {
+        "sourceId": "USR-SRC-0010",
+        "product": "Official Senate Class II record",
+        "locator": "https://www.senate.gov/senators/Class_II.htm",
+        "retrievedAt": "2026-08-22",
+        "rawSha256": "4b266287eaee132c92e34682ee1874835d31a382cbdb02b39e6ae9fd4af1a936"
+      },
+      {
+        "sourceId": "USR-SRC-0010",
+        "product": "Official Senate Class III record",
+        "locator": "https://www.senate.gov/senators/Class_III.htm",
+        "retrievedAt": "2026-08-22",
+        "rawSha256": "ba3cfd31a8a75e4336774f8b1ef90877bf4c06091e2e36180977258fbbec8249"
+      }
+    ]
+  },
+  "records": [
+    {
+      "stateFips": "01",
+      "stateUsps": "AL",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "01",
+      "stateUsps": "AL",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "02",
+      "stateUsps": "AK",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "02",
+      "stateUsps": "AK",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "04",
+      "stateUsps": "AZ",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "04",
+      "stateUsps": "AZ",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "05",
+      "stateUsps": "AR",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "05",
+      "stateUsps": "AR",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "06",
+      "stateUsps": "CA",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "06",
+      "stateUsps": "CA",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "08",
+      "stateUsps": "CO",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "08",
+      "stateUsps": "CO",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "09",
+      "stateUsps": "CT",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "09",
+      "stateUsps": "CT",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "10",
+      "stateUsps": "DE",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "10",
+      "stateUsps": "DE",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "12",
+      "stateUsps": "FL",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "12",
+      "stateUsps": "FL",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "13",
+      "stateUsps": "GA",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "13",
+      "stateUsps": "GA",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "15",
+      "stateUsps": "HI",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "15",
+      "stateUsps": "HI",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "16",
+      "stateUsps": "ID",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "16",
+      "stateUsps": "ID",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "17",
+      "stateUsps": "IL",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "17",
+      "stateUsps": "IL",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "18",
+      "stateUsps": "IN",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "18",
+      "stateUsps": "IN",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "19",
+      "stateUsps": "IA",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "19",
+      "stateUsps": "IA",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "20",
+      "stateUsps": "KS",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "20",
+      "stateUsps": "KS",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "21",
+      "stateUsps": "KY",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "21",
+      "stateUsps": "KY",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "22",
+      "stateUsps": "LA",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "22",
+      "stateUsps": "LA",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "23",
+      "stateUsps": "ME",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "23",
+      "stateUsps": "ME",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "24",
+      "stateUsps": "MD",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "24",
+      "stateUsps": "MD",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "25",
+      "stateUsps": "MA",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "25",
+      "stateUsps": "MA",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "26",
+      "stateUsps": "MI",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "26",
+      "stateUsps": "MI",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "27",
+      "stateUsps": "MN",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "27",
+      "stateUsps": "MN",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "28",
+      "stateUsps": "MS",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "28",
+      "stateUsps": "MS",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "29",
+      "stateUsps": "MO",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "29",
+      "stateUsps": "MO",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "30",
+      "stateUsps": "MT",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "30",
+      "stateUsps": "MT",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "31",
+      "stateUsps": "NE",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "31",
+      "stateUsps": "NE",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "32",
+      "stateUsps": "NV",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "32",
+      "stateUsps": "NV",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "33",
+      "stateUsps": "NH",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "33",
+      "stateUsps": "NH",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "34",
+      "stateUsps": "NJ",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "34",
+      "stateUsps": "NJ",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "35",
+      "stateUsps": "NM",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "35",
+      "stateUsps": "NM",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "36",
+      "stateUsps": "NY",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "36",
+      "stateUsps": "NY",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "37",
+      "stateUsps": "NC",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "37",
+      "stateUsps": "NC",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "38",
+      "stateUsps": "ND",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "38",
+      "stateUsps": "ND",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "39",
+      "stateUsps": "OH",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "39",
+      "stateUsps": "OH",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "40",
+      "stateUsps": "OK",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "40",
+      "stateUsps": "OK",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "41",
+      "stateUsps": "OR",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "41",
+      "stateUsps": "OR",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "42",
+      "stateUsps": "PA",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "42",
+      "stateUsps": "PA",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "44",
+      "stateUsps": "RI",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "44",
+      "stateUsps": "RI",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "45",
+      "stateUsps": "SC",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "45",
+      "stateUsps": "SC",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "46",
+      "stateUsps": "SD",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "46",
+      "stateUsps": "SD",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "47",
+      "stateUsps": "TN",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "47",
+      "stateUsps": "TN",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "48",
+      "stateUsps": "TX",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "48",
+      "stateUsps": "TX",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "49",
+      "stateUsps": "UT",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "49",
+      "stateUsps": "UT",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "50",
+      "stateUsps": "VT",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "50",
+      "stateUsps": "VT",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "51",
+      "stateUsps": "VA",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "51",
+      "stateUsps": "VA",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "53",
+      "stateUsps": "WA",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "53",
+      "stateUsps": "WA",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "54",
+      "stateUsps": "WV",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "54",
+      "stateUsps": "WV",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "55",
+      "stateUsps": "WI",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "55",
+      "stateUsps": "WI",
+      "classLabel": "III",
+      "ordinaryBoundaryAt": "2029-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "56",
+      "stateUsps": "WY",
+      "classLabel": "I",
+      "ordinaryBoundaryAt": "2031-01-03T12:00:00-05:00"
+    },
+    {
+      "stateFips": "56",
+      "stateUsps": "WY",
+      "classLabel": "II",
+      "ordinaryBoundaryAt": "2027-01-03T12:00:00-05:00"
+    }
+  ]
+}
