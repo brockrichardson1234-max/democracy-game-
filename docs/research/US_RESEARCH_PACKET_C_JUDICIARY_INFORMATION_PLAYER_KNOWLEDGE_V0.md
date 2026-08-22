@@ -1,6 +1,6 @@
 # U.S. Research Packet C — Judiciary + Information + Player Knowledge V0
 
-Status: **Single bounded-repair candidate over audited baseline `8d3a5c4f`. Not findings-only rechecked, frozen evidence, or configuration authority.**
+Status: **One-time protocol-exception repair candidate over exact first-repair base `9c2b8be012038e5581526923e5c564ac9e65c39c`. Not findings-only rechecked, frozen evidence, or configuration authority.**
 
 Research baseline date: **2026-08-21**
 
@@ -348,3 +348,15 @@ One supported public route is official HOME award/project/completion claim → H
 Public availability is not receipt; delivery is not opening or reading; receipt/exposure is not belief, persuasion, or a direct mutation of Population. Later work may project only an evidenced bounded audience such as confirmed deliveries or measured visits. It may not treat every citizen as exposed, infer algorithmic diffusion, or invent a persuasion magnitude. (`USR-CLM-0238`)
 
 Packet C repair trace: `USR-RQ-006` → `0180`, `0240`; `USR-RQ-007` → `0234`–`0236`; `USR-RQ-008` → `0237`–`0238`. Readiness rows `020`, `023`–`025` are reevaluated in Packet D and the readiness matrix.
+
+## 14. One-time protocol-exception addendum — named artifact and bounded audience
+
+This addendum repairs only `USR-AUD-B-007` and the information-stage dependency of `USR-AUD-B-008`. It does not reopen the already-closed hostile-action route or BPS correction.
+
+The named official artifact is the **City of Corpus Christi FY2025/PY2024 Annual Action Plan**, dated and adopted through ordinance file `24-0996` on July 16 and July 23, 2024. Its Project 8 claim is specific: TG 110, Inc. Palms at Morris, 2212 Morris Street, **$587,531 HOME**, planned construction of 72 affordable senior units. The City published the plan, award matrix, ordinance, agenda memorandum, and presentation as attachments to the official Legistar item and placed that item on the July 16 public-hearing agenda. (`USR-CLM-0242`, `0245`; `USR-SRC-0115`)
+
+The bounded audience event is the July 16, 2024 City Council proceeding. The final official minutes record item `24-0996`, the public hearing, motion and second, and a 9–0 first-reading vote by the nine named Mayor/Council participants. That record establishes actual encounter with and action on the official adoption item by those nine decision participants; it does not prove that each participant read every attachment or internalized the Palms statement. Final passage on July 23 establishes the artifact's official adoption, not an additional inferred audience count. (`USR-CLM-0245`; `USR-SRC-0115`)
+
+The evidence chain is therefore: official project claim in a named plan → publication/distribution in the official agenda packet and public-hearing item → nine named decision participants recorded acting on the item. Web availability remains distinct from agenda distribution; meeting participation/action remains distinct from reading every attachment; exposure remains distinct from belief, persuasion, or Population knowledge. No subscriber, visitor, open-rate, or belief count is invented. (`USR-CLM-0245`–`0246`)
+
+This route supersedes `USR-CLM-0237` only for B-007 closure evidence: `0237` remains a true channel-capability claim, but it is not claim-specific audience evidence. Readiness rows `023`–`025` now cite `0245`–`0246` for the bounded public route.

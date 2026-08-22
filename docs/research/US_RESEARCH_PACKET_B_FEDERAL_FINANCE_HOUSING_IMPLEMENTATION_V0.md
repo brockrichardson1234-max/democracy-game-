@@ -1,6 +1,6 @@
 # U.S. Research Packet B — Federal Finance + Housing Implementation V0
 
-Status: **Single bounded-repair candidate over audited baseline `8d3a5c4f`. Not findings-only rechecked, frozen, or configuration authority.**
+Status: **One-time protocol-exception repair candidate over exact first-repair base `9c2b8be012038e5581526923e5c564ac9e65c39c`. Not findings-only rechecked, frozen, or configuration authority.**
 
 Exact authorities:
 
@@ -357,3 +357,34 @@ The material path is HOME-assisted construction/rehabilitation/preservation → 
 The Stables waiver supplies an independent physical constraint: compliant HVAC inputs were unavailable, and denial could delay or halt construction and prevent habitability/occupancy certification. CRS separately supports construction-cost, labor/material, finance, land/regulatory, stock, and demand constraints. A lawful well-run project therefore can have weak or mixed regional consequences through latency, small scale, preservation rather than net addition, other unit loss, or offsetting demand. This establishes mechanisms only—no elasticity, duration, state ranking, or gameplay coefficient. (`USR-CLM-0230`; `USR-SRC-0106`, `0110`)
 
 Packet B repair trace: `USR-RQ-001` → `0225`–`0226`; `USR-RQ-002` → `0221`–`0224`; `USR-RQ-004` → `0229`–`0230`; `USR-RQ-005` → `0227`–`0228`. Readiness rows `010`–`013` and `026` are reevaluated in Packet D and the readiness matrix.
+
+## 14. One-time protocol-exception addendum — B-002 product-resolution repair
+
+This addendum descends exactly from first repaired candidate `9c2b8be012038e5581526923e5c564ac9e65c39c`. Project authority authorized one additional bounded repair only for `USR-AUD-B-002`, `USR-AUD-B-007`, `USR-AUD-B-008`, and direct consistency dependencies. It does not reopen any closed finding, replace the Arapahoe evidence supporting other findings, or authorize a third repair.
+
+### A. Corrected P0 closure criterion
+
+The product-resolution directive preserves B-002's substantive concern: research must not collapse authorization, appropriation/budget authority, fiscal control, federal obligation, recipient commitment, draw/payment/expenditure, legitimate Housing input, and material consequence. It corrects the later closure test, which had drifted into forensic reconstruction of one municipal transaction.
+
+P0 requires authoritative, owner-qualified evidence for the institutional/fiscal causal stages. It does **not** require proof that the same identifiable federal dollars moved through one exact IDIS/LOCCS voucher, one exact city payment, and one exact building. Different authoritative sources may establish different stages if their scopes are explicit and no continuous same-dollar provenance chain is implied.
+
+### B. Owner-qualified composite institutional proof
+
+| Required stage | Evidence scope | Evidence and owner boundary |
+|---|---|---|
+| HOME authorization distinct from spendable budget authority | `PROGRAM-GENERAL` plus `FUNDING-COHORT-SPECIFIC` | Claims `0079`–`0080`, `0092`, and `0221` distinguish program authorization from P.L. 118-42's FY2024 HOME appropriation/budget authority. |
+| Federal fiscal control/apportionment | `PROGRAM-GENERAL` plus `FUNDING-COHORT-SPECIFIC` | Claims `0081`–`0085` establish amount/purpose/time and apportionment controls; `0222` supplies the approved FY2024 OMB HOME apportionment. Apportionment is not recipient entitlement or payment. |
+| HUD formula allocation and federal obligation | `PROGRAM-GENERAL` plus `FUNDING-COHORT-SPECIFIC` | Claims `0086`–`0088`, `0093`–`0097`, `0223`, and `0241` establish formula administration, grant relationships, federal award/obligation examples, and the distinction between obligation and later outlay. |
+| Participating-jurisdiction project commitment and HOME activity | `PROGRAM-GENERAL` | Claims `0097` and `0100` establish that PJs separately select projects and that commitment requires a legally binding written agreement and project-readiness facts; a preliminary allocation or reservation is insufficient. |
+| Recipient draw/payment/expenditure process | `PROGRAM-GENERAL` plus `RECIPIENT-EXAMPLE` | Claims `0088`–`0089`, `0101`–`0102`, and `0175` establish IDIS project setup, eligible-cost draw/payment, expenditure/cash-management, final draw, and completion-record mechanics. Claim `0243` is a dated City-owned recipient-expenditure example and is not relabeled as its federal draw. |
+| Legitimate downstream Housing input | `PROGRAM-GENERAL` plus `PROJECT-EXAMPLE` | Claims `0098`–`0102` establish eligible HOME construction/rehabilitation activity; `0228`–`0230` and `0242`–`0244` provide project examples of planned assistance, physical constraints, and material development. None proves every upstream transaction for the same project. |
+| Separately modeled material result and latency | `MATERIAL-DOMAIN EVIDENCE` | Claims `0134`–`0135`, `0141`, `0178`, and `0229`–`0230` establish that administrative/fiscal stages end upstream of Housing-owned construction, completion, usable stock, and affordability effects. Award, draw, expenditure, permit, IDIS status, and report never become material Housing truth. |
+| Coherent composition without duplicate ownership | `CROSS-SEAM SYNTHESIS` | Corrected claims `0239` and `0247` compose legally fixed dates, administrative cycles, event-driven process stages, variable project latency, election/transfer, and later information without assigning one fact to multiple owners or converting real dates to game days. |
+
+Corpus Christi/Palms remains corroborating evidence with deliberately limited scope: `0241` is a funding-cohort award/obligation example; `0242` is a recipient/project planning example; `0243` is a recipient-expenditure example; and `0244` is a physical-development example. These records are not presented as one transaction-reconciled chain. Arapahoe/Stables continues to support the separate consortium, hostile-route, ordinary HUD decision, and material-constraint findings for which it was collected.
+
+### C. Explicit P0 boundary
+
+B-002 closure does not require an executed agreement, PR02, PR05/PR07, LOCCS voucher, municipal check crosswalk, or full project-finance ledger for one arbitrarily selected municipality when authoritative program evidence already establishes the relevant commitment/draw/expenditure mechanics and owners. Such records may later support historical replay, timing/amount calibration, or case-study enrichment; they are not prerequisites for the first recognizable U.S. configuration.
+
+This candidate therefore supplies objective closure evidence under the corrected P0 criterion but does not declare `USR-AUD-B-002` closed. Only the authorized Audit B findings-only recheck may do so. No public-record request was sent, and no aggregate, plan, expenditure, permit, or project record is transformed into a stage it does not own.

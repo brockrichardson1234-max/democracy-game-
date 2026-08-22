@@ -1,6 +1,6 @@
 # U.S. Research Packet D — Implementation Data + Cross-Packet Synthesis V0
 
-Status: **Single bounded-repair candidate over audited baseline `8d3a5c4f`. Not findings-only rechecked, frozen evidence, or configuration authority.**
+Status: **One-time protocol-exception repair candidate over exact first-repair base `9c2b8be012038e5581526923e5c564ac9e65c39c`. Not findings-only rechecked, frozen evidence, or configuration authority.**
 
 Research baseline date: **2026-08-21**
 
@@ -43,11 +43,11 @@ The systematic A/B/C comparison found no genuine factual or authority conflict. 
 
 The combined evidence supports a recognizable U.S. causal chain through bicameral enactment, distinct fiscal stages, HUD/HOME administration, real state/local recipient relationships, downstream project delivery, delayed official artifacts and public claims, separate Population state, election/count/transfer, and one bounded legal-contest/order/compliance route. The strongest differences from synthetic GL0 are configuration questions—not research failures: real Congress is bicameral and large; HOME is formula/plan/agreement-based rather than state application/award competition; recipient and project layers are plural; official information is composite; and legal relief is claimant-, order-, and procedure-specific. (`USR-CLM-0220`)
 
-All 12 P0 workstreams are supported or supported with explicit bounds. All 26 readiness rows are `READY` or `READY_WITH_BOUNDS`; none is `NOT_READY` or `NOT_REQUIRED`. Twelve architecture-fit questions remain non-normative configuration/simplification decisions. **NO QUALIFYING ARCHITECTURE V0 CONTRADICTION IDENTIFIED.** These are researcher readiness assessments for the three independent audits, not acceptance or freeze.
+All 12 P0 workstreams are supported or supported with explicit bounds under the B-002 product-resolution directive. Fiscal-execution workstream 6.3 is supported by an owner-qualified composite proof: program-general law and operations establish the causal stages, while funding-cohort, recipient, project, and material examples corroborate distinct stages without asserting a continuous same-dollar provenance chain. All 26 readiness rows are `READY` or `READY_WITH_BOUNDS`. Twelve architecture-fit questions remain non-normative configuration/simplification decisions. **NO QUALIFYING ARCHITECTURE V0 CONTRADICTION IDENTIFIED.** B-002 nevertheless remains open until the authorized Audit B findings-only recheck; these are candidate-author readiness assessments, not acceptance or freeze.
 
 ## 4. Claim/evidence ledger additions
 
-Packet D originally appended `USR-CLM-0202`–`USR-CLM-0220` and `USR-SRC-0085`–`USR-SRC-0097`; those records later entered audited baseline `8d3a5c4f`. Repair claims `0221`–`0240` remain `NOT_FINDINGS_ONLY_RECHECKED`.
+Packet D originally appended `USR-CLM-0202`–`USR-CLM-0220` and `USR-SRC-0085`–`USR-SRC-0097`; those records later entered audited baseline `8d3a5c4f`. First-repair claims `0221`–`0240` and exception-repair claims `0241`–`0247` remain outside any findings-only recheck of this candidate.
 
 ### A. Implementation-data source inventory
 
@@ -198,12 +198,13 @@ Architecture-reopen assessment: **NO QUALIFYING ARCHITECTURE V0 CONTRADICTION ID
 | USR-MP0-020 | `0199` | `0083`–`0084` | Temporary public-claim artifacts | 2025/2026 examples | 2026-08-21 | Confirm retained artifacts remain available or archive/hash them | 003, 023–024 |
 | USR-MP0-021 | `0221`–`0224` | `0099`–`0103` | FY2024 appropriation/apportionment/award and mutable spending record | P.L. 118-42; 2024-04-05 apportionment; 2024-09-25 award | 2026-08-21 | Reopen enacted text and OMB record; archive/hash allocation, award, obligation, outlay, and plan artifacts | 010–013, 025–026 |
 | USR-MP0-022 | `0225`–`0226` | `0104`–`0105` | Current HOME consortium rule/guidance and named renewal records | Current §92.101; FY2025–FY2027 renewal | 2026-08-21 | Confirm rule/guidance status and archive/hash named agreements/plan | 012–013, 020, 025 |
-| USR-MP0-023 | `0228`–`0230` | `0106`–`0110` | Project scope, final waiver, BABA process, and material-supply synthesis | FY2024 Stables waiver/current BABA pages | 2026-08-21 | Confirm final status/scope and archive waiver; recheck current process and synthesis editions | 012, 025–026 |
+| USR-MP0-023 | `0228`–`0230` | `0106`–`0110` | Project scope, final waiver, BABA process, and material-supply synthesis | Stables tied to FY2024 FAIN; 2026 final waiver; current BABA pages | 2026-08-21 | Confirm final status/scope and archive waiver; recheck current process and synthesis editions | 012, 025–026 |
 | USR-MP0-024 | `0231`–`0233` | `0092`–`0094`, `0111`–`0112` | Population/CVAP/ACS vintages and mutable eligibility rules | Vintage 2025 Population; 2020–2024 CVAP; 2024 ACS five-year | 2026-08-21 | Freeze files/APIs/hashes, universes/MOEs, state/DC joins, and current eligibility bounds | 014–016, 023, 025–026 |
 | USR-MP0-025 | `0237`–`0238` | `0113` | Current HUD newsroom and mailing-list channel | Current web/signup pages | 2026-08-21 | Confirm channel mechanics; archive/hash relied-on pages; select only evidenced exposure measure | 023–025 |
 | USR-MP0-026 | `0234`–`0236`, `0239`–`0240` | `0057`–`0068`, `0098`–`0101` | Current legal/procedural rules, calendar instruments, and BPS method | 2024 cohort; current law/rules/methodology | 2026-08-21 | Reopen statutes/rules/precedent and BPS method; verify term/cycle dates and no superseding route fact | 020–026 |
+| USR-MP0-027 | `0241`–`0247` | `0114`–`0119` | Funding-cohort, recipient, project, official-publication, and chronology examples | FY2024 award; 2024 plan; 2025 expenditure/permits; planned 2026 completion | 2026-08-21 | Archive/hash award, agenda/minutes, register/audit, environmental and permit records; recheck mutable aggregate outlay and planned status while preserving each example's scope and never treating it as an exact draw, completion, or continuous same-dollar chain | 011, 023–026 |
 
-Mutable-P0 records: **26**. Freeze-time revalidation is **NOT complete**.
+Mutable-P0 records: **27**. Freeze-time revalidation is **NOT complete**.
 
 ### F. P0 question-status matrix
 
@@ -211,18 +212,18 @@ Mutable-P0 records: **26**. Freeze-time revalidation is **NOT complete**.
 |---|---|---|---|---|---|
 | 6.1 Federal institutional frame | A/D | `0001`–`0008`, `0073`–`0075`, `0210` | SUPPORTED | Bounded first-vertical institutions only | Required institution/jurisdiction rows ready |
 | 6.2 Legislative route | A | `0009`–`0043` | SUPPORTED_WITH_BOUNDS | Committees, cloture, reconciliation, amendment exchange are compression choices | Procedure row ready with bounds |
-| 6.3 Fiscal authority/execution | B/D | `0079`–`0091`, `0129`–`0131`, `0136`–`0139`, `0221`–`0224` | SUPPORTED | Named FY2024 cohort closes chain; no 1:1 synthetic `availableAmount` term | Finance ready; mutable outlay/expenditure bounded |
+| 6.3 Fiscal authority/execution | B/D | `0079`–`0102`, `0129`–`0141`, `0175`–`0178`, `0221`–`0224`, `0241`–`0244` | SUPPORTED | Program-general evidence establishes the owner-qualified stages; cohort/recipient/project examples corroborate them without same-dollar reconstruction | FiscalExecution row 011 ready with documented HOME-transition bounds; B-002 remains open only pending recheck of the corrected P0 criterion |
 | 6.4 Executive/administrative implementation | B/D | `0092`–`0112`, `0140`–`0142`, `0217`, `0227`–`0228` | SUPPORTED_WITH_BOUNDS | Ordinary HUD waiver family established; current HOME/BABA transition mutable | Program row ready with freeze bounds |
 | 6.5 Federalism/state participation | B/C/D | `0093`–`0097`, `0114`–`0119`, `0132`–`0133`, `0145`–`0148`, `0225`–`0226` | SUPPORTED_WITH_BOUNDS | Same-HOME branch established; old duties/other lawful routes persist | Intergovernmental row ready with bounds |
-| 6.6 Housing material seam | B/C/D | `0098`–`0108`, `0120`–`0122`, `0134`–`0142`, `0175`–`0192`, `0216`, `0224`, `0228`–`0230`, `0233` | SUPPORTED_WITH_BOUNDS | Physical latency/mixed mechanisms established; magnitudes P1 | Material owner ready; data row bounded |
+| 6.6 Housing material seam | B/C/D | `0098`–`0108`, `0120`–`0122`, `0134`–`0142`, `0175`–`0192`, `0216`, `0224`, `0228`–`0230`, `0233`, `0244` | SUPPORTED_WITH_BOUNDS | Physical latency/mixed mechanisms and Palms permit transition established; completion/magnitudes remain bounded | Material owner ready; data row bounded |
 | 6.7 Measurement/reporting/artifacts | C/D | `0175`–`0195`, `0213`, `0216`, `0218`, corrected `0180`, `0240` | SUPPORTED_WITH_BOUNDS | Composite method/vintage; current BPS correction mutable | Information row ready with bounds |
-| 6.8 Public claims/player knowledge | C | `0193`–`0201`, `0237`–`0238` | SUPPORTED_WITH_BOUNDS | Bounded HUD channel established; reach/receipt/belief distinct | ControlBinding/exposure boundary ready |
+| 6.8 Public claims/player knowledge | C | `0193`–`0201`, `0237`–`0238`, `0245`–`0246` | SUPPORTED_WITH_BOUNDS | Named Corpus plan/Palms claim and nine-participant official meeting event; reading/belief remain distinct | B-007 objective route supplied; ControlBinding boundary ready |
 | 6.9 Election/certification/succession | A/C/D | `0044`–`0078`, `0198`, `0207`–`0209`, `0231`–`0233` | SUPPORTED_WITH_BOUNDS | CVAP proxy is not exact eligibility/turnout; vintage remains later choice | Electoral route ready; process row bounded |
 | 6.10 Contested-authority/judiciary | C | `0143`–`0174`, `0197`, `0234`–`0236` | SUPPORTED_WITH_BOUNDS | Exact pre-award act/forum/remedy fixed; merits and interim relief adjudicative | Court route ready with Tucker boundary |
-| 6.11 Cross-seam calendars | A/B/C/D | `0076`–`0078`, `0084`, `0101`–`0112`, `0157`–`0198`, `0221`–`0239` | SUPPORTED | Classified representative-term chronology; heterogeneous cycles remain separate | Time row ready with bounds |
+| 6.11 Cross-seam calendars | A/B/C/D | `0076`–`0078`, `0084`, `0101`–`0112`, `0157`–`0198`, `0221`–`0247` | SUPPORTED | Corrected multi-year chronology; heterogeneous cycles, event-driven program stages, and variable material latency remain explicit without invented project-specific dates | B-008 objective ordering supplied; time row ready with bounds |
 | 6.12 Architecture-fit questions | A/B/C/D | AFQs `A001`–`A003`, `B001`–`B004`, `C001`–`C005`; supporting claims above | SUPPORTED_WITH_BOUNDS | Twelve later mapping/compression decisions; no qualifying contradiction | No reopen; affected rows ready with bounds |
 
-P0 workstream counts: `SUPPORTED` **3**; `SUPPORTED_WITH_BOUNDS` **9**; `NOT_REQUIRED` **0**; `NOT_ESTABLISHED` **0**; `CONFLICTED` **0**. Blocking P0 gaps: **0**.
+P0 workstream counts: `SUPPORTED` **3**; `SUPPORTED_WITH_BOUNDS` **9**; `NOT_REQUIRED` **0**; `NOT_ESTABLISHED` **0**; `CONFLICTED` **0**. Blocking P0 evidence gaps: **0**. B-002 remains procedurally open pending findings-only recheck.
 
 ## 8. Facts relevant to accepted architecture seams
 
@@ -345,12 +346,12 @@ The combined source ledger records source status, file/API/product format, vinta
 - All claim and source IDs are unique and sequential.
 - Every new claim has exact source or prior-claim support with pinpoints/status.
 - Every P0 claim retains temporal, jurisdiction, scope, and evidence-class semantics.
-- Packet A–C atomic claims/source IDs remain unchanged; no substantive correction is hidden.
+- Packet A remains unchanged. Packet B/C exception addenda and the chronology corrections to `0228`/`0239` are explicit; no substantive correction is hidden.
 - All 12 P0 workstreams appear in the status matrix.
 - All 26 required readiness seams appear in the separate matrix.
 - All 12 AFQ IDs resolve to their source packet and supporting claims.
 - Simplification candidates remain **NON-EVIDENCE** and outside readiness support.
-- No `NOT_READY`, `NOT_REQUIRED`, `NOT_ESTABLISHED`, or `CONFLICTED` result is hidden.
+- B-002's corrected composite-evidence criterion and still-open recheck status are explicit; no `NOT_READY`, `NOT_ESTABLISHED`, `NOT_REQUIRED`, or `CONFLICTED` result is hidden.
 - Mutable-P0 freeze-time revalidation is prepared but expressly incomplete.
 - No audit, freeze, configuration, runtime, UI, or architecture work occurred.
 
@@ -368,41 +369,43 @@ Vintage 2025 Census state/DC resident population remains the sole canonical Popu
 
 For Housing exposure, ACS 2024 five-year B25008 may project people in owner- versus renter-occupied housing from the same state/DC basis. B25106 may group household housing-cost exposure by tenure, but it has a household denominator and must remain a separate projected exposure measure with its universe, observation period, estimate, and margin of error. No exposure projection becomes a second Population owner, and none supplies ideology, party, persuasion, turnout, or behavioral coefficients. (`USR-CLM-0233`; `USR-SRC-0111`)
 
-### B. Feasible representative-term chronology (`USR-RQ-009`)
+### B. Corrected representative-term chronology (`USR-RQ-009`)
 
-The frame is the presidential term beginning January 20, 2021 and ending January 20, 2025. Exact dates appear only where authoritative evidence fixes them; all other timing remains a cycle, event, or observed latency.
+The representative presidential term begins January 20, 2021 and ends January 20, 2025, while its FY2024 awards, project duties, construction, measurement, and public artifacts persist afterward. Exact dates appear only where an authoritative record fixes them; deadlines, administrative cycles, event-driven stages, and variable latency remain distinct.
 
 | Order | Event | Time class | Evidence/bound |
 |---:|---|---|---|
 | 1 | President takes office, 2021-01-20 | `LEGAL_FIXED_DATE` | Twentieth Amendment; `0045`–`0048` |
-| 2 | Congress legislates; P.L. 118-42 is enacted 2024-03-09 and HOME authority becomes available through 2027-09-30 | `EVENT_DRIVEN`; `LEGAL_DEADLINE` for availability end | `0221`; `0099` |
-| 3 | OMB approves FY2024 HOME apportionment 2024-04-05 | `ADMINISTRATIVE_CYCLE` | `0222`; `0100` |
-| 4 | HUD announces formula allocations; PJ prepares/submits action plan within the supported program deadline/cycle | `ADMINISTRATIVE_CYCLE`; `LEGAL_DEADLINE` where CPD Notice 24-01 applies | `0101`, `0223` |
-| 5 | Consortium membership/status and consolidated/action plan determine the recipient relationship; Arapahoe identifies projects | `ADMINISTRATIVE_CYCLE` | `0224`–`0226`; `0103`–`0105` |
-| 6 | Ordinary HUD/MIAO grant-or-deny waiver decision changes project input compliance/timing risk | `EVENT_DRIVEN` | `0227`–`0228`; `0106`–`0108` |
-| 7 | HUD award/grant is signed and federal obligation recorded 2024-09-25 | `ADMINISTRATIVE_CYCLE` with observed fixed event | `0223`; `0102` |
-| 8 | Recipient project commitment, draw/payment, expenditure, procurement, development/construction | `OBSERVED_VARIABLE_LATENCY` | `0224`, `0229`–`0230` |
-| 9 | Completion/restoration/preservation, occupancy, and bounded stock/affordability consequence | `OBSERVED_VARIABLE_LATENCY` | `0229`–`0230`; may occur after transfer |
-| 10 | IDIS/HUD measurement and BPS/SOC/ACS observation, revision, and release | `DATA_RELEASE_CYCLE` | `0175`–`0192`, corrected `0180`, `0240` |
-| 11 | Official claim enters HUD newsroom/list and reaches a bounded audience | `EVENT_DRIVEN` | `0237`–`0238`; after artifact creation, not universal exposure |
-| 12 | 2024-11-05 popular election; 2024-12-17 electors; 2025-01-06 congressional count | `LEGAL_FIXED_DATE` | `0057`–`0070`; election-cycle sources already recorded |
-| 13 | Presidential transfer 2025-01-20; program/project/affordability and information history persist | `LEGAL_FIXED_DATE` | `0070`–`0072`; `0226`, `0239` |
-| Branch | Before a renewed award, HUD issues the defined final rejection; suit, notice, interim relief, order, appeal, and separate stay follow facts/court schedule | `EVENT_DRIVEN`; `OBSERVED_VARIABLE_LATENCY` | `0234`–`0236`; one exact branch only |
+| 2 | P.L. 118-42 enacted 2024-03-09 supplies FY2024 HOME budget authority available through 2027-09-30 | `EVENT_DRIVEN`; `LEGAL_DEADLINE` | `0221`; `0099` |
+| 3 | OMB approves FY2024 HOME apportionment 2024-04-05 | `FIXED_ADMINISTRATIVE_EVENT` | `0222`; `0100` |
+| 4 | HUD allocation and plan cycle proceeds; Corpus publishes the named plan/Palms claim and nine Council participants act on item 24-0996 on 2024-07-16; final adoption follows 2024-07-23 | `ADMINISTRATIVE_CYCLE`; `FIXED_PUBLICATION_AND_MEETING_EVENT` | `0242`, `0245`–`0246`; `0115` |
+| 5 | Arapahoe HOME award/obligation is recorded 2024-09-25; the closed consortium route remains distinct from separately scoped B-002 examples | `FIXED_ADMINISTRATIVE_EVENT` | `0223`–`0226`; `0102`, `0104`–`0105` |
+| 6 | Corpus award/obligation is recorded 2024-10-25 | `FIXED_ADMINISTRATIVE_EVENT` | `0241`; `0114` |
+| 7 | Popular election 2024-11-05 and elector vote 2024-12-17 | `LEGAL_FIXED_DATE` | `0057`–`0067` |
+| 8 | Congressional count 2025-01-06; Corpus environmental notice 2025-01-08 states an intended release request on/about 2025-01-24 | `LEGAL_FIXED_DATE`; `FIXED_NOTICE` with event-driven intended request | `0068`–`0070`, `0242`; `0116` |
+| 9 | Presidential transfer 2025-01-20; awards, project obligations, and information history persist | `LEGAL_FIXED_DATE` | `0070`–`0072`; `0247` |
+| 10 | Palms building permits issue 2025-02-18, establishing physical development after transfer | `FIXED_MATERIAL_EVENT` | `0244`; `0118` |
+| 11 | Program-general evidence establishes recipient commitment, IDIS activity setup, draw/payment, expenditure, and completion-record stages; the representative chronology keeps them event-driven and assigns no unsupported Palms-specific date, amount, voucher, or activity id | `EVENT_DRIVEN_PROCESS_STAGE` | `0100`–`0102`, `0175`; scoped examples `0241`–`0243` |
+| 12 | Corpus pays Palms at Morris Apartments $117,000 on 2025-09-17; the FY2025 Single Audit reports the same passed-through amount under FAIN M-24-MC-48-0502 | `FIXED_RECIPIENT_EXPENDITURE_EVENT` | `0243`; `0117` |
+| 13 | Stables groundbreaking occurs in February 2026; HUD waiver public comment runs 2026-06-24–2026-07-09 and the final waiver becomes effective 2026-08-10 | `FIXED_PROJECT_EVENTS`; `ADMINISTRATIVE_PROCEEDING` | `0228`; `0106`–`0107` |
+| 14 | Palms planned completion is 2026-10-01; actual completion/occupancy remains variable and unproved | `PLANNED_DATE`; `OBSERVED_VARIABLE_LATENCY` | `0244`; `0119` |
+| 15 | Stables anticipated completion 2027-09-30; actual completion, occupancy, Housing consequence, measurement, official release, and later public exposure follow their own variable/data-release/event-driven clocks | `ANTICIPATED_DATE`; `OBSERVED_VARIABLE_LATENCY`; `DATA_RELEASE_CYCLE`; `EVENT_DRIVEN` | `0229`–`0230`, `0175`–`0192`, `0237`–`0238` |
+| Branch | Hypothetically and before an Arapahoe renewed award, HUD issues the defined final consortium rejection; suit, notice, interim relief, order, appeal, and separate stay then follow facts and court schedule | `HYPOTHETICAL_EVENT_DRIVEN`; `OBSERVED_VARIABLE_LATENCY` | `0234`–`0236`; no historical rejection date asserted |
 
-This ordering is mutually compatible and may span years. It is not converted to game days. (`USR-CLM-0239`)
+This sequence does not force project delivery before the November 2024 election or January 2025 transfer. It also does not use the 2026 Stables waiver as a pre-award event. The actual July 2024 bounded plan-audience event is distinct from later outcome measurement/release/exposure. (`USR-CLM-0239`, `0247`)
 
 ### C. Repaired coherent route
 
-The first evidence route is now: political enactment → FY2024 budget authority → OMB apportionment → HUD formula/allocation and Arapahoe award → HOME consortium membership/nonmembership → local project commitment → Stables physical construction and HUD BABA input decision → delayed units/affordability with material constraints → HUD/IDIS/Census measurement and official claim → bounded HUD News exposure → election/count/January transfer. The one contested branch is the defined pre-award HUD consortium rejection and its District of Colorado/Tenth Circuit prospective-review route. Each owner transition is evidenced; no award/report directly writes Housing or Population. (`USR-CLM-0221`–`0240`)
+The coherent route is an owner-qualified composite, not a transaction reconstruction. FY2024 authority and apportionment feed HUD formula administration. Program-general law and operations establish PJ project commitment, IDIS activity setup, draw/payment/expenditure, completion-record mechanics, and the boundary to Housing. Arapahoe supplies separately scoped award, consortium, hostile-route, Stables waiver, and material-constraint evidence. Corpus Christi/Palms supplies separately labeled funding-cohort, recipient-plan, recipient-expenditure, project-development, and named-artifact/audience examples. Election, count, and transfer occur before most project delivery; construction, anticipated completion, measurement, release, and later exposure persist afterward. No source is used to imply a continuous same-dollar chain, and no award, plan, expenditure, permit, or report directly writes Housing or Population. (`USR-CLM-0079`–`0102`, `0134`–`0141`, `0175`–`0178`, `0221`–`0247`)
 
 ### D. P0/readiness reevaluation after bounded repair
 
-All 12 P0 workstreams were reevaluated. Status counts remain `SUPPORTED` **3**, `SUPPORTED_WITH_BOUNDS` **9**, and zero `NOT_REQUIRED`, `NOT_ESTABLISHED`, or `CONFLICTED`. The bounds are now configuration/freeze bounds rather than the nine repaired evidence defects. The 26 readiness rows remain `READY` **12**, `READY_WITH_BOUNDS` **14**, zero `NOT_READY`, and zero `NOT_REQUIRED`.
+Only the three exception findings and direct dependencies were reevaluated. P0 counts are `SUPPORTED` **3**, `SUPPORTED_WITH_BOUNDS` **9**, and zero `NOT_ESTABLISHED`, `NOT_REQUIRED`, or `CONFLICTED`. The 26 readiness rows are `READY` **12**, `READY_WITH_BOUNDS` **14**, and zero `NOT_READY` or `NOT_REQUIRED`.
 
-The nine challenged rows were specifically rechecked: `010` now cites a real appropriation/apportionment cohort; `011` the exact award/obligation and downstream stages; `012` ordinary HUD waiver discretion; `013` same-program consortium branches; `015` the canonical Population/projection strategy; `016` the bounded electorate proxy; `020` one exact hostile action/forum/remedy route; `025` the classified representative-term chronology; and `026` the physical process and independent mixed-outcome constraint. The separate readiness matrix records claim-level traceability.
+Row `011` is `READY_WITH_BOUNDS` because composite authoritative evidence establishes every required owner-qualified stage without requiring same-dollar municipal reconciliation. Row `025` remains `READY_WITH_BOUNDS` on the corrected mechanically ordered chronology. Rows `023`–`024` retain their prior statuses and now cite the named artifact/audience evidence. B-002 remains open for recheck; no closed finding or unrelated row was reopened.
 
-Mutable-P0 records added by this repair are `USR-MP0-021`–`026`, bringing the total to **26**. They cover the FY2024 fiscal/award record, current consortium materials, project waiver/BABA process, CVAP/ACS projection inputs, HUD public channel, and hostile-route rules/calendar. **FREEZE-TIME REVALIDATION IS NOT COMPLETE.**
+Exception record `USR-MP0-027` brings the mutable-P0 total to **27**. **FREEZE-TIME REVALIDATION IS NOT COMPLETE.**
 
 ### E. Repair boundary and architecture result
 
-Packet A was not modified. `USR-CLM-0042` is closed through the new cohort synthesis rather than rewritten; `USR-CLM-0180` is the only old atomic claim changed, with its former error and correction explicit. No source or claim was renumbered. Architecture V0 ownership, primitives, causal paths, and persistence are unchanged. Audit C's result remains **0 BLOCKER, 0 HIGH; 26/26 fit; 12/12 AFQs viable; NO QUALIFYING ARCHITECTURE CONTRADICTION**.
+Packet A was not modified. No claim/source ID was renumbered. Old claims `0228` and `0239` are changed only to correct the Stables dates and ordering; the reason is explicit in the claim ledger and audit synthesis. Architecture V0 ownership, primitives, causal paths, and persistence are unchanged. Audit C remains **CLEAR** and was not rerun.

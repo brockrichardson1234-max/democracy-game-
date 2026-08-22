@@ -1,6 +1,6 @@
 # U.S. Research Source Ledger V0
 
-Status: Single bounded-repair candidate over independently audited A–D baseline `8d3a5c4ff1d906d4bbc5f965fc737d7175b802c2`. New/changed evidence is not findings-only rechecked, is not configuration, and is not frozen.
+Status: One-time protocol-exception repair candidate over exact first-repair base `9c2b8be012038e5581526923e5c564ac9e65c39c`. New/changed evidence is not findings-only rechecked, is not configuration, and is not frozen.
 
 Research baseline date: **2026-08-21**
 
@@ -1057,7 +1057,7 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Issuing body: U.S. Department of Housing and Urban Development
 - Tier / type: Tier 1; final project-specific administrative waiver
 - Authority status: official final nonavailability determination for identified inputs and project; not a general market rule
-- Publication / vintage: FY2024 project; retrieved 2026-08-21
+- Publication / vintage: public comment 2026-06-24 through 2026-07-09; final waiver effective 2026-08-10 for a project tied to FY2024 FAIN; retrieved 2026-08-21
 - Stable identifier: [Final nonavailability waiver](https://www.hud.gov/sites/default/files/Main/documents/Final-Nonavailability-Waiver-CO-DOLA-Arapahoe-Co-HVAC-W-0000102.pdf)
 - Repair pinpoints: project/recipient/FAIN identity, 85-unit affordable project, HOME/HTF and total infrastructure amounts, unavailable compliant HVAC inputs, waiver scope, and findings that denial risked delay/halt, habitability, and occupancy certification
 
@@ -1124,13 +1124,67 @@ The tier is claim-relative. `Tier 1` means primary authoritative or primary offi
 - Stable identifiers: [HUD News](https://www.hud.gov/news); [HUD mailing lists](https://www.hud.gov/subscribe/mailinglist); [HUD News signup](https://www.hud.gov/subscribe/signup1?email=&list=HUD-NEWS-L&listname=HUD+News)
 - Repair pinpoints: public newsroom, HUD News distribution of press communications to media/public, opt-in signup and confirmation, and program-specific list descriptions
 
+### USR-SRC-0114 — USAspending Corpus Christi FY2024 HOME award
+
+- Issuing body: U.S. Department of the Treasury, USAspending.gov; HUD award data
+- Tier / type: Tier 1; official federal spending record
+- Authority status: primary award/obligation/outlay reporting record; aggregate outlay is mutable and not an exact project draw
+- Version / vintage: FAIN M24-MC480502, internal award id 268322672, retrieved 2026-08-21
+- Stable identifiers: [award page](https://www.usaspending.gov/award/ASST_NON_M24-MC480502_086); [award API](https://api.usaspending.gov/api/v2/awards/ASST_NON_M24-MC480502_086/)
+- Exception-repair pinpoints: City of Corpus Christi recipient; Assistance Listing 14.239; 2024-10-25 action/signing; $1,119,386.26 obligation; current $268,520.21 aggregate outlay; obligation-transaction components
+
+### USR-SRC-0115 — Corpus Christi FY2025/PY2024 Annual Action Plan and adoption record
+
+- Issuing body: City of Corpus Christi, Texas, City Council and Planning and Community Development Department
+- Tier / type: Tier 1; official participating-jurisdiction plan, legislative file, agenda packet, and final minutes
+- Authority status: primary local allocation/publication/adoption and meeting-participation evidence; authorization to execute later agreements is not the executed HOME project agreement
+- Publication / event dates: official file created 2024-06-11; public hearing/first reading 2024-07-16; final passage 2024-07-23
+- Stable identifiers: [Annual Action Plan](https://www.corpuschristitx.gov/media/3xqcills/fy-2025py2024-annual-action-plan.pdf); [Legistar file 24-0996 and attachments](https://corpuschristi.legistar.com/LegislationDetail.aspx?GUID=638D6718-2790-4047-8484-21F5058B6D5E&ID=6772310); [July 16 final minutes](https://corpuschristi.legistar.com/View.ashx?GUID=76A79F63-2CB2-423E-A79E-C644C7B0F76D&ID=1203413&M=M)
+- Exception-repair pinpoints: Project 8, TG 110, Inc. Palms at Morris, 2212 Morris Street, $587,531 HOME, 72 affordable senior units; ordinance authority; official agenda attachments; item 30 public hearing; motion/second; nine named aye votes; July 23 final passage
+
+### USR-SRC-0116 — Corpus Christi Palms environmental release notice
+
+- Issuing body: City of Corpus Christi, Texas
+- Tier / type: Tier 1; official HOME environmental-review/release notice
+- Authority status: primary environmental process artifact and proposed release-request timing; not a federal draw, executed project agreement, or physical-completion record
+- Publication date: 2025-01-08
+- Stable identifier: [FONSI and notice of intent to request release of funds](https://www.corpuschristitx.gov/media/eqxhy1id/2025-2024-home-fonsi-noi-rrof-tg-110-palms-at-morris-fnl-english-and-spanish-combined-with-ea.pdf)
+- Exception-repair pinpoints: project `FY25-PY24-TG-110-Inc.-Palms-at-Morris-(CHDO)`, 2212 Morris Street, 72 senior units, $587,531 of 2024 HOME, total project cost, and planned request on/about 2025-01-24
+
+### USR-SRC-0117 — Corpus Christi exact Palms expenditure and FY2025 Single Audit
+
+- Issuing body: City of Corpus Christi, Texas, Finance & Procurement Department; independent Single Audit published by the City
+- Tier / type: Tier 1; official municipal disbursement register and audited Schedule of Expenditures of Federal Awards
+- Authority status: primary City-owned payment record and audited federal-award expenditure record; neither is relabeled as a project-specific federal draw or used to assert a continuous same-dollar chain
+- Version / vintage: September 2025 register; fiscal year ended 2025-09-30
+- Stable identifiers: [financial-transparency description](https://www.corpuschristitx.gov/department-directory/finance-procurement/financial-transparency-reports/); [archived registers](https://www.corpuschristitx.gov/department-directory/finance-procurement/financial-transparency-reports/archived-check-registers/); [September 2025 XLSX](https://www.corpuschristitx.gov/media/d1ijy2zb/september-2025-check-register.xlsx); [FY2025 Single Audit](https://www.corpuschristitx.gov/media/cl2fxe3x/city-of-corpus-christi-2025-single-audit-final.pdf); [Fund 9045 identification](https://www.corpuschristitx.gov/media/mlynb203/fy2024-q3-june-30-2024-quarterly-investment-report.pdf)
+- Exception-repair pinpoints: 2025-09-17 Palms at Morris Apartments row, Fund 9045, Department 24, organization/activity 48004, account 530005 “Payments to Subrecipients,” $117,000; Single Audit FAIN M-24-MC-48-0502, $151,520 expenditures and $117,000 passed through; Fund 9045 “HOME Projects FB05”
+
+### USR-SRC-0118 — Corpus Christi Palms permit records
+
+- Issuing body: City of Corpus Christi, Texas, Development Services Department
+- Tier / type: Tier 1; official permit-history records
+- Authority status: primary evidence of issued construction permits; not proof of completion, occupancy, or Housing magnitude
+- Version / vintage: February 2025 report, retrieved 2026-08-21
+- Stable identifiers: [monthly permit-report index](https://www.corpuschristitx.gov/department-directory/development-services/reports/fiscal-permit-history-reports-by-month/); [February 2025 report](https://www.corpuschristitx.gov/media/3p2dsj2m/permit-report-feb-2025-pdf.pdf)
+- Exception-repair pinpoints: permits C226687 and C226685, Palms at Morris Buildings 3 and 2, 2212 Morris, issued 2025-02-18, including Building 2 value $4,057,128
+
+### USR-SRC-0119 — Texas Palms physical-project record
+
+- Issuing body: Texas Department of Licensing and Regulation
+- Tier / type: Tier 1; official state architectural-barriers project record
+- Authority status: primary project-registration/status record; planned dates are not proof of actual completion
+- Version / vintage: TABS2025005871, registered 2024-11-19, current record retrieved 2026-08-21
+- Stable identifier: [TABS2025005871 project details](https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025005871)
+- Exception-repair pinpoints: Palms at Morris Apartments leasing/community facilities, 2212 Morris Avenue, TG 110 Palms at Morris LP owner, new construction, planned 2025-04-01 start and 2026-10-01 completion
+
 ## Source-tier count
 
-- Tier 1: **87**
+- Tier 1: **93**
 - Tier 2: **26**
 - Tier 3: **0**
 - Tier 4: **0**
-- Total: **113**
+- Total: **119**
 
 No Tier 3 source was necessary because the bounded ordinary-practice claims are supported by CRS procedural syntheses tied to chamber rules and precedents. No Tier 4 source is relied upon.
 
