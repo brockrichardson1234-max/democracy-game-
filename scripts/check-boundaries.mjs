@@ -18,8 +18,13 @@ const listSourceFiles = async (directory) => {
 const importRules = [
   {
     root: "src/sim",
-    forbidden: ["src/app", "../app", "src/ui", "../ui", "electron", "react", "react-dom", "node:", "vite"],
-    reason: "simulation must remain platform- and presentation-independent",
+    forbidden: ["src/app", "../app", "src/ui", "../ui", "src/content", "../content", "electron", "react", "react-dom", "node:", "vite"],
+    reason: "simulation must remain platform-, presentation-, and named-content-independent",
+  },
+  {
+    root: "src/configuration",
+    forbidden: ["src/content", "../content", "src/ui", "../ui", "electron", "react", "react-dom"],
+    reason: "production configuration loading/bootstrap cannot depend on a named content package or presentation",
   },
   {
     root: "src/app",
@@ -76,6 +81,68 @@ for (const file of await listSourceFiles(join(root, "src/sim"))) {
     if (pattern.test(source)) {
       violations.push(`${relative(root, file)} uses ${name}: canonical simulation cannot depend on uncontrolled platform/wall-clock/random APIs`);
     }
+  }
+}
+
+const stripComments = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+const usExecutionTokens = [
+  "USA",
+  "UNITED_STATES",
+  "HUD",
+  "HOME",
+  "HOUSE",
+  "SENATE",
+  "ELECTORAL_COLLEGE",
+  "FIPS",
+  "GEOID",
+];
+for (const file of await listSourceFiles(join(root, "src/sim"))) {
+  const source = stripComments(await readFile(file, "utf8"));
+  for (const token of usExecutionTokens) {
+    if (new RegExp(`\\b${token}\\b`).test(source)) {
+      violations.push(`${relative(root, file)} contains U.S.-specific execution token ${token}`);
+    }
+  }
+  for (const numericToken of [435, 538, 270]) {
+    if (new RegExp(`(^|[^0-9_])${numericToken}([^0-9_]|$)`).test(source)) {
+      violations.push(`${relative(root, file)} contains U.S.-specific execution number ${numericToken}`);
+    }
+  }
+}
+
+const genericConfigurationFiles = [
+  ...(await listSourceFiles(join(root, "src/sim"))),
+  join(root, "src/configuration/bootstrap.ts"),
+];
+for (const file of genericConfigurationFiles) {
+  const source = stripComments(await readFile(file, "utf8"));
+  if (
+    /(?:if|switch)\s*\([^)]*(?:configurationId|scenarioId)[^)]*\)/m.test(source) ||
+    /(?:configurationId|scenarioId)\s*={2,3}/m.test(source)
+  ) {
+    violations.push(`${relative(root, file)} branches on configuration/scenario identity`);
+  }
+}
+
+const genericWorldSource = await readFile(join(root, "src/sim/world.ts"), "utf8");
+for (const token of [
+  "STATE_A_ID",
+  "STATE_B_ID",
+  "STATE_C_ID",
+  "GEOGRAPHY_REGION_A_ID",
+  "GEOGRAPHY_REGION_B_ID",
+  "GEOGRAPHY_REGION_C_ID",
+  "HOUSING_REGION_A_ID",
+  "HOUSING_REGION_B_ID",
+  "HOUSING_REGION_C_ID",
+  "PUBLIC_AUDIENCE_ALPHA_ID",
+  "PUBLIC_AUDIENCE_BETA_ID",
+  "PUBLIC_AUDIENCE_GAMMA_ID",
+]) {
+  if (genericWorldSource.includes(token)) {
+    violations.push(`src/sim/world.ts depends on synthetic fixture token ${token}`);
   }
 }
 

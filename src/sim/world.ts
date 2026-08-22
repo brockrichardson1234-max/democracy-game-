@@ -1,58 +1,24 @@
+import type {
+  ConfigurationIdentity,
+  LoadedGovernmentConfiguration,
+  ScheduledTransitionDescriptor,
+} from "../configuration/types";
 import {
-  createInitialGovernanceState,
   originateHousingPoliticalClaimDecision,
   resolveContestedAuthorityChallengeBoundary,
   resolveContestedAuthorityComplianceBoundary,
   resolveContestedAuthorityInterimReliefBoundary,
   type GovernanceState,
-  type HousingPoliticalClaimDecisionKind,
 } from "./governance";
-import {
-  GEOGRAPHY_REGION_A_ID,
-  GEOGRAPHY_REGION_B_ID,
-  GEOGRAPHY_REGION_C_ID,
-  createInitialGeographyState,
-  type GeographyState,
-} from "./geography";
-import {
-  certifyElection,
-  createInitialElectoralState,
-  GL0_EXECUTIVE_CERTIFICATION_AT,
-  GL0_EXECUTIVE_CONTEST_ID,
-  GL0_EXECUTIVE_ELECTION_AT,
-  resolveElection,
-  type ElectoralState,
-} from "./electoral";
+import type { GeographyState } from "./geography";
+import { certifyElection, resolveElection, type ElectoralState } from "./electoral";
 import {
   establishExecutiveSuccessorEntitlement,
-  GL0_EXECUTIVE_TRANSFER_AT,
-  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
-  GL0_SUCCESSOR_ENTITLEMENT_AT,
   transferExecutiveOffice,
 } from "./executive";
-import {
-  advanceHousing,
-  createInitialHousingState,
-  HOUSING_REGION_A_ID,
-  HOUSING_REGION_B_ID,
-  HOUSING_REGION_C_ID,
-  type HousingState,
-} from "./housing";
+import { advanceHousing, type HousingState } from "./housing";
 import type { HistoricalOccurrence } from "./history";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "./federalism";
 import {
-  ADMINISTRATION_HOUSING_CLAIM_ID,
-  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
-  HOUSING_MEASUREMENT_OBSERVATION_END,
-  OFFICIAL_HOUSING_REPORT_ID,
-  OFFICIAL_HOUSING_REPORT_RELEASE_AT,
-  OPPOSITION_HOUSING_CLAIM_ID,
-  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
-  PUBLIC_AUDIENCE_ALPHA_ID,
-  PUBLIC_AUDIENCE_BETA_ID,
-  PUBLIC_AUDIENCE_GAMMA_ID,
-  createInitialInformationState,
   exposeInformationArtifact,
   releasePoliticalClaim,
   resolveInformationBoundary,
@@ -60,17 +26,10 @@ import {
   type InformationState,
 } from "./information";
 import {
-  createInitialPopulationState,
   incorporateInformationExposure,
-  POPULATION_ELECTORAL_RESPONSE_AT,
   resolvePopulationElectoralDisposition,
   type PopulationState,
 } from "./population";
-import {
-  GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
-  GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
-  GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
-} from "./judiciary";
 
 export type SimulationInstant = number;
 
@@ -83,7 +42,19 @@ export interface BootstrapTransitionState {
   readonly resolved: boolean;
 }
 
+/** Plain canonical state supplied by configuration content, never executable behavior. */
+export interface WorldSeed {
+  readonly governance: GovernanceState;
+  readonly geography: GeographyState;
+  readonly housing: HousingState;
+  readonly information: InformationState;
+  readonly population: PopulationState;
+  readonly electoral: ElectoralState;
+}
+
 export interface WorldState {
+  readonly configuration: ConfigurationIdentity;
+  readonly transitionSchedule: readonly ScheduledTransitionDescriptor[];
   readonly time: TimeState;
   readonly bootstrapTransition: BootstrapTransitionState;
   readonly governance: GovernanceState;
@@ -101,62 +72,39 @@ export interface WorldState {
   readonly history: readonly HistoricalOccurrence[];
 }
 
-const BOOTSTRAP_BOUNDARY: SimulationInstant = 1;
-
-export const createDeterministicWorldFixture = (): WorldState => {
-  const geography = createInitialGeographyState();
-  const governance = createInitialGovernanceState();
-  const housing = createInitialHousingState({
-    stateAId: STATE_A_ID,
-    stateBId: STATE_B_ID,
-    stateCId: STATE_C_ID,
-    geographyRegionAId: GEOGRAPHY_REGION_A_ID,
-    geographyRegionBId: GEOGRAPHY_REGION_B_ID,
-    geographyRegionCId: GEOGRAPHY_REGION_C_ID,
-  });
-
+export const createWorldFromConfiguration = (
+  configuration: LoadedGovernmentConfiguration<WorldSeed>,
+): WorldState => {
+  if (configuration.capability !== "PLAYABLE_CAUSAL_WORLD" || configuration.runtimeSeed === null) {
+    throw new Error(
+      `Configuration ${configuration.identity.configurationId} is structural-proof-only and cannot materialize a playable world.`,
+    );
+  }
+  const bootstrap = configuration.transitions.find(
+    (transition) => transition.kind === "BOOTSTRAP_BOUNDARY",
+  );
+  if (bootstrap === undefined) throw new Error("Playable configuration has no bootstrap boundary.");
   return {
+    configuration: { ...configuration.identity },
+    transitionSchedule: configuration.transitions.map((transition) => ({ ...transition })),
     time: { current: 0 },
-    bootstrapTransition: {
-      boundaryAt: BOOTSTRAP_BOUNDARY,
-      resolved: false,
-    },
-    governance,
-    geography,
-    housing,
-    information: createInitialInformationState(housing.regions.map((region) => region.id)),
-    population: createInitialPopulationState({
-      geographyRegionAId: GEOGRAPHY_REGION_A_ID,
-      geographyRegionBId: GEOGRAPHY_REGION_B_ID,
-      geographyRegionCId: GEOGRAPHY_REGION_C_ID,
-      housingRegionAId: HOUSING_REGION_A_ID,
-      housingRegionBId: HOUSING_REGION_B_ID,
-      housingRegionCId: HOUSING_REGION_C_ID,
-      informationAudienceAlphaId: PUBLIC_AUDIENCE_ALPHA_ID,
-      informationAudienceBetaId: PUBLIC_AUDIENCE_BETA_ID,
-      informationAudienceGammaId: PUBLIC_AUDIENCE_GAMMA_ID,
-    }),
-    electoral: createInitialElectoralState({
-      geographyRegionIds: [
-        GEOGRAPHY_REGION_A_ID,
-        GEOGRAPHY_REGION_B_ID,
-        GEOGRAPHY_REGION_C_ID,
-      ],
-      administrationCandidateActorId: GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-      oppositionCandidateActorId: GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
-    }),
+    bootstrapTransition: { boundaryAt: bootstrap.at, resolved: false },
+    governance: configuration.runtimeSeed.governance,
+    geography: configuration.runtimeSeed.geography,
+    housing: configuration.runtimeSeed.housing,
+    information: configuration.runtimeSeed.information,
+    population: configuration.runtimeSeed.population,
+    electoral: configuration.runtimeSeed.electoral,
     history: [],
   };
 };
 
 const assertValidTarget = (world: WorldState, target: SimulationInstant): void => {
   if (!Number.isFinite(target)) throw new Error("Simulation target must be finite.");
-  if (target < world.time.current) {
-    throw new Error("Simulation time cannot advance backwards.");
-  }
+  if (target < world.time.current) throw new Error("Simulation time cannot advance backwards.");
 };
 
-const exposeArtifactToFixtureAudiences = (
+const exposeArtifactToConfiguredAudiences = (
   information: InformationState,
   artifactId: string,
   audienceIds: readonly string[],
@@ -184,7 +132,7 @@ const exposeArtifactToFixtureAudiences = (
   return { information: nextInformation, exposures, occurrences };
 };
 
-const incorporateFixtureExposures = (
+const incorporateConfiguredExposures = (
   population: PopulationState,
   information: InformationState,
   exposures: readonly InformationExposure[],
@@ -193,70 +141,55 @@ const incorporateFixtureExposures = (
   let nextPopulation = population;
   const occurrences: HistoricalOccurrence[] = [];
   for (const exposure of exposures) {
-    const incorporation = incorporateInformationExposure(
-      nextPopulation,
-      information,
-      exposure,
-      at,
-    );
+    const incorporation = incorporateInformationExposure(nextPopulation, information, exposure, at);
     nextPopulation = incorporation.population;
     occurrences.push(...incorporation.occurrences);
   }
   return { population: nextPopulation, occurrences };
 };
 
-const releaseFixturePoliticalClaim = (
+const releaseConfiguredPoliticalClaim = (
   governance: GovernanceState,
   information: InformationState,
-  kind: HousingPoliticalClaimDecisionKind,
-  at: SimulationInstant,
+  transition: Extract<ScheduledTransitionDescriptor, { kind: "POLITICAL_CLAIM_RELEASE" }>,
 ): {
   readonly governance: GovernanceState;
   readonly information: InformationState;
   readonly exposures: readonly InformationExposure[];
-  readonly occurrences: HistoricalOccurrence[];
+  readonly occurrences: readonly HistoricalOccurrence[];
 } => {
   const sourceReport = information.artifacts.find(
-    (artifact) => artifact.id === OFFICIAL_HOUSING_REPORT_ID,
+    (artifact) => artifact.id === transition.sourceArtifactId,
   );
   if (sourceReport === undefined) {
-    throw new Error(`${kind} Housing claim requires the released official Housing report.`);
+    throw new Error(`${transition.claimKind} claim requires source artifact ${transition.sourceArtifactId}.`);
   }
-
   const decisionResult = originateHousingPoliticalClaimDecision(
     governance,
-    kind,
+    transition.claimKind,
     sourceReport.id,
-    at,
+    transition.at,
+    transition.at,
   );
   const decision = decisionResult.decision;
-  const claimArtifactId =
-    kind === "ADMINISTRATION"
-      ? ADMINISTRATION_HOUSING_CLAIM_ID
-      : OPPOSITION_HOUSING_CLAIM_ID;
   const claimRelease = releasePoliticalClaim(
     information,
     {
-      claimArtifactId,
+      claimArtifactId: transition.claimArtifactId,
       sourceDecisionId: decision.id,
       origin: decision.origin,
       sourceArtifactIds: decision.sourceArtifactIds,
       federalProgramId: decision.federalProgramId,
       claimPosition: decision.claimPosition,
     },
-    at,
+    transition.at,
   );
-  const audienceIds =
-    kind === "ADMINISTRATION"
-      ? [PUBLIC_AUDIENCE_ALPHA_ID, PUBLIC_AUDIENCE_GAMMA_ID]
-      : [PUBLIC_AUDIENCE_BETA_ID, PUBLIC_AUDIENCE_GAMMA_ID];
-  const exposure = exposeArtifactToFixtureAudiences(
+  const exposure = exposeArtifactToConfiguredAudiences(
     claimRelease.information,
-    claimArtifactId,
-    audienceIds,
-    at,
+    transition.claimArtifactId,
+    transition.audienceIds,
+    transition.at,
   );
-
   return {
     governance: decisionResult.governance,
     information: exposure.information,
@@ -265,37 +198,18 @@ const releaseFixturePoliticalClaim = (
   };
 };
 
-export const advanceWorldTo = (
-  world: WorldState,
-  target: SimulationInstant,
-): WorldState => {
-  assertValidTarget(world, target);
+const transitionRank = (transition: ScheduledTransitionDescriptor): string =>
+  `${transition.order.toString().padStart(8, "0")}:${transition.id}`;
 
-  const resolvesBootstrapBoundary =
-    !world.bootstrapTransition.resolved &&
-    target >= world.bootstrapTransition.boundaryAt;
-  const hasDisputedHousingRedirectionAttempt =
-    world.governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0;
+export const advanceWorldTo = (world: WorldState, target: SimulationInstant): WorldState => {
+  assertValidTarget(world, target);
+  if (target === world.time.current) return world;
   const boundaries = [
-    ...(hasDisputedHousingRedirectionAttempt
-      ? [
-          GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
-          GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
-          GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
-        ]
-      : []),
-    HOUSING_MEASUREMENT_OBSERVATION_END,
-    OFFICIAL_HOUSING_REPORT_RELEASE_AT,
-    ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
-    OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
-    POPULATION_ELECTORAL_RESPONSE_AT,
-    GL0_EXECUTIVE_ELECTION_AT,
-    GL0_EXECUTIVE_CERTIFICATION_AT,
-    GL0_SUCCESSOR_ENTITLEMENT_AT,
-    GL0_EXECUTIVE_TRANSFER_AT,
+    ...world.transitionSchedule
+      .filter((transition) => transition.at > world.time.current && transition.at <= target)
+      .map((transition) => transition.at),
     target,
   ]
-    .filter((boundary) => boundary > world.time.current && boundary <= target)
     .filter((boundary, index, all) => all.indexOf(boundary) === index)
     .sort((left, right) => left - right);
 
@@ -305,6 +219,7 @@ export const advanceWorldTo = (
   let information = world.information;
   let population = world.population;
   let electoral = world.electoral;
+  let bootstrapResolved = world.bootstrapTransition.resolved;
   const occurrences: HistoricalOccurrence[] = [];
 
   for (const boundary of boundaries) {
@@ -312,159 +227,153 @@ export const advanceWorldTo = (
     housing = housingAdvancement.housing;
     occurrences.push(...housingAdvancement.occurrences);
 
-    // Explicit dependency: material state stabilizes before same-boundary capture.
-    const informationAdvancement = resolveInformationBoundary(
-      information,
-      housing,
-      boundary,
-    );
+    // Material state stabilizes before same-boundary measurement/release semantics.
+    const informationAdvancement = resolveInformationBoundary(information, housing, boundary);
     information = informationAdvancement.information;
     occurrences.push(...informationAdvancement.occurrences);
 
-    if (
-      hasDisputedHousingRedirectionAttempt &&
-      boundary === GL0_HOUSING_REDIRECTION_CHALLENGE_AT
-    ) {
-      const challenge = resolveContestedAuthorityChallengeBoundary(governance, boundary);
-      governance = challenge.governance;
-      occurrences.push(...challenge.occurrences);
-    }
-
-    if (
-      hasDisputedHousingRedirectionAttempt &&
-      boundary === GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT
-    ) {
-      const interimRelief = resolveContestedAuthorityInterimReliefBoundary(
-        governance,
-        boundary,
-      );
-      governance = interimRelief.governance;
-      occurrences.push(...interimRelief.occurrences);
-    }
-
-    if (
-      hasDisputedHousingRedirectionAttempt &&
-      boundary === GL0_HOUSING_REDIRECTION_COMPLIANCE_AT
-    ) {
-      const compliance = resolveContestedAuthorityComplianceBoundary(
-        governance,
-        "COMPLY",
-        boundary,
-      );
-      governance = compliance.governance;
-      occurrences.push(...compliance.occurrences);
-    }
-
-    if (boundary === OFFICIAL_HOUSING_REPORT_RELEASE_AT) {
-      // Explicit dependency: report release above precedes same-time receipt.
-      const reportExposure = exposeArtifactToFixtureAudiences(
-        information,
-        OFFICIAL_HOUSING_REPORT_ID,
-        [PUBLIC_AUDIENCE_ALPHA_ID, PUBLIC_AUDIENCE_BETA_ID],
-        boundary,
-      );
-      information = reportExposure.information;
-      occurrences.push(...reportExposure.occurrences);
-      const reportIncorporation = incorporateFixtureExposures(
-        population,
-        information,
-        reportExposure.exposures,
-        boundary,
-      );
-      population = reportIncorporation.population;
-      occurrences.push(...reportIncorporation.occurrences);
-    }
-
-    if (
-      governance.housingGrantProgram !== null &&
-      (boundary === ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT ||
-        boundary === OPPOSITION_HOUSING_CLAIM_RELEASE_AT)
-    ) {
-      // Political decision -> Information artifact -> same-time exposures.
-      const claim = releaseFixturePoliticalClaim(
-        governance,
-        information,
-        boundary === ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT
-          ? "ADMINISTRATION"
-          : "OPPOSITION",
-        boundary,
-      );
-      governance = claim.governance;
-      information = claim.information;
-      occurrences.push(...claim.occurrences);
-      const claimIncorporation = incorporateFixtureExposures(
-        population,
-        information,
-        claim.exposures,
-        boundary,
-      );
-      population = claimIncorporation.population;
-      occurrences.push(...claimIncorporation.occurrences);
-    }
-
-    if (boundary === POPULATION_ELECTORAL_RESPONSE_AT) {
-      // All supported Information incorporation is already Population-owned by day 43.
-      const electoralResponse = resolvePopulationElectoralDisposition(
-        population,
-        boundary,
-      );
-      population = electoralResponse.population;
-      occurrences.push(...electoralResponse.occurrences);
-    }
-
-    if (boundary === GL0_EXECUTIVE_ELECTION_AT) {
-      // Material and all prior Population response state are canonical before balloting.
-      const election = resolveElection(
-        electoral,
-        population,
-        governance.electoralEligibilityLegalOrder,
-        governance.electoralProcedureLegalOrder,
-        GL0_EXECUTIVE_CONTEST_ID,
-        boundary,
-      );
-      electoral = election.electoral;
-      occurrences.push(...election.occurrences);
-    }
-
-    if (boundary === GL0_EXECUTIVE_CERTIFICATION_AT) {
-      // Certification consumes only the frozen result, never current Population.
-      const certification = certifyElection(
-        electoral,
-        governance.electoralProcedureLegalOrder,
-        GL0_EXECUTIVE_CONTEST_ID,
-        boundary,
-      );
-      electoral = certification.electoral;
-      occurrences.push(...certification.occurrences);
-    }
-
-    if (boundary === GL0_SUCCESSOR_ENTITLEMENT_AT) {
-      // Certified result -> candidate reference -> executive actor entitlement.
-      const entitlement = establishExecutiveSuccessorEntitlement(
-        governance.executivePolitical,
-        electoral,
-        governance.executiveSuccessionLegalOrder,
-        boundary,
-      );
-      governance = {
-        ...governance,
-        executivePolitical: entitlement.executivePolitical,
-      };
-      occurrences.push(...entitlement.occurrences);
-    }
-
-    if (boundary === GL0_EXECUTIVE_TRANSFER_AT) {
-      // Entitlement is distinct from assignment; only this owner boundary changes the holder.
-      const transfer = transferExecutiveOffice(
-        governance.executivePolitical,
-        governance.executiveSuccessionLegalOrder,
-        boundary,
-      );
-      governance = {
-        ...governance,
-        executivePolitical: transfer.executivePolitical,
-      };
-      occurrences.push(...transfer.occurrences);
+    const transitions = world.transitionSchedule
+      .filter((transition) => transition.at === boundary)
+      .sort((left, right) => transitionRank(left).localeCompare(transitionRank(right)));
+    for (const transition of transitions) {
+      switch (transition.kind) {
+        case "BOOTSTRAP_BOUNDARY":
+          bootstrapResolved = true;
+          break;
+        case "INFORMATION_BOUNDARY":
+          break;
+        case "CONTESTED_AUTHORITY_CHALLENGE":
+          if (governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0) {
+            const result = resolveContestedAuthorityChallengeBoundary(
+              governance,
+              boundary,
+              transition.at,
+            );
+            governance = result.governance;
+            occurrences.push(...result.occurrences);
+          }
+          break;
+        case "CONTESTED_AUTHORITY_INTERIM_RELIEF":
+          if (governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0) {
+            const result = resolveContestedAuthorityInterimReliefBoundary(
+              governance,
+              boundary,
+              transition.at,
+            );
+            governance = result.governance;
+            occurrences.push(...result.occurrences);
+          }
+          break;
+        case "CONTESTED_AUTHORITY_COMPLIANCE":
+          if (governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0) {
+            const result = resolveContestedAuthorityComplianceBoundary(
+              governance,
+              "COMPLY",
+              boundary,
+              transition.at,
+            );
+            governance = result.governance;
+            occurrences.push(...result.occurrences);
+          }
+          break;
+        case "INFORMATION_ARTIFACT_EXPOSURE": {
+          const result = exposeArtifactToConfiguredAudiences(
+            information,
+            transition.artifactId,
+            transition.audienceIds,
+            boundary,
+          );
+          information = result.information;
+          occurrences.push(...result.occurrences);
+          const incorporation = incorporateConfiguredExposures(
+            population,
+            information,
+            result.exposures,
+            boundary,
+          );
+          population = incorporation.population;
+          occurrences.push(...incorporation.occurrences);
+          break;
+        }
+        case "POLITICAL_CLAIM_RELEASE":
+          if (governance.housingGrantProgram !== null) {
+            const result = releaseConfiguredPoliticalClaim(governance, information, transition);
+            governance = result.governance;
+            information = result.information;
+            occurrences.push(...result.occurrences);
+            const incorporation = incorporateConfiguredExposures(
+              population,
+              information,
+              result.exposures,
+              boundary,
+            );
+            population = incorporation.population;
+            occurrences.push(...incorporation.occurrences);
+          }
+          break;
+        case "POPULATION_ELECTORAL_RESPONSE": {
+          const result = resolvePopulationElectoralDisposition(
+            population,
+            boundary,
+            transition.at,
+          );
+          population = result.population;
+          occurrences.push(...result.occurrences);
+          break;
+        }
+        case "ELECTION_RESOLUTION": {
+          const result = resolveElection(
+            electoral,
+            population,
+            governance.electoralEligibilityLegalOrder,
+            governance.electoralProcedureLegalOrder,
+            transition.contestId,
+            boundary,
+          );
+          electoral = result.electoral;
+          occurrences.push(...result.occurrences);
+          break;
+        }
+        case "ELECTION_CERTIFICATION": {
+          const result = certifyElection(
+            electoral,
+            governance.electoralProcedureLegalOrder,
+            transition.contestId,
+            boundary,
+          );
+          electoral = result.electoral;
+          occurrences.push(...result.occurrences);
+          break;
+        }
+        case "SUCCESSOR_ENTITLEMENT": {
+          const result = establishExecutiveSuccessorEntitlement(
+            governance.executivePolitical,
+            electoral,
+            governance.executiveSuccessionLegalOrder,
+            boundary,
+            {
+              contestId: transition.contestId,
+              entitlementId: transition.entitlementId,
+              entitlementAt: transition.at,
+              transferAt: transition.transferAt,
+            },
+          );
+          governance = { ...governance, executivePolitical: result.executivePolitical };
+          occurrences.push(...result.occurrences);
+          break;
+        }
+        case "EXECUTIVE_OFFICE_TRANSFER": {
+          const result = transferExecutiveOffice(
+            governance.executivePolitical,
+            governance.executiveSuccessionLegalOrder,
+            boundary,
+            transition.at,
+          );
+          governance = { ...governance, executivePolitical: result.executivePolitical };
+          occurrences.push(...result.occurrences);
+          break;
+        }
+      }
     }
     cursor = boundary;
   }
@@ -478,7 +387,7 @@ export const advanceWorldTo = (
     population,
     electoral,
     history: [...world.history, ...occurrences],
-    bootstrapTransition: resolvesBootstrapBoundary
+    bootstrapTransition: bootstrapResolved
       ? { ...world.bootstrapTransition, resolved: true }
       : world.bootstrapTransition,
   };

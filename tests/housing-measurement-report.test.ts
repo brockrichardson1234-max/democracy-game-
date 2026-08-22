@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
 import { createGameSession } from "../src/app/session";
 import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
 import {
@@ -28,7 +30,6 @@ import {
 import type { ProposalTerms } from "../src/sim/legislature";
 import {
   advanceWorldTo,
-  createDeterministicWorldFixture,
   type WorldState,
 } from "../src/sim/world";
 

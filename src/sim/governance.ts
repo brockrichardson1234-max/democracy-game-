@@ -234,12 +234,12 @@ export const originateHousingPoliticalClaimDecision = (
   kind: HousingPoliticalClaimDecisionKind,
   sourceArtifactId: string,
   at: SimulationInstant,
-): HousingPoliticalClaimDecisionResult => {
-  const expectedAt =
+  scheduledAt: SimulationInstant =
     kind === "ADMINISTRATION"
       ? ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT
-      : OPPOSITION_HOUSING_CLAIM_RELEASE_AT;
-  if (at !== expectedAt) {
+      : OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
+): HousingPoliticalClaimDecisionResult => {
+  if (at !== scheduledAt) {
     throw new Error(`${kind} Housing claim decision is not due at simulation time ${at}.`);
   }
   if (governance.housingGrantProgram === null) {
@@ -1369,8 +1369,9 @@ const requireSingleDisputedAttempt = (governance: GovernanceState) => {
 export const resolveContestedAuthorityChallengeBoundary = (
   governance: GovernanceState,
   at: SimulationInstant,
+  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
 ): ContestedAuthorityBoundaryResult => {
-  if (at !== GL0_HOUSING_REDIRECTION_CHALLENGE_AT) {
+  if (at !== scheduledAt) {
     throw new Error(`The legal challenge boundary is not due at ${at}.`);
   }
   const attempt = requireSingleDisputedAttempt(governance);
@@ -1379,6 +1380,7 @@ export const resolveContestedAuthorityChallengeBoundary = (
     attempt.id,
     attempt.targetInstitutionId,
     at,
+    scheduledAt,
   );
   const admission = admitHousingRedirectionContest(filing.judiciary, filing.claim, at);
   return {
@@ -1406,8 +1408,9 @@ export const resolveContestedAuthorityChallengeBoundary = (
 export const resolveContestedAuthorityInterimReliefBoundary = (
   governance: GovernanceState,
   at: SimulationInstant,
+  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
 ): ContestedAuthorityBoundaryResult => {
-  if (at !== GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT) {
+  if (at !== scheduledAt) {
     throw new Error(`The interim-relief boundary is not due at ${at}.`);
   }
   const attempt = requireSingleDisputedAttempt(governance);
@@ -1419,6 +1422,7 @@ export const resolveContestedAuthorityInterimReliefBoundary = (
     governance.judiciary,
     contests[0].id,
     at,
+    scheduledAt,
   );
   const issued = issueScopedTemporaryHousingRedirectionOrder(
     governance.judicialLegalOrder,
@@ -1477,8 +1481,9 @@ export const resolveContestedAuthorityComplianceBoundary = (
   governance: GovernanceState,
   response: JudicialOrderComplianceChoice,
   at: SimulationInstant,
+  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
 ): ContestedAuthorityBoundaryResult => {
-  if (at !== GL0_HOUSING_REDIRECTION_COMPLIANCE_AT) {
+  if (at !== scheduledAt) {
     throw new Error(`Judicial-order compliance is not due at simulation time ${at}.`);
   }
   const orders = governance.judicialLegalOrder.operativeOrders;

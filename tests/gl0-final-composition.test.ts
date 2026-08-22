@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { GameSaveV1 } from "../src/app/persistence";
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
+import type { GameSaveV2 } from "../src/app/persistence";
 import {
   createGameSession,
   createGameSessionFromSave,
@@ -56,7 +58,6 @@ import {
 } from "../src/sim/population";
 import {
   advanceWorldTo,
-  createDeterministicWorldFixture,
   type WorldState,
 } from "../src/sim/world";
 
@@ -144,10 +145,10 @@ const createHostileDay6Session = (): GameSession => {
   return session;
 };
 
-const parseEnvelope = (serialized: string): GameSaveV1 =>
-  JSON.parse(serialized) as GameSaveV1;
+const parseEnvelope = (serialized: string): GameSaveV2 =>
+  JSON.parse(serialized) as GameSaveV2;
 
-const envelopeFor = (session: GameSession): GameSaveV1 => parseEnvelope(session.save());
+const envelopeFor = (session: GameSession): GameSaveV2 => parseEnvelope(session.save());
 
 const worldFor = (session: GameSession): WorldState => envelopeFor(session).world;
 

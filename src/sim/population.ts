@@ -427,11 +427,12 @@ const resolveTurnoutDisposition = (
 export const resolvePopulationElectoralDisposition = (
   population: PopulationState,
   at: SimulationInstant,
+  scheduledAt: SimulationInstant = POPULATION_ELECTORAL_RESPONSE_AT,
 ): PopulationTransitionResult => {
   if (!Number.isFinite(at)) {
     throw new Error("Population electoral-response time must be finite.");
   }
-  if (at !== POPULATION_ELECTORAL_RESPONSE_AT) {
+  if (at !== scheduledAt) {
     throw new Error(`Population electoral response is not due at simulation time ${at}.`);
   }
   if (population.electoralDispositionResolvedAt !== null) {

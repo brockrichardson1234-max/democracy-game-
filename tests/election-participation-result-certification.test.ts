@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
 import {
   certifyElection,
   GL0_ADMINISTRATION_CANDIDATE_ID,
@@ -45,7 +47,6 @@ import {
 } from "../src/sim/population";
 import {
   advanceWorldTo,
-  createDeterministicWorldFixture,
   type WorldState,
 } from "../src/sim/world";
 

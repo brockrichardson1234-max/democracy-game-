@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
 import {
   amendHousingGrantProposal,
   HOUSING_GRANT_APPROPRIATION_PURPOSE,
@@ -10,7 +12,6 @@ import {
 import { decideActorVote, resolveSeatHolder } from "../src/sim/legislature";
 import type { ProposalTerms } from "../src/sim/legislature";
 import { resolveRequiredYeaVotes } from "../src/sim/legislative-procedure";
-import { createDeterministicWorldFixture } from "../src/sim/world";
 
 const INITIAL_TERMS: ProposalTerms = {
   federalMatchRatePercent: 35,

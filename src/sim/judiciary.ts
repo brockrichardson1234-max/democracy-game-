@@ -106,8 +106,9 @@ export const fileStateAHousingRedirectionClaim = (
   challengedAttemptId: string,
   targetInstitutionId: string,
   at: SimulationInstant,
+  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
 ): { readonly judiciary: JudiciaryState; readonly claim: LegalClaim } => {
-  if (at !== GL0_HOUSING_REDIRECTION_CHALLENGE_AT) {
+  if (at !== scheduledAt) {
     throw new Error(`State A's Housing redirection challenge is not due at ${at}.`);
   }
   if (judiciary.legalClaims.length > 0) {
@@ -166,8 +167,9 @@ export const autonomouslyGrantInterimRelief = (
   judiciary: JudiciaryState,
   contestId: string,
   at: SimulationInstant,
+  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
 ): { readonly judiciary: JudiciaryState; readonly decision: InterimReliefDecision } => {
-  if (at !== GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT) {
+  if (at !== scheduledAt) {
     throw new Error(`Interim relief is not due at simulation time ${at}.`);
   }
   const contest = judiciary.legalContests.find((candidate) => candidate.id === contestId);

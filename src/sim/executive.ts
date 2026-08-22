@@ -124,9 +124,9 @@ export const resolveCurrentExecutiveOfficeholder = (
   return actors[0];
 };
 
-const resolveCertifiedElection = (electoral: ElectoralState) => {
+const resolveCertifiedElection = (electoral: ElectoralState, contestId: string) => {
   const processes = electoral.electionProcesses.filter(
-    (process) => process.contestId === GL0_EXECUTIVE_CONTEST_ID,
+    (process) => process.contestId === contestId,
   );
   if (processes.length !== 1) {
     throw new Error("Executive succession requires exactly one GL0 election process.");
@@ -145,6 +145,20 @@ const resolveCertifiedElection = (electoral: ElectoralState) => {
   return { process, result: process.result, certification: process.certification };
 };
 
+export interface ExecutiveSuccessionTransitionConfiguration {
+  readonly contestId: string;
+  readonly entitlementId: string;
+  readonly entitlementAt: SimulationInstant;
+  readonly transferAt: SimulationInstant;
+}
+
+const DEFAULT_SUCCESSION_TRANSITION: ExecutiveSuccessionTransitionConfiguration = {
+  contestId: GL0_EXECUTIVE_CONTEST_ID,
+  entitlementId: GL0_SUCCESSOR_ENTITLEMENT_ID,
+  entitlementAt: GL0_SUCCESSOR_ENTITLEMENT_AT,
+  transferAt: GL0_EXECUTIVE_TRANSFER_AT,
+};
+
 /**
  * Day-62 executive-owner admission of a certified non-tie winner. The election
  * remains frozen and candidate identity is resolved through its actor reference.
@@ -154,8 +168,9 @@ export const establishExecutiveSuccessorEntitlement = (
   electoral: ElectoralState,
   legalOrder: ExecutiveSuccessionLegalOrderState,
   at: SimulationInstant,
+  transition: ExecutiveSuccessionTransitionConfiguration = DEFAULT_SUCCESSION_TRANSITION,
 ): ExecutivePoliticalTransitionResult => {
-  if (at !== GL0_SUCCESSOR_ENTITLEMENT_AT) {
+  if (at !== transition.entitlementAt) {
     throw new Error(`Successor entitlement is not due at simulation time ${at}.`);
   }
   if (executivePolitical.succession.successorEntitlement !== null) {
@@ -166,7 +181,7 @@ export const establishExecutiveSuccessorEntitlement = (
     legalOrder,
     executivePolitical.office.successionRuleId,
   );
-  const { result, certification } = resolveCertifiedElection(electoral);
+  const { result, certification } = resolveCertifiedElection(electoral, transition.contestId);
   const successorCandidateId = resolveSuccessorCandidateId(
     rule,
     result.outcome,
@@ -197,13 +212,13 @@ export const establishExecutiveSuccessorEntitlement = (
   }
 
   const entitlement: SuccessorEntitlement = {
-    id: GL0_SUCCESSOR_ENTITLEMENT_ID,
+    id: transition.entitlementId,
     sourceCertificationId: certification.id,
     sourceResultId: result.id,
     sourceWinningCandidateId: winningCandidate.id,
     entitledActorId: entitledActors[0].id,
     establishedAtSimulationTime: at,
-    scheduledTransferAtSimulationTime: GL0_EXECUTIVE_TRANSFER_AT,
+    scheduledTransferAtSimulationTime: transition.transferAt,
   };
   return {
     executivePolitical: {
@@ -230,8 +245,9 @@ export const transferExecutiveOffice = (
   executivePolitical: ExecutivePoliticalState,
   legalOrder: ExecutiveSuccessionLegalOrderState,
   at: SimulationInstant,
+  scheduledAt: SimulationInstant = GL0_EXECUTIVE_TRANSFER_AT,
 ): ExecutivePoliticalTransitionResult => {
-  if (at !== GL0_EXECUTIVE_TRANSFER_AT) {
+  if (at !== scheduledAt) {
     throw new Error(`Executive office transfer is not due at simulation time ${at}.`);
   }
   if (executivePolitical.succession.transferResolvedAtSimulationTime !== null) {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
 import { createGameSession, type GameSession } from "../src/app/session";
 import { FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID } from "../src/sim/administration";
 import {
@@ -41,7 +43,6 @@ import { advanceHousing } from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 import {
   advanceWorldTo,
-  createDeterministicWorldFixture,
   type WorldState,
 } from "../src/sim/world";
 

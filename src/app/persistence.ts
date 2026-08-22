@@ -1,10 +1,13 @@
 import type { WorldState } from "../sim/world";
+import { assertConfigurationIdentityCompatible } from "../configuration/loader";
+import type { ConfigurationIdentity } from "../configuration/types";
 import type { ControlBinding } from "./session";
 
-export const GAME_SAVE_FORMAT_VERSION = 1 as const;
+export const GAME_SAVE_FORMAT_VERSION = 2 as const;
 
-export interface GameSaveV1 {
+export interface GameSaveV2 {
   readonly formatVersion: typeof GAME_SAVE_FORMAT_VERSION;
+  readonly configuration: ConfigurationIdentity;
   readonly world: WorldState;
   readonly session: {
     readonly controlBinding: ControlBinding;
@@ -52,18 +55,36 @@ const parseControlBinding = (value: unknown): ControlBinding => {
   return binding as unknown as ControlBinding;
 };
 
-export const serializeGameSaveV1 = (
+export const serializeGameSaveV2 = (
   world: WorldState,
   controlBinding: ControlBinding,
 ): string =>
   JSON.stringify({
     formatVersion: GAME_SAVE_FORMAT_VERSION,
+    configuration: world.configuration,
     world,
     session: { controlBinding },
-  } satisfies GameSaveV1);
+  } satisfies GameSaveV2);
 
-export const parseGameSaveV1 = (
+const parseConfigurationIdentity = (value: unknown): ConfigurationIdentity => {
+  const identity = requireRecord(value, "configuration");
+  for (const field of [
+    "configurationId",
+    "configurationVersion",
+    "scenarioId",
+    "scenarioVersion",
+    "configurationHash",
+  ] as const) {
+    if (typeof identity[field] !== "string" || identity[field].length === 0) {
+      throw new Error(`Invalid game save: configuration.${field} is required.`);
+    }
+  }
+  return identity as unknown as ConfigurationIdentity;
+};
+
+export const parseGameSaveV2 = (
   serializedSave: string,
+  expectedConfiguration: ConfigurationIdentity,
 ): { readonly world: WorldState; readonly controlBinding: ControlBinding } => {
   let parsed: unknown;
   try {
@@ -75,11 +96,16 @@ export const parseGameSaveV1 = (
   const envelope = requireRecord(parsed, "save envelope");
   if (envelope.formatVersion !== GAME_SAVE_FORMAT_VERSION) {
     throw new Error(
-      `Unsupported game save format version: ${String(envelope.formatVersion)}. Expected 1.`,
+      `Unsupported game save format version: ${String(envelope.formatVersion)}. Expected ${GAME_SAVE_FORMAT_VERSION}.`,
     );
   }
 
+  const configuration = parseConfigurationIdentity(envelope.configuration);
+  assertConfigurationIdentityCompatible(expectedConfiguration, configuration);
+
   const world = requireRecord(envelope.world, "world");
+  const worldConfiguration = parseConfigurationIdentity(world.configuration);
+  assertConfigurationIdentityCompatible(configuration, worldConfiguration);
   const time = requireRecord(world.time, "world.time");
   if (
     typeof time.current !== "number" ||

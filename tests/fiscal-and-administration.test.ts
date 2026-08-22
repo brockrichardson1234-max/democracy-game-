@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
 import {
   amendHousingGrantProposal,
   establishHousingGrantProgram,
@@ -11,7 +13,6 @@ import {
 import { FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID } from "../src/sim/administration";
 import { createGameSession } from "../src/app/session";
 import type { ProposalTerms } from "../src/sim/legislature";
-import { createDeterministicWorldFixture } from "../src/sim/world";
 
 const INITIAL_TERMS: ProposalTerms = {
   federalMatchRatePercent: 35,

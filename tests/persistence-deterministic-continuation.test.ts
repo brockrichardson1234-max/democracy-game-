@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type GameSaveV1 } from "../src/app/persistence";
+import { type GameSaveV2 } from "../src/app/persistence";
 import {
   createGameSession,
   createGameSessionFromSave,
@@ -60,10 +60,10 @@ const createHostileDay6Session = (): GameSession => {
   return session;
 };
 
-const parseEnvelope = (serialized: string): GameSaveV1 =>
-  JSON.parse(serialized) as GameSaveV1;
+const parseEnvelope = (serialized: string): GameSaveV2 =>
+  JSON.parse(serialized) as GameSaveV2;
 
-const envelopeFor = (session: GameSession): GameSaveV1 => parseEnvelope(session.save());
+const envelopeFor = (session: GameSession): GameSaveV2 => parseEnvelope(session.save());
 
 const worldFor = (session: GameSession): WorldState => envelopeFor(session).world;
 
@@ -83,7 +83,8 @@ describe("Commit 24 save/load and deterministic continuation", () => {
     const serialized = createGameSession().save();
     const envelope = parseEnvelope(serialized);
 
-    expect(envelope.formatVersion).toBe(1);
+    expect(envelope.formatVersion).toBe(2);
+    expect(envelope.configuration).toEqual(envelope.world.configuration);
     expect(envelope.world).toBeDefined();
     expect(envelope.session.controlBinding.status).toBe("ACTIVE");
     expect(envelope.world).not.toHaveProperty("controlBinding");
@@ -113,7 +114,7 @@ describe("Commit 24 save/load and deterministic continuation", () => {
   });
 
   it("4. rejects missing and unsupported save versions", () => {
-    for (const version of [undefined, 0, 2]) {
+    for (const version of [undefined, 0, 1, 3]) {
       const serialized = malformedFromValid((envelope) => {
         if (version === undefined) delete envelope.formatVersion;
         else envelope.formatVersion = version;
@@ -124,9 +125,14 @@ describe("Commit 24 save/load and deterministic continuation", () => {
     }
   });
 
-  it("5. rejects missing world, session, and ControlBinding fields", () => {
+  it("5. rejects missing configuration, world, session, and ControlBinding fields", () => {
     const cases = [
+      malformedFromValid((envelope) => delete envelope.configuration),
       malformedFromValid((envelope) => delete envelope.world),
+      malformedFromValid((envelope) => {
+        const world = envelope.world as Record<string, unknown>;
+        delete world.configuration;
+      }),
       malformedFromValid((envelope) => delete envelope.session),
       malformedFromValid((envelope) => {
         const session = envelope.session as Record<string, unknown>;

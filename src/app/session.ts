@@ -1,9 +1,14 @@
 import {
   advanceWorldTo,
-  createDeterministicWorldFixture,
   type SimulationInstant,
   type WorldState,
 } from "../sim/world";
+import {
+  GL0_SYNTHETIC_CONFIGURATION,
+  createDeterministicWorldFixture,
+} from "../content/gl0-synthetic/configuration";
+import { loadGovernmentConfiguration } from "../configuration/loader";
+import type { GovernmentConfiguration } from "../configuration/types";
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -77,7 +82,7 @@ import {
   resolveExecutiveSuccessionRule,
   type ExecutiveSuccessionRequirement,
 } from "../sim/executive-law";
-import { parseGameSaveV1, serializeGameSaveV1 } from "./persistence";
+import { parseGameSaveV2, serializeGameSaveV2 } from "./persistence";
 import {
   projectPlayerAdministrationView,
   type PlayerAdministrationView,
@@ -1051,7 +1056,7 @@ const createGameSessionFromState = (
   return {
     getPlayerView: () => projectPlayerAdministrationView(world, controlBinding),
     getView: () => projectWorld(world, controlBinding),
-    save: () => serializeGameSaveV1(world, controlBinding),
+    save: () => serializeGameSaveV2(world, controlBinding),
     advanceTo: (target) => commitWorld(advanceWorldTo(world, target)),
     submitHousingGrantProposal: (terms) => {
       requireStrategicControl();
@@ -1116,7 +1121,16 @@ export const createGameSession = (): GameSession => {
   return createGameSessionFromState(world, createInitialControlBinding(world));
 };
 
-export const createGameSessionFromSave = (serializedSave: string): GameSession => {
-  const restored = parseGameSaveV1(serializedSave);
+export const createGameSessionFromSave = (
+  serializedSave: string,
+  configuration: GovernmentConfiguration<unknown> = GL0_SYNTHETIC_CONFIGURATION,
+): GameSession => {
+  const loaded = loadGovernmentConfiguration(configuration);
+  const restored = parseGameSaveV2(serializedSave, loaded.identity);
+  if (loaded.capability !== "PLAYABLE_CAUSAL_WORLD") {
+    throw new Error(
+      `Configuration ${loaded.identity.configurationId} is structural-proof-only and cannot open a game session.`,
+    );
+  }
   return createGameSessionFromState(restored.world, restored.controlBinding);
 };

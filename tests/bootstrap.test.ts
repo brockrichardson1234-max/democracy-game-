@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
 import { createGameSession } from "../src/app/session";
-import { advanceWorldTo, createDeterministicWorldFixture } from "../src/sim/world";
+import { advanceWorldTo } from "../src/sim/world";
 
 describe("Commit 8 headless bootstrap", () => {
   it("initializes deterministic canonical time and a pending transition", () => {
