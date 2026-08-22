@@ -14,9 +14,6 @@ export type LegislativeCoalition =
   | "OPPOSITION_COALITION"
   | "SWING_COALITION";
 
-/** Existing bounded opposition speaker used by the GL0 public-claim fixture. */
-export const GL0_OPPOSITION_CLAIM_ACTOR_ID = "actor-opposition-1";
-
 /**
  * Actor-owned decision criteria. An actor votes YEA only when every
  * criterion it specifies is satisfied by the proposal terms currently before
@@ -54,63 +51,6 @@ export interface Legislature {
   readonly actors: readonly PoliticalActor[];
   readonly assignments: readonly OfficeAssignment[];
 }
-
-const actor = (
-  id: string,
-  coalition: LegislativeCoalition,
-  decisionCriteria: LegislatorDecisionCriteria,
-): PoliticalActor => ({ id, coalition, decisionCriteria });
-
-const noAdditionalCriteria: LegislatorDecisionCriteria = {
-  minimumFederalMatchRatePercent: null,
-  requiredParticipationCondition: null,
-  requiredReportingRequirement: null,
-};
-
-const requiresLenientParticipation: LegislatorDecisionCriteria = {
-  minimumFederalMatchRatePercent: null,
-  requiredParticipationCondition: "lenient",
-  requiredReportingRequirement: null,
-};
-
-const requiresGenerousMatchAndStrongReporting: LegislatorDecisionCriteria = {
-  minimumFederalMatchRatePercent: 50,
-  requiredParticipationCondition: null,
-  requiredReportingRequirement: "strengthened",
-};
-
-/**
- * Deliberately tiny synthetic legislature: 11 causally discrete seats, each
- * currently held by its own persistent political actor. The coalition label
- * on an actor only groups actors who happen to share a deterministic
- * template for fixture readability; it never casts a vote on their behalf,
- * and it is the seat/assignment -- not the actor object alone -- that
- * establishes who is currently entitled to cast that seat's vote.
- */
-export const createDeterministicLegislatureFixture = (): Legislature => {
-  const actors: PoliticalActor[] = [
-    actor("actor-support-1", "SUPPORT_COALITION", noAdditionalCriteria),
-    actor("actor-support-2", "SUPPORT_COALITION", noAdditionalCriteria),
-    actor("actor-support-3", "SUPPORT_COALITION", noAdditionalCriteria),
-    actor("actor-support-4", "SUPPORT_COALITION", noAdditionalCriteria),
-    actor("actor-opposition-1", "OPPOSITION_COALITION", requiresLenientParticipation),
-    actor("actor-opposition-2", "OPPOSITION_COALITION", requiresLenientParticipation),
-    actor("actor-opposition-3", "OPPOSITION_COALITION", requiresLenientParticipation),
-    actor("actor-opposition-4", "OPPOSITION_COALITION", requiresLenientParticipation),
-    actor("actor-swing-1", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
-    actor("actor-swing-2", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
-    actor("actor-swing-3", "SWING_COALITION", requiresGenerousMatchAndStrongReporting),
-  ];
-
-  const seats: LegislativeSeat[] = actors.map((_, index) => ({ id: `seat-${index + 1}` }));
-
-  const assignments: OfficeAssignment[] = seats.map((seat, index) => ({
-    seatId: seat.id,
-    actorId: actors[index].id,
-  }));
-
-  return { seats, actors, assignments };
-};
 
 /** Resolves which actor currently holds a seat through the office-assignment relationship. */
 export const resolveSeatHolder = (

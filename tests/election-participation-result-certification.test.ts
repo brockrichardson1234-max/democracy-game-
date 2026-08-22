@@ -1,9 +1,4 @@
-import { describe, expect, it } from "vitest";
-
-import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
-
 import {
-  certifyElection,
   GL0_ADMINISTRATION_CANDIDATE_ID,
   GL0_EXECUTIVE_CERTIFICATION_AT,
   GL0_EXECUTIVE_CONTEST_ID,
@@ -11,18 +6,28 @@ import {
   GL0_EXECUTIVE_ELECTION_PROCESS_ID,
   GL0_EXECUTIVE_ELECTION_RESULT_ID,
   GL0_OPPOSITION_CANDIDATE_ID,
+  GL0_ORDINARY_EXECUTIVE_ELECTION_PROCEDURE_RULE_ID,
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
+  STATE_A_ID,
+  STATE_C_ID,
+  POPULATION_UNIT_A_ID,
+  POPULATION_UNIT_B_ID,
+  POPULATION_UNIT_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
+import { describe, expect, it } from "vitest";
+
+import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
+
+import {
+  certifyElection,
   resolveElection,
   type ElectionProcess,
   type ElectionResult,
 } from "../src/sim/electoral";
-import {
-  GL0_ORDINARY_EXECUTIVE_ELECTION_PROCEDURE_RULE_ID,
-} from "../src/sim/electoral-law";
-import {
-  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
-} from "../src/sim/executive";
-import { STATE_A_ID, STATE_C_ID } from "../src/sim/federalism";
+
+
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -40,11 +45,7 @@ import {
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
 import type { ProposalTerms } from "../src/sim/legislature";
-import {
-  POPULATION_UNIT_A_ID,
-  POPULATION_UNIT_B_ID,
-  POPULATION_UNIT_C_ID,
-} from "../src/sim/population";
+
 import {
   advanceWorldTo,
   type WorldState,
@@ -83,7 +84,7 @@ const materializeStateProject = (world: WorldState, stateId: string): WorldState
 };
 
 const resolveRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): WorldState => {
   let world = establishProgram();
   world = materializeStateProject(world, STATE_A_ID);
@@ -116,7 +117,7 @@ const candidateWeight = (result: ElectionResult, candidateId: string): number =>
 
 describe("Commit 21 election participation, result, and certification", () => {
   it("1. preserves the accepted Commit-20 preference and turnout state through day 43", () => {
-    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
 
     expect(
       world.population.units.map((unit) => [
@@ -132,7 +133,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("2. stores actual participation only in the Electoral-owned election process", () => {
-    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60);
+    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60);
 
     expect(processFor(world).participationRecords).toHaveLength(3);
     expect(world.population.units.every((unit) => !("participatingWeight" in unit))).toBe(true);
@@ -159,7 +160,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("4. has no snapshot, participation, ballots, or result on day 59", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 59));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 59));
 
     expect(process).toMatchObject({
       status: "SCHEDULED",
@@ -172,7 +173,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("5. resolves the day-60 election exactly once", () => {
-    const day60 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60);
+    const day60 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60);
     const repeated = advanceWorldTo(day60, 60);
 
     expect(processFor(day60).electorateSnapshot).toMatchObject({
@@ -190,7 +191,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("6. requires the canonical eligibility legal-order rule", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
 
     expect(() =>
       resolveElection(
@@ -224,7 +225,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("8. rejects election resolution when the referenced procedure rule is absent", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
 
     expect(() =>
       resolveElection(
@@ -239,7 +240,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("9. converts HIGH turnout disposition into 100 percent participating weight", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60));
 
     for (const unitId of [POPULATION_UNIT_B_ID, POPULATION_UNIT_C_ID]) {
       expect(
@@ -249,7 +250,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("10. converts MEDIUM turnout disposition into 50 percent participating weight", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60));
 
     expect(
       process.participationRecords.find(
@@ -259,7 +260,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("11. converts LOW turnout disposition into zero participation in a focused fixture", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
     const lowPopulation = {
       ...day43.population,
       units: day43.population.units.map((unit) =>
@@ -289,7 +290,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("12. rejects UNRESOLVED turnout or preference at election resolution", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
     const withUnitA = (
       replacement: Partial<(typeof day43.population.units)[number]>,
     ) => ({
@@ -322,7 +323,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("13. turns ADMINISTRATION preference into Administration candidate ballot weight", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60));
 
     expect(
       process.ballots.find((ballot) => ballot.populationUnitId === POPULATION_UNIT_C_ID),
@@ -334,7 +335,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("14. turns OPPOSITION preference into Opposition candidate ballot weight", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60));
 
     expect(
       process.ballots.find((ballot) => ballot.populationUnitId === POPULATION_UNIT_B_ID),
@@ -346,7 +347,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("15. turns participating UNDECIDED weight into a blank ballot", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60));
 
     expect(
       process.ballots.find((ballot) => ballot.populationUnitId === POPULATION_UNIT_A_ID),
@@ -354,7 +355,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("16. produces the exact DEPLOY day-60 tie result", () => {
-    const result = resultFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60));
+    const result = resultFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60));
 
     expect(result).toMatchObject({
       id: GL0_EXECUTIVE_ELECTION_RESULT_ID,
@@ -386,7 +387,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("18. leaves Population preference and turnout unchanged when ballots resolve", () => {
-    const day59 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 59);
+    const day59 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 59);
     const populationSnapshot = structuredClone(day59.population);
     const day60 = advanceWorldTo(day59, 60);
 
@@ -394,7 +395,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("19. resolves from electoral Population state without reading Housing or Information", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
     const housingSnapshot = structuredClone(day43.housing);
     const informationSnapshot = structuredClone(day43.information);
     const governanceSnapshot = structuredClone(day43.governance);
@@ -414,7 +415,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("20. creates no certification on election day", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60));
 
     expect(process.status).toBe("RESOLVED");
     expect(process.certification).toBeNull();
@@ -453,7 +454,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("22. certifies the DEPLOY tie without inventing a winner", () => {
-    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 61));
+    const process = processFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 61));
 
     expect(process.status).toBe("CERTIFIED");
     expect(process.result).toMatchObject({ outcome: "TIE", winningCandidateId: null });
@@ -473,7 +474,7 @@ describe("Commit 21 election participation, result, and certification", () => {
   });
 
   it("24. keeps snapshot, participation, ballots, and result frozen after Population changes", () => {
-    const day60 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 60);
+    const day60 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 60);
     const processSnapshot = structuredClone(processFor(day60));
     const changedPopulation = {
       ...day60.population,

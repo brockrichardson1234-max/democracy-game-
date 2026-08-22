@@ -1,23 +1,11 @@
-import {
-  GL0_EXECUTIVE_CONTEST_ID,
-  type ElectoralState,
-} from "./electoral";
+import type { ElectoralState } from "./electoral";
 import {
   assertSuccessorTransferDue,
-  GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID,
   resolveExecutiveSuccessionRule,
   resolveSuccessorCandidateId,
   type ExecutiveSuccessionLegalOrderState,
 } from "./executive-law";
 import type { SimulationInstant } from "./world";
-
-export const GL0_INCUMBENT_EXECUTIVE_ACTOR_ID = "gl0-incumbent-executive-actor";
-export const GL0_OPPOSITION_EXECUTIVE_ACTOR_ID = "gl0-opposition-executive-actor";
-export const GL0_EXECUTIVE_INSTITUTION_ID = "gl0-federal-executive-administration";
-export const GL0_EXECUTIVE_OFFICE_ID = "gl0-executive-office";
-export const GL0_SUCCESSOR_ENTITLEMENT_ID = "gl0-successor-entitlement";
-export const GL0_SUCCESSOR_ENTITLEMENT_AT = 62;
-export const GL0_EXECUTIVE_TRANSFER_AT = 63;
 
 export interface ExecutivePoliticalActor {
   readonly id: string;
@@ -86,28 +74,6 @@ export interface ExecutivePoliticalTransitionResult {
   readonly occurrences: readonly ExecutivePoliticalOccurrence[];
 }
 
-export const createInitialExecutivePoliticalState = (): ExecutivePoliticalState => ({
-  actors: [
-    { id: GL0_INCUMBENT_EXECUTIVE_ACTOR_ID },
-    { id: GL0_OPPOSITION_EXECUTIVE_ACTOR_ID },
-  ],
-  institution: { id: GL0_EXECUTIVE_INSTITUTION_ID },
-  office: {
-    id: GL0_EXECUTIVE_OFFICE_ID,
-    institutionId: GL0_EXECUTIVE_INSTITUTION_ID,
-    successionRuleId: GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID,
-  },
-  currentOfficeAssignment: {
-    officeId: GL0_EXECUTIVE_OFFICE_ID,
-    actorId: GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-    effectiveAtSimulationTime: 0,
-  },
-  succession: {
-    successorEntitlement: null,
-    transferResolvedAtSimulationTime: null,
-  },
-});
-
 export const resolveCurrentExecutiveOfficeholder = (
   executivePolitical: ExecutivePoliticalState,
 ): ExecutivePoliticalActor => {
@@ -129,7 +95,7 @@ const resolveCertifiedElection = (electoral: ElectoralState, contestId: string) 
     (process) => process.contestId === contestId,
   );
   if (processes.length !== 1) {
-    throw new Error("Executive succession requires exactly one GL0 election process.");
+    throw new Error("Executive succession requires exactly one configured election process.");
   }
   const process = processes[0];
   if (
@@ -152,13 +118,6 @@ export interface ExecutiveSuccessionTransitionConfiguration {
   readonly transferAt: SimulationInstant;
 }
 
-const DEFAULT_SUCCESSION_TRANSITION: ExecutiveSuccessionTransitionConfiguration = {
-  contestId: GL0_EXECUTIVE_CONTEST_ID,
-  entitlementId: GL0_SUCCESSOR_ENTITLEMENT_ID,
-  entitlementAt: GL0_SUCCESSOR_ENTITLEMENT_AT,
-  transferAt: GL0_EXECUTIVE_TRANSFER_AT,
-};
-
 /**
  * Day-62 executive-owner admission of a certified non-tie winner. The election
  * remains frozen and candidate identity is resolved through its actor reference.
@@ -168,7 +127,7 @@ export const establishExecutiveSuccessorEntitlement = (
   electoral: ElectoralState,
   legalOrder: ExecutiveSuccessionLegalOrderState,
   at: SimulationInstant,
-  transition: ExecutiveSuccessionTransitionConfiguration = DEFAULT_SUCCESSION_TRANSITION,
+  transition: ExecutiveSuccessionTransitionConfiguration,
 ): ExecutivePoliticalTransitionResult => {
   if (at !== transition.entitlementAt) {
     throw new Error(`Successor entitlement is not due at simulation time ${at}.`);
@@ -245,7 +204,7 @@ export const transferExecutiveOffice = (
   executivePolitical: ExecutivePoliticalState,
   legalOrder: ExecutiveSuccessionLegalOrderState,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant = GL0_EXECUTIVE_TRANSFER_AT,
+  scheduledAt: SimulationInstant,
 ): ExecutivePoliticalTransitionResult => {
   if (at !== scheduledAt) {
     throw new Error(`Executive office transfer is not due at simulation time ${at}.`);

@@ -9,7 +9,7 @@ export interface HousingRegion {
   readonly stateJurisdictionId: string;
   readonly constructionCapacityWorkUnitsPerDay: number;
   readonly housingStockUnits: number;
-  /** Synthetic GL0 material demand owned by Housing until Population integration exists. */
+  /** Material demand owned by Housing until Population integration exists. */
   readonly housingDemandUnits: number;
   /** Canonical material pressure derived by Housing from usable stock and demand. */
   readonly affordabilityPressure: number;
@@ -39,9 +39,11 @@ export interface HousingProject {
  * the material target and effect.
  */
 export interface HousingImplementationSupportInput {
+  readonly deliverySupportId: string;
   readonly sourceDeploymentId: string;
   readonly stateJurisdictionId: string;
   readonly supportUnits: number;
+  readonly supplementalWorkUnitsPerDayPerUnit: number;
 }
 
 /** Housing-owned material interpretation of one accepted deployment. */
@@ -61,88 +63,29 @@ export interface HousingState {
   readonly projectDeliverySupports: readonly HousingProjectDeliverySupport[];
 }
 
-/** References supplied by the world fixture; Housing supplies all material values. */
-export interface HousingFixtureReferences {
-  readonly stateAId: string;
-  readonly stateBId: string;
-  readonly stateCId: string;
-  readonly geographyRegionAId: string;
-  readonly geographyRegionBId: string;
-  readonly geographyRegionCId: string;
-}
-
-export const HOUSING_REGION_A_ID = "housing-region-a";
-export const HOUSING_REGION_B_ID = "housing-region-b";
-export const HOUSING_REGION_C_ID = "housing-region-c";
-export const INITIAL_HOUSING_STOCK_UNITS = 1_000;
-export const STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS = 1_200;
-export const STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS = 1_150;
-export const STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS = 1_250;
-export const HOUSING_PROJECT_REQUIRED_WORK_UNITS = 100;
-export const HOUSING_PROJECT_PLANNED_UNITS = 100;
-export const STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 10;
-export const STATE_B_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 5;
-export const STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY = 2;
-/** Synthetic GL0 material rule, not a claim about real administrative effects. */
-export const HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT = 3;
-
-/** Housing's deliberately bounded deterministic GL0 material-pressure rule. */
+/** Housing's deliberately bounded deterministic material-pressure rule. */
 export const resolveHousingAffordabilityPressure = (
   housingStockUnits: number,
   housingDemandUnits: number,
 ): number => Math.max(0, housingDemandUnits - housingStockUnits);
 
-export const createInitialHousingState = (
-  references: HousingFixtureReferences,
-): HousingState => ({
-  regions: [
-    {
-      id: HOUSING_REGION_A_ID,
-      geographyRegionId: references.geographyRegionAId,
-      stateJurisdictionId: references.stateAId,
-      constructionCapacityWorkUnitsPerDay:
-        STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
-      housingStockUnits: INITIAL_HOUSING_STOCK_UNITS,
-      housingDemandUnits: STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS,
-      affordabilityPressure: resolveHousingAffordabilityPressure(
-        INITIAL_HOUSING_STOCK_UNITS,
-        STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS,
-      ),
-    },
-    {
-      id: HOUSING_REGION_B_ID,
-      geographyRegionId: references.geographyRegionBId,
-      stateJurisdictionId: references.stateBId,
-      constructionCapacityWorkUnitsPerDay:
-        STATE_B_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
-      housingStockUnits: INITIAL_HOUSING_STOCK_UNITS,
-      housingDemandUnits: STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS,
-      affordabilityPressure: resolveHousingAffordabilityPressure(
-        INITIAL_HOUSING_STOCK_UNITS,
-        STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS,
-      ),
-    },
-    {
-      id: HOUSING_REGION_C_ID,
-      geographyRegionId: references.geographyRegionCId,
-      stateJurisdictionId: references.stateCId,
-      constructionCapacityWorkUnitsPerDay:
-        STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
-      housingStockUnits: INITIAL_HOUSING_STOCK_UNITS,
-      housingDemandUnits: STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS,
-      affordabilityPressure: resolveHousingAffordabilityPressure(
-        INITIAL_HOUSING_STOCK_UNITS,
-        STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS,
-      ),
-    },
-  ],
-  projects: [],
-  projectDeliverySupports: [],
-});
+export const createHousingState = (regions: readonly HousingRegion[]): HousingState => {
+  if (regions.length === 0 || new Set(regions.map((region) => region.id)).size !== regions.length) {
+    throw new Error("Housing requires nonempty, unique region identities.");
+  }
+  return {
+    regions: regions.map((region) => ({ ...region })),
+    projects: [],
+    projectDeliverySupports: [],
+  };
+};
 
 export interface HousingProjectInitiationInput {
+  readonly projectId: string;
   readonly stateJurisdictionId: string;
   readonly sourceDisbursementId: string;
+  readonly requiredWorkUnits: number;
+  readonly plannedHousingUnits: number;
 }
 
 const resolveHousingRegionForState = (
@@ -172,13 +115,13 @@ export const materializeHousingProject = (
 
   const region = resolveHousingRegionForState(housing, input.stateJurisdictionId);
   const project: HousingProject = {
-    id: `gl0-housing-project-for-${input.sourceDisbursementId}`,
+    id: input.projectId,
     housingRegionId: region.id,
     stateJurisdictionId: input.stateJurisdictionId,
     sourceDisbursementId: input.sourceDisbursementId,
-    requiredWorkUnits: HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+    requiredWorkUnits: input.requiredWorkUnits,
     completedWorkUnits: 0,
-    plannedHousingUnits: HOUSING_PROJECT_PLANNED_UNITS,
+    plannedHousingUnits: input.plannedHousingUnits,
     status: "FUNDED_NOT_STARTED",
     createdAtSimulationTime: at,
     startedAtSimulationTime: null,
@@ -247,13 +190,13 @@ export const acceptHousingImplementationSupport = (
   }
 
   const support: HousingProjectDeliverySupport = {
-    id: `gl0-housing-delivery-support-for-${input.sourceDeploymentId}`,
+    id: input.deliverySupportId,
     sourceDeploymentId: input.sourceDeploymentId,
     housingProjectId: project.id,
     housingRegionId: region.id,
     supportUnits: input.supportUnits,
     supplementalWorkUnitsPerDay:
-      input.supportUnits * HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
+      input.supportUnits * input.supplementalWorkUnitsPerDayPerUnit,
     effectiveAtSimulationTime: at,
   };
 

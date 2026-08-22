@@ -15,7 +15,9 @@ import {
   createDeterministicWorldFixture,
 } from "../src/content/gl0-synthetic/configuration";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { advanceWorldTo } from "../src/sim/world";
+import {
+  advanceWorldTo,
+} from "../src/sim/world";
 
 const sha256For = (configuration: GovernmentConfiguration): string =>
   createHash("sha256").update(canonicalConfigurationContent(configuration)).digest("hex");

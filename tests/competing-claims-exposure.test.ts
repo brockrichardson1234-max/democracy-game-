@@ -1,16 +1,30 @@
+import {
+  STATE_A_ID,
+  STATE_C_ID,
+  HOUSING_GRANT_ADMINISTRATION_ID,
+  ADMINISTRATION_HOUSING_CLAIM_ID,
+  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
+  OFFICIAL_HOUSING_REPORT_ID,
+  OFFICIAL_HOUSING_REPORT_RELEASE_AT,
+  OPPOSITION_HOUSING_CLAIM_ID,
+  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
+  PUBLIC_AUDIENCE_ALPHA_ID,
+  PUBLIC_AUDIENCE_BETA_ID,
+  PUBLIC_AUDIENCE_GAMMA_ID,
+  GL0_OPPOSITION_CLAIM_ACTOR_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession } from "../src/app/session";
-import { STATE_A_ID, STATE_C_ID } from "../src/sim/federalism";
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
   createHousingGrantAward,
   disburseHousingGrantObligation,
   establishHousingGrantProgram,
-  HOUSING_GRANT_ADMINISTRATION_ID,
   materializeHousingProjectFromDisbursement,
   obligateHousingGrantAward,
   recognizeHousingGrantFiscalAuthority,
@@ -22,20 +36,13 @@ import {
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
 import {
-  ADMINISTRATION_HOUSING_CLAIM_ID,
-  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
   exposeInformationArtifact,
-  OFFICIAL_HOUSING_REPORT_ID,
-  OFFICIAL_HOUSING_REPORT_RELEASE_AT,
-  OPPOSITION_HOUSING_CLAIM_ID,
-  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
-  PUBLIC_AUDIENCE_ALPHA_ID,
-  PUBLIC_AUDIENCE_BETA_ID,
-  PUBLIC_AUDIENCE_GAMMA_ID,
   releasePoliticalClaim,
   resolveInformationBoundary,
 } from "../src/sim/information";
-import { GL0_OPPOSITION_CLAIM_ACTOR_ID, type ProposalTerms } from "../src/sim/legislature";
+import {
+  type ProposalTerms,
+} from "../src/sim/legislature";
 import {
   advanceWorldTo,
   type WorldState,
@@ -74,7 +81,7 @@ const materializeStateProject = (world: WorldState, stateId: string): WorldState
 };
 
 const resolveRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): WorldState => {
   let world = establishProgram();
   world = materializeStateProject(world, STATE_A_ID);
@@ -106,7 +113,7 @@ const meaningfulInformationHistory = (world: WorldState) =>
 
 describe("Commit 18 competing claims and public exposure", () => {
   it("1. preserves the accepted Commit-17 capture and frozen public report path", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     const report = day40.information.artifacts[0];
 
     expect(day40.information.housingMeasurement).toMatchObject({
@@ -124,7 +131,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("2. owns claim artifacts in Information while political sources own their decisions", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(day42.information.politicalClaims).toHaveLength(2);
     expect(day42.governance.housingPoliticalClaimDecisions).toHaveLength(2);
@@ -133,7 +140,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("3. makes the administration claim reference the existing official report", () => {
-    const day41 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 41);
+    const day41 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 41);
     const claim = claimFor(day41, ADMINISTRATION_HOUSING_CLAIM_ID);
 
     expect(claim.sourceArtifactIds).toEqual([OFFICIAL_HOUSING_REPORT_ID]);
@@ -141,7 +148,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("4. makes the opposition claim reference each route's existing official report", () => {
-    const deployed = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const deployed = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
     const preserved = advanceWorldTo(resolveRoute("PRESERVE_SUPPORT_RESERVE"), 42);
 
     expect(claimFor(deployed, OPPOSITION_HOUSING_CLAIM_ID).sourceArtifactIds).toEqual([
@@ -155,7 +162,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("5. rejects nonexistent, premature, and duplicate claim artifacts", () => {
-    const day39 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 39);
+    const day39 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 39);
     const programId = day39.governance.housingGrantProgram!.id;
     const fixtureInput = {
       claimArtifactId: "fixture-claim",
@@ -200,7 +207,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("6. releases the administration claim at exactly day 41", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     const day41 = advanceWorldTo(day40, 41);
 
     expect(day40.information.politicalClaims).toHaveLength(0);
@@ -210,7 +217,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("7. releases the opposition claim at exactly day 42", () => {
-    const day41 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 41);
+    const day41 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 41);
     const day42 = advanceWorldTo(day41, 42);
 
     expect(day41.information.politicalClaims).toHaveLength(1);
@@ -220,7 +227,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("8. claims mutate neither Housing nor material/fiscal governance state", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     const day42 = advanceWorldTo(day40, 42);
 
     expect(day42.housing).toEqual(day40.housing);
@@ -231,7 +238,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("9. leaves the official report object and regional content frozen", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     const report = day40.information.artifacts[0];
     const reportSnapshot = structuredClone(report);
     const day42 = advanceWorldTo(day40, 42);
@@ -241,7 +248,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("10. gives the two claims distinct legitimate origins and positions", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
     const administration = claimFor(day42, ADMINISTRATION_HOUSING_CLAIM_ID);
     const opposition = claimFor(day42, OPPOSITION_HOUSING_CLAIM_ID);
 
@@ -263,7 +270,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("11. proves PUBLIC report release alone creates no universal exposure", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const directRelease = resolveInformationBoundary(day30.information, day30.housing, 40);
 
     expect(directRelease.information.artifacts[0].accessClass).toBe("PUBLIC");
@@ -272,7 +279,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("12. keeps exposure records distinct from report and claim artifacts", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
     const artifactIds = [
       ...day42.information.artifacts.map((artifact) => artifact.id),
       ...day42.information.politicalClaims.map((artifact) => artifact.id),
@@ -287,27 +294,28 @@ describe("Commit 18 competing claims and public exposure", () => {
 
   it("13. gives Alpha the report and administration claim only", () => {
     expect(
-      exposuresFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42), PUBLIC_AUDIENCE_ALPHA_ID),
+      exposuresFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42), PUBLIC_AUDIENCE_ALPHA_ID),
     ).toEqual([OFFICIAL_HOUSING_REPORT_ID, ADMINISTRATION_HOUSING_CLAIM_ID]);
   });
 
   it("14. gives Beta the report and opposition claim only", () => {
     expect(
-      exposuresFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42), PUBLIC_AUDIENCE_BETA_ID),
+      exposuresFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42), PUBLIC_AUDIENCE_BETA_ID),
     ).toEqual([OFFICIAL_HOUSING_REPORT_ID, OPPOSITION_HOUSING_CLAIM_ID]);
   });
 
   it("15. gives Gamma both competing claims without direct report exposure", () => {
     expect(
-      exposuresFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42), PUBLIC_AUDIENCE_GAMMA_ID),
+      exposuresFor(advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42), PUBLIC_AUDIENCE_GAMMA_ID),
     ).toEqual([ADMINISTRATION_HOUSING_CLAIM_ID, OPPOSITION_HOUSING_CLAIM_ID]);
   });
 
   it("16. rejects duplicate exposure while repeated advancement remains idempotent", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
     expect(() =>
       exposeInformationArtifact(
         day42.information,
+        "test-duplicate-exposure",
         ADMINISTRATION_HOUSING_CLAIM_ID,
         PUBLIC_AUDIENCE_ALPHA_ID,
         42,
@@ -322,10 +330,11 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("17. rejects exposure before release and permits same-time receipt after release", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     expect(() =>
       exposeInformationArtifact(
         day40.information,
+        "test-early-exposure",
         OFFICIAL_HOUSING_REPORT_ID,
         PUBLIC_AUDIENCE_GAMMA_ID,
         39,
@@ -339,7 +348,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("18. orders each same-time release before exposure and later incorporation", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(day42.history.filter((entry) => entry.at === 40).map((entry) => entry.type)).toEqual([
       "OfficialHousingReportReleased",
@@ -365,7 +374,7 @@ describe("Commit 18 competing claims and public exposure", () => {
   });
 
   it("19. makes direct 30→50 equal chunked 30→40→41→42→50", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const direct = advanceWorldTo(day30, 50);
     const chunked = advanceWorldTo(
       advanceWorldTo(advanceWorldTo(advanceWorldTo(day30, 40), 41), 42),
@@ -399,7 +408,7 @@ describe("Commit 18 competing claims and public exposure", () => {
     session.advanceTo(5);
     session.deployHousingImplementationSupportToStateC();
     const view = session.advanceTo(42);
-    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(view.publicInformationAudit.claims).toHaveLength(2);
     expect(view.publicInformationAudit.exposures).toHaveLength(6);

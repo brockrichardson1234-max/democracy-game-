@@ -1,18 +1,27 @@
+import {
+  FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
+  GL0_DISPUTED_HOUSING_CLAIMED_LEGAL_BASIS,
+  GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT,
+  GL0_EXECUTIVE_OFFICE_ID,
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+  GL0_HOUSING_REDIRECTION_CONTEST_ID,
+  GL0_JUDGE_ACTOR_ID,
+  GL0_JUDICIAL_INSTITUTION_ID,
+  GL0_JUDICIAL_OFFICE_ID,
+  GL0_TEMPORARY_HOUSING_REDIRECTION_ORDER_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession, type GameSession } from "../src/app/session";
-import { FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID } from "../src/sim/administration";
-import {
-  GL0_DISPUTED_HOUSING_CLAIMED_LEGAL_BASIS,
-  GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT,
-} from "../src/sim/executive-authority";
-import {
-  GL0_EXECUTIVE_OFFICE_ID,
-  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-} from "../src/sim/executive";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
+
+
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -32,14 +41,11 @@ import {
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
+
+
 import {
-  GL0_HOUSING_REDIRECTION_CONTEST_ID,
-  GL0_JUDGE_ACTOR_ID,
-  GL0_JUDICIAL_INSTITUTION_ID,
-  GL0_JUDICIAL_OFFICE_ID,
-} from "../src/sim/judiciary";
-import { GL0_TEMPORARY_HOUSING_REDIRECTION_ORDER_ID } from "../src/sim/judicial-law";
-import { advanceHousing } from "../src/sim/housing";
+  advanceHousing,
+} from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 import {
   advanceWorldTo,
@@ -344,7 +350,12 @@ describe("Commit 23 contested executive authority and independent compliance", (
 
   it("18. leaves fiscal state untouched and Housing on its ordinary time progression at issuance", () => {
     const day7 = advanceWorldTo(createDay6AttemptWorld(), 7);
-    const boundary = resolveContestedAuthorityInterimReliefBoundary(day7.governance, 8);
+    const boundary = resolveContestedAuthorityInterimReliefBoundary(
+      day7.governance,
+      day7.runtimeConfiguration,
+      8,
+      8,
+    );
     const day8 = advanceWorldTo(day7, 8);
     const expectedHousing = advanceHousing(day7.housing, 7, 8).housing;
 
@@ -405,7 +416,7 @@ describe("Commit 23 contested executive authority and independent compliance", (
 
   it("23. records focused REFUSE as noncompliance while leaving the order ACTIVE", () => {
     const day8 = createDay8World();
-    const refused = resolveContestedAuthorityComplianceBoundary(day8.governance, "REFUSE", 9);
+    const refused = resolveContestedAuthorityComplianceBoundary(day8.governance, "REFUSE", 9, 9);
 
     expect(
       refused.governance.contestedHousingAdministration.judicialOrderComplianceResponses[0]
@@ -419,7 +430,7 @@ describe("Commit 23 contested executive authority and independent compliance", (
 
   it("24. makes REFUSE incapable of moving funds or creating fiscal execution", () => {
     const day8 = createDay8World();
-    const refused = resolveContestedAuthorityComplianceBoundary(day8.governance, "REFUSE", 9);
+    const refused = resolveContestedAuthorityComplianceBoundary(day8.governance, "REFUSE", 9, 9);
 
     expect(refused.governance.publicFinance).toEqual(day8.governance.publicFinance);
     expect(refused.governance.fiscalExecution).toEqual(day8.governance.fiscalExecution);

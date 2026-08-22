@@ -1,3 +1,7 @@
+import {
+  HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
+  FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
@@ -5,12 +9,11 @@ import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/co
 import {
   amendHousingGrantProposal,
   establishHousingGrantProgram,
-  HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
   recognizeHousingGrantFiscalAuthority,
   resolveHousingGrantProposalVote,
   submitHousingGrantProposal,
 } from "../src/sim/governance";
-import { FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID } from "../src/sim/administration";
+
 import { createGameSession } from "../src/app/session";
 import type { ProposalTerms } from "../src/sim/legislature";
 

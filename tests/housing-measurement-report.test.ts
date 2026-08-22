@@ -1,9 +1,19 @@
+import {
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+  HOUSING_MEASUREMENT_OBSERVATION_END,
+  HOUSING_MEASUREMENT_OBSERVATION_START,
+  OFFICIAL_HOUSING_REPORT_RELEASE_AT,
+  HOUSING_PROJECT_PLANNED_UNITS,
+  HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession } from "../src/app/session";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -20,11 +30,10 @@ import {
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
-import { materializeHousingProject } from "../src/sim/housing";
 import {
-  HOUSING_MEASUREMENT_OBSERVATION_END,
-  HOUSING_MEASUREMENT_OBSERVATION_START,
-  OFFICIAL_HOUSING_REPORT_RELEASE_AT,
+  materializeHousingProject,
+} from "../src/sim/housing";
+import {
   type HousingRegionalObservation,
 } from "../src/sim/information";
 import type { ProposalTerms } from "../src/sim/legislature";
@@ -73,7 +82,7 @@ const createResponseWorld = (): WorldState => {
 };
 
 const resolveRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): WorldState => resolveHousingImplementationResponse(createResponseWorld(), action);
 
 const regionFor = (world: WorldState, stateId: string) => {
@@ -121,7 +130,7 @@ const meaningfulMaterialAndInformationHistory = (world: WorldState) =>
 
 describe("Commit 17 Housing measurement and official report lag", () => {
   it("1. preserves accepted Commit-16 material results", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
 
     expect(regionFor(day30, STATE_A_ID)).toMatchObject({
       housingStockUnits: 1_100,
@@ -157,7 +166,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("4. captures no observations before day 30", () => {
-    const day29 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 29);
+    const day29 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 29);
 
     expect(day29.information.housingMeasurement).toMatchObject({
       status: "SCHEDULED",
@@ -170,7 +179,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("5. captures one committed regional measurement at day 30", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const process = day30.information.housingMeasurement;
 
     expect(process.status).toBe("CAPTURED");
@@ -183,7 +192,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("6. captures the stabilized day-30 Housing stock and pressure", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
 
     for (const stateId of [STATE_A_ID, STATE_B_ID, STATE_C_ID]) {
       const region = regionFor(day30, stateId);
@@ -196,7 +205,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("7. preserves the same committed result after capture", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const capturedResult = day30.information.housingMeasurement.result;
     const snapshot = structuredClone(capturedResult);
     const day39 = advanceWorldTo(day30, 39);
@@ -206,7 +215,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("8. releases no report artifact before day 40", () => {
-    const day39 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 39);
+    const day39 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 39);
 
     expect(day39.information.artifacts).toHaveLength(0);
     expect(
@@ -215,7 +224,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("9. releases exactly one official Housing report at day 40", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     const day80 = advanceWorldTo(day40, 80);
 
     expect(day40.information.housingMeasurement.status).toBe("COMPLETED");
@@ -228,7 +237,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("10. links the report to its source measurement and existing producer", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     const process = day40.information.housingMeasurement;
     const report = day40.information.artifacts[0];
 
@@ -238,7 +247,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("11. distinguishes the day 0-30 as-of window from day-40 release", () => {
-    const report = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40)
+    const report = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40)
       .information.artifacts[0];
 
     expect(report).toMatchObject({
@@ -251,7 +260,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("12. records DEPLOY day-30 A/B/C results", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
 
     expect(
       summarizedObservations(
@@ -282,7 +291,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("14. proves reality changes 17 days before the DEPLOY report release", () => {
-    const route = resolveRoute("DEPLOY_SUPPORT_TO_C");
+    const route = resolveRoute("DEPLOY_SUPPORT");
     const day23 = advanceWorldTo(route, 23);
     const day30 = advanceWorldTo(day23, 30);
     const day39 = advanceWorldTo(day30, 39);
@@ -296,13 +305,19 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("15. a Housing-owned post-capture change cannot rewrite captured observations", () => {
-    const captured = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const captured = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const capturedResult = captured.information.housingMeasurement.result;
     const withLateHousingProject: WorldState = {
       ...captured,
       housing: materializeHousingProject(
         captured.housing,
-        { stateJurisdictionId: STATE_A_ID, sourceDisbursementId: "post-capture-fixture" },
+        {
+          projectId: "test-post-capture-project",
+          stateJurisdictionId: STATE_A_ID,
+          sourceDisbursementId: "post-capture-fixture",
+          requiredWorkUnits: HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+          plannedHousingUnits: HOUSING_PROJECT_PLANNED_UNITS,
+        },
         30,
       ),
     };
@@ -320,12 +335,18 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("16. released report content remains the frozen day-30 result", () => {
-    const captured = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const captured = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const withLateHousingProject: WorldState = {
       ...captured,
       housing: materializeHousingProject(
         captured.housing,
-        { stateJurisdictionId: STATE_A_ID, sourceDisbursementId: "stale-report-fixture" },
+        {
+          projectId: "test-stale-report-project",
+          stateJurisdictionId: STATE_A_ID,
+          sourceDisbursementId: "stale-report-fixture",
+          requiredWorkUnits: HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+          plannedHousingUnits: HOUSING_PROJECT_PLANNED_UNITS,
+        },
         30,
       ),
     };
@@ -342,7 +363,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("17. one-shot and chunked advancement preserve Housing, Information, and history order", () => {
-    const route = resolveRoute("DEPLOY_SUPPORT_TO_C");
+    const route = resolveRoute("DEPLOY_SUPPORT");
     const direct = advanceWorldTo(route, 50);
     const chunked = advanceWorldTo(
       advanceWorldTo(
@@ -360,12 +381,18 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("18. stabilizes same-time day-30 Housing before measurement capture", () => {
-    const day20 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 20);
+    const day20 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 20);
     const withDay30Completion: WorldState = {
       ...day20,
       housing: materializeHousingProject(
         day20.housing,
-        { stateJurisdictionId: STATE_A_ID, sourceDisbursementId: "day-30-fixture" },
+        {
+          projectId: "test-day-30-project",
+          stateJurisdictionId: STATE_A_ID,
+          sourceDisbursementId: "day-30-fixture",
+          requiredWorkUnits: HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+          plannedHousingUnits: HOUSING_PROJECT_PLANNED_UNITS,
+        },
         20,
       ),
     };
@@ -392,7 +419,7 @@ describe("Commit 17 Housing measurement and official report lag", () => {
   });
 
   it("19. report release mutates neither Housing nor political state and is not universal exposure", () => {
-    const day39 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 39);
+    const day39 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 39);
     const day40 = advanceWorldTo(day39, 40);
 
     expect(day40.housing).toEqual(day39.housing);

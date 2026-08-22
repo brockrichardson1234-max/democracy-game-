@@ -1,16 +1,26 @@
+import {
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+  HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT,
+  HOUSING_PROJECT_PLANNED_UNITS,
+  HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+  INITIAL_HOUSING_STOCK_UNITS,
+  STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
+  STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession } from "../src/app/session";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
   createHousingGrantAward,
   disburseHousingGrantObligation,
   establishHousingGrantProgram,
-  HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT,
   materializeHousingProjectFromDisbursement,
   obligateHousingGrantAward,
   recognizeHousingGrantFiscalAuthority,
@@ -22,11 +32,6 @@ import {
 } from "../src/sim/governance";
 import {
   advanceHousing,
-  HOUSING_PROJECT_PLANNED_UNITS,
-  HOUSING_PROJECT_REQUIRED_WORK_UNITS,
-  INITIAL_HOUSING_STOCK_UNITS,
-  STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
-  STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
 } from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 import {

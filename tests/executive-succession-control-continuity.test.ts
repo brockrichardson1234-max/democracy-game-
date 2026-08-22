@@ -1,3 +1,21 @@
+import {
+  GL0_ADMINISTRATION_CANDIDATE_ID,
+  GL0_EXECUTIVE_ELECTION_RESULT_ID,
+  GL0_EXECUTIVE_ELECTION_PROCESS_ID,
+  GL0_EXECUTIVE_CONTEST_ID,
+  GL0_OPPOSITION_CANDIDATE_ID,
+  GL0_EXECUTIVE_INSTITUTION_ID,
+  GL0_EXECUTIVE_OFFICE_ID,
+  GL0_EXECUTIVE_TRANSFER_AT,
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
+  GL0_SUCCESSOR_ENTITLEMENT_AT,
+  GL0_SUCCESSOR_ENTITLEMENT_ID,
+  GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID,
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
@@ -9,27 +27,14 @@ import {
   type GameSession,
 } from "../src/app/session";
 import {
-  GL0_ADMINISTRATION_CANDIDATE_ID,
-  GL0_EXECUTIVE_ELECTION_RESULT_ID,
-  GL0_EXECUTIVE_ELECTION_PROCESS_ID,
-  GL0_OPPOSITION_CANDIDATE_ID,
   type ElectionProcess,
 } from "../src/sim/electoral";
 import {
   establishExecutiveSuccessorEntitlement,
-  GL0_EXECUTIVE_INSTITUTION_ID,
-  GL0_EXECUTIVE_OFFICE_ID,
-  GL0_EXECUTIVE_TRANSFER_AT,
-  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
-  GL0_SUCCESSOR_ENTITLEMENT_AT,
-  GL0_SUCCESSOR_ENTITLEMENT_ID,
   resolveCurrentExecutiveOfficeholder,
 } from "../src/sim/executive";
-import {
-  GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID,
-} from "../src/sim/executive-law";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -86,7 +91,7 @@ const materializeStateProject = (world: WorldState, stateId: string): WorldState
 };
 
 const resolveWorldRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): WorldState => {
   let world = establishProgram();
   world = materializeStateProject(world, STATE_A_ID);
@@ -96,7 +101,7 @@ const resolveWorldRoute = (
 };
 
 const resolveSessionRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): GameSession => {
   const session = createGameSession();
   session.submitHousingGrantProposal(INITIAL_TERMS);
@@ -116,7 +121,7 @@ const resolveSessionRoute = (
     session.materializeHousingProjectFromDisbursement(stateId);
   }
   session.advanceTo(5);
-  if (action === "DEPLOY_SUPPORT_TO_C") {
+  if (action === "DEPLOY_SUPPORT") {
     session.deployHousingImplementationSupportToStateC();
   } else {
     session.preserveHousingImplementationSupportReserve();
@@ -265,6 +270,12 @@ describe("Commit 22 executive succession, control end, and continuity", () => {
         day61.electoral,
         { rules: [] },
         62,
+        {
+          contestId: GL0_EXECUTIVE_CONTEST_ID,
+          entitlementId: GL0_SUCCESSOR_ENTITLEMENT_ID,
+          entitlementAt: GL0_SUCCESSOR_ENTITLEMENT_AT,
+          transferAt: GL0_EXECUTIVE_TRANSFER_AT,
+        },
       ),
     ).toThrow(/legal order requires exactly one executive succession rule/i);
 
@@ -349,7 +360,7 @@ describe("Commit 22 executive succession, control end, and continuity", () => {
   });
 
   it("18. creates no successor entitlement for the certified DEPLOY tie", () => {
-    const day70 = advanceWorldTo(resolveWorldRoute("DEPLOY_SUPPORT_TO_C"), 70);
+    const day70 = advanceWorldTo(resolveWorldRoute("DEPLOY_SUPPORT"), 70);
 
     expect(electionProcessFor(day70).result).toMatchObject({
       outcome: "TIE",
@@ -362,7 +373,7 @@ describe("Commit 22 executive succession, control end, and continuity", () => {
   });
 
   it("19. performs no office transfer for the DEPLOY tie", () => {
-    const day70 = advanceWorldTo(resolveWorldRoute("DEPLOY_SUPPORT_TO_C"), 70);
+    const day70 = advanceWorldTo(resolveWorldRoute("DEPLOY_SUPPORT"), 70);
 
     expect(day70.governance.executivePolitical.currentOfficeAssignment.actorId).toBe(
       GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
@@ -374,7 +385,7 @@ describe("Commit 22 executive succession, control end, and continuity", () => {
   });
 
   it("20. leaves the incumbent ControlBinding active on the DEPLOY tie route", () => {
-    const session = resolveSessionRoute("DEPLOY_SUPPORT_TO_C");
+    const session = resolveSessionRoute("DEPLOY_SUPPORT");
     const day70 = session.advanceTo(70);
 
     expect(day70.controlBindingAudit).toMatchObject({

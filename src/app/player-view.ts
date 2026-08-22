@@ -1,5 +1,5 @@
 import { availableHousingImplementationSupportUnits } from "../sim/administration";
-import { GL0_EXECUTIVE_CONTEST_ID } from "../sim/electoral";
+import { GL0_EXECUTIVE_CONTEST_ID } from "../content/gl0-synthetic/configuration";
 import type { WorldState } from "../sim/world";
 import type { ControlBinding } from "./session";
 
@@ -378,7 +378,13 @@ export const projectPlayerAdministrationView = (
         decision:
           governance.housingImplementationResponseDecision === null
             ? null
-            : { ...governance.housingImplementationResponseDecision },
+            : {
+                ...governance.housingImplementationResponseDecision,
+                action:
+                  governance.housingImplementationResponseDecision.action === "DEPLOY_SUPPORT"
+                    ? "DEPLOY_SUPPORT_TO_C"
+                    : "PRESERVE_SUPPORT_RESERVE",
+              },
         deployments: implementationSupport.deployments.map((deployment) => ({
           id: deployment.id,
           relationshipId: deployment.relationshipId,

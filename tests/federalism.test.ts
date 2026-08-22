@@ -1,3 +1,10 @@
+import {
+  HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
+  createDeterministicStateProgramAdministrativeStates,
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
@@ -7,7 +14,6 @@ import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
   establishHousingGrantProgram,
-  HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
   recognizeHousingGrantFiscalAuthority,
   resolveFederalHousingGrantApplication,
   resolveHousingGrantProposalVote,
@@ -15,12 +21,7 @@ import {
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
-import {
-  createDeterministicStateProgramAdministrativeStates,
-  STATE_A_ID,
-  STATE_B_ID,
-  STATE_C_ID,
-} from "../src/sim/federalism";
+
 import type { ProposalTerms } from "../src/sim/legislature";
 
 const INITIAL_TERMS: ProposalTerms = {

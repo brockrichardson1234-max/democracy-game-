@@ -1,11 +1,6 @@
 import type { InterimReliefDecision } from "./judiciary";
 import type { SimulationInstant } from "./world";
 
-export const GL0_INTERIM_HOUSING_REDIRECTION_RULE_ID =
-  "gl0-interim-housing-redirection-relief-rule";
-export const GL0_TEMPORARY_HOUSING_REDIRECTION_ORDER_ID =
-  "gl0-temporary-housing-redirection-order";
-
 export type JudicialInterimReliefRequirement =
   "GRANT_DECISION_AUTHORIZES_SCOPED_TEMPORARY_NONEXECUTION_ORDER";
 
@@ -37,18 +32,16 @@ export interface JudicialLegalOrderState {
   readonly operativeOrders: readonly JudicialOrder[];
 }
 
-export const createInitialJudicialLegalOrderState = (): JudicialLegalOrderState => ({
-  interimReliefRules: [
-    {
-      id: GL0_INTERIM_HOUSING_REDIRECTION_RULE_ID,
-      requirement: "GRANT_DECISION_AUTHORIZES_SCOPED_TEMPORARY_NONEXECUTION_ORDER",
-    },
-  ],
+export const createJudicialLegalOrderState = (
+  interimReliefRules: readonly JudicialInterimReliefRule[],
+): JudicialLegalOrderState => ({
+  interimReliefRules: interimReliefRules.map((rule) => ({ ...rule })),
   operativeOrders: [],
 });
 
 export const issueScopedTemporaryHousingRedirectionOrder = (
   legalOrder: JudicialLegalOrderState,
+  orderId: string,
   interimReliefRuleId: string,
   decision: InterimReliefDecision,
   subjectInstitutionId: string,
@@ -71,14 +64,14 @@ export const issueScopedTemporaryHousingRedirectionOrder = (
     throw new Error("An operative temporary order requires a GRANT interim-relief decision.");
   }
   if (decision.decidedAtSimulationTime !== at) {
-    throw new Error("The GL0 temporary order must follow its decision at the same boundary.");
+    throw new Error("A temporary order must follow its decision at the same boundary.");
   }
   if (legalOrder.operativeOrders.length > 0) {
-    throw new Error("The GL0 temporary Housing redirection order already exists.");
+    throw new Error("The temporary Housing redirection order already exists.");
   }
 
   const order: JudicialOrder = {
-    id: GL0_TEMPORARY_HOUSING_REDIRECTION_ORDER_ID,
+    id: orderId,
     sourceContestId: decision.contestId,
     sourceDecisionId: decision.id,
     subjectInstitutionId,

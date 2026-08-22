@@ -1,3 +1,11 @@
+import {
+  GL0_EXECUTIVE_OFFICE_ID,
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { type GameSaveV2 } from "../src/app/persistence";
@@ -6,12 +14,8 @@ import {
   createGameSessionFromSave,
   type GameSession,
 } from "../src/app/session";
-import {
-  GL0_EXECUTIVE_OFFICE_ID,
-  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
-} from "../src/sim/executive";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
+
 import type { ProposalTerms } from "../src/sim/legislature";
 import type { WorldState } from "../src/sim/world";
 

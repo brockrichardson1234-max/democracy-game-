@@ -1,3 +1,18 @@
+import {
+  GL0_EXECUTIVE_CONTEST_ID,
+  GL0_EXECUTIVE_ELECTION_AT,
+  GL0_ALL_REPRESENTED_RESIDENT_POPULATION_ELIGIBILITY_RULE_ID,
+  STATE_A_ID,
+  STATE_C_ID,
+  GEOGRAPHY_REGION_A_ID,
+  GEOGRAPHY_REGION_B_ID,
+  GEOGRAPHY_REGION_C_ID,
+  HOUSING_REGION_C_ID,
+  POPULATION_ELECTORAL_RESPONSE_AT,
+  POPULATION_UNIT_A_ID,
+  POPULATION_UNIT_B_ID,
+  POPULATION_UNIT_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
@@ -5,17 +20,11 @@ import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/co
 import { createGameSession } from "../src/app/session";
 import {
   deriveElectorate,
-  GL0_EXECUTIVE_CONTEST_ID,
-  GL0_EXECUTIVE_ELECTION_AT,
   type ElectoralState,
 } from "../src/sim/electoral";
-import { GL0_ALL_REPRESENTED_RESIDENT_POPULATION_ELIGIBILITY_RULE_ID } from "../src/sim/electoral-law";
-import { STATE_A_ID, STATE_C_ID } from "../src/sim/federalism";
-import {
-  GEOGRAPHY_REGION_A_ID,
-  GEOGRAPHY_REGION_B_ID,
-  GEOGRAPHY_REGION_C_ID,
-} from "../src/sim/geography";
+
+
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -32,13 +41,9 @@ import {
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
-import { HOUSING_REGION_C_ID } from "../src/sim/housing";
+
 import type { ProposalTerms } from "../src/sim/legislature";
 import {
-  POPULATION_ELECTORAL_RESPONSE_AT,
-  POPULATION_UNIT_A_ID,
-  POPULATION_UNIT_B_ID,
-  POPULATION_UNIT_C_ID,
   resolvePopulationElectoralDisposition,
   type PopulationUnit,
 } from "../src/sim/population";
@@ -80,7 +85,7 @@ const materializeStateProject = (world: WorldState, stateId: string): WorldState
 };
 
 const resolveRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): WorldState => {
   let world = establishProgram();
   world = materializeStateProject(world, STATE_A_ID);
@@ -121,7 +126,7 @@ const meaningfulDownstreamHistory = (world: WorldState) =>
 
 describe("Commit 20 preference, turnout disposition, and derived electorate", () => {
   it("1. preserves the accepted Commit-19 belief, attribution, and salience path", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(populationUnitFor(day42, POPULATION_UNIT_A_ID)).toMatchObject({
       housingPressureBelief: "UNKNOWN",
@@ -168,7 +173,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("4. leaves preference and turnout unresolved through day-42 incorporation", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(day42.population.informationIncorporations).toHaveLength(6);
     expect(day42.population.units.every((unit) => unit.electoralPreference === "UNRESOLVED")).toBe(
@@ -181,18 +186,29 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("5. resolves once at the exact Population-owned day-43 boundary", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
-    expect(() => resolvePopulationElectoralDisposition(day42.population, 42)).toThrow(/not due/i);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
+    expect(() =>
+      resolvePopulationElectoralDisposition(
+        day42.population,
+        42,
+        POPULATION_ELECTORAL_RESPONSE_AT,
+      ),
+    ).toThrow(/not due/i);
 
     const resolved = resolvePopulationElectoralDisposition(
       day42.population,
+      POPULATION_ELECTORAL_RESPONSE_AT,
       POPULATION_ELECTORAL_RESPONSE_AT,
     );
     expect(resolved.population.electoralDispositionResolvedAt).toBe(43);
     expect(resolved.occurrences).toEqual([
       { type: "PopulationElectoralDispositionResolved", at: 43 },
     ]);
-    const repeated = resolvePopulationElectoralDisposition(resolved.population, 43);
+    const repeated = resolvePopulationElectoralDisposition(
+      resolved.population,
+      43,
+      POPULATION_ELECTORAL_RESPONSE_AT,
+    );
     expect(repeated.population).toBe(resolved.population);
     expect(repeated.occurrences).toHaveLength(0);
 
@@ -215,7 +231,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   it("6. resolves DEPLOY Unit A to UNDECIDED / MEDIUM", () => {
     expect(
       populationUnitFor(
-        advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43),
+        advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43),
         POPULATION_UNIT_A_ID,
       ),
     ).toMatchObject({ electoralPreference: "UNDECIDED", turnoutDisposition: "MEDIUM" });
@@ -224,7 +240,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   it("7. resolves DEPLOY Unit B to OPPOSITION / HIGH", () => {
     expect(
       populationUnitFor(
-        advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43),
+        advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43),
         POPULATION_UNIT_B_ID,
       ),
     ).toMatchObject({ electoralPreference: "OPPOSITION", turnoutDisposition: "HIGH" });
@@ -233,7 +249,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   it("8. resolves DEPLOY Unit C to ADMINISTRATION / HIGH", () => {
     expect(
       populationUnitFor(
-        advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43),
+        advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43),
         POPULATION_UNIT_C_ID,
       ),
     ).toMatchObject({ electoralPreference: "ADMINISTRATION", turnoutDisposition: "HIGH" });
@@ -258,11 +274,15 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("10. resolves from Population political state without other world roots", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
     const housingSnapshot = structuredClone(day42.housing);
     const informationSnapshot = structuredClone(day42.information);
     const governanceSnapshot = structuredClone(day42.governance);
-    const direct = resolvePopulationElectoralDisposition(day42.population, 43);
+    const direct = resolvePopulationElectoralDisposition(
+      day42.population,
+      43,
+      POPULATION_ELECTORAL_RESPONSE_AT,
+    );
     const orchestrated = advanceWorldTo(day42, 43);
 
     expect(direct.population).toEqual(orchestrated.population);
@@ -333,7 +353,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("14a. requires the canonical legal-order rule when deriving eligibility", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
 
     expect(() =>
       deriveElectorate(
@@ -347,7 +367,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("15. defines one day-60 contest and derives full eligible weight 300", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
     const contest = day43.electoral.contests[0];
     const electorate = deriveFixtureElectorate(day43);
 
@@ -367,7 +387,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
 
   it("16. derives DEPLOY preference weights 100 / 100 / 100", () => {
     const electorate = deriveFixtureElectorate(
-      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43),
+      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43),
     );
 
     expect(electorate.preferenceWeight).toEqual({
@@ -393,7 +413,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
 
   it("18. derives distinct turnout-disposition weights without actual participation", () => {
     const deployed = deriveFixtureElectorate(
-      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43),
+      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43),
     );
     const preserved = deriveFixtureElectorate(
       advanceWorldTo(resolveRoute("PRESERVE_SUPPORT_RESERVE"), 43),
@@ -416,7 +436,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("19. derives narrowed A+C boundary weight 200 without mutating Population", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
     const populationSnapshot = structuredClone(day43.population);
     const narrowed: ElectoralState = {
       ...day43.electoral,
@@ -442,7 +462,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("20. keeps electorate derivation pure and history-free", () => {
-    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 43);
+    const day43 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 43);
     const populationSnapshot = structuredClone(day43.population);
     const electoralSnapshot = structuredClone(day43.electoral);
     const historySnapshot = structuredClone(day43.history);
@@ -454,7 +474,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("21. makes direct 30→50 equal chunked 30→40→41→42→43→50", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const direct = advanceWorldTo(day30, 50);
     const chunked = advanceWorldTo(
       advanceWorldTo(
@@ -472,7 +492,7 @@ describe("Commit 20 preference, turnout disposition, and derived electorate", ()
   });
 
   it("22. remains scheduled immediately before election without ballots, result, winner, or transfer", () => {
-    const day59 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 59);
+    const day59 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 59);
     const contest = day59.electoral.contests[0];
     const process = day59.electoral.electionProcesses[0];
 

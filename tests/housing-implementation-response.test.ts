@@ -1,13 +1,21 @@
+import {
+  GL0_HOUSING_IMPLEMENTATION_SUPPORT_UNITS,
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+  INITIAL_HOUSING_STOCK_UNITS,
+  STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
+  STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession } from "../src/app/session";
 import {
-  GL0_HOUSING_IMPLEMENTATION_SUPPORT_UNITS,
   availableHousingImplementationSupportUnits,
 } from "../src/sim/administration";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -27,9 +35,6 @@ import {
 } from "../src/sim/governance";
 import {
   advanceHousing,
-  INITIAL_HOUSING_STOCK_UNITS,
-  STATE_A_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
-  STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
 } from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 import {
@@ -192,14 +197,14 @@ describe("Commit 14 post-enactment implementation response", () => {
     };
 
     expect(() =>
-      resolveHousingImplementationResponse(withoutStateCRelationship, "DEPLOY_SUPPORT_TO_C"),
+      resolveHousingImplementationResponse(withoutStateCRelationship, "DEPLOY_SUPPORT"),
     ).toThrow(/ACTIVE participation relationship/i);
   });
 
   it("6. DEPLOY creates exactly one canonical support deployment", () => {
     const resolved = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     expect(resolved.governance.housingImplementationSupport.deployments).toHaveLength(1);
     expect(resolved.governance.housingImplementationSupport.deployments[0].supportUnits).toBe(1);
@@ -207,7 +212,7 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("7. deployment references the existing program, relationship, and jurisdiction", () => {
     const before = createAttemptableWorld();
-    const after = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
+    const after = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT");
     const deployment = after.governance.housingImplementationSupport.deployments[0];
     const relationship = before.governance.intergovernmentalProgramRelationships.find(
       (candidate) => candidate.stateJurisdictionId === STATE_C_ID,
@@ -223,7 +228,7 @@ describe("Commit 14 post-enactment implementation response", () => {
   it("8. DEPLOY commits exactly one unit and leaves none reusable", () => {
     const support = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     ).governance.housingImplementationSupport;
     expect(support.committedSupportUnits).toBe(1);
     expect(availableHousingImplementationSupportUnits(support)).toBe(0);
@@ -243,7 +248,7 @@ describe("Commit 14 post-enactment implementation response", () => {
     };
 
     expect(() =>
-      resolveHousingImplementationResponse(exhausted, "DEPLOY_SUPPORT_TO_C"),
+      resolveHousingImplementationResponse(exhausted, "DEPLOY_SUPPORT"),
     ).toThrow(/no federal housing implementation support/i);
     expect(availableHousingImplementationSupportUnits(exhausted.governance.housingImplementationSupport)).toBe(0);
   });
@@ -251,20 +256,20 @@ describe("Commit 14 post-enactment implementation response", () => {
   it("10. rejects every repeated resolution sequence for the single opportunity", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const preserved = resolveHousingImplementationResponse(
       createAttemptableWorld(),
       "PRESERVE_SUPPORT_RESERVE",
     );
 
-    expect(() => resolveHousingImplementationResponse(deployed, "DEPLOY_SUPPORT_TO_C")).toThrow(
+    expect(() => resolveHousingImplementationResponse(deployed, "DEPLOY_SUPPORT")).toThrow(
       /already been resolved/i,
     );
     expect(() => resolveHousingImplementationResponse(deployed, "PRESERVE_SUPPORT_RESERVE")).toThrow(
       /already been resolved/i,
     );
-    expect(() => resolveHousingImplementationResponse(preserved, "DEPLOY_SUPPORT_TO_C")).toThrow(
+    expect(() => resolveHousingImplementationResponse(preserved, "DEPLOY_SUPPORT")).toThrow(
       /already been resolved/i,
     );
   });
@@ -294,7 +299,7 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("13. neither response directly changes progress, intrinsic capacity, or stock", () => {
     const before = createAttemptableWorld();
-    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
+    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT");
     const preserved = resolveHousingImplementationResponse(before, "PRESERVE_SUPPORT_RESERVE");
 
     expect(deployed.housing.projects).toEqual(before.housing.projects);
@@ -320,7 +325,7 @@ describe("Commit 14 post-enactment implementation response", () => {
     };
     const deployment = resolveHousingImplementationResponse(
       altered,
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     ).governance.housingImplementationSupport.deployments[0];
 
     expect(deployment.stateJurisdictionId).toBe(STATE_C_ID);
@@ -329,7 +334,7 @@ describe("Commit 14 post-enactment implementation response", () => {
 
   it("15. leaves both routes independently advanceable from HousingState plus time", () => {
     const before = createAttemptableWorld();
-    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
+    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT");
     const preserved = resolveHousingImplementationResponse(before, "PRESERVE_SUPPORT_RESERVE");
 
     const ordinaryAdvance = advanceHousing(before.housing, 5, 6);
@@ -355,7 +360,7 @@ describe("Commit 14 post-enactment implementation response", () => {
   it("17. emits response and deployment occurrences exactly once with stable identities", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     expect(responseHistory(deployed).map((occurrence) => occurrence.type)).toEqual([
       "HousingImplementationResponseResolved",

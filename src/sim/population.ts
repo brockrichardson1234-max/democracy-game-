@@ -5,12 +5,6 @@ import type {
 } from "./information";
 import type { SimulationInstant } from "./world";
 
-export const POPULATION_UNIT_A_ID = "gl0-population-unit-a";
-export const POPULATION_UNIT_B_ID = "gl0-population-unit-b";
-export const POPULATION_UNIT_C_ID = "gl0-population-unit-c";
-export const GL0_POPULATION_UNIT_WEIGHT = 100;
-export const POPULATION_ELECTORAL_RESPONSE_AT = 43;
-
 export type BaselinePoliticalDisposition =
   | "ADMINISTRATION_LEAN"
   | "OPPOSITION_LEAN"
@@ -89,24 +83,7 @@ export interface PopulationTransitionResult {
   readonly occurrences: readonly PopulationOccurrence[];
 }
 
-export interface PopulationFixtureReferences {
-  readonly geographyRegionAId: string;
-  readonly geographyRegionBId: string;
-  readonly geographyRegionCId: string;
-  readonly housingRegionAId: string;
-  readonly housingRegionBId: string;
-  readonly housingRegionCId: string;
-  readonly informationAudienceAlphaId: string;
-  readonly informationAudienceBetaId: string;
-  readonly informationAudienceGammaId: string;
-}
-
-const UNKNOWN_ATTRIBUTION: HousingAttribution = {
-  target: "UNKNOWN",
-  evaluation: "NONE",
-};
-
-/** Validates the few invariants needed by the bounded aggregate fixture. */
+/** Validates the few invariants needed by the bounded aggregate population. */
 export const createPopulationState = (
   units: readonly PopulationUnit[],
 ): PopulationState => {
@@ -117,7 +94,7 @@ export const createPopulationState = (
     throw new Error("Population unit IDs must be unique.");
   }
   if (new Set(units.map((unit) => unit.informationAudienceId)).size !== units.length) {
-    throw new Error("Each GL0 Information audience must bind to exactly one Population unit.");
+    throw new Error("Each Information audience must bind to exactly one Population unit.");
   }
 
   return {
@@ -129,54 +106,6 @@ export const createPopulationState = (
     electoralDispositionResolvedAt: null,
   };
 };
-
-export const createInitialPopulationState = (
-  references: PopulationFixtureReferences,
-): PopulationState =>
-  createPopulationState([
-    {
-      id: POPULATION_UNIT_A_ID,
-      weight: GL0_POPULATION_UNIT_WEIGHT,
-      residenceGeographyId: references.geographyRegionAId,
-      housingRegionId: references.housingRegionAId,
-      informationAudienceId: references.informationAudienceGammaId,
-      baselinePoliticalDisposition: "SWING",
-      housingPressureBelief: "UNKNOWN",
-      programPerformanceBelief: "UNKNOWN",
-      housingAttribution: UNKNOWN_ATTRIBUTION,
-      housingSalience: "LOW",
-      electoralPreference: "UNRESOLVED",
-      turnoutDisposition: "UNRESOLVED",
-    },
-    {
-      id: POPULATION_UNIT_B_ID,
-      weight: GL0_POPULATION_UNIT_WEIGHT,
-      residenceGeographyId: references.geographyRegionBId,
-      housingRegionId: references.housingRegionBId,
-      informationAudienceId: references.informationAudienceBetaId,
-      baselinePoliticalDisposition: "OPPOSITION_LEAN",
-      housingPressureBelief: "UNKNOWN",
-      programPerformanceBelief: "UNKNOWN",
-      housingAttribution: UNKNOWN_ATTRIBUTION,
-      housingSalience: "LOW",
-      electoralPreference: "UNRESOLVED",
-      turnoutDisposition: "UNRESOLVED",
-    },
-    {
-      id: POPULATION_UNIT_C_ID,
-      weight: GL0_POPULATION_UNIT_WEIGHT,
-      residenceGeographyId: references.geographyRegionCId,
-      housingRegionId: references.housingRegionCId,
-      informationAudienceId: references.informationAudienceAlphaId,
-      baselinePoliticalDisposition: "ADMINISTRATION_LEAN",
-      housingPressureBelief: "UNKNOWN",
-      programPerformanceBelief: "UNKNOWN",
-      housingAttribution: UNKNOWN_ATTRIBUTION,
-      housingSalience: "LOW",
-      electoralPreference: "UNRESOLVED",
-      turnoutDisposition: "UNRESOLVED",
-    },
-  ]);
 
 /** Population's deliberately synthetic interpretation of reported pressure. */
 export const categorizeReportedHousingPressure = (
@@ -242,7 +171,7 @@ const resolveHousingAttribution = (
   ) {
     return { target: "FEDERAL_HOUSING_PROGRAM", evaluation: "BLAME" };
   }
-  return UNKNOWN_ATTRIBUTION;
+  return { target: "UNKNOWN", evaluation: "NONE" };
 };
 
 /**
@@ -254,6 +183,7 @@ export const incorporateInformationExposure = (
   information: InformationState,
   exposure: InformationExposure,
   at: SimulationInstant,
+  incorporationIdPrefix: string,
 ): PopulationTransitionResult => {
   if (!Number.isFinite(at)) {
     throw new Error("Population information-incorporation time must be finite.");
@@ -348,7 +278,7 @@ export const incorporateInformationExposure = (
   }
 
   const incorporation: PopulationInformationIncorporation = {
-    id: `gl0-incorporation-${recipient.id}-${canonicalExposure.id}`,
+    id: `${incorporationIdPrefix}${recipient.id}-${canonicalExposure.id}`,
     populationUnitId: recipient.id,
     exposureId: canonicalExposure.id,
     artifactId: canonicalExposure.artifactId,
@@ -423,11 +353,11 @@ const resolveTurnoutDisposition = (
     : "MEDIUM";
 };
 
-/** Population's bounded day-43 response using only recipient-owned political state. */
+/** Population's bounded response using only recipient-owned political state. */
 export const resolvePopulationElectoralDisposition = (
   population: PopulationState,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant = POPULATION_ELECTORAL_RESPONSE_AT,
+  scheduledAt: SimulationInstant,
 ): PopulationTransitionResult => {
   if (!Number.isFinite(at)) {
     throw new Error("Population electoral-response time must be finite.");

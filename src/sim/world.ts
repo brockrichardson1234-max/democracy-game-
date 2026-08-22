@@ -18,6 +18,7 @@ import {
 } from "./executive";
 import { advanceHousing, type HousingState } from "./housing";
 import type { HistoricalOccurrence } from "./history";
+import type { CausalVerticalRuntimeConfiguration } from "./runtime-configuration";
 import {
   exposeInformationArtifact,
   releasePoliticalClaim,
@@ -44,6 +45,7 @@ export interface BootstrapTransitionState {
 
 /** Plain canonical state supplied by configuration content, never executable behavior. */
 export interface WorldSeed {
+  readonly runtimeConfiguration: CausalVerticalRuntimeConfiguration;
   readonly governance: GovernanceState;
   readonly geography: GeographyState;
   readonly housing: HousingState;
@@ -54,6 +56,7 @@ export interface WorldSeed {
 
 export interface WorldState {
   readonly configuration: ConfigurationIdentity;
+  readonly runtimeConfiguration: CausalVerticalRuntimeConfiguration;
   readonly transitionSchedule: readonly ScheduledTransitionDescriptor[];
   readonly time: TimeState;
   readonly bootstrapTransition: BootstrapTransitionState;
@@ -86,6 +89,7 @@ export const createWorldFromConfiguration = (
   if (bootstrap === undefined) throw new Error("Playable configuration has no bootstrap boundary.");
   return {
     configuration: { ...configuration.identity },
+    runtimeConfiguration: configuration.runtimeSeed.runtimeConfiguration,
     transitionSchedule: configuration.transitions.map((transition) => ({ ...transition })),
     time: { current: 0 },
     bootstrapTransition: { boundaryAt: bootstrap.at, resolved: false },
@@ -106,6 +110,7 @@ const assertValidTarget = (world: WorldState, target: SimulationInstant): void =
 
 const exposeArtifactToConfiguredAudiences = (
   information: InformationState,
+  exposureIdPrefix: string,
   artifactId: string,
   audienceIds: readonly string[],
   at: SimulationInstant,
@@ -118,7 +123,13 @@ const exposeArtifactToConfiguredAudiences = (
   const exposures: InformationExposure[] = [];
   const occurrences: HistoricalOccurrence[] = [];
   for (const audienceId of audienceIds) {
-    const exposure = exposeInformationArtifact(nextInformation, artifactId, audienceId, at);
+    const exposure = exposeInformationArtifact(
+      nextInformation,
+      `${exposureIdPrefix}${artifactId}-to-${audienceId}`,
+      artifactId,
+      audienceId,
+      at,
+    );
     nextInformation = exposure.information;
     const createdExposure = nextInformation.exposures.find(
       (candidate) => candidate.artifactId === artifactId && candidate.audienceId === audienceId,
@@ -137,11 +148,18 @@ const incorporateConfiguredExposures = (
   information: InformationState,
   exposures: readonly InformationExposure[],
   at: SimulationInstant,
+  incorporationIdPrefix: string,
 ): { readonly population: PopulationState; readonly occurrences: HistoricalOccurrence[] } => {
   let nextPopulation = population;
   const occurrences: HistoricalOccurrence[] = [];
   for (const exposure of exposures) {
-    const incorporation = incorporateInformationExposure(nextPopulation, information, exposure, at);
+    const incorporation = incorporateInformationExposure(
+      nextPopulation,
+      information,
+      exposure,
+      at,
+      incorporationIdPrefix,
+    );
     nextPopulation = incorporation.population;
     occurrences.push(...incorporation.occurrences);
   }
@@ -152,6 +170,7 @@ const releaseConfiguredPoliticalClaim = (
   governance: GovernanceState,
   information: InformationState,
   transition: Extract<ScheduledTransitionDescriptor, { kind: "POLITICAL_CLAIM_RELEASE" }>,
+  runtimeConfiguration: CausalVerticalRuntimeConfiguration,
 ): {
   readonly governance: GovernanceState;
   readonly information: InformationState;
@@ -167,6 +186,7 @@ const releaseConfiguredPoliticalClaim = (
   const decisionResult = originateHousingPoliticalClaimDecision(
     governance,
     transition.claimKind,
+    runtimeConfiguration.politicalClaims[transition.claimKind],
     sourceReport.id,
     transition.at,
     transition.at,
@@ -186,6 +206,7 @@ const releaseConfiguredPoliticalClaim = (
   );
   const exposure = exposeArtifactToConfiguredAudiences(
     claimRelease.information,
+    runtimeConfiguration.recordIds.informationExposurePrefix,
     transition.claimArtifactId,
     transition.audienceIds,
     transition.at,
@@ -246,6 +267,7 @@ export const advanceWorldTo = (world: WorldState, target: SimulationInstant): Wo
           if (governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0) {
             const result = resolveContestedAuthorityChallengeBoundary(
               governance,
+              world.runtimeConfiguration,
               boundary,
               transition.at,
             );
@@ -257,6 +279,7 @@ export const advanceWorldTo = (world: WorldState, target: SimulationInstant): Wo
           if (governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0) {
             const result = resolveContestedAuthorityInterimReliefBoundary(
               governance,
+              world.runtimeConfiguration,
               boundary,
               transition.at,
             );
@@ -279,6 +302,7 @@ export const advanceWorldTo = (world: WorldState, target: SimulationInstant): Wo
         case "INFORMATION_ARTIFACT_EXPOSURE": {
           const result = exposeArtifactToConfiguredAudiences(
             information,
+            world.runtimeConfiguration.recordIds.informationExposurePrefix,
             transition.artifactId,
             transition.audienceIds,
             boundary,
@@ -290,6 +314,7 @@ export const advanceWorldTo = (world: WorldState, target: SimulationInstant): Wo
             information,
             result.exposures,
             boundary,
+            world.runtimeConfiguration.recordIds.populationIncorporationPrefix,
           );
           population = incorporation.population;
           occurrences.push(...incorporation.occurrences);
@@ -297,7 +322,12 @@ export const advanceWorldTo = (world: WorldState, target: SimulationInstant): Wo
         }
         case "POLITICAL_CLAIM_RELEASE":
           if (governance.housingGrantProgram !== null) {
-            const result = releaseConfiguredPoliticalClaim(governance, information, transition);
+            const result = releaseConfiguredPoliticalClaim(
+              governance,
+              information,
+              transition,
+              world.runtimeConfiguration,
+            );
             governance = result.governance;
             information = result.information;
             occurrences.push(...result.occurrences);
@@ -306,6 +336,7 @@ export const advanceWorldTo = (world: WorldState, target: SimulationInstant): Wo
               information,
               result.exposures,
               boundary,
+              world.runtimeConfiguration.recordIds.populationIncorporationPrefix,
             );
             population = incorporation.population;
             occurrences.push(...incorporation.occurrences);

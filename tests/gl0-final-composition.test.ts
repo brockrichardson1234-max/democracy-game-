@@ -1,3 +1,22 @@
+import {
+  FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
+  GL0_ADMINISTRATION_CANDIDATE_ID,
+  GL0_EXECUTIVE_CONTEST_ID,
+  GL0_OPPOSITION_CANDIDATE_ID,
+  GL0_EXECUTIVE_OFFICE_ID,
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
+  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+  HOUSING_REGION_C_ID,
+  INITIAL_HOUSING_STOCK_UNITS,
+  ADMINISTRATION_HOUSING_CLAIM_ID,
+  OFFICIAL_HOUSING_REPORT_ID,
+  POPULATION_UNIT_A_ID,
+  POPULATION_UNIT_B_ID,
+  POPULATION_UNIT_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
@@ -11,19 +30,10 @@ import {
 import {
   availableHousingImplementationSupportUnits,
   commitHousingImplementationSupport,
-  FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
 } from "../src/sim/administration";
-import {
-  GL0_ADMINISTRATION_CANDIDATE_ID,
-  GL0_EXECUTIVE_CONTEST_ID,
-  GL0_OPPOSITION_CANDIDATE_ID,
-} from "../src/sim/electoral";
-import {
-  GL0_EXECUTIVE_OFFICE_ID,
-  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
-  GL0_OPPOSITION_EXECUTIVE_ACTOR_ID,
-} from "../src/sim/executive";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
+
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -42,20 +52,10 @@ import {
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
-import {
-  HOUSING_REGION_C_ID,
-  INITIAL_HOUSING_STOCK_UNITS,
-} from "../src/sim/housing";
-import {
-  ADMINISTRATION_HOUSING_CLAIM_ID,
-  OFFICIAL_HOUSING_REPORT_ID,
-} from "../src/sim/information";
+
+
 import type { ProposalTerms } from "../src/sim/legislature";
-import {
-  POPULATION_UNIT_A_ID,
-  POPULATION_UNIT_B_ID,
-  POPULATION_UNIT_C_ID,
-} from "../src/sim/population";
+
 import {
   advanceWorldTo,
   type WorldState,
@@ -73,7 +73,7 @@ const COMPROMISE_TERMS: ProposalTerms = {
   reportingRequirement: "strengthened",
 };
 
-type RouteAction = "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE";
+type RouteAction = "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE";
 
 const establishProgramWorld = (): WorldState => {
   let world = createDeterministicWorldFixture();
@@ -130,7 +130,7 @@ const establishSessionThroughProjects = (): GameSession => {
 
 const createRouteSession = (action: RouteAction): GameSession => {
   const session = establishSessionThroughProjects();
-  if (action === "DEPLOY_SUPPORT_TO_C") {
+  if (action === "DEPLOY_SUPPORT") {
     session.deployHousingImplementationSupportToStateC();
   } else {
     session.preserveHousingImplementationSupportReserve();
@@ -336,7 +336,7 @@ describe("Commit 25 final synthetic GL0 composition candidate", () => {
   });
 
   it("4. certifies the DEPLOY tie without entitlement, transfer, or control loss", () => {
-    const session = createRouteSession("DEPLOY_SUPPORT_TO_C");
+    const session = createRouteSession("DEPLOY_SUPPORT");
     session.advanceTo(61);
     expect(session.getView().electoralAudit.electionProcess).toMatchObject({
       status: "CERTIFIED",
@@ -407,7 +407,7 @@ describe("Commit 25 final synthetic GL0 composition candidate", () => {
     day8 = advanceWorldTo(day8, 8);
     const housingBeforeRefusal = structuredClone(day8.housing);
     const populationBeforeRefusal = structuredClone(day8.population);
-    const refused = resolveContestedAuthorityComplianceBoundary(day8.governance, "REFUSE", 9);
+    const refused = resolveContestedAuthorityComplianceBoundary(day8.governance, "REFUSE", 9, 9);
 
     expect(
       refused.governance.contestedHousingAdministration.judicialOrderComplianceResponses[0],
@@ -457,7 +457,7 @@ describe("Commit 25 final synthetic GL0 composition candidate", () => {
   });
 
   it("10. proves finite institution-owned support is exhausted by DEPLOY", () => {
-    const deployed = resolveWorldRoute("DEPLOY_SUPPORT_TO_C");
+    const deployed = resolveWorldRoute("DEPLOY_SUPPORT");
     const support = deployed.governance.housingImplementationSupport;
     const stateARelationship = deployed.governance.intergovernmentalProgramRelationships.find(
       (relationship) => relationship.stateJurisdictionId === STATE_A_ID,
@@ -470,6 +470,7 @@ describe("Commit 25 final synthetic GL0 composition candidate", () => {
     expect(() =>
       commitHousingImplementationSupport(
         support,
+        "test-additional-deployment",
         deployed.governance.housingGrantProgram!.id,
         stateARelationship.id,
         STATE_A_ID,
@@ -559,7 +560,7 @@ describe("Commit 25 final synthetic GL0 composition candidate", () => {
   });
 
   it("16. proves material improvement does not automatically become Administration credit", () => {
-    const day42 = advanceWorldTo(resolveWorldRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveWorldRoute("DEPLOY_SUPPORT"), 42);
 
     expect(regionFor(day42, STATE_A_ID).housingStockUnits).toBe(1_100);
     expect(populationUnitFor(day42, POPULATION_UNIT_A_ID)).toMatchObject({
@@ -699,7 +700,7 @@ describe("Commit 25 final synthetic GL0 composition candidate", () => {
   });
 
   it("23. excludes captured-unreleased measurement, live Housing, hidden Population, and debug electorate truth", () => {
-    const session = createRouteSession("DEPLOY_SUPPORT_TO_C");
+    const session = createRouteSession("DEPLOY_SUPPORT");
     session.advanceTo(30);
     const player = session.getPlayerView();
     const serialized = JSON.stringify(player);
@@ -740,7 +741,7 @@ describe("Commit 25 final synthetic GL0 composition candidate", () => {
   });
 
   it("25. keeps the developer audit projection explicitly separate from player knowledge", () => {
-    const session = createRouteSession("DEPLOY_SUPPORT_TO_C");
+    const session = createRouteSession("DEPLOY_SUPPORT");
     session.advanceTo(43);
     const audit = session.getView();
     const player = session.getPlayerView();

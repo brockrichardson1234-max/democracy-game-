@@ -1,6 +1,3 @@
-export const GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID =
-  "gl0-ordinary-executive-succession-rule";
-
 export type ExecutiveSuccessionRequirement =
   "CERTIFIED_NON_TIE_WINNER_ESTABLISHES_ENTITLEMENT_AND_TRANSFERS_AT_CONFIGURED_BOUNDARY";
 
@@ -9,21 +6,14 @@ export interface ExecutiveSuccessionRule {
   readonly requirement: ExecutiveSuccessionRequirement;
 }
 
-/** Canonical legal-order owner of the one bounded GL0 succession requirement. */
+/** Canonical legal-order owner of bounded succession requirements. */
 export interface ExecutiveSuccessionLegalOrderState {
   readonly rules: readonly ExecutiveSuccessionRule[];
 }
 
-export const createInitialExecutiveSuccessionLegalOrderState =
-  (): ExecutiveSuccessionLegalOrderState => ({
-    rules: [
-      {
-        id: GL0_ORDINARY_EXECUTIVE_SUCCESSION_RULE_ID,
-        requirement:
-          "CERTIFIED_NON_TIE_WINNER_ESTABLISHES_ENTITLEMENT_AND_TRANSFERS_AT_CONFIGURED_BOUNDARY",
-      },
-    ],
-  });
+export const createExecutiveSuccessionLegalOrderState = (
+  rules: readonly ExecutiveSuccessionRule[],
+): ExecutiveSuccessionLegalOrderState => ({ rules: rules.map((rule) => ({ ...rule })) });
 
 export const resolveExecutiveSuccessionRule = (
   legalOrder: ExecutiveSuccessionLegalOrderState,

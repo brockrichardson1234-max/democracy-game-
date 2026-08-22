@@ -1,9 +1,19 @@
+import {
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+  STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS,
+  STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS,
+  STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS,
+  HOUSING_PROJECT_PLANNED_UNITS,
+  HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession } from "../src/app/session";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -24,9 +34,6 @@ import {
   advanceHousing,
   materializeHousingProject,
   resolveHousingAffordabilityPressure,
-  STATE_A_SYNTHETIC_HOUSING_DEMAND_UNITS,
-  STATE_B_SYNTHETIC_HOUSING_DEMAND_UNITS,
-  STATE_C_SYNTHETIC_HOUSING_DEMAND_UNITS,
 } from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 import {
@@ -74,7 +81,7 @@ const createResponseWorld = (): WorldState => {
 };
 
 const resolveRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): WorldState => resolveHousingImplementationResponse(createResponseWorld(), action);
 
 const regionFor = (world: WorldState, stateId: string) => {
@@ -180,7 +187,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
   });
 
   it("6. State C DEPLOY stays at baseline through day 22 and improves at day 23", () => {
-    const day22 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 22);
+    const day22 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 22);
     const day23 = advanceWorldTo(day22, 23);
 
     expect(regionFor(day22, STATE_C_ID)).toMatchObject({
@@ -218,7 +225,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
   });
 
   it("8. DEPLOY and PRESERVE produce different State C material truth at day 30", () => {
-    const deployed = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const deployed = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const preserved = advanceWorldTo(resolveRoute("PRESERVE_SUPPORT_RESERVE"), 30);
 
     expect(regionFor(deployed, STATE_C_ID).affordabilityPressure).toBe(150);
@@ -226,7 +233,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
   });
 
   it("9. successful delivery leaves positive residual pressure in States A and C", () => {
-    const completed = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const completed = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
 
     expect(regionFor(completed, STATE_A_ID).affordabilityPressure).toBe(100);
     expect(regionFor(completed, STATE_C_ID).affordabilityPressure).toBe(150);
@@ -234,7 +241,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
 
   it("10. State B refusal leaves its material problem at the Housing baseline", () => {
     let world = resolveStateHousingGrantDecision(createResponseWorld(), STATE_B_ID);
-    world = resolveHousingImplementationResponse(world, "DEPLOY_SUPPORT_TO_C");
+    world = resolveHousingImplementationResponse(world, "DEPLOY_SUPPORT");
     world = advanceWorldTo(world, 60);
 
     expect(regionFor(world, STATE_B_ID)).toMatchObject({
@@ -250,7 +257,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
   });
 
   it("11. Housing-only advancement reproduces the world result without governance input", () => {
-    const route = resolveRoute("DEPLOY_SUPPORT_TO_C");
+    const route = resolveRoute("DEPLOY_SUPPORT");
     const housingOnly = advanceHousing(route.housing, 5, 30);
     const worldResult = advanceWorldTo(route, 30);
 
@@ -259,7 +266,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
   });
 
   it("12. repeated advancement after completion cannot improve pressure twice", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const day100 = advanceWorldTo(advanceWorldTo(day30, 60), 100);
 
     expect(day100.housing).toEqual(day30.housing);
@@ -269,7 +276,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
   });
 
   it("13. coarse and chunked advancement preserve Housing state and material order", () => {
-    const route = resolveRoute("DEPLOY_SUPPORT_TO_C");
+    const route = resolveRoute("DEPLOY_SUPPORT");
     const direct = advanceWorldTo(route, 30);
     const chunked = advanceWorldTo(
       advanceWorldTo(
@@ -284,7 +291,7 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
   });
 
   it("14. completion, stock, and pressure occurrences have explicit causal order", () => {
-    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
 
     for (const [stateId, completionAt] of [
       [STATE_A_ID, 10],
@@ -319,7 +326,13 @@ describe("Commit 16 Housing stock to affordability pressure", () => {
     };
     const withProject = materializeHousingProject(
       zeroPressureHousing,
-      { stateJurisdictionId: STATE_A_ID, sourceDisbursementId: "fixture-disbursement" },
+      {
+        projectId: "test-affordability-project",
+        stateJurisdictionId: STATE_A_ID,
+        sourceDisbursementId: "fixture-disbursement",
+        requiredWorkUnits: HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+        plannedHousingUnits: HOUSING_PROJECT_PLANNED_UNITS,
+      },
       0,
     );
     const completed = advanceHousing(withProject, 0, 10);

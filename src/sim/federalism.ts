@@ -6,7 +6,7 @@ export type StateAdministrativeCapacity = "ADEQUATE" | "WEAK";
 /**
  * A political/legal jurisdiction: identity/existence only, intentionally
  * independent of geography. It does not own deterministic decision behavior
- * or administrative capacity -- those are separately owned fixture facts
+ * or administrative capacity -- those are separately configured facts
  * (see `StateProgramAdministrativeState` below) that merely reference this
  * jurisdiction by stable id, the same way `StateProgramDecisionState` does.
  */
@@ -15,9 +15,9 @@ export interface StateJurisdiction {
 }
 
 /**
- * State political/administrative fixture state: the deterministic GL0
- * behavior and capacity a state jurisdiction currently has for the housing
- * grant program offer. This is distinct from jurisdiction identity above
+ * Configured state political/administrative state: the deterministic
+ * behavior and capacity a state jurisdiction currently has for a program
+ * offer. This is distinct from jurisdiction identity above
  * (existence != behavior) and from `StateProgramDecisionState` below (a
  * standing disposition != the actual resolved decision that was made from
  * it at a point in time).
@@ -67,30 +67,19 @@ export interface IntergovernmentalProgramRelationship {
   readonly status: "ACTIVE";
 }
 
-export const STATE_A_ID = "state-a";
-export const STATE_B_ID = "state-b";
-export const STATE_C_ID = "state-c";
+export const createStateJurisdictions = (
+  jurisdictions: readonly StateJurisdiction[],
+): readonly StateJurisdiction[] => {
+  if (
+    jurisdictions.length === 0 ||
+    new Set(jurisdictions.map((jurisdiction) => jurisdiction.id)).size !== jurisdictions.length
+  ) {
+    throw new Error("State jurisdictions require nonempty, unique identities.");
+  }
+  return jurisdictions.map((jurisdiction) => ({ ...jurisdiction }));
+};
 
-export const createDeterministicStateJurisdictions = (): readonly StateJurisdiction[] => [
-  { id: STATE_A_ID },
-  { id: STATE_B_ID },
-  { id: STATE_C_ID },
-];
-
-export const createDeterministicStateProgramAdministrativeStates = (): readonly StateProgramAdministrativeState[] => [
-  {
-    stateJurisdictionId: STATE_A_ID,
-    housingGrantDecisionRule: "APPLY",
-    administrativeCapacity: "ADEQUATE",
-  },
-  {
-    stateJurisdictionId: STATE_B_ID,
-    housingGrantDecisionRule: "REFUSE",
-    administrativeCapacity: "ADEQUATE",
-  },
-  {
-    stateJurisdictionId: STATE_C_ID,
-    housingGrantDecisionRule: "APPLY",
-    administrativeCapacity: "WEAK",
-  },
-];
+export const createStateProgramAdministrativeStates = (
+  states: readonly StateProgramAdministrativeState[],
+): readonly StateProgramAdministrativeState[] =>
+  states.map((state) => ({ ...state }));

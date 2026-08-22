@@ -1,18 +1,4 @@
-import { STATE_A_ID } from "./federalism";
-import { GL0_INTERIM_HOUSING_REDIRECTION_RULE_ID } from "./judicial-law";
 import type { SimulationInstant } from "./world";
-
-export const GL0_JUDICIAL_INSTITUTION_ID = "gl0-generic-judicial-institution";
-export const GL0_JUDICIAL_OFFICE_ID = "gl0-judicial-office";
-export const GL0_JUDGE_ACTOR_ID = "gl0-judge-actor";
-export const GL0_HOUSING_REDIRECTION_LEGAL_CLAIM_ID =
-  "gl0-housing-redirection-legal-claim";
-export const GL0_HOUSING_REDIRECTION_CONTEST_ID =
-  "gl0-housing-redirection-legal-contest";
-export const GL0_INTERIM_RELIEF_DECISION_ID = "gl0-interim-relief-decision";
-export const GL0_HOUSING_REDIRECTION_CHALLENGE_AT = 7;
-export const GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT = 8;
-export const GL0_HOUSING_REDIRECTION_COMPLIANCE_AT = 9;
 
 export interface JudicialInstitution {
   readonly id: string;
@@ -48,7 +34,7 @@ export interface InterimReliefDecision {
   readonly contestId: string;
   readonly judgeActorId: string;
   readonly outcome: "GRANT";
-  readonly decisionSource: "AUTONOMOUS_DETERMINISTIC_FIXTURE";
+  readonly decisionSource: string;
   readonly decidedAtSimulationTime: SimulationInstant;
 }
 
@@ -85,38 +71,24 @@ export interface JudiciaryState {
   readonly legalContests: readonly LegalContest[];
 }
 
-export const createInitialJudiciaryState = (): JudiciaryState => ({
-  institution: { id: GL0_JUDICIAL_INSTITUTION_ID },
-  office: {
-    id: GL0_JUDICIAL_OFFICE_ID,
-    institutionId: GL0_JUDICIAL_INSTITUTION_ID,
-  },
-  judgeActor: { id: GL0_JUDGE_ACTOR_ID },
-  officeAssignment: {
-    officeId: GL0_JUDICIAL_OFFICE_ID,
-    actorId: GL0_JUDGE_ACTOR_ID,
-    effectiveAtSimulationTime: 0,
-  },
-  legalClaims: [],
-  legalContests: [],
-});
-
-export const fileStateAHousingRedirectionClaim = (
+export const fileHousingRedirectionClaim = (
   judiciary: JudiciaryState,
+  claimId: string,
+  claimantJurisdictionId: string,
   challengedAttemptId: string,
   targetInstitutionId: string,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
+  scheduledAt: SimulationInstant,
 ): { readonly judiciary: JudiciaryState; readonly claim: LegalClaim } => {
   if (at !== scheduledAt) {
-    throw new Error(`State A's Housing redirection challenge is not due at ${at}.`);
+    throw new Error(`Housing redirection challenge is not due at ${at}.`);
   }
   if (judiciary.legalClaims.length > 0) {
-    throw new Error("State A's Housing redirection legal claim already exists.");
+    throw new Error("A Housing redirection legal claim already exists.");
   }
   const claim: LegalClaim = {
-    id: GL0_HOUSING_REDIRECTION_LEGAL_CLAIM_ID,
-    claimantJurisdictionId: STATE_A_ID,
+    id: claimId,
+    claimantJurisdictionId,
     challengedAttemptId,
     targetInstitutionId,
     claimedGround: "EXECUTIVE_REDIRECTION_EXCEEDS_EXISTING_HOUSING_AUTHORITY",
@@ -132,10 +104,12 @@ export const fileStateAHousingRedirectionClaim = (
 export const admitHousingRedirectionContest = (
   judiciary: JudiciaryState,
   claim: LegalClaim,
+  contestId: string,
+  interimReliefRuleId: string,
   at: SimulationInstant,
 ): { readonly judiciary: JudiciaryState; readonly contest: LegalContest } => {
   if (claim.filedAtSimulationTime !== at) {
-    throw new Error("The bounded GL0 contest must be admitted after filing at the same boundary.");
+    throw new Error("A bounded contest must be admitted after filing at the same boundary.");
   }
   if (!judiciary.legalClaims.some((candidate) => candidate.id === claim.id)) {
     throw new Error(`Cannot admit an unfiled legal claim ${claim.id}.`);
@@ -144,13 +118,13 @@ export const admitHousingRedirectionContest = (
     throw new Error("The Housing redirection legal contest already exists.");
   }
   const contest: LegalContest = {
-    id: GL0_HOUSING_REDIRECTION_CONTEST_ID,
+    id: contestId,
     forumInstitutionId: judiciary.institution.id,
     claimantJurisdictionId: claim.claimantJurisdictionId,
     challengedAttemptId: claim.challengedAttemptId,
     targetInstitutionId: claim.targetInstitutionId,
     legalClaimId: claim.id,
-    interimReliefRuleId: GL0_INTERIM_HOUSING_REDIRECTION_RULE_ID,
+    interimReliefRuleId,
     proceduralStage: "INTERIM_RELIEF_PENDING",
     admittedAtSimulationTime: at,
     interimReliefDecision: null,
@@ -163,11 +137,13 @@ export const admitHousingRedirectionContest = (
   };
 };
 
-export const autonomouslyGrantInterimRelief = (
+export const resolveInterimRelief = (
   judiciary: JudiciaryState,
   contestId: string,
+  decisionId: string,
+  decisionSource: string,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
+  scheduledAt: SimulationInstant,
 ): { readonly judiciary: JudiciaryState; readonly decision: InterimReliefDecision } => {
   if (at !== scheduledAt) {
     throw new Error(`Interim relief is not due at simulation time ${at}.`);
@@ -178,15 +154,15 @@ export const autonomouslyGrantInterimRelief = (
     throw new Error(`Interim relief has already been decided for contest ${contestId}.`);
   }
   if (judiciary.officeAssignment.actorId !== judiciary.judgeActor.id) {
-    throw new Error("The judicial office is not assigned to the fixture judge.");
+    throw new Error("The judicial office is not assigned to the configured judge.");
   }
 
   const decision: InterimReliefDecision = {
-    id: GL0_INTERIM_RELIEF_DECISION_ID,
+    id: decisionId,
     contestId,
     judgeActorId: judiciary.judgeActor.id,
     outcome: "GRANT",
-    decisionSource: "AUTONOMOUS_DETERMINISTIC_FIXTURE",
+    decisionSource,
     decidedAtSimulationTime: at,
   };
   return {
@@ -226,6 +202,7 @@ export const referenceJudicialOrder = (
 
 export const fileJudicialReviewRequest = (
   judiciary: JudiciaryState,
+  requestId: string,
   contestId: string,
   requestingActorId: string,
   sourceOrderId: string,
@@ -240,7 +217,7 @@ export const fileJudicialReviewRequest = (
     throw new Error(`A review request already exists for contest ${contestId}.`);
   }
   const request: JudicialReviewRequest = {
-    id: `gl0-review-request-for-${sourceOrderId}`,
+    id: requestId,
     contestId,
     requestingActorId,
     sourceOrderId,

@@ -1,3 +1,12 @@
+import {
+  HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
+  HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT,
+  HOUSING_PROJECT_PLANNED_UNITS,
+  HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
@@ -8,8 +17,6 @@ import {
   createHousingGrantAward,
   disburseHousingGrantObligation,
   establishHousingGrantProgram,
-  HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
-  HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT,
   materializeHousingProjectFromDisbursement,
   obligateHousingGrantAward,
   recognizeHousingGrantFiscalAuthority,
@@ -19,8 +26,10 @@ import {
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
-import { materializeHousingProject } from "../src/sim/housing";
+
+import {
+  materializeHousingProject,
+} from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
 
 const INITIAL_TERMS: ProposalTerms = {
@@ -389,7 +398,13 @@ describe("Commit 12 participation -> award -> obligation -> disbursement -> Hous
     // admissibility/duplicate check live inside Housing -- not spliced into
     // HousingState by the cross-domain orchestrator.
     const empty = createDeterministicWorldFixture().housing;
-    const input = { stateJurisdictionId: STATE_A_ID, sourceDisbursementId: "gl0-disbursement-fixture" };
+    const input = {
+      projectId: "test-housing-project",
+      stateJurisdictionId: STATE_A_ID,
+      sourceDisbursementId: "gl0-disbursement-fixture",
+      requiredWorkUnits: HOUSING_PROJECT_REQUIRED_WORK_UNITS,
+      plannedHousingUnits: HOUSING_PROJECT_PLANNED_UNITS,
+    };
 
     const withProject = materializeHousingProject(empty, input, 0);
     expect(withProject.projects).toHaveLength(1);

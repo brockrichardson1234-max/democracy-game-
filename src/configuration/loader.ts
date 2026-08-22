@@ -32,6 +32,189 @@ const requireUnique = (values: readonly string[], field: string): void => {
   }
 };
 
+type TransitionPosition = Pick<ScheduledTransitionDescriptor, "id" | "at" | "order">;
+
+const isStrictlyBefore = (left: TransitionPosition, right: TransitionPosition): boolean =>
+  left.at < right.at || (left.at === right.at && left.order < right.order);
+
+const requireBefore = (
+  predecessor: TransitionPosition,
+  successor: TransitionPosition,
+  relationship: string,
+): void => {
+  if (!isStrictlyBefore(predecessor, successor)) {
+    throw new Error(
+      `Configuration causal order requires ${relationship}: ${predecessor.id} must precede ${successor.id}.`,
+    );
+  }
+};
+
+const transitionsOfKind = <TKind extends ScheduledTransitionDescriptor["kind"]>(
+  transitions: readonly ScheduledTransitionDescriptor[],
+  kind: TKind,
+): readonly (ScheduledTransitionDescriptor & { readonly kind: TKind })[] =>
+  transitions.filter(
+    (transition): transition is ScheduledTransitionDescriptor & { readonly kind: TKind } =>
+      transition.kind === kind,
+  );
+
+const requireAtMostOne = <T>(values: readonly T[], description: string): T | null => {
+  if (values.length > 1) {
+    throw new Error(`Configuration supports at most one ${description} transition.`);
+  }
+  return values[0] ?? null;
+};
+
+interface RuntimeSeedInformationSchedule {
+  readonly information?: {
+    readonly housingMeasurement?: {
+      readonly reportArtifactId?: string;
+      readonly observationEnd?: number;
+      readonly scheduledReleaseAtSimulationTime?: number;
+    };
+    readonly artifacts?: readonly {
+      readonly id?: string;
+      readonly releasedAtSimulationTime?: number;
+    }[];
+  };
+}
+
+/** Accepted owner semantics constrain configuration-selected event times. */
+const validateCausalSchedule = (
+  configuration: GovernmentConfiguration<unknown>,
+): void => {
+  const transitions = configuration.transitions;
+
+  const challenge = requireAtMostOne(
+    transitionsOfKind(transitions, "CONTESTED_AUTHORITY_CHALLENGE"),
+    "contested-authority challenge",
+  );
+  const relief = requireAtMostOne(
+    transitionsOfKind(transitions, "CONTESTED_AUTHORITY_INTERIM_RELIEF"),
+    "contested-authority interim-relief",
+  );
+  const compliance = requireAtMostOne(
+    transitionsOfKind(transitions, "CONTESTED_AUTHORITY_COMPLIANCE"),
+    "contested-authority compliance",
+  );
+  if (relief !== null && challenge === null) {
+    throw new Error("Configuration interim relief requires a challenge transition.");
+  }
+  if (compliance !== null && (challenge === null || relief === null)) {
+    throw new Error("Configuration compliance requires challenge and interim-relief transitions.");
+  }
+  if (challenge !== null && relief !== null) requireBefore(challenge, relief, "challenge → interim relief");
+  if (relief !== null && compliance !== null) requireBefore(relief, compliance, "interim relief → compliance");
+
+  const populationResponse = requireAtMostOne(
+    transitionsOfKind(transitions, "POPULATION_ELECTORAL_RESPONSE"),
+    "Population electoral-response",
+  );
+  const informationInputs = transitions.filter(
+    (transition) =>
+      transition.kind === "INFORMATION_ARTIFACT_EXPOSURE" ||
+      transition.kind === "POLITICAL_CLAIM_RELEASE",
+  );
+  if (populationResponse !== null) {
+    for (const input of informationInputs) {
+      requireBefore(input, populationResponse, "information incorporation → Population response");
+    }
+  }
+
+  const elections = transitionsOfKind(transitions, "ELECTION_RESOLUTION");
+  const certifications = transitionsOfKind(transitions, "ELECTION_CERTIFICATION");
+  const entitlements = transitionsOfKind(transitions, "SUCCESSOR_ENTITLEMENT");
+  const transfers = transitionsOfKind(transitions, "EXECUTIVE_OFFICE_TRANSFER");
+  if (populationResponse !== null) {
+    for (const election of elections) {
+      requireBefore(populationResponse, election, "Population response → election resolution");
+    }
+  }
+  for (const election of elections) {
+    const matches = certifications.filter((candidate) => candidate.contestId === election.contestId);
+    if (matches.length !== 1) {
+      throw new Error(`Configuration election contest ${election.contestId} requires exactly one certification.`);
+    }
+    requireBefore(election, matches[0], "election resolution → certification");
+  }
+  for (const certification of certifications) {
+    if (!elections.some((election) => election.contestId === certification.contestId)) {
+      throw new Error(`Configuration certification references unresolved contest ${certification.contestId}.`);
+    }
+  }
+  for (const entitlement of entitlements) {
+    const matchingCertification = certifications.filter(
+      (certification) => certification.contestId === entitlement.contestId,
+    );
+    if (matchingCertification.length !== 1) {
+      throw new Error(`Configuration entitlement references uncertified contest ${entitlement.contestId}.`);
+    }
+    requireBefore(matchingCertification[0], entitlement, "certification → successor entitlement");
+    const matchingTransfers = transfers.filter((transfer) => transfer.at === entitlement.transferAt);
+    if (matchingTransfers.length !== 1) {
+      throw new Error(
+        `Configuration entitlement transferAt ${entitlement.transferAt} must match exactly one office-transfer boundary.`,
+      );
+    }
+    requireBefore(entitlement, matchingTransfers[0], "successor entitlement → office transfer");
+  }
+  if (transfers.length > 0 && entitlements.length === 0) {
+    throw new Error("Configuration office transfer requires a successor-entitlement transition.");
+  }
+
+  const seed = configuration.runtimeSeed as RuntimeSeedInformationSchedule | null;
+  const measurement = seed?.information?.housingMeasurement;
+  if (
+    typeof measurement?.observationEnd === "number" &&
+    typeof measurement.scheduledReleaseAtSimulationTime === "number" &&
+    measurement.scheduledReleaseAtSimulationTime < measurement.observationEnd
+  ) {
+    throw new Error("Configuration report release cannot precede its measurement observation end.");
+  }
+  const availability = new Map<string, TransitionPosition>();
+  for (const artifact of seed?.information?.artifacts ?? []) {
+    if (
+      typeof artifact.id === "string" &&
+      typeof artifact.releasedAtSimulationTime === "number"
+    ) {
+      availability.set(artifact.id, {
+        id: `initial artifact ${artifact.id}`,
+        at: artifact.releasedAtSimulationTime,
+        order: -1,
+      });
+    }
+  }
+  if (
+    typeof measurement?.reportArtifactId === "string" &&
+    typeof measurement.scheduledReleaseAtSimulationTime === "number"
+  ) {
+    availability.set(measurement.reportArtifactId, {
+      id: `scheduled report ${measurement.reportArtifactId}`,
+      at: measurement.scheduledReleaseAtSimulationTime,
+      order: -1,
+    });
+  }
+  for (const claim of transitionsOfKind(transitions, "POLITICAL_CLAIM_RELEASE")) {
+    const source = availability.get(claim.sourceArtifactId);
+    if (source === undefined) {
+      throw new Error(
+        `Configuration claim ${claim.claimArtifactId} has no supported source-artifact availability path for ${claim.sourceArtifactId}.`,
+      );
+    }
+    requireBefore(source, claim, "source artifact availability → political claim release");
+    availability.set(claim.claimArtifactId, claim);
+  }
+  for (const exposure of transitionsOfKind(transitions, "INFORMATION_ARTIFACT_EXPOSURE")) {
+    const source = availability.get(exposure.artifactId);
+    if (source === undefined) {
+      throw new Error(
+        `Configuration exposure has no supported artifact-availability path for ${exposure.artifactId}.`,
+      );
+    }
+    requireBefore(source, exposure, "artifact availability → exposure");
+  }
+};
+
 export const loadGovernmentConfiguration = <TRuntimeSeed>(
   configuration: GovernmentConfiguration<TRuntimeSeed>,
 ): LoadedGovernmentConfiguration<TRuntimeSeed> => {
@@ -86,6 +269,7 @@ export const loadGovernmentConfiguration = <TRuntimeSeed>(
     if (bootstrapCount !== 1) {
       throw new Error("Playable configuration requires exactly one bootstrap boundary.");
     }
+    validateCausalSchedule(configuration as GovernmentConfiguration<unknown>);
   } else if (configuration.runtimeSeed !== null || configuration.transitions.length !== 0) {
     throw new Error("Structural-proof configuration cannot contain a runtime seed or schedule.");
   }

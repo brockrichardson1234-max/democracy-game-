@@ -1,12 +1,5 @@
 import type { SimulationInstant } from "./world";
 
-export const GL0_DISPUTED_HOUSING_REDIRECTION_ATTEMPT_ID =
-  "gl0-disputed-housing-funds-redirection-attempt";
-export const GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT = 500_000_000;
-export const GL0_DISPUTED_HOUSING_REDIRECTION_AT = 6;
-export const GL0_DISPUTED_HOUSING_CLAIMED_LEGAL_BASIS =
-  "EXECUTIVE_DISCRETION_OVER_UNOBLIGATED_HOUSING_FUNDS";
-
 export type DisputedHousingFundsRedirectionAttemptStatus = "ATTEMPTED" | "WITHDRAWN";
 
 /** Executive-owned record of what was attempted; it owns no legal conclusion. */
@@ -18,7 +11,7 @@ export interface DisputedHousingFundsRedirectionAttempt {
   readonly federalProgramId: string;
   readonly publicFinanceRef: string;
   readonly disputedAmount: number;
-  readonly claimedLegalBasis: typeof GL0_DISPUTED_HOUSING_CLAIMED_LEGAL_BASIS;
+  readonly claimedLegalBasis: string;
   readonly attemptedAtSimulationTime: SimulationInstant;
   readonly status: DisputedHousingFundsRedirectionAttemptStatus;
 }
@@ -34,7 +27,7 @@ export interface ExecutiveJudicialResponse {
   readonly respondedAtSimulationTime: SimulationInstant;
 }
 
-/** Bounded executive/political owner for the hostile GL0 route. */
+/** Bounded executive/political owner for the disputed-authority route. */
 export interface ExecutiveAuthorityState {
   readonly disputedHousingFundsRedirectionAttempts:
     readonly DisputedHousingFundsRedirectionAttempt[];
@@ -48,13 +41,18 @@ export const createInitialExecutiveAuthorityState = (): ExecutiveAuthorityState 
 
 export const recordDisputedHousingFundsRedirectionAttempt = (
   state: ExecutiveAuthorityState,
+  configuration: {
+    readonly attemptId: string;
+    readonly availableAt: SimulationInstant;
+    readonly claimedLegalBasis: string;
+  },
   input: Omit<
     DisputedHousingFundsRedirectionAttempt,
     "id" | "claimedLegalBasis" | "attemptedAtSimulationTime" | "status"
   >,
   at: SimulationInstant,
 ): { readonly state: ExecutiveAuthorityState; readonly attempt: DisputedHousingFundsRedirectionAttempt } => {
-  if (at !== GL0_DISPUTED_HOUSING_REDIRECTION_AT) {
+  if (at !== configuration.availableAt) {
     throw new Error(`Disputed Housing funds redirection is not attemptable at simulation time ${at}.`);
   }
   if (state.disputedHousingFundsRedirectionAttempts.length > 0) {
@@ -65,9 +63,9 @@ export const recordDisputedHousingFundsRedirectionAttempt = (
   }
 
   const attempt: DisputedHousingFundsRedirectionAttempt = {
-    id: GL0_DISPUTED_HOUSING_REDIRECTION_ATTEMPT_ID,
+    id: configuration.attemptId,
     ...input,
-    claimedLegalBasis: GL0_DISPUTED_HOUSING_CLAIMED_LEGAL_BASIS,
+    claimedLegalBasis: configuration.claimedLegalBasis,
     attemptedAtSimulationTime: at,
     status: "ATTEMPTED",
   };
@@ -85,6 +83,7 @@ export const recordDisputedHousingFundsRedirectionAttempt = (
 
 export const recordExecutiveJudicialResponse = (
   state: ExecutiveAuthorityState,
+  responseId: string,
   attemptId: string,
   orderId: string,
   respondingActorId: string,
@@ -103,7 +102,7 @@ export const recordExecutiveJudicialResponse = (
   }
 
   const response: ExecutiveJudicialResponse = {
-    id: `gl0-executive-judicial-response-for-${attemptId}`,
+    id: responseId,
     sourceAttemptId: attemptId,
     orderId,
     respondingActorId,

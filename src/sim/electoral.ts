@@ -1,8 +1,6 @@
 import {
   applyElectoralEligibilityRule,
   assertProcedureResultCertifiable,
-  GL0_ALL_REPRESENTED_RESIDENT_POPULATION_ELIGIBILITY_RULE_ID,
-  GL0_ORDINARY_EXECUTIVE_ELECTION_PROCEDURE_RULE_ID,
   resolveElectoralEligibilityRule,
   resolveElectoralProcedureRule,
   resolveParticipatingWeight,
@@ -18,17 +16,6 @@ import type {
   TurnoutDisposition,
 } from "./population";
 import type { SimulationInstant } from "./world";
-
-export const GL0_EXECUTIVE_ELECTORAL_BOUNDARY_ID = "gl0-executive-electoral-boundary";
-export const GL0_EXECUTIVE_CONTEST_ID = "gl0-executive-contest";
-export const GL0_EXECUTIVE_ELECTION_PROCESS_ID = "gl0-executive-election-process";
-export const GL0_EXECUTIVE_ELECTION_RESULT_ID = "gl0-executive-election-result";
-export const GL0_EXECUTIVE_ELECTION_CERTIFICATION_ID =
-  "gl0-executive-election-certification";
-export const GL0_ADMINISTRATION_CANDIDATE_ID = "gl0-administration-candidate";
-export const GL0_OPPOSITION_CANDIDATE_ID = "gl0-opposition-candidate";
-export const GL0_EXECUTIVE_ELECTION_AT = 60;
-export const GL0_EXECUTIVE_CERTIFICATION_AT = 61;
 
 export type ElectoralCandidateAlignment = "ADMINISTRATION" | "OPPOSITION";
 
@@ -50,6 +37,8 @@ export interface ElectoralContest {
   readonly boundaryId: string;
   readonly scheduledElectionAt: SimulationInstant;
   readonly candidateIds: readonly string[];
+  readonly administrationCandidateId: string;
+  readonly oppositionCandidateId: string;
   /** Reference only: the normative requirement remains owned by the legal order. */
   readonly eligibilityRuleId: string;
   /** Reference only: turnout, ballot, result, and certification requirements are legal-order truth. */
@@ -63,7 +52,7 @@ export interface ElectionElectorateSnapshotUnit {
   readonly turnoutDisposition: TurnoutDisposition;
 }
 
-/** Fixed day-60 election input, not a second continuously mutable Population owner. */
+/** Frozen election input, not a second continuously mutable Population owner. */
 export interface ElectionElectorateSnapshot {
   readonly contestId: string;
   readonly asOfSimulationTime: SimulationInstant;
@@ -77,10 +66,7 @@ export interface ElectionParticipationRecord {
   readonly participatingWeight: number;
 }
 
-export type WeightedBallotSelection =
-  | typeof GL0_ADMINISTRATION_CANDIDATE_ID
-  | typeof GL0_OPPOSITION_CANDIDATE_ID
-  | "BLANK";
+export type WeightedBallotSelection = string | "BLANK";
 
 export interface WeightedBallotRecord {
   readonly populationUnitId: string;
@@ -121,6 +107,8 @@ export type ElectionProcessStatus = "SCHEDULED" | "RESOLVED" | "CERTIFIED";
 export interface ElectionProcess {
   readonly id: string;
   readonly contestId: string;
+  readonly resultId: string;
+  readonly certificationId: string;
   readonly scheduledCertificationAt: SimulationInstant;
   readonly status: ElectionProcessStatus;
   readonly electorateSnapshot: ElectionElectorateSnapshot | null;
@@ -165,78 +153,6 @@ export interface ElectoralTransitionResult {
   readonly electoral: ElectoralState;
   readonly occurrences: readonly ElectoralOccurrence[];
 }
-
-export interface ElectoralFixtureReferences {
-  readonly geographyRegionIds: readonly string[];
-  readonly administrationCandidateActorId: string;
-  readonly oppositionCandidateActorId: string;
-}
-
-export const createInitialElectoralState = (
-  references: ElectoralFixtureReferences,
-): ElectoralState => {
-  if (
-    references.geographyRegionIds.length === 0 ||
-    new Set(references.geographyRegionIds).size !== references.geographyRegionIds.length
-  ) {
-    throw new Error("The GL0 electoral boundary requires distinct Geography references.");
-  }
-  if (
-    references.administrationCandidateActorId.length === 0 ||
-    references.oppositionCandidateActorId.length === 0 ||
-    references.administrationCandidateActorId === references.oppositionCandidateActorId
-  ) {
-    throw new Error("The GL0 election requires two distinct PoliticalActor references.");
-  }
-
-  return {
-    boundaries: [
-      {
-        id: GL0_EXECUTIVE_ELECTORAL_BOUNDARY_ID,
-        geographyRegionIds: [...references.geographyRegionIds],
-      },
-    ],
-    candidates: [
-      {
-        id: GL0_ADMINISTRATION_CANDIDATE_ID,
-        actorId: references.administrationCandidateActorId,
-        alignment: "ADMINISTRATION",
-      },
-      {
-        id: GL0_OPPOSITION_CANDIDATE_ID,
-        actorId: references.oppositionCandidateActorId,
-        alignment: "OPPOSITION",
-      },
-    ],
-    contests: [
-      {
-        id: GL0_EXECUTIVE_CONTEST_ID,
-        boundaryId: GL0_EXECUTIVE_ELECTORAL_BOUNDARY_ID,
-        scheduledElectionAt: GL0_EXECUTIVE_ELECTION_AT,
-        candidateIds: [
-          GL0_ADMINISTRATION_CANDIDATE_ID,
-          GL0_OPPOSITION_CANDIDATE_ID,
-        ],
-        eligibilityRuleId:
-          GL0_ALL_REPRESENTED_RESIDENT_POPULATION_ELIGIBILITY_RULE_ID,
-        procedureRuleId: GL0_ORDINARY_EXECUTIVE_ELECTION_PROCEDURE_RULE_ID,
-      },
-    ],
-    electionProcesses: [
-      {
-        id: GL0_EXECUTIVE_ELECTION_PROCESS_ID,
-        contestId: GL0_EXECUTIVE_CONTEST_ID,
-        scheduledCertificationAt: GL0_EXECUTIVE_CERTIFICATION_AT,
-        status: "SCHEDULED",
-        electorateSnapshot: null,
-        participationRecords: [],
-        ballots: [],
-        result: null,
-        certification: null,
-      },
-    ],
-  };
-};
 
 const createPreferenceWeights = (): Record<ElectoralPreference, number> => ({
   UNRESOLVED: 0,
@@ -344,7 +260,7 @@ export const deriveElectorate = (
   };
 };
 
-/** Electoral-owned day-60 resolution from Population state and legal-order rules only. */
+/** Electoral-owned resolution from Population state and legal-order rules only. */
 export const resolveElection = (
   electoral: ElectoralState,
   population: PopulationState,
@@ -430,9 +346,9 @@ export const resolveElection = (
     );
     const selection: WeightedBallotSelection =
       ballotDirection === "ADMINISTRATION"
-        ? GL0_ADMINISTRATION_CANDIDATE_ID
+        ? contest.administrationCandidateId
         : ballotDirection === "OPPOSITION"
-          ? GL0_OPPOSITION_CANDIDATE_ID
+          ? contest.oppositionCandidateId
           : "BLANK";
     ballots.push({ populationUnitId: unit.id, ballotWeight: participatingWeight, selection });
   }
@@ -462,7 +378,7 @@ export const resolveElection = (
     0,
   );
   const result: ElectionResult = {
-    id: GL0_EXECUTIVE_ELECTION_RESULT_ID,
+    id: process.resultId,
     contestId,
     resolvedAtSimulationTime: at,
     totalEligibleWeight: derivedElectorate.eligiblePopulationWeight,
@@ -507,7 +423,7 @@ export const resolveElection = (
   };
 };
 
-/** Electoral-owned day-61 certification of the already frozen day-60 result. */
+/** Electoral-owned certification of the already frozen result. */
 export const certifyElection = (
   electoral: ElectoralState,
   procedureLegalOrder: ElectoralProcedureLegalOrderState,
@@ -531,7 +447,7 @@ export const certifyElection = (
   assertProcedureResultCertifiable(procedureRule, process.result.outcome);
 
   const certification: ElectionCertification = {
-    id: GL0_EXECUTIVE_ELECTION_CERTIFICATION_ID,
+    id: process.certificationId,
     contestId,
     sourceResultId: process.result.id,
     certifiedAtSimulationTime: at,

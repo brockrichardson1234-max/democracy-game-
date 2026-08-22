@@ -1,14 +1,29 @@
+import {
+  STATE_A_ID,
+  STATE_C_ID,
+  GEOGRAPHY_REGION_A_ID,
+  GEOGRAPHY_REGION_B_ID,
+  GEOGRAPHY_REGION_C_ID,
+  HOUSING_REGION_A_ID,
+  HOUSING_REGION_B_ID,
+  HOUSING_REGION_C_ID,
+  ADMINISTRATION_HOUSING_CLAIM_ID,
+  OFFICIAL_HOUSING_REPORT_ID,
+  OPPOSITION_HOUSING_CLAIM_ID,
+  PUBLIC_AUDIENCE_ALPHA_ID,
+  PUBLIC_AUDIENCE_BETA_ID,
+  PUBLIC_AUDIENCE_GAMMA_ID,
+  POPULATION_UNIT_A_ID,
+  POPULATION_UNIT_B_ID,
+  POPULATION_UNIT_C_ID,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession } from "../src/app/session";
-import { STATE_A_ID, STATE_C_ID } from "../src/sim/federalism";
-import {
-  GEOGRAPHY_REGION_A_ID,
-  GEOGRAPHY_REGION_B_ID,
-  GEOGRAPHY_REGION_C_ID,
-} from "../src/sim/geography";
+
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -25,19 +40,9 @@ import {
   submitHousingGrantProposal,
   submitStateHousingGrantApplication,
 } from "../src/sim/governance";
+
 import {
-  HOUSING_REGION_A_ID,
-  HOUSING_REGION_B_ID,
-  HOUSING_REGION_C_ID,
-} from "../src/sim/housing";
-import {
-  ADMINISTRATION_HOUSING_CLAIM_ID,
   exposeInformationArtifact,
-  OFFICIAL_HOUSING_REPORT_ID,
-  OPPOSITION_HOUSING_CLAIM_ID,
-  PUBLIC_AUDIENCE_ALPHA_ID,
-  PUBLIC_AUDIENCE_BETA_ID,
-  PUBLIC_AUDIENCE_GAMMA_ID,
   resolveInformationBoundary,
   type InformationExposure,
 } from "../src/sim/information";
@@ -45,9 +50,6 @@ import type { ProposalTerms } from "../src/sim/legislature";
 import {
   createPopulationState,
   incorporateInformationExposure,
-  POPULATION_UNIT_A_ID,
-  POPULATION_UNIT_B_ID,
-  POPULATION_UNIT_C_ID,
   type PopulationUnit,
 } from "../src/sim/population";
 import {
@@ -88,7 +90,7 @@ const materializeStateProject = (world: WorldState, stateId: string): WorldState
 };
 
 const resolveRoute = (
-  action: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE",
+  action: "DEPLOY_SUPPORT" | "PRESERVE_SUPPORT_RESERVE",
 ): WorldState => {
   let world = establishProgram();
   world = materializeStateProject(world, STATE_A_ID);
@@ -132,7 +134,7 @@ const meaningfulDownstreamHistory = (world: WorldState) =>
 
 describe("Commit 19 Population belief, attribution, and salience", () => {
   it("1. preserves the accepted Commit-18 report, claim, and exposure path", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(day42.information.artifacts).toHaveLength(1);
     expect(day42.information.politicalClaims.map((claim) => claim.id)).toEqual([
@@ -259,10 +261,11 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
   });
 
   it("9. distinguishes report release, exposure, incorporation, and resulting belief", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const release = resolveInformationBoundary(day30.information, day30.housing, 40);
     const exposed = exposeInformationArtifact(
       release.information,
+      "test-report-alpha-exposure-9",
       OFFICIAL_HOUSING_REPORT_ID,
       PUBLIC_AUDIENCE_ALPHA_ID,
       40,
@@ -278,6 +281,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
       exposed.information,
       exposed.information.exposures[0],
       40,
+      "test-incorporation-",
     );
     expect(
       incorporated.population.units.find((unit) => unit.id === POPULATION_UNIT_C_ID)
@@ -286,7 +290,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
   });
 
   it("10. gives DEPLOY Unit C a MODERATE day-40 report belief", () => {
-    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 40);
+    const day40 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 40);
     const unitC = populationUnitFor(day40, POPULATION_UNIT_C_ID);
 
     expect(unitC.housingPressureBelief).toBe("MODERATE");
@@ -305,7 +309,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
 
   it("12. gives DEPLOY Unit C WORKING belief and bounded program credit at day 41", () => {
     const unitC = populationUnitFor(
-      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 41),
+      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 41),
       POPULATION_UNIT_C_ID,
     );
 
@@ -330,7 +334,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
 
   it("14. gives Unit B MODERATE pressure, INADEQUATE performance, and program blame", () => {
     const unitB = populationUnitFor(
-      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42),
+      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42),
       POPULATION_UNIT_B_ID,
     );
 
@@ -344,7 +348,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
 
   it("15. gives Unit A CONTESTED claims without report belief or attribution", () => {
     const unitA = populationUnitFor(
-      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42),
+      advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42),
       POPULATION_UNIT_A_ID,
     );
 
@@ -354,7 +358,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
   });
 
   it("16. makes salience HIGH for all three while belief direction remains differentiated", () => {
-    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const day42 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(day42.population.units.map((unit) => unit.housingSalience)).toEqual([
       "HIGH",
@@ -368,10 +372,11 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
   });
 
   it("17. leaves Information exposures unchanged when Population incorporates one", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const release = resolveInformationBoundary(day30.information, day30.housing, 40);
     const exposed = exposeInformationArtifact(
       release.information,
+      "test-report-alpha-exposure-17",
       OFFICIAL_HOUSING_REPORT_ID,
       PUBLIC_AUDIENCE_ALPHA_ID,
       40,
@@ -383,17 +388,19 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
       exposed.information,
       exposed.information.exposures[0],
       40,
+      "test-incorporation-",
     );
     expect(exposed.information).toEqual(informationSnapshot);
   });
 
   it("18. leaves Housing and Governance unchanged during Population processing", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const housingSnapshot = structuredClone(day30.housing);
     const governanceSnapshot = structuredClone(day30.governance);
     const release = resolveInformationBoundary(day30.information, day30.housing, 40);
     const exposed = exposeInformationArtifact(
       release.information,
+      "test-report-alpha-exposure-18",
       OFFICIAL_HOUSING_REPORT_ID,
       PUBLIC_AUDIENCE_ALPHA_ID,
       40,
@@ -404,6 +411,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
       exposed.information,
       exposed.information.exposures[0],
       40,
+      "test-incorporation-",
     );
     expect(day30.housing).toEqual(housingSnapshot);
     expect(day30.governance).toEqual(governanceSnapshot);
@@ -424,7 +432,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
   });
 
   it("20. rejects duplicate, unknown, tampered, unbound, and unknown-region incorporation", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const day40 = advanceWorldTo(day30, 40);
     const alphaExposure = exposureFor(
       day40,
@@ -433,7 +441,13 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
     );
 
     expect(() =>
-      incorporateInformationExposure(day40.population, day40.information, alphaExposure, 40),
+      incorporateInformationExposure(
+        day40.population,
+        day40.information,
+        alphaExposure,
+        40,
+        "test-incorporation-",
+      ),
     ).toThrow(/already incorporated/i);
     expect(advanceWorldTo(day40, 40).population).toEqual(day40.population);
 
@@ -443,6 +457,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
         day40.information,
         { ...alphaExposure, id: "missing-exposure" },
         40,
+        "test-incorporation-",
       ),
     ).toThrow(/unknown exposure/i);
     expect(() =>
@@ -451,6 +466,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
         day40.information,
         { ...alphaExposure, artifactId: ADMINISTRATION_HOUSING_CLAIM_ID },
         40,
+        "test-incorporation-",
       ),
     ).toThrow(/does not match/i);
 
@@ -477,6 +493,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
         unboundInformation,
         unboundExposure,
         40,
+        "test-incorporation-",
       ),
     ).toThrow(/exactly one Population unit/i);
 
@@ -493,12 +510,13 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
         day40.information,
         alphaExposure,
         40,
+        "test-incorporation-",
       ),
     ).toThrow(/exactly one result/i);
   });
 
   it("21. makes direct 30→50 equal chunked 30→40→41→42→50", () => {
-    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 30);
+    const day30 = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 30);
     const direct = advanceWorldTo(day30, 50);
     const chunked = advanceWorldTo(
       advanceWorldTo(advanceWorldTo(advanceWorldTo(day30, 40), 41), 42),
@@ -531,7 +549,7 @@ describe("Commit 19 Population belief, attribution, and salience", () => {
     session.advanceTo(5);
     session.deployHousingImplementationSupportToStateC();
     const view = session.advanceTo(42);
-    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT_TO_C"), 42);
+    const world = advanceWorldTo(resolveRoute("DEPLOY_SUPPORT"), 42);
 
     expect(view.populationAudit.totalWeight).toBe(300);
     expect(view.populationAudit.units).toHaveLength(3);

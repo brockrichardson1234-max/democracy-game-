@@ -5,6 +5,8 @@ import {
 } from "../sim/world";
 import {
   GL0_SYNTHETIC_CONFIGURATION,
+  GL0_EXECUTIVE_CONTEST_ID,
+  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
   createDeterministicWorldFixture,
 } from "../content/gl0-synthetic/configuration";
 import { loadGovernmentConfiguration } from "../configuration/loader";
@@ -34,7 +36,6 @@ import type { RecordedVote } from "../sim/legislative-procedure";
 import {
   availableHousingImplementationSupportUnits,
   type HousingGrantProgramStatus,
-  type HousingImplementationResponseAction,
   type JudicialOrderComplianceChoice,
 } from "../sim/administration";
 import type {
@@ -65,7 +66,6 @@ import type {
 } from "../sim/population";
 import {
   deriveElectorate,
-  GL0_EXECUTIVE_CONTEST_ID,
   type DerivedElectorate,
 } from "../sim/electoral";
 import {
@@ -75,7 +75,6 @@ import {
   type ElectoralProcedureRequirement,
 } from "../sim/electoral-law";
 import {
-  GL0_INCUMBENT_EXECUTIVE_ACTOR_ID,
   resolveCurrentExecutiveOfficeholder,
 } from "../sim/executive";
 import {
@@ -159,7 +158,7 @@ export interface HousingImplementationResponseProjection {
   readonly totalSupportUnits: number;
   readonly committedSupportUnits: number;
   readonly availableSupportUnits: number;
-  readonly resolvedAction: HousingImplementationResponseAction | null;
+  readonly resolvedAction: "DEPLOY_SUPPORT_TO_C" | "PRESERVE_SUPPORT_RESERVE" | null;
   readonly targetStateJurisdictionId: string | null;
 }
 
@@ -207,7 +206,7 @@ export interface ContestedAuthorityAuditProjection {
       readonly id: string;
       readonly judgeActorId: string;
       readonly outcome: "GRANT";
-      readonly decisionSource: "AUTONOMOUS_DETERMINISTIC_FIXTURE";
+      readonly decisionSource: string;
       readonly decidedAtSimulationTime: SimulationInstant;
     } | null;
     readonly judicialOrderIds: readonly string[];
@@ -293,7 +292,7 @@ export interface PublicInformationAuditProjection {
   }[];
   readonly audiences: readonly {
     readonly id: string;
-    readonly audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE";
+    readonly audienceType: string;
     readonly exposedArtifactIds: readonly string[];
   }[];
   readonly exposures: readonly {
@@ -685,7 +684,10 @@ const projectWorld = (world: WorldState, controlBinding: ControlBinding): GameVi
       availableSupportUnits: availableHousingImplementationSupportUnits(
         housingImplementationSupport,
       ),
-      resolvedAction: housingImplementationResponseDecision?.action ?? null,
+      resolvedAction:
+        housingImplementationResponseDecision?.action === "DEPLOY_SUPPORT"
+          ? "DEPLOY_SUPPORT_TO_C"
+          : housingImplementationResponseDecision?.action ?? null,
       targetStateJurisdictionId:
         housingImplementationResponseDecision?.targetStateJurisdictionId ?? null,
     },
@@ -1090,7 +1092,7 @@ const createGameSessionFromState = (
     deployHousingImplementationSupportToStateC: () => {
       requireStrategicControl();
       return commitWorld(
-        resolveHousingImplementationResponse(world, "DEPLOY_SUPPORT_TO_C"),
+        resolveHousingImplementationResponse(world, "DEPLOY_SUPPORT"),
       );
     },
     preserveHousingImplementationSupportReserve: () => {

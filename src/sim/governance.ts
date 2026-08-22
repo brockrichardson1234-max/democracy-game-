@@ -2,10 +2,7 @@ import {
   availableHousingImplementationSupportUnits,
   commitHousingImplementationSupport,
   createHousingImplementationResponseDecision,
-  createInitialFederalHousingImplementationSupportState,
-  createFederalHousingAdministrationInstitution,
   createHousingGrantAwardForRelationship,
-  createInitialContestedHousingAdministrationState,
   establishHousingGrantProgramFromLaw,
   receiveDisputedHousingRedirectionDirective,
   receiveJudicialOrder,
@@ -23,7 +20,6 @@ import {
   commitAvailablePublicFinance,
   createFiscalExecutionState,
   createFiscalObligation,
-  createInitialPublicFinanceState,
   createPublicDisbursement,
   recognizePublicFinanceState,
   recordFiscalObligation,
@@ -38,19 +34,12 @@ import {
   materializeHousingProject,
 } from "./housing";
 import {
-  createDeterministicLegislatureFixture,
   decideActorVote,
-  GL0_OPPOSITION_CLAIM_ACTOR_ID,
   resolveSeatHolder,
   type Legislature,
   type ProposalTerms,
 } from "./legislature";
-import {
-  ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT,
-  OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
-  type PoliticalClaimOrigin,
-  type PoliticalClaimPosition,
-} from "./information";
+import type { PoliticalClaimOrigin, PoliticalClaimPosition } from "./information";
 import {
   createLegislativeProcedureInstance,
   resolveRequiredYeaVotes,
@@ -62,34 +51,22 @@ import {
   type FederalApplicationDetermination,
   type IntergovernmentalProgramRelationship,
   type ProgramApplicationRecord,
-  STATE_C_ID,
-  createDeterministicStateJurisdictions,
-  createDeterministicStateProgramAdministrativeStates,
   type StateJurisdiction,
   type StateProgramAdministrativeState,
   type StateProgramDecisionState,
 } from "./federalism";
 import type { EnactedLaw, LegislativeProposal } from "./proposal";
 import type { SimulationInstant, WorldState } from "./world";
-import {
-  createInitialElectoralEligibilityLegalOrderState,
-  createInitialElectoralProcedureLegalOrderState,
-  type ElectoralEligibilityLegalOrderState,
-  type ElectoralProcedureLegalOrderState,
+import type {
+  ElectoralEligibilityLegalOrderState,
+  ElectoralProcedureLegalOrderState,
 } from "./electoral-law";
 import {
-  createInitialExecutivePoliticalState,
-  GL0_EXECUTIVE_INSTITUTION_ID,
   resolveCurrentExecutiveOfficeholder,
   type ExecutivePoliticalState,
 } from "./executive";
+import type { ExecutiveSuccessionLegalOrderState } from "./executive-law";
 import {
-  createInitialExecutiveSuccessionLegalOrderState,
-  type ExecutiveSuccessionLegalOrderState,
-} from "./executive-law";
-import {
-  createInitialExecutiveAuthorityState,
-  GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT,
   recordDisputedHousingFundsRedirectionAttempt,
   recordExecutiveJudicialResponse,
   type ExecutiveAuthorityState,
@@ -97,21 +74,20 @@ import {
 } from "./executive-authority";
 import {
   admitHousingRedirectionContest,
-  autonomouslyGrantInterimRelief,
-  createInitialJudiciaryState,
+  resolveInterimRelief,
   fileJudicialReviewRequest,
-  fileStateAHousingRedirectionClaim,
-  GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
-  GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
-  GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
+  fileHousingRedirectionClaim,
   referenceJudicialOrder,
   type JudiciaryState,
 } from "./judiciary";
 import {
-  createInitialJudicialLegalOrderState,
   issueScopedTemporaryHousingRedirectionOrder,
   type JudicialLegalOrderState,
 } from "./judicial-law";
+import type {
+  CausalVerticalRuntimeConfiguration,
+  PoliticalClaimDecisionConfiguration,
+} from "./runtime-configuration";
 
 export type HousingPoliticalClaimDecisionKind = "ADMINISTRATION" | "OPPOSITION";
 
@@ -155,13 +131,13 @@ export interface GovernanceState {
   readonly contestedHousingAdministration: ContestedHousingAdministrationState;
   /** Institution-owned operational implementation-support capacity. */
   readonly housingImplementationSupport: FederalHousingImplementationSupportState;
-  /** Program/administrative-owned resolution of the single GL0 response opportunity. */
+  /** Program/administrative-owned resolution of the configured response opportunity. */
   readonly housingImplementationResponseDecision: HousingImplementationResponseDecision | null;
   /** Administrative/program owner: null until an explicit establishment transition runs. */
   readonly housingGrantProgram: HousingGrantProgram | null;
   /** Political/legal state jurisdiction identity only; no geography or population is implied. */
   readonly stateJurisdictions: readonly StateJurisdiction[];
-  /** State-owned deterministic fixture behavior/capacity, separate from jurisdiction identity. */
+  /** State-owned configured behavior/capacity, separate from jurisdiction identity. */
   readonly stateProgramAdministrativeStates: readonly StateProgramAdministrativeState[];
   /** State-owned current decisions for the federal program offer. */
   readonly stateProgramDecisions: readonly StateProgramDecisionState[];
@@ -177,48 +153,6 @@ export interface GovernanceState {
   readonly housingPoliticalClaimDecisions: readonly HousingPoliticalClaimDecision[];
 }
 
-export const createInitialGovernanceState = (): GovernanceState => {
-  const administrativeInstitution = createFederalHousingAdministrationInstitution();
-
-  return {
-    legislature: createDeterministicLegislatureFixture(),
-    executivePolitical: createInitialExecutivePoliticalState(),
-    executiveAuthority: createInitialExecutiveAuthorityState(),
-    judiciary: createInitialJudiciaryState(),
-    judicialLegalOrder: createInitialJudicialLegalOrderState(),
-    proposal: null,
-    procedure: null,
-    enactedLaws: [],
-    electoralEligibilityLegalOrder: createInitialElectoralEligibilityLegalOrderState(),
-    electoralProcedureLegalOrder: createInitialElectoralProcedureLegalOrderState(),
-    executiveSuccessionLegalOrder: createInitialExecutiveSuccessionLegalOrderState(),
-    publicFinance: createInitialPublicFinanceState(),
-    fiscalExecution: null,
-    administrativeInstitution,
-    contestedHousingAdministration: createInitialContestedHousingAdministrationState(),
-    housingImplementationSupport:
-      createInitialFederalHousingImplementationSupportState(administrativeInstitution),
-    housingImplementationResponseDecision: null,
-    housingGrantProgram: null,
-    stateJurisdictions: createDeterministicStateJurisdictions(),
-    stateProgramAdministrativeStates: createDeterministicStateProgramAdministrativeStates(),
-    stateProgramDecisions: [],
-    programApplications: [],
-    federalApplicationDeterminations: [],
-    intergovernmentalProgramRelationships: [],
-    housingGrantAwards: [],
-    housingPoliticalClaimDecisions: [],
-  };
-};
-
-/**
- * The controlled executive administration's decision surface for this
- * increment. A fixed identity, not a player-owned actor: the player selects
- * intents through the bound ControlBinding, but the administration remains
- * the canonical originator of the resulting attempted action.
- */
-export const HOUSING_GRANT_ADMINISTRATION_ID = GL0_EXECUTIVE_INSTITUTION_ID;
-
 export interface HousingPoliticalClaimDecisionResult {
   readonly governance: GovernanceState;
   readonly decision: HousingPoliticalClaimDecision;
@@ -232,12 +166,10 @@ export interface HousingPoliticalClaimDecisionResult {
 export const originateHousingPoliticalClaimDecision = (
   governance: GovernanceState,
   kind: HousingPoliticalClaimDecisionKind,
+  decisionConfiguration: PoliticalClaimDecisionConfiguration,
   sourceArtifactId: string,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant =
-    kind === "ADMINISTRATION"
-      ? ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT
-      : OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
+  scheduledAt: SimulationInstant,
 ): HousingPoliticalClaimDecisionResult => {
   if (at !== scheduledAt) {
     throw new Error(`${kind} Housing claim decision is not due at simulation time ${at}.`);
@@ -252,10 +184,7 @@ export const originateHousingPoliticalClaimDecision = (
     throw new Error(`${kind} Housing political claim decision already exists.`);
   }
 
-  const origin: PoliticalClaimOrigin =
-    kind === "ADMINISTRATION"
-      ? { originType: "ADMINISTRATION", administrationId: HOUSING_GRANT_ADMINISTRATION_ID }
-      : { originType: "ACTOR", actorId: GL0_OPPOSITION_CLAIM_ACTOR_ID };
+  const origin = decisionConfiguration.origin;
   if (
     origin.originType === "ACTOR" &&
     !governance.legislature.actors.some((actor) => actor.id === origin.actorId)
@@ -264,12 +193,12 @@ export const originateHousingPoliticalClaimDecision = (
   }
 
   const decision: HousingPoliticalClaimDecision = {
-    id: `gl0-${kind.toLowerCase()}-housing-claim-decision`,
+    id: decisionConfiguration.decisionId,
     kind,
     origin,
     sourceArtifactIds: [sourceArtifactId],
     federalProgramId: governance.housingGrantProgram.id,
-    claimPosition: kind === "ADMINISTRATION" ? "PROGRAM_WORKING" : "PROGRAM_INADEQUATE",
+    claimPosition: decisionConfiguration.claimPosition,
     decidedAtSimulationTime: at,
   };
 
@@ -284,30 +213,6 @@ export const originateHousingPoliticalClaimDecision = (
     decision,
   };
 };
-
-const HOUSING_GRANT_PROPOSAL_ID = "gl0-housing-grant-proposal";
-
-/**
- * GL0 synthetic fixture value: the smallest legally operative fiscal
- * provision this enacted law carries. Not a claim about real U.S. fiscal
- * policy and not a player-selected amount -- the accepted Commit-9 proposal
- * terms do not yet include a fiscal dimension. Owned here because governance
- * is what constructs the enacted legal source that carries it (see
- * `EnactedLaw.appropriation` in proposal.ts).
- */
-export const HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT = 5_000_000_000;
-export const HOUSING_GRANT_APPROPRIATION_PURPOSE = "gl0-housing-construction-grant-program";
-
-/**
- * GL0 synthetic fixture value: the fixed amount awarded to any one state
- * with ACTIVE participation. Not a claim about real U.S. grant sizing and
- * deliberately independent of a state's administrative capacity. Housing's
- * separate material capacity controls physical progress downstream.
- * Two awards (State A + State C) total $2,000,000,000, well under the
- * $5,000,000,000 appropriation ceiling, so the arithmetic stays manually
- * inspectable and never approaches exhausting available public finance.
- */
-export const HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT = 1_000_000_000;
 
 /** Structural validity: malformed terms fail before any world mutation. */
 const assertStructurallyValidTerms = (terms: ProposalTerms): void => {
@@ -331,7 +236,7 @@ const assertStructurallyValidTerms = (terms: ProposalTerms): void => {
  * admits only structurally valid input and never assigns actor votes or a
  * passage outcome itself.
  *
- * GL0 supports exactly one housing-grant proposal lifecycle. A proposal's id
+ * This bounded vertical supports exactly one housing-grant proposal lifecycle. A proposal's id
  * is therefore only ever assigned once per world, so rejecting any second
  * submission -- passed, failed, or still pending -- keeps that id (and any
  * law/history it produced) stable instead of building a proposal registry
@@ -348,8 +253,9 @@ export const submitHousingGrantProposal = (
   }
 
   const proposal: LegislativeProposal = {
-    id: HOUSING_GRANT_PROPOSAL_ID,
-    sponsorAdministrationId: HOUSING_GRANT_ADMINISTRATION_ID,
+    id: world.runtimeConfiguration.housingGrant.proposalId,
+    sponsorAdministrationId:
+      world.runtimeConfiguration.housingGrant.administrationInstitutionId,
     terms,
     status: "PENDING",
   };
@@ -372,7 +278,7 @@ export const submitHousingGrantProposal = (
 
 /**
  * A formal amendment attempt is admitted by the active proceeding, which
- * this fixture's procedure resolves deterministically (GL0 does not yet
+ * this bounded procedure resolves deterministically (this route does not yet
  * model a contested amendment vote): only then does the pending proposal's
  * own provisions actually change, and an immutable occurrence records that
  * the amendment was accepted. Only legal while the proceeding is still
@@ -481,13 +387,13 @@ export const resolveHousingGrantProposalVote = (world: WorldState): WorldState =
   }
 
   const enactedLaw: EnactedLaw = {
-    id: `gl0-law-for-${proposal.id}`,
+    id: `${world.runtimeConfiguration.recordIds.lawPrefix}${proposal.id}`,
     sourceProposalId: proposal.id,
     enactedTerms: proposal.terms,
     enactedAtSimulationTime: world.time.current,
     appropriation: {
-      amount: HOUSING_GRANT_SYNTHETIC_APPROPRIATION_AMOUNT,
-      purpose: HOUSING_GRANT_APPROPRIATION_PURPOSE,
+      amount: world.runtimeConfiguration.housingGrant.appropriationAmount,
+      purpose: world.runtimeConfiguration.housingGrant.appropriationPurpose,
     },
   };
 
@@ -508,7 +414,7 @@ export const resolveHousingGrantProposalVote = (world: WorldState): WorldState =
   };
 };
 
-/** GL0 has exactly one housing-grant proposal lifecycle, so at most one law is ever enacted. */
+/** This bounded route has exactly one housing-grant proposal lifecycle, so at most one law is ever enacted. */
 const latestEnactedHousingGrantLaw = (world: WorldState): EnactedLaw | null => {
   const { enactedLaws } = world.governance;
   return enactedLaws.length > 0 ? enactedLaws[enactedLaws.length - 1] : null;
@@ -532,7 +438,11 @@ export const recognizeHousingGrantFiscalAuthority = (world: WorldState): WorldSt
     throw new Error("Fiscal authority has already been recognized for this law.");
   }
 
-  const publicFinance = recognizePublicFinanceState(enactedLaw, world.time.current);
+  const publicFinance = recognizePublicFinanceState(
+    `${world.runtimeConfiguration.recordIds.publicFinancePrefix}${enactedLaw.id}`,
+    enactedLaw,
+    world.time.current,
+  );
   const fiscalExecution = createFiscalExecutionState(enactedLaw);
 
   return {
@@ -583,6 +493,7 @@ export const establishHousingGrantProgram = (world: WorldState): WorldState => {
   }
 
   const housingGrantProgram = establishHousingGrantProgramFromLaw(
+    `${world.runtimeConfiguration.recordIds.programPrefix}${enactedLaw.id}`,
     enactedLaw,
     publicFinance,
     administrativeInstitution,
@@ -619,10 +530,10 @@ const resolveStateJurisdiction = (world: WorldState, stateJurisdictionId: string
 };
 
 /**
- * The state's deterministic fixture behavior/capacity is a separate owner
+ * The state's configured behavior/capacity is a separate owner
  * from jurisdiction identity (see `StateProgramAdministrativeState` in
- * federalism.ts). Every fixture jurisdiction has exactly one such record, so
- * its absence indicates a fixture-construction defect rather than a normal
+ * federalism.ts). Every configured jurisdiction has exactly one such record, so
+ * its absence indicates a configuration-construction defect rather than a normal
  * runtime precondition failure.
  */
 const resolveStateProgramAdministrativeState = (
@@ -634,7 +545,7 @@ const resolveStateProgramAdministrativeState = (
   );
   if (administrativeState === undefined) {
     throw new Error(
-      `State jurisdiction ${stateJurisdictionId} has no administrative fixture state.`,
+      `State jurisdiction ${stateJurisdictionId} has no configured administrative state.`,
     );
   }
   return administrativeState;
@@ -727,7 +638,7 @@ export const submitStateHousingGrantApplication = (
   }
 
   const application: ProgramApplicationRecord = {
-    id: `gl0-application-${state.id}-for-${program.id}`,
+    id: `${world.runtimeConfiguration.recordIds.applicationPrefix}${state.id}-for-${program.id}`,
     federalProgramId: program.id,
     stateJurisdictionId: state.id,
     status: "SUBMITTED",
@@ -750,7 +661,7 @@ export const submitStateHousingGrantApplication = (
   };
 };
 
-/** Federal-owned determination stage. GL0 deterministically accepts submitted applications. */
+/** Federal-owned determination stage. The configured bounded rule accepts submitted applications. */
 export const resolveFederalHousingGrantApplication = (
   world: WorldState,
   stateJurisdictionId: string,
@@ -770,7 +681,7 @@ export const resolveFederalHousingGrantApplication = (
   }
 
   const determination: FederalApplicationDetermination = {
-    id: `gl0-determination-for-${application.id}`,
+    id: `${world.runtimeConfiguration.recordIds.determinationPrefix}${application.id}`,
     federalProgramId: program.id,
     applicationId: application.id,
     stateJurisdictionId: state.id,
@@ -830,7 +741,7 @@ export const activateIntergovernmentalHousingGrantParticipation = (
   }
 
   const relationship: IntergovernmentalProgramRelationship = {
-    id: `gl0-participation-${state.id}-for-${program.id}`,
+    id: `${world.runtimeConfiguration.recordIds.relationshipPrefix}${state.id}-for-${program.id}`,
     federalProgramId: program.id,
     stateJurisdictionId: state.id,
     stateApplicationId: application.id,
@@ -919,15 +830,17 @@ export const createHousingGrantAward = (
   }
 
   const availableAmount = world.governance.publicFinance.housingGrant?.availableAmount ?? 0;
-  if (availableAmount < HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT) {
+  const awardAmount = world.runtimeConfiguration.housingGrant.awardAmount;
+  if (availableAmount < awardAmount) {
     throw new Error(`Awarding state ${state.id} would exceed currently available public-finance authority.`);
   }
 
   const award = createHousingGrantAwardForRelationship(
+    `${world.runtimeConfiguration.recordIds.awardPrefix}${state.id}-for-${program.id}`,
     program.id,
     relationship.id,
     state.id,
-    HOUSING_GRANT_SYNTHETIC_AWARD_AMOUNT,
+    awardAmount,
     world.time.current,
   );
 
@@ -980,6 +893,7 @@ export const obligateHousingGrantAward = (
   }
 
   const obligation = createFiscalObligation(
+    `${world.runtimeConfiguration.recordIds.obligationPrefix}${award.id}`,
     fiscalExecution.sourceLawId,
     program.id,
     award.id,
@@ -1008,7 +922,7 @@ export const obligateHousingGrantAward = (
 
 /**
  * Public-finance-owned disbursement stage. Requires an existing obligation
- * and pays exactly its obligated amount in one transition (GL0 does not
+ * and pays exactly its obligated amount in one transition (this bounded route does not
  * model partial payment schedules). Disbursement never adjusts
  * `availableAmount` again -- that was already committed at obligation time.
  */
@@ -1038,7 +952,11 @@ export const disburseHousingGrantObligation = (
     throw new Error("Public finance must be recognized before an obligation can be disbursed.");
   }
 
-  const disbursement = createPublicDisbursement(obligation, world.time.current);
+  const disbursement = createPublicDisbursement(
+    `${world.runtimeConfiguration.recordIds.disbursementPrefix}${obligation.id}`,
+    obligation,
+    world.time.current,
+  );
   if (disbursement.amount > obligation.amount) {
     throw new Error(`Disbursement for obligation ${obligation.id} cannot exceed its obligated amount.`);
   }
@@ -1094,7 +1012,15 @@ export const materializeHousingProjectFromDisbursement = (
   // admissibility/duplicate rejection) -- see `materializeHousingProject`.
   const housing = materializeHousingProject(
     world.housing,
-    { stateJurisdictionId: state.id, sourceDisbursementId: disbursement.id },
+    {
+      projectId: `${world.runtimeConfiguration.recordIds.housingProjectPrefix}${disbursement.id}`,
+      stateJurisdictionId: state.id,
+      sourceDisbursementId: disbursement.id,
+      requiredWorkUnits:
+        world.runtimeConfiguration.housingMaterial.projectRequiredWorkUnits,
+      plannedHousingUnits:
+        world.runtimeConfiguration.housingMaterial.projectPlannedHousingUnits,
+    },
     world.time.current,
   );
   const project = housing.projects[housing.projects.length - 1];
@@ -1113,14 +1039,6 @@ export const materializeHousingProjectFromDisbursement = (
   };
 };
 
-/**
- * Explicit fixture boundary for GL0's single post-enactment response. This
- * is not a universal day-five rule: the boundary is additionally gated by
- * the supported program, relationship, and existence of State C's material
- * project. Exact Housing progress is deliberately not an attemptability fact.
- */
-export const GL0_HOUSING_IMPLEMENTATION_RESPONSE_BOUNDARY = 5;
-
 const resolveHousingProjectForState = (world: WorldState, stateJurisdictionId: string) =>
   world.housing.projects.find(
     (project) => project.stateJurisdictionId === stateJurisdictionId,
@@ -1130,31 +1048,35 @@ const requireHousingImplementationResponseAttemptability = (
   world: WorldState,
 ): {
   readonly program: HousingGrantProgram;
-  readonly stateCRelationship: IntergovernmentalProgramRelationship;
+  readonly targetRelationship: IntergovernmentalProgramRelationship;
 } => {
   const program = requireHousingGrantProgram(world);
+  const configured = world.runtimeConfiguration.implementationResponse;
   if (world.governance.housingImplementationResponseDecision !== null) {
-    throw new Error("The GL0 housing implementation response has already been resolved.");
+    throw new Error("The housing implementation response has already been resolved.");
   }
-  if (world.time.current < GL0_HOUSING_IMPLEMENTATION_RESPONSE_BOUNDARY) {
+  if (world.time.current < configured.availableAt) {
     throw new Error("The housing implementation response is not yet available.");
   }
 
-  const stateCRelationship = resolveActiveIntergovernmentalRelationship(
+  const targetRelationship = resolveActiveIntergovernmentalRelationship(
     world,
     program.id,
-    STATE_C_ID,
+    configured.targetStateJurisdictionId,
   );
-  if (stateCRelationship === null) {
-    throw new Error("State C must have an ACTIVE participation relationship before the response.");
+  if (targetRelationship === null) {
+    throw new Error("The configured target must have an ACTIVE participation relationship before the response.");
   }
 
-  const stateCProject = resolveHousingProjectForState(world, STATE_C_ID);
-  if (stateCProject === null) {
-    throw new Error("State C must have an actual Housing project before the response.");
+  const targetProject = resolveHousingProjectForState(
+    world,
+    configured.targetStateJurisdictionId,
+  );
+  if (targetProject === null) {
+    throw new Error("The configured target must have an actual Housing project before the response.");
   }
 
-  return { program, stateCRelationship };
+  return { program, targetRelationship };
 };
 
 export const isHousingImplementationResponseAttemptable = (world: WorldState): boolean => {
@@ -1176,33 +1098,37 @@ export const resolveHousingImplementationResponse = (
   world: WorldState,
   action: HousingImplementationResponseAction,
 ): WorldState => {
-  if (action !== "DEPLOY_SUPPORT_TO_C" && action !== "PRESERVE_SUPPORT_RESERVE") {
+  if (action !== "DEPLOY_SUPPORT" && action !== "PRESERVE_SUPPORT_RESERVE") {
     throw new Error(`Unsupported housing implementation response: ${String(action)}.`);
   }
 
-  const { program, stateCRelationship } = requireHousingImplementationResponseAttemptability(world);
-  const targetStateJurisdictionId = action === "DEPLOY_SUPPORT_TO_C" ? STATE_C_ID : null;
+  const { program, targetRelationship } = requireHousingImplementationResponseAttemptability(world);
+  const configured = world.runtimeConfiguration.implementationResponse;
+  const targetStateJurisdictionId =
+    action === "DEPLOY_SUPPORT" ? configured.targetStateJurisdictionId : null;
 
   if (
-    action === "DEPLOY_SUPPORT_TO_C" &&
+    action === "DEPLOY_SUPPORT" &&
     availableHousingImplementationSupportUnits(world.governance.housingImplementationSupport) < 1
   ) {
     throw new Error("No federal housing implementation support remains available.");
   }
 
   const decision = createHousingImplementationResponseDecision(
+    `${world.runtimeConfiguration.recordIds.implementationDecisionPrefix}${program.id}`,
     program.id,
     action,
     targetStateJurisdictionId,
     world.time.current,
   );
   const housingImplementationSupport =
-    action === "DEPLOY_SUPPORT_TO_C"
+    action === "DEPLOY_SUPPORT"
       ? commitHousingImplementationSupport(
           world.governance.housingImplementationSupport,
+          `${world.runtimeConfiguration.recordIds.implementationDeploymentPrefix}${targetRelationship.id}`,
           program.id,
-          stateCRelationship.id,
-          STATE_C_ID,
+          targetRelationship.id,
+          configured.targetStateJurisdictionId,
           1,
           world.time.current,
         )
@@ -1217,7 +1143,7 @@ export const resolveHousingImplementationResponse = (
     at: world.time.current,
   });
   const deployment =
-    action === "DEPLOY_SUPPORT_TO_C"
+    action === "DEPLOY_SUPPORT"
       ? housingImplementationSupport.deployments[
           housingImplementationSupport.deployments.length - 1
         ]
@@ -1228,9 +1154,13 @@ export const resolveHousingImplementationResponse = (
       : acceptHousingImplementationSupport(
           world.housing,
           {
+            deliverySupportId: `${world.runtimeConfiguration.recordIds.housingDeliverySupportPrefix}${deployment.id}`,
             sourceDeploymentId: deployment.id,
             stateJurisdictionId: deployment.stateJurisdictionId,
             supportUnits: deployment.supportUnits,
+            supplementalWorkUnitsPerDayPerUnit:
+              world.runtimeConfiguration.housingMaterial
+                .supportSupplementalWorkUnitsPerDayPerUnit,
           },
           world.time.current,
         );
@@ -1284,11 +1214,12 @@ export const resolveHousingImplementationResponse = (
  * award, disbursement, or Housing mutation boundary.
  */
 export const attemptDisputedHousingFundsRedirection = (world: WorldState): WorldState => {
-  if (world.time.current !== 6) {
-    throw new Error("The bounded disputed Housing redirection attempt is available on day 6.");
+  const configured = world.runtimeConfiguration.disputedAuthority;
+  if (world.time.current !== configured.availableAt) {
+    throw new Error("The bounded disputed Housing redirection attempt is not currently available.");
   }
   if (world.governance.housingImplementationResponseDecision === null) {
-    throw new Error("The day-5 Housing implementation response must precede the disputed attempt.");
+    throw new Error("The Housing implementation response must precede the disputed attempt.");
   }
   const program = world.governance.housingGrantProgram;
   const publicFinance = world.governance.publicFinance.housingGrant;
@@ -1299,7 +1230,7 @@ export const attemptDisputedHousingFundsRedirection = (world: WorldState): World
   if (publicFinance === null || publicFinance.id !== program.publicFinanceRef) {
     throw new Error("The disputed redirection requires the program's recognized public finance.");
   }
-  if (publicFinance.availableAmount < GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT) {
+  if (publicFinance.availableAmount < configured.amount) {
     throw new Error("Insufficient uncommitted Housing appropriation authority for the attempt.");
   }
   if (institution === null || institution.id !== program.operatorInstitutionId) {
@@ -1312,12 +1243,17 @@ export const attemptDisputedHousingFundsRedirection = (world: WorldState): World
   const attempted = recordDisputedHousingFundsRedirectionAttempt(
     world.governance.executiveAuthority,
     {
+      attemptId: configured.attemptId,
+      availableAt: configured.availableAt,
+      claimedLegalBasis: configured.claimedLegalBasis,
+    },
+    {
       initiatingActorId: initiatingActor.id,
       executiveOfficeId: world.governance.executivePolitical.office.id,
       targetInstitutionId: institution.id,
       federalProgramId: program.id,
       publicFinanceRef: publicFinance.id,
-      disputedAmount: GL0_DISPUTED_HOUSING_REDIRECTION_AMOUNT,
+      disputedAmount: configured.amount,
     },
     world.time.current,
   );
@@ -1368,21 +1304,30 @@ const requireSingleDisputedAttempt = (governance: GovernanceState) => {
 /** Explicit same-time order: LegalClaimFiled -> LegalContestAdmitted. */
 export const resolveContestedAuthorityChallengeBoundary = (
   governance: GovernanceState,
+  configuration: CausalVerticalRuntimeConfiguration,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
+  scheduledAt: SimulationInstant,
 ): ContestedAuthorityBoundaryResult => {
   if (at !== scheduledAt) {
     throw new Error(`The legal challenge boundary is not due at ${at}.`);
   }
   const attempt = requireSingleDisputedAttempt(governance);
-  const filing = fileStateAHousingRedirectionClaim(
+  const filing = fileHousingRedirectionClaim(
     governance.judiciary,
+    configuration.judiciary.legalClaimId,
+    configuration.judiciary.claimantJurisdictionId,
     attempt.id,
     attempt.targetInstitutionId,
     at,
     scheduledAt,
   );
-  const admission = admitHousingRedirectionContest(filing.judiciary, filing.claim, at);
+  const admission = admitHousingRedirectionContest(
+    filing.judiciary,
+    filing.claim,
+    configuration.judiciary.legalContestId,
+    configuration.judiciary.interimReliefRuleId,
+    at,
+  );
   return {
     governance: { ...governance, judiciary: admission.judiciary },
     occurrences: [
@@ -1407,8 +1352,9 @@ export const resolveContestedAuthorityChallengeBoundary = (
 /** Explicit same-time order: decision -> legal-order issuance -> agency delivery. */
 export const resolveContestedAuthorityInterimReliefBoundary = (
   governance: GovernanceState,
+  configuration: CausalVerticalRuntimeConfiguration,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_INTERIM_RELIEF_AT,
+  scheduledAt: SimulationInstant,
 ): ContestedAuthorityBoundaryResult => {
   if (at !== scheduledAt) {
     throw new Error(`The interim-relief boundary is not due at ${at}.`);
@@ -1418,14 +1364,17 @@ export const resolveContestedAuthorityInterimReliefBoundary = (
   if (contests.length !== 1) {
     throw new Error("Interim relief requires exactly one admitted legal contest.");
   }
-  const decided = autonomouslyGrantInterimRelief(
+  const decided = resolveInterimRelief(
     governance.judiciary,
     contests[0].id,
+    configuration.judiciary.interimReliefDecisionId,
+    configuration.judiciary.interimReliefDecisionSource,
     at,
     scheduledAt,
   );
   const issued = issueScopedTemporaryHousingRedirectionOrder(
     governance.judicialLegalOrder,
+    configuration.judiciary.temporaryOrderId,
     contests[0].interimReliefRuleId,
     decided.decision,
     attempt.targetInstitutionId,
@@ -1440,6 +1389,7 @@ export const resolveContestedAuthorityInterimReliefBoundary = (
   const delivered = receiveJudicialOrder(
     governance.contestedHousingAdministration,
     issued.order,
+    attempt.targetInstitutionId,
     at,
   );
   return {
@@ -1476,12 +1426,12 @@ export const resolveContestedAuthorityInterimReliefBoundary = (
   };
 };
 
-/** Agency-owned day-9 response seam; the normal fixture selects COMPLY. */
+/** Agency-owned compliance-response seam. */
 export const resolveContestedAuthorityComplianceBoundary = (
   governance: GovernanceState,
   response: JudicialOrderComplianceChoice,
   at: SimulationInstant,
-  scheduledAt: SimulationInstant = GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
+  scheduledAt: SimulationInstant,
 ): ContestedAuthorityBoundaryResult => {
   if (at !== scheduledAt) {
     throw new Error(`Judicial-order compliance is not due at simulation time ${at}.`);
@@ -1537,6 +1487,7 @@ export const resolveExecutiveJudicialResponse = (
   const actor = resolveCurrentExecutiveOfficeholder(world.governance.executivePolitical);
   const recorded = recordExecutiveJudicialResponse(
     world.governance.executiveAuthority,
+    `${world.runtimeConfiguration.recordIds.executiveJudicialResponsePrefix}${attempts[0].id}`,
     attempts[0].id,
     orders[0].id,
     actor.id,
@@ -1558,6 +1509,7 @@ export const resolveExecutiveJudicialResponse = (
     }
     const review = fileJudicialReviewRequest(
       judiciary,
+      `${world.runtimeConfiguration.recordIds.judicialReviewRequestPrefix}${orders[0].id}`,
       contests[0].id,
       actor.id,
       orders[0].id,

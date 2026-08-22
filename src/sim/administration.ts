@@ -8,13 +8,6 @@ export interface AdministrativeInstitution {
   readonly id: string;
 }
 
-export const FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID =
-  "gl0-federal-housing-administration";
-
-export const createFederalHousingAdministrationInstitution = (): AdministrativeInstitution => ({
-  id: FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
-});
-
 export type DisputedRedirectionAdministrativeStatus =
   | "PREPARING_REDIRECTION"
   | "HALTED_BY_JUDICIAL_ORDER";
@@ -90,10 +83,11 @@ export const receiveDisputedHousingRedirectionDirective = (
 export const receiveJudicialOrder = (
   state: ContestedHousingAdministrationState,
   order: JudicialOrder,
+  recipientInstitutionId: string,
   at: SimulationInstant,
 ): { readonly state: ContestedHousingAdministrationState; readonly receipt: JudicialOrderReceipt } => {
-  if (order.subjectInstitutionId !== FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID) {
-    throw new Error(`Judicial order ${order.id} does not address the federal Housing administration.`);
+  if (order.subjectInstitutionId !== recipientInstitutionId) {
+    throw new Error(`Judicial order ${order.id} does not address institution ${recipientInstitutionId}.`);
   }
   if (
     !state.disputedRedirections.some(
@@ -168,12 +162,12 @@ export const resolveJudicialOrderCompliance = (
 };
 
 export type HousingImplementationResponseAction =
-  | "DEPLOY_SUPPORT_TO_C"
+  | "DEPLOY_SUPPORT"
   | "PRESERVE_SUPPORT_RESERVE";
 
 /**
  * Canonical federal administrative decision. This records that the bounded
- * GL0 response opportunity was resolved; it is not a Housing instruction or
+ * configured response opportunity was resolved; it is not a Housing instruction or
  * a generic player-action resource.
  */
 export interface HousingImplementationResponseDecision {
@@ -206,13 +200,12 @@ export interface FederalHousingImplementationSupportState {
   readonly deployments: readonly HousingImplementationSupportDeployment[];
 }
 
-export const GL0_HOUSING_IMPLEMENTATION_SUPPORT_UNITS = 1;
-
-export const createInitialFederalHousingImplementationSupportState = (
+export const createFederalHousingImplementationSupportState = (
   operatorInstitution: AdministrativeInstitution,
+  totalSupportUnits: number,
 ): FederalHousingImplementationSupportState => ({
   operatorInstitutionId: operatorInstitution.id,
-  totalSupportUnits: GL0_HOUSING_IMPLEMENTATION_SUPPORT_UNITS,
+  totalSupportUnits,
   committedSupportUnits: 0,
   deployments: [],
 });
@@ -222,12 +215,13 @@ export const availableHousingImplementationSupportUnits = (
 ): number => support.totalSupportUnits - support.committedSupportUnits;
 
 export const createHousingImplementationResponseDecision = (
+  decisionId: string,
   federalProgramId: string,
   action: HousingImplementationResponseAction,
   targetStateJurisdictionId: string | null,
   at: SimulationInstant,
 ): HousingImplementationResponseDecision => ({
-  id: `gl0-implementation-response-for-${federalProgramId}`,
+  id: decisionId,
   federalProgramId,
   action,
   targetStateJurisdictionId,
@@ -236,6 +230,7 @@ export const createHousingImplementationResponseDecision = (
 
 export const commitHousingImplementationSupport = (
   support: FederalHousingImplementationSupportState,
+  deploymentId: string,
   federalProgramId: string,
   relationshipId: string,
   stateJurisdictionId: string,
@@ -256,7 +251,7 @@ export const commitHousingImplementationSupport = (
   }
 
   const deployment: HousingImplementationSupportDeployment = {
-    id: `gl0-implementation-support-for-${relationshipId}`,
+    id: deploymentId,
     federalProgramId,
     relationshipId,
     stateJurisdictionId,
@@ -276,7 +271,7 @@ export const commitHousingImplementationSupport = (
  * ESTABLISHED` is represented by `GovernanceState.housingGrantProgram` being
  * `null` (the same pattern already used for "no proposal yet"), so this
  * status only needs to describe the state a program object actually has
- * once established. GL0 does not require a modeled setup delay, so
+ * once established. This bounded route does not require a modeled setup delay, so
  * establishment produces `READY_FOR_APPLICATIONS` directly -- see
  * `establishHousingGrantProgram` in governance.ts for why that single step
  * is still causally distinct from enactment and from fiscal recognition.
@@ -304,6 +299,7 @@ export interface HousingGrantProgram {
  * calls this.
  */
 export const establishHousingGrantProgramFromLaw = (
+  programId: string,
   law: EnactedLaw,
   publicFinance: PublicFinanceState,
   operatorInstitution: AdministrativeInstitution,
@@ -314,7 +310,7 @@ export const establishHousingGrantProgramFromLaw = (
   }
 
   return {
-    id: `gl0-program-for-${law.id}`,
+    id: programId,
     sourceLawId: law.id,
     operatorInstitutionId: operatorInstitution.id,
     publicFinanceRef: recognizedFinance.id,
@@ -339,20 +335,21 @@ export interface HousingGrantAward {
 }
 
 /**
- * Pure resolver: the active relationship plus a fixture-determined amount
+ * Pure resolver: the active relationship plus a configured amount
  * become an administrative award record. Does not decide whether awarding is
  * currently permitted (active relationship, no duplicate, within available
  * fiscal authority) -- those preconditions belong to the governance
  * transition that calls this.
  */
 export const createHousingGrantAwardForRelationship = (
+  awardId: string,
   federalProgramId: string,
   relationshipId: string,
   stateJurisdictionId: string,
   awardedAmount: number,
   at: SimulationInstant,
 ): HousingGrantAward => ({
-  id: `gl0-award-${stateJurisdictionId}-for-${federalProgramId}`,
+  id: awardId,
   federalProgramId,
   relationshipId,
   stateJurisdictionId,

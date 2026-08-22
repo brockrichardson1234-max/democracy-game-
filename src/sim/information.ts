@@ -1,19 +1,5 @@
-import { FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID } from "./administration";
 import type { HousingState } from "./housing";
 import type { SimulationInstant } from "./world";
-
-export const OFFICIAL_HOUSING_MEASUREMENT_ID = "gl0-official-housing-measurement";
-export const OFFICIAL_HOUSING_REPORT_ID = "gl0-official-housing-report";
-export const HOUSING_MEASUREMENT_OBSERVATION_START = 0;
-export const HOUSING_MEASUREMENT_OBSERVATION_END = 30;
-export const OFFICIAL_HOUSING_REPORT_RELEASE_AT = 40;
-export const ADMINISTRATION_HOUSING_CLAIM_RELEASE_AT = 41;
-export const OPPOSITION_HOUSING_CLAIM_RELEASE_AT = 42;
-export const ADMINISTRATION_HOUSING_CLAIM_ID = "gl0-administration-housing-claim";
-export const OPPOSITION_HOUSING_CLAIM_ID = "gl0-opposition-housing-claim";
-export const PUBLIC_AUDIENCE_ALPHA_ID = "gl0-public-audience-alpha";
-export const PUBLIC_AUDIENCE_BETA_ID = "gl0-public-audience-beta";
-export const PUBLIC_AUDIENCE_GAMMA_ID = "gl0-public-audience-gamma";
 
 export type HousingMeasurementStatus = "SCHEDULED" | "CAPTURED" | "COMPLETED";
 
@@ -24,7 +10,7 @@ export interface HousingRegionalObservation {
   readonly affordabilityPressure: number;
 }
 
-/** Canonical committed result of the bounded day-30 measurement. */
+/** Canonical committed result of the bounded measurement. */
 export interface HousingMeasurementResult {
   readonly committedAtSimulationTime: SimulationInstant;
   readonly regionalObservations: readonly HousingRegionalObservation[];
@@ -32,6 +18,7 @@ export interface HousingMeasurementResult {
 
 export interface HousingMeasurementProcess {
   readonly id: string;
+  readonly reportArtifactId: string;
   readonly housingRegionIds: readonly string[];
   readonly observationStart: SimulationInstant;
   readonly observationEnd: SimulationInstant;
@@ -82,10 +69,10 @@ export interface PoliticalClaimArtifact {
   readonly accessClass: "PUBLIC";
 }
 
-/** Temporary GL0 distribution target; explicitly not a Population subject. */
+/** Configured distribution target; explicitly not a Population subject. */
 export interface InformationAudience {
   readonly id: string;
-  readonly audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE";
+  readonly audienceType: string;
 }
 
 /** Receipt only: this record owns no belief, attribution, or preference. */
@@ -144,41 +131,28 @@ export interface InformationBoundaryResult {
   readonly occurrences: readonly InformationOccurrence[];
 }
 
-export const createInitialInformationState = (
-  housingRegionIds: readonly string[],
+export const createInformationState = (
+  housingMeasurement: HousingMeasurementProcess,
+  audiences: readonly InformationAudience[],
 ): InformationState => {
-  if (housingRegionIds.length === 0 || new Set(housingRegionIds).size !== housingRegionIds.length) {
+  if (
+    housingMeasurement.housingRegionIds.length === 0 ||
+    new Set(housingMeasurement.housingRegionIds).size !==
+      housingMeasurement.housingRegionIds.length
+  ) {
     throw new Error("Official Housing measurement requires distinct Housing region IDs.");
   }
-
+  if (new Set(audiences.map((audience) => audience.id)).size !== audiences.length) {
+    throw new Error("Information audience identities must be unique.");
+  }
   return {
     housingMeasurement: {
-      id: OFFICIAL_HOUSING_MEASUREMENT_ID,
-      housingRegionIds: [...housingRegionIds],
-      observationStart: HOUSING_MEASUREMENT_OBSERVATION_START,
-      observationEnd: HOUSING_MEASUREMENT_OBSERVATION_END,
-      scheduledReleaseAtSimulationTime: OFFICIAL_HOUSING_REPORT_RELEASE_AT,
-      producerInstitutionId: FEDERAL_HOUSING_ADMINISTRATION_INSTITUTION_ID,
-      status: "SCHEDULED",
-      capturedAtSimulationTime: null,
-      result: null,
+      ...housingMeasurement,
+      housingRegionIds: [...housingMeasurement.housingRegionIds],
     },
     artifacts: [],
     politicalClaims: [],
-    audiences: [
-      {
-        id: PUBLIC_AUDIENCE_ALPHA_ID,
-        audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE",
-      },
-      {
-        id: PUBLIC_AUDIENCE_BETA_ID,
-        audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE",
-      },
-      {
-        id: PUBLIC_AUDIENCE_GAMMA_ID,
-        audienceType: "GL0_SYNTHETIC_PUBLIC_DISTRIBUTION_FIXTURE",
-      },
-    ],
+    audiences: audiences.map((audience) => ({ ...audience })),
     exposures: [],
   };
 };
@@ -242,12 +216,12 @@ const releaseOfficialHousingReport = (
   if (process.status !== "CAPTURED" || process.result === null) {
     throw new Error("Official Housing report cannot be released before measurement capture.");
   }
-  if (information.artifacts.some((artifact) => artifact.id === OFFICIAL_HOUSING_REPORT_ID)) {
-    throw new Error(`Information artifact ${OFFICIAL_HOUSING_REPORT_ID} already exists.`);
+  if (information.artifacts.some((artifact) => artifact.id === process.reportArtifactId)) {
+    throw new Error(`Information artifact ${process.reportArtifactId} already exists.`);
   }
 
   const report: OfficialHousingReport = {
-    id: OFFICIAL_HOUSING_REPORT_ID,
+    id: process.reportArtifactId,
     artifactType: "OFFICIAL_HOUSING_REPORT",
     sourceMeasurementId: process.id,
     producerInstitutionId: process.producerInstitutionId,
@@ -321,7 +295,7 @@ export const releasePoliticalClaim = (
     throw new Error(`Political claim ${input.claimArtifactId} already exists.`);
   }
   if (input.sourceArtifactIds.length !== 1) {
-    throw new Error("The GL0 political claim requires exactly one source artifact.");
+    throw new Error("A supported political claim requires exactly one source artifact.");
   }
 
   const source = information.artifacts.find(
@@ -372,6 +346,7 @@ export const releasePoliticalClaim = (
 /** Information-owned exposure mutation; PUBLIC availability is not receipt. */
 export const exposeInformationArtifact = (
   information: InformationState,
+  exposureId: string,
   artifactId: string,
   audienceId: string,
   at: SimulationInstant,
@@ -398,7 +373,7 @@ export const exposeInformationArtifact = (
   }
 
   const exposure: InformationExposure = {
-    id: `gl0-exposure-${artifactId}-to-${audienceId}`,
+    id: exposureId,
     artifactId,
     audienceId,
     exposedAtSimulationTime: at,

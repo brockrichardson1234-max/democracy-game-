@@ -20,7 +20,7 @@ export interface PublicDisbursement {
 
 /**
  * Public-finance state: the recognized financial position downstream of an
- * enacted law. `availableAmount` is the GL0-chosen semantic: the amount
+ * enacted law. `availableAmount` is the configured semantic: the amount
  * currently available and not yet committed/obligated (appropriated ceiling
  * minus everything obligated so far -- see `obligateHousingGrantAward` in
  * governance.ts, the only place that decrements it). `disbursedAmount` is a
@@ -72,11 +72,12 @@ export const createInitialPublicFinanceState = (): PublicFinanceState => ({
 
 /** Pure recognition transition from legal appropriation to public-finance availability. */
 export const recognizePublicFinanceState = (
+  publicFinanceId: string,
   law: EnactedLaw,
   at: SimulationInstant,
 ): PublicFinanceState => ({
   housingGrant: {
-    id: `gl0-public-finance-for-${law.id}`,
+    id: publicFinanceId,
     sourceLawId: law.id,
     availableAmount: law.appropriation.amount,
     disbursements: [],
@@ -102,6 +103,7 @@ const sumAmounts = (entries: readonly { readonly amount: number }[]): number =>
  * both.
  */
 export const createFiscalObligation = (
+  obligationId: string,
   sourceLawId: string,
   federalProgramId: string,
   awardId: string,
@@ -109,7 +111,7 @@ export const createFiscalObligation = (
   amount: number,
   at: SimulationInstant,
 ): FiscalObligation => ({
-  id: `gl0-obligation-for-${awardId}`,
+  id: obligationId,
   sourceLawId,
   federalProgramId,
   awardId,
@@ -125,10 +127,11 @@ export const createFiscalObligation = (
  * transition that calls both.
  */
 export const createPublicDisbursement = (
+  disbursementId: string,
   obligation: FiscalObligation,
   at: SimulationInstant,
 ): PublicDisbursement => ({
-  id: `gl0-disbursement-for-${obligation.id}`,
+  id: disbursementId,
   obligationId: obligation.id,
   awardId: obligation.awardId,
   stateJurisdictionId: obligation.stateJurisdictionId,

@@ -126,8 +126,7 @@ for (const file of genericConfigurationFiles) {
   }
 }
 
-const genericWorldSource = await readFile(join(root, "src/sim/world.ts"), "utf8");
-for (const token of [
+const syntheticExecutionSymbols = [
   "STATE_A_ID",
   "STATE_B_ID",
   "STATE_C_ID",
@@ -140,9 +139,41 @@ for (const token of [
   "PUBLIC_AUDIENCE_ALPHA_ID",
   "PUBLIC_AUDIENCE_BETA_ID",
   "PUBLIC_AUDIENCE_GAMMA_ID",
-]) {
-  if (genericWorldSource.includes(token)) {
-    violations.push(`src/sim/world.ts depends on synthetic fixture token ${token}`);
+  "GL0_INCUMBENT_EXECUTIVE_ACTOR_ID",
+  "GL0_OPPOSITION_EXECUTIVE_ACTOR_ID",
+  "GL0_EXECUTIVE_CONTEST_ID",
+  "GL0_EXECUTIVE_ELECTION_RESULT_ID",
+  "GL0_EXECUTIVE_ELECTION_CERTIFICATION_ID",
+  "DEPLOY_SUPPORT_TO_C",
+];
+const syntheticExecutionStrings = [
+  "state-a",
+  "state-b",
+  "state-c",
+  "geo-region-a",
+  "geo-region-b",
+  "geo-region-c",
+  "gl0-public-audience-alpha",
+  "gl0-public-audience-beta",
+  "gl0-public-audience-gamma",
+  "gl0-incumbent-executive-actor",
+  "gl0-opposition-executive-actor",
+  "gl0-executive-contest",
+];
+for (const file of await listSourceFiles(join(root, "src/sim"))) {
+  const source = stripComments(await readFile(file, "utf8"));
+  for (const token of syntheticExecutionSymbols) {
+    if (new RegExp(`\\b${token}\\b`).test(source)) {
+      violations.push(`${relative(root, file)} depends on synthetic fixture symbol ${token}`);
+    }
+  }
+  for (const token of syntheticExecutionStrings) {
+    if (source.includes(`"${token}"`) || source.includes(`'${token}'`)) {
+      violations.push(`${relative(root, file)} owns synthetic fixture identity ${token}`);
+    }
+  }
+  if (/\b(?:createInitial|createDeterministic)GL0\w*\b/.test(source)) {
+    violations.push(`${relative(root, file)} owns a synthetic fixture builder`);
   }
 }
 

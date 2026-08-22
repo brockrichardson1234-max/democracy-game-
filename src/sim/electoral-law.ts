@@ -5,12 +5,7 @@ import type {
   TurnoutDisposition,
 } from "./population";
 
-export const GL0_ALL_REPRESENTED_RESIDENT_POPULATION_ELIGIBILITY_RULE_ID =
-  "gl0-all-represented-resident-population-eligibility-rule";
-export const GL0_ORDINARY_EXECUTIVE_ELECTION_PROCEDURE_RULE_ID =
-  "gl0-ordinary-executive-election-procedure-rule";
-
-/** The one synthetic normative eligibility requirement owned by the GL0 legal order. */
+/** A supported normative eligibility requirement owned by the legal order. */
 export type ElectoralEligibilityRequirement =
   "ALL_REPRESENTED_RESIDENT_POPULATION_WITHIN_BOUNDARY_IS_ELIGIBLE";
 
@@ -40,27 +35,13 @@ export interface ElectoralProcedureLegalOrderState {
 export type ProcedureBallotDirection = "ADMINISTRATION" | "OPPOSITION" | "BLANK";
 export type ProcedureElectionOutcome = "ADMINISTRATION_WIN" | "OPPOSITION_WIN" | "TIE";
 
-export const createInitialElectoralEligibilityLegalOrderState =
-  (): ElectoralEligibilityLegalOrderState => ({
-    rules: [
-      {
-        id: GL0_ALL_REPRESENTED_RESIDENT_POPULATION_ELIGIBILITY_RULE_ID,
-        requirement:
-          "ALL_REPRESENTED_RESIDENT_POPULATION_WITHIN_BOUNDARY_IS_ELIGIBLE",
-      },
-    ],
-  });
+export const createElectoralEligibilityLegalOrderState = (
+  rules: readonly ElectoralEligibilityRule[],
+): ElectoralEligibilityLegalOrderState => ({ rules: rules.map((rule) => ({ ...rule })) });
 
-export const createInitialElectoralProcedureLegalOrderState =
-  (): ElectoralProcedureLegalOrderState => ({
-    rules: [
-      {
-        id: GL0_ORDINARY_EXECUTIVE_ELECTION_PROCEDURE_RULE_ID,
-        requirement:
-          "DETERMINISTIC_AGGREGATE_PARTICIPATION_BALLOT_COUNT_AND_CERTIFICATION",
-      },
-    ],
-  });
+export const createElectoralProcedureLegalOrderState = (
+  rules: readonly ElectoralProcedureRule[],
+): ElectoralProcedureLegalOrderState => ({ rules: rules.map((rule) => ({ ...rule })) });
 
 export const resolveElectoralEligibilityRule = (
   legalOrder: ElectoralEligibilityLegalOrderState,

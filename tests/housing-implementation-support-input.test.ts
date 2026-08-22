@@ -1,9 +1,17 @@
+import {
+  STATE_A_ID,
+  STATE_B_ID,
+  STATE_C_ID,
+  HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
+  INITIAL_HOUSING_STOCK_UNITS,
+  STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
+} from "../src/content/gl0-synthetic/configuration";
 import { describe, expect, it } from "vitest";
 
 import { createDeterministicWorldFixture } from "../src/content/gl0-synthetic/configuration";
 
 import { createGameSession } from "../src/app/session";
-import { STATE_A_ID, STATE_B_ID, STATE_C_ID } from "../src/sim/federalism";
+
 import {
   activateIntergovernmentalHousingGrantParticipation,
   amendHousingGrantProposal,
@@ -23,10 +31,7 @@ import {
 import {
   acceptHousingImplementationSupport,
   advanceHousing,
-  HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
-  INITIAL_HOUSING_STOCK_UNITS,
   resolveHousingProjectEffectiveWorkUnitsPerDay,
-  STATE_C_CONSTRUCTION_CAPACITY_WORK_UNITS_PER_DAY,
   type HousingImplementationSupportInput,
 } from "../src/sim/housing";
 import type { ProposalTerms } from "../src/sim/legislature";
@@ -113,7 +118,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("1. keeps both accepted Commit-14 response routes valid", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const preserved = resolveHousingImplementationResponse(
       createAttemptableWorld(),
@@ -121,7 +126,7 @@ describe("Commit 15 administrative support to Housing input", () => {
     );
 
     expect(deployed.governance.housingImplementationResponseDecision?.action).toBe(
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     expect(deployed.governance.housingImplementationSupport.committedSupportUnits).toBe(1);
     expect(preserved.governance.housingImplementationResponseDecision?.action).toBe(
@@ -148,7 +153,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("3. DEPLOY records the administrative deployment before Housing acceptance", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
 
     expect(supportBoundaryHistory(deployed).map((occurrence) => occurrence.type)).toEqual([
@@ -162,7 +167,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("4. stores the accepted material effect only in Housing-owned state", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
 
     expect(deployed.housing.projectDeliverySupports).toHaveLength(1);
@@ -175,7 +180,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("5. references sourceDeploymentId without copying administrative facts", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const deployment = deployed.governance.housingImplementationSupport.deployments[0];
     const effect = deployed.housing.projectDeliverySupports[0];
@@ -190,9 +195,12 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("6. keeps the input free of a final physical effect and translates one unit to +3/day in Housing", () => {
     const base = createAttemptableWorld();
     const input: HousingImplementationSupportInput = {
+      deliverySupportId: "test-delivery-support-fixture",
       sourceDeploymentId: "fixture-deployment",
       stateJurisdictionId: STATE_C_ID,
       supportUnits: 1,
+      supplementalWorkUnitsPerDayPerUnit:
+        HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
     };
     expect(input).not.toHaveProperty("supplementalWorkUnitsPerDay");
 
@@ -210,7 +218,7 @@ describe("Commit 15 administrative support to Housing input", () => {
 
   it("7. leaves State C intrinsic construction capacity exactly 2/day", () => {
     const before = createAttemptableWorld();
-    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
+    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT");
 
     expect(regionFor(before, STATE_C_ID).constructionCapacityWorkUnitsPerDay).toBe(2);
     expect(regionFor(deployed, STATE_C_ID).constructionCapacityWorkUnitsPerDay).toBe(
@@ -222,7 +230,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("8. leaves State C administrative capacity WEAK and retains the federal deployment", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const stateCAdministration = deployed.governance.stateProgramAdministrativeStates.find(
       (state) => state.stateJurisdictionId === STATE_C_ID,
@@ -234,7 +242,7 @@ describe("Commit 15 administrative support to Housing input", () => {
 
   it("9. accepts support at day 5 without retroactively changing State C's first 10 work units", () => {
     const before = createAttemptableWorld();
-    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT_TO_C");
+    const deployed = resolveHousingImplementationResponse(before, "DEPLOY_SUPPORT");
 
     expect(projectFor(before, STATE_C_ID).completedWorkUnits).toBe(10);
     expect(projectFor(deployed, STATE_C_ID).completedWorkUnits).toBe(10);
@@ -243,7 +251,7 @@ describe("Commit 15 administrative support to Housing input", () => {
 
   it("10. diverges at day 10: DEPLOY is 35/100 and PRESERVE is 20/100", () => {
     const deployed = advanceWorldTo(
-      resolveHousingImplementationResponse(createAttemptableWorld(), "DEPLOY_SUPPORT_TO_C"),
+      resolveHousingImplementationResponse(createAttemptableWorld(), "DEPLOY_SUPPORT"),
       10,
     );
     const preserved = advanceWorldTo(
@@ -257,7 +265,7 @@ describe("Commit 15 administrative support to Housing input", () => {
 
   it("11. records State C's exact supported completion timestamp at day 23", () => {
     const deployed = advanceWorldTo(
-      resolveHousingImplementationResponse(createAttemptableWorld(), "DEPLOY_SUPPORT_TO_C"),
+      resolveHousingImplementationResponse(createAttemptableWorld(), "DEPLOY_SUPPORT"),
       50,
     );
 
@@ -284,7 +292,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("13. changes State C stock exactly once at the supported completion boundary", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const day22 = advanceWorldTo(deployed, 22);
     const day23 = advanceWorldTo(day22, 23);
@@ -304,7 +312,7 @@ describe("Commit 15 administrative support to Housing input", () => {
 
   it("14. leaves State A unchanged and completed at day 10", () => {
     const deployed = advanceWorldTo(
-      resolveHousingImplementationResponse(createAttemptableWorld(), "DEPLOY_SUPPORT_TO_C"),
+      resolveHousingImplementationResponse(createAttemptableWorld(), "DEPLOY_SUPPORT"),
       23,
     );
 
@@ -319,7 +327,7 @@ describe("Commit 15 administrative support to Housing input", () => {
 
   it("15. leaves State B without a program-funded project or support effect", () => {
     const withRefusal = resolveStateHousingGrantDecision(createAttemptableWorld(), STATE_B_ID);
-    const deployed = resolveHousingImplementationResponse(withRefusal, "DEPLOY_SUPPORT_TO_C");
+    const deployed = resolveHousingImplementationResponse(withRefusal, "DEPLOY_SUPPORT");
 
     expect(
       deployed.housing.projects.some(
@@ -336,7 +344,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("16. rejects duplicate Housing consumption of the same deployment atomically", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const deployment = deployed.governance.housingImplementationSupport.deployments[0];
     const before = deployed.housing;
@@ -345,9 +353,12 @@ describe("Commit 15 administrative support to Housing input", () => {
       acceptHousingImplementationSupport(
         before,
         {
+          deliverySupportId: "test-delivery-support-duplicate",
           sourceDeploymentId: deployment.id,
           stateJurisdictionId: deployment.stateJurisdictionId,
           supportUnits: deployment.supportUnits,
+          supplementalWorkUnitsPerDayPerUnit:
+            HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
         },
         5,
       ),
@@ -362,21 +373,42 @@ describe("Commit 15 administrative support to Housing input", () => {
     expect(() =>
       acceptHousingImplementationSupport(
         housing,
-        { sourceDeploymentId: "zero", stateJurisdictionId: STATE_C_ID, supportUnits: 0 },
+        {
+          deliverySupportId: "test-delivery-support-zero",
+          sourceDeploymentId: "zero",
+          stateJurisdictionId: STATE_C_ID,
+          supportUnits: 0,
+          supplementalWorkUnitsPerDayPerUnit:
+            HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
+        },
         5,
       ),
     ).toThrow(/positive whole/i);
     expect(() =>
       acceptHousingImplementationSupport(
         housing,
-        { sourceDeploymentId: "state-b", stateJurisdictionId: STATE_B_ID, supportUnits: 1 },
+        {
+          deliverySupportId: "test-delivery-support-state-b",
+          sourceDeploymentId: "state-b",
+          stateJurisdictionId: STATE_B_ID,
+          supportUnits: 1,
+          supplementalWorkUnitsPerDayPerUnit:
+            HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
+        },
         5,
       ),
     ).toThrow(/exactly one supported material project/i);
     expect(() =>
       acceptHousingImplementationSupport(
         housing,
-        { sourceDeploymentId: "too-early", stateJurisdictionId: STATE_C_ID, supportUnits: 1 },
+        {
+          deliverySupportId: "test-delivery-support-too-early",
+          sourceDeploymentId: "too-early",
+          stateJurisdictionId: STATE_C_ID,
+          supportUnits: 1,
+          supplementalWorkUnitsPerDayPerUnit:
+            HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
+        },
         -1,
       ),
     ).toThrow(/cannot predate/i);
@@ -384,7 +416,14 @@ describe("Commit 15 administrative support to Housing input", () => {
     expect(() =>
       acceptHousingImplementationSupport(
         completed,
-        { sourceDeploymentId: "too-late", stateJurisdictionId: STATE_C_ID, supportUnits: 1 },
+        {
+          deliverySupportId: "test-delivery-support-too-late",
+          sourceDeploymentId: "too-late",
+          stateJurisdictionId: STATE_C_ID,
+          supportUnits: 1,
+          supplementalWorkUnitsPerDayPerUnit:
+            HOUSING_SUPPORT_SUPPLEMENTAL_WORK_UNITS_PER_DAY_PER_UNIT,
+        },
         50,
       ),
     ).toThrow(/already completed/i);
@@ -393,7 +432,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("18. reproduces supported progression from HousingState plus time alone", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const housingOnly = advanceHousing(deployed.housing, 5, 23);
     const worldAdvance = advanceWorldTo(deployed, 23);
@@ -405,7 +444,7 @@ describe("Commit 15 administrative support to Housing input", () => {
   it("19. produces identical supported Housing state and material occurrence order when chunked", () => {
     const deployed = resolveHousingImplementationResponse(
       createAttemptableWorld(),
-      "DEPLOY_SUPPORT_TO_C",
+      "DEPLOY_SUPPORT",
     );
     const direct = advanceWorldTo(deployed, 23);
     const chunked = advanceWorldTo(
