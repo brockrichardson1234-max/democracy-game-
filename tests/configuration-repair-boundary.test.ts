@@ -170,6 +170,14 @@ describe("I1 bounded repair configuration proofs", () => {
     expect(
       deployed.governance.contestedHousingAdministration.disputedRedirections[0]?.status,
     ).toBe("PREPARING_REDIRECTION");
+    expect(
+      deployed.history.find((occurrence) => occurrence.type === "InterimReliefDecided"),
+    ).toMatchObject({ outcome: alteredCourtRoute.interimReliefDecisionOutcome });
+    expect(
+      deployed.history.find(
+        (occurrence) => occurrence.type === "JudicialOrderComplianceResolved",
+      ),
+    ).toMatchObject({ response: alteredCourtRoute.complianceResponse });
     expect(world.information.audiences.map((audience) => audience.id)).toEqual([
       renamed.audienceAlphaId,
       renamed.audienceBetaId,
@@ -241,6 +249,36 @@ describe("I1 bounded repair configuration proofs", () => {
     };
     expect(() => loadGovernmentConfiguration(extraTransfer)).toThrow(
       /office transfer .* must match exactly one successor-entitlement boundary/i,
+    );
+  });
+
+  it("rejects an office transfer when no successor entitlement is configured", () => {
+    const noEntitlement: GovernmentConfiguration = {
+      ...GL0_SYNTHETIC_CONFIGURATION,
+      transitions: GL0_SYNTHETIC_CONFIGURATION.transitions.filter(
+        (transition) => transition.kind !== "SUCCESSOR_ENTITLEMENT",
+      ),
+    };
+    expect(() => loadGovernmentConfiguration(noEntitlement)).toThrow(
+      /office transfer .* must match exactly one successor-entitlement boundary/i,
+    );
+  });
+
+  it("rejects two office transfers matching one entitlement time", () => {
+    const duplicateTransfer: GovernmentConfiguration = {
+      ...GL0_SYNTHETIC_CONFIGURATION,
+      transitions: [
+        ...GL0_SYNTHETIC_CONFIGURATION.transitions,
+        {
+          id: "duplicate-matching-transfer",
+          kind: "EXECUTIVE_OFFICE_TRANSFER",
+          at: 63,
+          order: 1,
+        },
+      ],
+    };
+    expect(() => loadGovernmentConfiguration(duplicateTransfer)).toThrow(
+      /transferAt 63 must match exactly one office-transfer boundary/i,
     );
   });
 
