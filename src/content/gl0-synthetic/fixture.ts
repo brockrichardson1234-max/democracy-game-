@@ -70,6 +70,32 @@ export interface SyntheticFixtureIdentities {
   readonly disputedAttemptId: string;
 }
 
+/** Authored bounded-court content; the generic simulation only interprets it. */
+export interface SyntheticCourtRouteContent {
+  readonly claimedGround: string;
+  readonly requestedRemedy: string;
+  readonly interimReliefRuleRequirement: string;
+  readonly interimReliefDecisionOutcome: string;
+  readonly interimReliefDecisionSource: string;
+  readonly temporaryOrderDirective: string;
+  readonly temporaryOrderTemporalScope: string;
+  readonly temporaryOrderType: string;
+  readonly complianceResponse: "COMPLY" | "REFUSE";
+}
+
+export const GL0_COURT_ROUTE_CONTENT: SyntheticCourtRouteContent = {
+  claimedGround: "EXECUTIVE_REDIRECTION_EXCEEDS_EXISTING_HOUSING_AUTHORITY",
+  requestedRemedy: "TEMPORARY_NONEXECUTION_ORDER",
+  interimReliefRuleRequirement:
+    "GRANT_DECISION_AUTHORIZES_SCOPED_TEMPORARY_NONEXECUTION_ORDER",
+  interimReliefDecisionOutcome: "GRANT",
+  interimReliefDecisionSource: "AUTONOMOUS_DETERMINISTIC_FIXTURE",
+  temporaryOrderDirective: "DO_NOT_EXECUTE_DISPUTED_HOUSING_FUNDS_REDIRECTION",
+  temporaryOrderTemporalScope: "UNTIL_FURTHER_JUDICIAL_ORDER_OR_MERITS_RESOLUTION",
+  temporaryOrderType: "INTERIM",
+  complianceResponse: "COMPLY",
+};
+
 export const GL0_FIXTURE_IDENTITIES: SyntheticFixtureIdentities = {
   namespace: "gl0-",
   stateAId: "state-a",
@@ -259,6 +285,7 @@ const createLegislature = (identities: SyntheticFixtureIdentities): Legislature 
 
 export const createSyntheticWorldSeed = (
   identities: SyntheticFixtureIdentities = GL0_FIXTURE_IDENTITIES,
+  courtRoute: SyntheticCourtRouteContent = GL0_COURT_ROUTE_CONTENT,
 ): WorldSeed => {
   const recordPrefix = identities.namespace;
   const runtimeConfiguration: CausalVerticalRuntimeConfiguration = {
@@ -320,11 +347,18 @@ export const createSyntheticWorldSeed = (
     judiciary: {
       claimantJurisdictionId: identities.stateAId,
       legalClaimId: identities.legalClaimId,
+      claimedGround: courtRoute.claimedGround,
+      requestedRemedy: courtRoute.requestedRemedy,
       legalContestId: identities.legalContestId,
       interimReliefRuleId: identities.interimReliefRuleId,
       interimReliefDecisionId: identities.interimReliefDecisionId,
-      interimReliefDecisionSource: "AUTONOMOUS_DETERMINISTIC_FIXTURE",
+      interimReliefDecisionOutcome: courtRoute.interimReliefDecisionOutcome,
+      interimReliefDecisionSource: courtRoute.interimReliefDecisionSource,
       temporaryOrderId: identities.temporaryOrderId,
+      temporaryOrderDirective: courtRoute.temporaryOrderDirective,
+      temporaryOrderTemporalScope: courtRoute.temporaryOrderTemporalScope,
+      temporaryOrderType: courtRoute.temporaryOrderType,
+      complianceResponse: courtRoute.complianceResponse,
     },
   };
 
@@ -375,7 +409,8 @@ export const createSyntheticWorldSeed = (
     judicialLegalOrder: createJudicialLegalOrderState([
       {
         id: identities.interimReliefRuleId,
-        requirement: "GRANT_DECISION_AUTHORIZES_SCOPED_TEMPORARY_NONEXECUTION_ORDER",
+        requirement: courtRoute.interimReliefRuleRequirement,
+        authorizedDecisionOutcome: courtRoute.interimReliefDecisionOutcome,
       },
     ]),
     proposal: null,

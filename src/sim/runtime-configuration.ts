@@ -1,4 +1,5 @@
 import type { PoliticalClaimOrigin, PoliticalClaimPosition } from "./information";
+import type { JudicialOrderComplianceChoice } from "./administration";
 import type { SimulationInstant } from "./world";
 
 export interface DeterministicRecordIdConfiguration {
@@ -63,10 +64,17 @@ export interface CausalVerticalRuntimeConfiguration {
   readonly judiciary: {
     readonly claimantJurisdictionId: string;
     readonly legalClaimId: string;
+    readonly claimedGround: string;
+    readonly requestedRemedy: string;
     readonly legalContestId: string;
     readonly interimReliefRuleId: string;
     readonly interimReliefDecisionId: string;
+    readonly interimReliefDecisionOutcome: string;
     readonly interimReliefDecisionSource: string;
     readonly temporaryOrderId: string;
+    readonly temporaryOrderDirective: string;
+    readonly temporaryOrderTemporalScope: string;
+    readonly temporaryOrderType: string;
+    readonly complianceResponse: JudicialOrderComplianceChoice;
   };
 }

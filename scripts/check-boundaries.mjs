@@ -160,6 +160,15 @@ const syntheticExecutionStrings = [
   "gl0-opposition-executive-actor",
   "gl0-executive-contest",
 ];
+const syntheticCourtRouteContentStrings = [
+  "EXECUTIVE_REDIRECTION_EXCEEDS_EXISTING_HOUSING_AUTHORITY",
+  "TEMPORARY_NONEXECUTION_ORDER",
+  "GRANT_DECISION_AUTHORIZES_SCOPED_TEMPORARY_NONEXECUTION_ORDER",
+  "GRANT",
+  "AUTONOMOUS_DETERMINISTIC_FIXTURE",
+  "DO_NOT_EXECUTE_DISPUTED_HOUSING_FUNDS_REDIRECTION",
+  "UNTIL_FURTHER_JUDICIAL_ORDER_OR_MERITS_RESOLUTION",
+];
 for (const file of await listSourceFiles(join(root, "src/sim"))) {
   const source = stripComments(await readFile(file, "utf8"));
   for (const token of syntheticExecutionSymbols) {
@@ -171,6 +180,20 @@ for (const file of await listSourceFiles(join(root, "src/sim"))) {
     if (source.includes(`"${token}"`) || source.includes(`'${token}'`)) {
       violations.push(`${relative(root, file)} owns synthetic fixture identity ${token}`);
     }
+  }
+  for (const token of syntheticCourtRouteContentStrings) {
+    if (source.includes(`"${token}"`) || source.includes(`'${token}'`)) {
+      violations.push(`${relative(root, file)} owns synthetic court-route content ${token}`);
+    }
+  }
+  if (
+    /resolveContestedAuthorityComplianceBoundary\s*\([\s\S]{0,300}?["'](?:COMPLY|REFUSE)["']/.test(
+      source,
+    )
+  ) {
+    violations.push(
+      `${relative(root, file)} authors a scheduled court-route compliance response`,
+    );
   }
   if (/\b(?:createInitial|createDeterministic)GL0\w*\b/.test(source)) {
     violations.push(`${relative(root, file)} owns a synthetic fixture builder`);

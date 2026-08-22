@@ -1318,6 +1318,8 @@ export const resolveContestedAuthorityChallengeBoundary = (
     configuration.judiciary.claimantJurisdictionId,
     attempt.id,
     attempt.targetInstitutionId,
+    configuration.judiciary.claimedGround,
+    configuration.judiciary.requestedRemedy,
     at,
     scheduledAt,
   );
@@ -1368,6 +1370,7 @@ export const resolveContestedAuthorityInterimReliefBoundary = (
     governance.judiciary,
     contests[0].id,
     configuration.judiciary.interimReliefDecisionId,
+    configuration.judiciary.interimReliefDecisionOutcome,
     configuration.judiciary.interimReliefDecisionSource,
     at,
     scheduledAt,
@@ -1379,6 +1382,9 @@ export const resolveContestedAuthorityInterimReliefBoundary = (
     decided.decision,
     attempt.targetInstitutionId,
     attempt.id,
+    configuration.judiciary.temporaryOrderDirective,
+    configuration.judiciary.temporaryOrderTemporalScope,
+    configuration.judiciary.temporaryOrderType,
     at,
   );
   const judiciary = referenceJudicialOrder(

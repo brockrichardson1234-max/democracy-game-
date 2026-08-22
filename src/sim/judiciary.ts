@@ -24,8 +24,8 @@ export interface LegalClaim {
   readonly claimantJurisdictionId: string;
   readonly challengedAttemptId: string;
   readonly targetInstitutionId: string;
-  readonly claimedGround: "EXECUTIVE_REDIRECTION_EXCEEDS_EXISTING_HOUSING_AUTHORITY";
-  readonly requestedRemedy: "TEMPORARY_NONEXECUTION_ORDER";
+  readonly claimedGround: string;
+  readonly requestedRemedy: string;
   readonly filedAtSimulationTime: SimulationInstant;
 }
 
@@ -33,7 +33,7 @@ export interface InterimReliefDecision {
   readonly id: string;
   readonly contestId: string;
   readonly judgeActorId: string;
-  readonly outcome: "GRANT";
+  readonly outcome: string;
   readonly decisionSource: string;
   readonly decidedAtSimulationTime: SimulationInstant;
 }
@@ -77,6 +77,8 @@ export const fileHousingRedirectionClaim = (
   claimantJurisdictionId: string,
   challengedAttemptId: string,
   targetInstitutionId: string,
+  claimedGround: string,
+  requestedRemedy: string,
   at: SimulationInstant,
   scheduledAt: SimulationInstant,
 ): { readonly judiciary: JudiciaryState; readonly claim: LegalClaim } => {
@@ -91,8 +93,8 @@ export const fileHousingRedirectionClaim = (
     claimantJurisdictionId,
     challengedAttemptId,
     targetInstitutionId,
-    claimedGround: "EXECUTIVE_REDIRECTION_EXCEEDS_EXISTING_HOUSING_AUTHORITY",
-    requestedRemedy: "TEMPORARY_NONEXECUTION_ORDER",
+    claimedGround,
+    requestedRemedy,
     filedAtSimulationTime: at,
   };
   return {
@@ -141,6 +143,7 @@ export const resolveInterimRelief = (
   judiciary: JudiciaryState,
   contestId: string,
   decisionId: string,
+  outcome: string,
   decisionSource: string,
   at: SimulationInstant,
   scheduledAt: SimulationInstant,
@@ -161,7 +164,7 @@ export const resolveInterimRelief = (
     id: decisionId,
     contestId,
     judgeActorId: judiciary.judgeActor.id,
-    outcome: "GRANT",
+    outcome,
     decisionSource,
     decidedAtSimulationTime: at,
   };

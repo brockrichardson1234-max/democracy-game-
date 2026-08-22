@@ -1,16 +1,11 @@
 import type { InterimReliefDecision } from "./judiciary";
 import type { SimulationInstant } from "./world";
 
-export type JudicialInterimReliefRequirement =
-  "GRANT_DECISION_AUTHORIZES_SCOPED_TEMPORARY_NONEXECUTION_ORDER";
-
 export interface JudicialInterimReliefRule {
   readonly id: string;
-  readonly requirement: JudicialInterimReliefRequirement;
+  readonly requirement: string;
+  readonly authorizedDecisionOutcome: string;
 }
-
-export type JudicialOrderDirective =
-  "DO_NOT_EXECUTE_DISPUTED_HOUSING_FUNDS_REDIRECTION";
 
 /** Single-owner operative legal state; receipt and compliance live elsewhere. */
 export interface JudicialOrder {
@@ -19,11 +14,11 @@ export interface JudicialOrder {
   readonly sourceDecisionId: string;
   readonly subjectInstitutionId: string;
   readonly challengedAttemptId: string;
-  readonly directive: JudicialOrderDirective;
+  readonly directive: string;
   readonly issuedAtSimulationTime: SimulationInstant;
   readonly effectiveAtSimulationTime: SimulationInstant;
-  readonly temporalScope: "UNTIL_FURTHER_JUDICIAL_ORDER_OR_MERITS_RESOLUTION";
-  readonly orderType: "INTERIM";
+  readonly temporalScope: string;
+  readonly orderType: string;
   readonly status: "ACTIVE";
 }
 
@@ -46,6 +41,9 @@ export const issueScopedTemporaryHousingRedirectionOrder = (
   decision: InterimReliefDecision,
   subjectInstitutionId: string,
   challengedAttemptId: string,
+  directive: string,
+  temporalScope: string,
+  orderType: string,
   at: SimulationInstant,
 ): { readonly legalOrder: JudicialLegalOrderState; readonly order: JudicialOrder } => {
   const rules = legalOrder.interimReliefRules.filter(
@@ -54,14 +52,10 @@ export const issueScopedTemporaryHousingRedirectionOrder = (
   if (rules.length !== 1) {
     throw new Error(`Legal order requires exactly one interim-relief rule ${interimReliefRuleId}.`);
   }
-  if (
-    rules[0].requirement !==
-    "GRANT_DECISION_AUTHORIZES_SCOPED_TEMPORARY_NONEXECUTION_ORDER"
-  ) {
-    throw new Error(`Unsupported interim-relief requirement ${rules[0].requirement}.`);
-  }
-  if (decision.outcome !== "GRANT") {
-    throw new Error("An operative temporary order requires a GRANT interim-relief decision.");
+  if (decision.outcome !== rules[0].authorizedDecisionOutcome) {
+    throw new Error(
+      `Interim-relief rule ${rules[0].id} does not authorize decision outcome ${decision.outcome}.`,
+    );
   }
   if (decision.decidedAtSimulationTime !== at) {
     throw new Error("A temporary order must follow its decision at the same boundary.");
@@ -76,11 +70,11 @@ export const issueScopedTemporaryHousingRedirectionOrder = (
     sourceDecisionId: decision.id,
     subjectInstitutionId,
     challengedAttemptId,
-    directive: "DO_NOT_EXECUTE_DISPUTED_HOUSING_FUNDS_REDIRECTION",
+    directive,
     issuedAtSimulationTime: at,
     effectiveAtSimulationTime: at,
-    temporalScope: "UNTIL_FURTHER_JUDICIAL_ORDER_OR_MERITS_RESOLUTION",
-    orderType: "INTERIM",
+    temporalScope,
+    orderType,
     status: "ACTIVE",
   };
   return {

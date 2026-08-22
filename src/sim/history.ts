@@ -193,7 +193,7 @@ export type HistoricalOccurrence =
       readonly decisionId: string;
       readonly contestId: string;
       readonly judgeActorId: string;
-      readonly outcome: "GRANT";
+      readonly outcome: string;
       readonly at: SimulationInstant;
     }
   | {

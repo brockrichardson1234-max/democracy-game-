@@ -158,8 +158,15 @@ const validateCausalSchedule = (
     }
     requireBefore(entitlement, matchingTransfers[0], "successor entitlement → office transfer");
   }
-  if (transfers.length > 0 && entitlements.length === 0) {
-    throw new Error("Configuration office transfer requires a successor-entitlement transition.");
+  for (const transfer of transfers) {
+    const matchingEntitlements = entitlements.filter(
+      (entitlement) => entitlement.transferAt === transfer.at,
+    );
+    if (matchingEntitlements.length !== 1) {
+      throw new Error(
+        `Configuration office transfer ${transfer.id} at ${transfer.at} must match exactly one successor-entitlement boundary.`,
+      );
+    }
   }
 
   const seed = configuration.runtimeSeed as RuntimeSeedInformationSchedule | null;

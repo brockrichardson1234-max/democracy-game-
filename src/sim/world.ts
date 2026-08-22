@@ -291,7 +291,7 @@ export const advanceWorldTo = (world: WorldState, target: SimulationInstant): Wo
           if (governance.executiveAuthority.disputedHousingFundsRedirectionAttempts.length > 0) {
             const result = resolveContestedAuthorityComplianceBoundary(
               governance,
-              "COMPLY",
+              world.runtimeConfiguration.judiciary.complianceResponse,
               boundary,
               transition.at,
             );

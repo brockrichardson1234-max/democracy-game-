@@ -13,6 +13,7 @@ import {
   GL0_FIXTURE_IDENTITIES,
   GL0_SYNTHETIC_CONFIGURATION,
   createSyntheticGovernmentConfiguration,
+  type SyntheticCourtRouteContent,
   type SyntheticFixtureIdentities,
 } from "../src/content/gl0-synthetic/configuration";
 import {
@@ -92,13 +93,25 @@ const prepareHousingRoute = (world: WorldState, identities: SyntheticFixtureIden
 };
 
 describe("I1 bounded repair configuration proofs", () => {
-  it("runs renamed fixture identities through generic owners without a known-identity fallback", () => {
+  it("runs materially renamed and altered court content without a generic-simulation fallback", () => {
     const renamed = Object.fromEntries(
       Object.keys(GL0_FIXTURE_IDENTITIES).map((key) => [
         key,
         key === "namespace" ? "renamed-" : `renamed-${key}`,
       ]),
     ) as unknown as SyntheticFixtureIdentities;
+    const alteredCourtRoute = {
+      claimedGround: "AUTHORED_NOTICE_REQUIRED_BEFORE_REDIRECTION",
+      requestedRemedy: "PRESERVE_FUNDS_PENDING_REVIEW",
+      interimReliefRuleRequirement:
+        "AUTHORIZED_DECISION_PERMITS_CONFIGURED_STATUS_QUO_ORDER",
+      interimReliefDecisionOutcome: "RELIEF_AUTHORIZED",
+      interimReliefDecisionSource: "ALTERED_COURT_FIXTURE",
+      temporaryOrderDirective: "PAUSE_REDIRECTION_PENDING_CONFIGURED_REVIEW",
+      temporaryOrderTemporalScope: "THROUGH_CONFIGURED_REVIEW_BOUNDARY",
+      temporaryOrderType: "STATUS_QUO_ORDER",
+      complianceResponse: "REFUSE",
+    } satisfies SyntheticCourtRouteContent;
     const configuration = withComputedHash(
       createSyntheticGovernmentConfiguration(
         {
@@ -109,6 +122,7 @@ describe("I1 bounded repair configuration proofs", () => {
           configurationHash: "0".repeat(64),
         },
         renamed,
+        alteredCourtRoute,
       ),
     );
     const bootstrap = bootstrapGovernmentConfiguration(configuration);
@@ -134,6 +148,28 @@ describe("I1 bounded repair configuration proofs", () => {
     expect(deployed.governance.judiciary.legalClaims[0]?.claimantJurisdictionId).toBe(
       renamed.stateAId,
     );
+    expect(deployed.governance.judiciary.legalClaims[0]).toMatchObject({
+      claimedGround: alteredCourtRoute.claimedGround,
+      requestedRemedy: alteredCourtRoute.requestedRemedy,
+    });
+    expect(
+      deployed.governance.judiciary.legalContests[0]?.interimReliefDecision,
+    ).toMatchObject({
+      outcome: alteredCourtRoute.interimReliefDecisionOutcome,
+      decisionSource: alteredCourtRoute.interimReliefDecisionSource,
+    });
+    expect(deployed.governance.judicialLegalOrder.operativeOrders[0]).toMatchObject({
+      directive: alteredCourtRoute.temporaryOrderDirective,
+      temporalScope: alteredCourtRoute.temporaryOrderTemporalScope,
+      orderType: alteredCourtRoute.temporaryOrderType,
+    });
+    expect(
+      deployed.governance.contestedHousingAdministration.judicialOrderComplianceResponses[0]
+        ?.response,
+    ).toBe(alteredCourtRoute.complianceResponse);
+    expect(
+      deployed.governance.contestedHousingAdministration.disputedRedirections[0]?.status,
+    ).toBe("PREPARING_REDIRECTION");
     expect(world.information.audiences.map((audience) => audience.id)).toEqual([
       renamed.audienceAlphaId,
       renamed.audienceBetaId,
@@ -186,6 +222,47 @@ describe("I1 bounded repair configuration proofs", () => {
         changeKind("ELECTION_RESOLUTION", { at: 43, order: 0 }),
       ),
     ).toThrow(/Population response.*election resolution/i);
+  });
+
+  it("accepts one successor-entitlement and office-transfer pair", () => {
+    expect(() => loadGovernmentConfiguration(GL0_SYNTHETIC_CONFIGURATION)).not.toThrow();
+  });
+
+  it.each([
+    ["earlier", 10],
+    ["later", 64],
+  ] as const)("rejects an extra unmatched %s office transfer", (_position, at) => {
+    const extraTransfer: GovernmentConfiguration = {
+      ...GL0_SYNTHETIC_CONFIGURATION,
+      transitions: [
+        ...GL0_SYNTHETIC_CONFIGURATION.transitions,
+        { id: `extra-transfer-${at}`, kind: "EXECUTIVE_OFFICE_TRANSFER", at, order: 0 },
+      ],
+    };
+    expect(() => loadGovernmentConfiguration(extraTransfer)).toThrow(
+      /office transfer .* must match exactly one successor-entitlement boundary/i,
+    );
+  });
+
+  it("rejects two successor entitlements sharing one transfer boundary", () => {
+    const sharedTransfer: GovernmentConfiguration = {
+      ...GL0_SYNTHETIC_CONFIGURATION,
+      transitions: [
+        ...GL0_SYNTHETIC_CONFIGURATION.transitions,
+        {
+          id: "second-entitlement",
+          kind: "SUCCESSOR_ENTITLEMENT",
+          at: 62,
+          order: 1,
+          contestId: GL0_FIXTURE_IDENTITIES.executiveContestId,
+          entitlementId: "second-successor-entitlement",
+          transferAt: 63,
+        },
+      ],
+    };
+    expect(() => loadGovernmentConfiguration(sharedTransfer)).toThrow(
+      /office transfer .* must match exactly one successor-entitlement boundary/i,
+    );
   });
 
   it("accepts valid same-time semantic order and remains chunk invariant", () => {

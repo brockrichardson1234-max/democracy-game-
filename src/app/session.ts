@@ -205,7 +205,7 @@ export interface ContestedAuthorityAuditProjection {
     readonly interimReliefDecision: {
       readonly id: string;
       readonly judgeActorId: string;
-      readonly outcome: "GRANT";
+      readonly outcome: string;
       readonly decisionSource: string;
       readonly decidedAtSimulationTime: SimulationInstant;
     } | null;
@@ -227,7 +227,7 @@ export interface ContestedAuthorityAuditProjection {
     readonly issuedAtSimulationTime: SimulationInstant;
     readonly effectiveAtSimulationTime: SimulationInstant;
     readonly temporalScope: string;
-    readonly orderType: "INTERIM";
+    readonly orderType: string;
     readonly status: "ACTIVE";
   } | null;
   readonly agency: {

@@ -172,7 +172,7 @@ export interface PlayerAdministrationView {
       readonly admittedAtSimulationTime: number;
       readonly interimReliefDecision: {
         readonly id: string;
-        readonly outcome: "GRANT";
+        readonly outcome: string;
         readonly decidedAtSimulationTime: number;
       } | null;
       readonly judicialOrderIds: readonly string[];
@@ -186,7 +186,7 @@ export interface PlayerAdministrationView {
       readonly id: string;
       readonly sourceContestId: string;
       readonly subjectInstitutionId: string;
-      readonly directive: "DO_NOT_EXECUTE_DISPUTED_HOUSING_FUNDS_REDIRECTION";
+      readonly directive: string;
       readonly issuedAtSimulationTime: number;
       readonly effectiveAtSimulationTime: number;
       readonly status: "ACTIVE";

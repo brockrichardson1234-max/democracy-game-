@@ -10,6 +10,7 @@ import {
   GL0_EXECUTIVE_CERTIFICATION_AT,
   GL0_EXECUTIVE_ELECTION_AT,
   GL0_EXECUTIVE_TRANSFER_AT,
+  GL0_COURT_ROUTE_CONTENT,
   GL0_FIXTURE_IDENTITIES,
   GL0_HOUSING_REDIRECTION_CHALLENGE_AT,
   GL0_HOUSING_REDIRECTION_COMPLIANCE_AT,
@@ -20,6 +21,7 @@ import {
   OPPOSITION_HOUSING_CLAIM_RELEASE_AT,
   POPULATION_ELECTORAL_RESPONSE_AT,
   createSyntheticWorldSeed,
+  type SyntheticCourtRouteContent,
   type SyntheticFixtureIdentities,
 } from "./fixture";
 
@@ -67,6 +69,7 @@ export const createSyntheticTransitionSchedule = (
 export const createSyntheticGovernmentConfiguration = (
   identity: ConfigurationIdentity,
   identities: SyntheticFixtureIdentities = GL0_FIXTURE_IDENTITIES,
+  courtRoute: SyntheticCourtRouteContent = GL0_COURT_ROUTE_CONTENT,
 ): GovernmentConfiguration<WorldSeed> => ({
   identity,
   capability: "PLAYABLE_CAUSAL_WORLD",
@@ -77,7 +80,7 @@ export const createSyntheticGovernmentConfiguration = (
     jurisdictionIds: [identities.stateAId, identities.stateBId, identities.stateCId],
   },
   transitions: createSyntheticTransitionSchedule(identities),
-  runtimeSeed: createSyntheticWorldSeed(identities),
+  runtimeSeed: createSyntheticWorldSeed(identities, courtRoute),
 });
 
 export const GL0_SYNTHETIC_CONFIGURATION = createSyntheticGovernmentConfiguration({
@@ -85,7 +88,7 @@ export const GL0_SYNTHETIC_CONFIGURATION = createSyntheticGovernmentConfiguratio
   configurationVersion: "1.0.0",
   scenarioId: "gl0-accepted-causal-vertical",
   scenarioVersion: "1.0.0",
-  configurationHash: "f9e48171af6e2f833a4c0623e6f32bb7094485c8843e600252c580ff1c118180",
+  configurationHash: "42e904d1b43d0139474b24ef32367ffbbb02cebc2f8b3517b170920e8b664ca9",
 });
 
 /** Backward-compatible accepted-fixture entry point over production composition. */
