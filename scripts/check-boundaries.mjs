@@ -189,6 +189,26 @@ for (const file of genericLegislativeEngineFiles) {
   }
 }
 
+const politicalRuntimeSource = stripComments(await readFile(join(root, "src/sim/political.ts"), "utf8"));
+const legislativeRuntimeSource = stripComments(await readFile(join(root, "src/sim/legislative-runtime.ts"), "utf8"));
+const dayZeroAssignmentReads = legislativeRuntimeSource.match(/currentAtScenarioStart/g) ?? [];
+if (politicalRuntimeSource.includes("currentAtScenarioStart") || dayZeroAssignmentReads.length !== 1) {
+  violations.push(
+    "I3 authority may read currentAtScenarioStart only once while initializing runtime active assignments",
+  );
+}
+const legislativeSessionSource = stripComments(await readFile(join(root, "src/app/legislative-session.ts"), "utf8"));
+for (const forbiddenAdministrationCommand of [
+  "threatenExtendedDebate",
+  "castTieBreaker",
+  "resolveNoSignature",
+  "expire:",
+]) {
+  if (legislativeSessionSource.includes(forbiddenAdministrationCommand)) {
+    violations.push(`Administration legislative session exposes forbidden command ${forbiddenAdministrationCommand}`);
+  }
+}
+
 const syntheticExecutionSymbols = [
   "STATE_A_ID",
   "STATE_B_ID",

@@ -4,12 +4,17 @@ import type {
   GovernmentStructureDescriptor,
   LegislativeChamberRuleConfiguration,
   LegislativeRuntimeSeed,
+  OperativeLegalTermValue,
 } from "../configuration/types";
 import {
   applyActorVoteResolution,
   createPoliticalState,
+  decideExecutiveDeputyTieBreak,
+  decidePoliticalActorExtendedDebate,
   decidePoliticalActorVote,
   refreshPoliticalSupport,
+  replacePoliticalOfficeholder,
+  type ActiveOfficeAssignmentState,
   type CanonicalVoteChoice,
   type EvaluatedProposalVersion,
   type LegislativeDecisionKind,
@@ -44,6 +49,8 @@ export interface ProposalVersion {
   readonly dimensions: Readonly<Record<string, number>>;
   readonly authorizationProvisions: readonly string[];
   readonly appropriation: { readonly amount: number; readonly purpose: string };
+  readonly policyTerms: Readonly<Record<string, OperativeLegalTermValue>>;
+  readonly legalTermsClassification: LegislativeRuntimeSeed["proposal"]["legalTerms"]["classification"];
   readonly textHash: string;
   readonly createdBy: "AGENDA" | "AGENDA_REVISION" | "ADOPTED_AMENDMENT" | "TEXT_EXCHANGE";
   readonly previousVersion: number | null;
@@ -122,7 +129,11 @@ export interface PresentmentState {
   readonly executiveActorId: string | null;
   readonly executiveAssignmentId: string | null;
   readonly action: "NONE" | "SIGNED" | "VETOED" | "WITHHELD";
-  readonly returnPrevented: boolean | null;
+  readonly presentedAt: string;
+  readonly resolutionNotBefore: string;
+  readonly noSignatureRuleClass: LegislativeRuntimeSeed["procedure"]["noSignatureRule"]["ruleClass"];
+  readonly noSignatureTimeZone: string;
+  readonly authoritativeReturnStatus: "RETURN_AVAILABLE" | "RETURN_PREVENTED" | null;
 }
 
 export interface EnactedLegislativeSource {
@@ -132,7 +143,25 @@ export interface EnactedLegislativeSource {
   readonly textHash: string;
   readonly authorizationProvisions: readonly string[];
   readonly appropriation: { readonly amount: number; readonly purpose: string };
+  readonly policyTerms: Readonly<Record<string, OperativeLegalTermValue>>;
+  readonly legalTermsClassification: LegislativeRuntimeSeed["proposal"]["legalTerms"]["classification"];
   readonly enactmentRoute: "SIGNATURE" | "NO_SIGNATURE" | "VETO_OVERRIDE";
+}
+
+export interface ExtendedDebateActorDecision {
+  readonly actorId: string;
+  readonly officeId: string;
+  readonly assignmentId: string;
+  readonly choice: "THREATEN" | "DECLINE";
+  readonly statedReason: string;
+}
+
+export interface ExtendedDebateDecisionOpportunity {
+  readonly id: string;
+  readonly chamberId: string;
+  readonly proposalVersion: number;
+  readonly decisions: readonly ExtendedDebateActorDecision[];
+  readonly threatened: boolean;
 }
 
 export interface LegislativeProcedureState {
@@ -144,7 +173,7 @@ export interface LegislativeProcedureState {
   readonly amendments: readonly AmendmentRecord[];
   readonly voteOpportunities: readonly VoteOpportunity[];
   readonly approvedVersionByChamber: Readonly<Record<string, number>>;
-  readonly extendedDebateThreatChamberIds: readonly string[];
+  readonly extendedDebateDecisionOpportunities: readonly ExtendedDebateDecisionOpportunity[];
   readonly textExchangeCount: number;
   readonly presentment: PresentmentState | null;
   readonly overridePassedChamberIds: readonly string[];
@@ -155,6 +184,7 @@ export interface LegislativeProcedureState {
 export interface LegislativeRuntimeState {
   readonly schemaVersion: number;
   readonly configuration: ConfigurationIdentity;
+  readonly activeAssignments: readonly ActiveOfficeAssignmentState[];
   readonly agenda: LegislativeAgenda;
   readonly political: PoliticalState;
   readonly procedure: LegislativeProcedureState;
@@ -166,22 +196,67 @@ export interface LegislativeRuntimeContext {
   readonly seed: LegislativeRuntimeSeed;
 }
 
+export interface NoSignatureBoundaryOccurrence {
+  readonly kind: "NO_SIGNATURE_RESOLUTION_BOUNDARY";
+  readonly occurredAt: string;
+  readonly proposalVersion: number;
+  readonly returnStatus: "RETURN_AVAILABLE" | "RETURN_PREVENTED";
+}
+
+export interface LegislatureTermBoundaryOccurrence {
+  readonly kind: "LEGISLATURE_TERM_BOUNDARY";
+  readonly occurredAt: string;
+  readonly legislatureId: string;
+}
+
 const versionTextHash = (
   proposalId: string,
   version: number,
   dimensions: Readonly<Record<string, number>>,
   authorizationProvisions: readonly string[],
   appropriation: { readonly amount: number; readonly purpose: string },
+  policyTerms: Readonly<Record<string, OperativeLegalTermValue>>,
 ): string =>
   sha256Hex(
     JSON.stringify({
       appropriation,
       authorizationProvisions,
       dimensions: Object.fromEntries(Object.entries(dimensions).sort(([left], [right]) => left.localeCompare(right))),
+      policyTerms: Object.fromEntries(Object.entries(policyTerms).sort(([left], [right]) => left.localeCompare(right))),
       proposalId,
       version,
     }),
   );
+
+const resolveOperativeLegalTerms = (
+  seed: LegislativeRuntimeSeed,
+  dimensions: Readonly<Record<string, number>>,
+): {
+  readonly appropriation: { readonly amount: number; readonly purpose: string };
+  readonly policyTerms: Readonly<Record<string, OperativeLegalTermValue>>;
+} => {
+  const mapping = seed.proposal.legalTerms;
+  const appropriationValue = dimensions[mapping.appropriation.dimensionId];
+  if (appropriationValue === undefined) throw new Error("Appropriation dimension is missing from proposal version.");
+  const unboundedAmount = mapping.appropriation.baseAmount +
+    (appropriationValue - mapping.appropriation.baseDimensionValue) * mapping.appropriation.amountPerDimensionPoint;
+  const amount = Math.round(Math.min(
+    mapping.appropriation.maximumAmount,
+    Math.max(mapping.appropriation.minimumAmount, unboundedAmount),
+  ));
+  const policyTerms: Record<string, OperativeLegalTermValue> = {};
+  for (const term of mapping.policyTerms) {
+    const dimensionValue = dimensions[term.dimensionId];
+    if (dimensionValue === undefined) throw new Error(`Policy-term dimension ${term.dimensionId} is missing.`);
+    const band = term.bands.find((candidate) => dimensionValue <= candidate.maximumDimensionValue);
+    if (band === undefined) throw new Error(`No operative policy-term band covers ${term.dimensionId}.`);
+    policyTerms[term.id] = band.value;
+  }
+  return {
+    appropriation: { amount, purpose: mapping.appropriation.purpose },
+    policyTerms,
+  };
+};
 
 const makeVersion = (
   seed: LegislativeRuntimeSeed,
@@ -189,23 +264,29 @@ const makeVersion = (
   dimensions: Readonly<Record<string, number>>,
   createdBy: ProposalVersion["createdBy"],
   previousVersion: number | null,
-): ProposalVersion => ({
-  id: `${seed.recordIds.proposalVersionPrefix}${seed.proposal.id}:${version}`,
-  proposalId: seed.proposal.id,
-  version,
-  dimensions,
-  authorizationProvisions: [...seed.proposal.authorizationProvisions],
-  appropriation: { ...seed.proposal.appropriation },
-  textHash: versionTextHash(
-    seed.proposal.id,
+): ProposalVersion => {
+  const legalTerms = resolveOperativeLegalTerms(seed, dimensions);
+  return {
+    id: `${seed.recordIds.proposalVersionPrefix}${seed.proposal.id}:${version}`,
+    proposalId: seed.proposal.id,
     version,
     dimensions,
-    seed.proposal.authorizationProvisions,
-    seed.proposal.appropriation,
-  ),
-  createdBy,
-  previousVersion,
-});
+    authorizationProvisions: [...seed.proposal.authorizationProvisions],
+    appropriation: legalTerms.appropriation,
+    policyTerms: legalTerms.policyTerms,
+    legalTermsClassification: seed.proposal.legalTerms.classification,
+    textHash: versionTextHash(
+      seed.proposal.id,
+      version,
+      dimensions,
+      seed.proposal.authorizationProvisions,
+      legalTerms.appropriation,
+      legalTerms.policyTerms,
+    ),
+    createdBy,
+    previousVersion,
+  };
+};
 
 const assertDimensions = (
   seed: LegislativeRuntimeSeed,
@@ -234,7 +315,17 @@ export const createLegislativeRuntimeState = (
 ): LegislativeRuntimeState => {
   assertDimensions(context.seed, context.seed.proposal.initialDimensions);
   const initialVersion = makeVersion(context.seed, 1, context.seed.proposal.initialDimensions, "AGENDA", null);
-  let political = createPoliticalState(context.structure, context.seed);
+  const activeAssignments: readonly ActiveOfficeAssignmentState[] = context.structure.assignments
+    .filter((assignment) => assignment.currentAtScenarioStart)
+    .map((assignment) => ({
+      id: assignment.id,
+      officeId: assignment.officeId,
+      actorId: assignment.actorId,
+      effectiveFrom: assignment.effectiveFrom,
+      effectiveUntil: assignment.effectiveUntil,
+      classification: assignment.classification,
+    }));
+  let political = createPoliticalState(context.structure, context.seed, activeAssignments);
   political = refreshPoliticalSupport(political, {
     proposalId: context.seed.proposal.id,
     version: initialVersion.version,
@@ -243,6 +334,7 @@ export const createLegislativeRuntimeState = (
   return {
     schemaVersion: context.seed.schemaVersion,
     configuration: { ...configuration },
+    activeAssignments,
     agenda: {
       proposalId: context.seed.proposal.id,
       title: context.seed.proposal.title,
@@ -269,7 +361,7 @@ export const createLegislativeRuntimeState = (
       amendments: [],
       voteOpportunities: [],
       approvedVersionByChamber: {},
-      extendedDebateThreatChamberIds: [],
+      extendedDebateDecisionOpportunities: [],
       textExchangeCount: 0,
       presentment: null,
       overridePassedChamberIds: [],
@@ -292,6 +384,45 @@ const withCurrentProposal = (
     procedure: { ...procedure, currentProposalVersion: agenda.currentVersion },
     political: refreshPoliticalSupport(state.political, proposal),
   };
+};
+
+/**
+ * Generic assignment-owner seam. Election, entitlement, and calendar causes
+ * remain outside I3; this transition only admits a supplied lawful successor.
+ */
+export const replaceActiveOfficeAssignment = (
+  state: LegislativeRuntimeState,
+  context: LegislativeRuntimeContext,
+  replacement: ActiveOfficeAssignmentState,
+): LegislativeRuntimeState => {
+  const office = context.structure.offices.find((candidate) => candidate.id === replacement.officeId);
+  const outgoing = state.activeAssignments.find((candidate) => candidate.officeId === replacement.officeId);
+  if (office === undefined || outgoing === undefined) throw new Error("Assignment replacement requires an existing active office.");
+  if (replacement.id === outgoing.id || replacement.actorId === outgoing.actorId) {
+    throw new Error("Assignment replacement requires a distinct successor assignment and actor.");
+  }
+  if (
+    state.activeAssignments.some((candidate) => candidate.id === replacement.id) ||
+    state.activeAssignments.some((candidate) => candidate.actorId === replacement.actorId)
+  ) throw new Error("Successor assignment or actor is already active.");
+  if (
+    !Number.isFinite(Date.parse(replacement.effectiveFrom)) ||
+    (replacement.effectiveUntil !== null && Date.parse(replacement.effectiveUntil) <= Date.parse(replacement.effectiveFrom))
+  ) throw new Error("Successor assignment has an invalid effective interval.");
+  const activeAssignments = state.activeAssignments.map((candidate) =>
+    candidate.officeId === replacement.officeId ? { ...replacement } : candidate,
+  );
+  const political = office.kind === "LEGISLATIVE_MEMBER"
+    ? replacePoliticalOfficeholder(
+        state.political,
+        context.seed,
+        office.id,
+        replacement.id,
+        replacement.actorId,
+        evaluated(state),
+      )
+    : state.political;
+  return { ...state, activeAssignments, political };
 };
 
 export const reviseLegislativeAgenda = (
@@ -336,13 +467,12 @@ export const beginSponsorSearch = (state: LegislativeRuntimeState): LegislativeR
 };
 
 const currentAssignmentForActor = (
+  state: LegislativeRuntimeState,
   context: LegislativeRuntimeContext,
   actorId: string,
   requiredChamberId?: string,
 ) => {
-  const assignment = context.structure.assignments.find(
-    (candidate) => candidate.actorId === actorId && candidate.currentAtScenarioStart,
-  );
+  const assignment = state.activeAssignments.find((candidate) => candidate.actorId === actorId);
   const office = assignment === undefined
     ? undefined
     : context.structure.offices.find((candidate) => candidate.id === assignment.officeId);
@@ -363,7 +493,7 @@ export const seekMemberSponsorship = (
   actorId: string,
 ): LegislativeRuntimeState => {
   if (state.procedure.stage !== "SPONSOR_SOUGHT") throw new Error("The agenda is not seeking sponsorship.");
-  const { assignment, office } = currentAssignmentForActor(context, actorId, context.seed.procedure.originChamberId);
+  const { assignment, office } = currentAssignmentForActor(state, context, actorId, context.seed.procedure.originChamberId);
   const actor = state.political.actors.find((candidate) => candidate.actorId === actorId);
   if (actor === undefined) throw new Error("Sponsoring actor has no political state.");
   const sponsorshipDecision = decidePoliticalActorVote(
@@ -408,7 +538,7 @@ export const introduceSponsoredProposal = (
   ) {
     throw new Error("Only the accepted sponsoring member may introduce this exact proposal version.");
   }
-  currentAssignmentForActor(context, actorId, context.seed.procedure.originChamberId);
+  currentAssignmentForActor(state, context, actorId, context.seed.procedure.originChamberId);
   return {
     ...state,
     procedure: {
@@ -453,7 +583,10 @@ const considerationSignals = (
     (organization) =>
       organization.negotiationPosture === "OPEN" ||
       organization.coordinationActions.some(
-        (action) => action.chamberId === chamberId && action.proposalVersion === state.agenda.currentVersion,
+        (action) =>
+          action.chamberId === chamberId &&
+          action.proposalVersion === state.agenda.currentVersion &&
+          action.recommendation === "SUPPORT",
       ),
   ).length;
   return sponsorshipSignal + organizationSignals;
@@ -535,13 +668,11 @@ const chamberRule = (context: LegislativeRuntimeContext, chamberId: string): Leg
   return rule;
 };
 
-const eligibleAssignments = (context: LegislativeRuntimeContext, chamberId: string) => {
+const eligibleAssignments = (state: LegislativeRuntimeState, context: LegislativeRuntimeContext, chamberId: string) => {
   const officeIds = new Set(
     context.structure.offices.filter((office) => office.chamberId === chamberId).map((office) => office.id),
   );
-  return context.structure.assignments.filter(
-    (assignment) => assignment.currentAtScenarioStart && officeIds.has(assignment.officeId),
-  );
+  return state.activeAssignments.filter((assignment) => officeIds.has(assignment.officeId));
 };
 
 const tallyVotes = (
@@ -589,7 +720,7 @@ const resolveActorVotes = (
   kind: LegislativeDecisionKind,
   sequence: number,
 ): { readonly political: PoliticalState; readonly opportunity: VoteOpportunity } => {
-  const assignments = eligibleAssignments(context, chamberId);
+  const assignments = eligibleAssignments(state, context, chamberId);
   const id = `${context.seed.recordIds.voteOpportunityPrefix}${kind}:${chamberId}:${sequence}`;
   let political = state.political;
   const votes: RecordedLegislativeVote[] = [];
@@ -680,23 +811,43 @@ export const closeAmendmentRound = (
   };
 };
 
-export const recordExtendedDebateThreat = (
+export const resolveExtendedDebateDecisionOpportunity = (
   state: LegislativeRuntimeState,
   context: LegislativeRuntimeContext,
-  actorId: string,
 ): LegislativeRuntimeState => {
   const chamberId = state.procedure.currentChamberId;
   if (chamberId === null || !state.procedure.stage.endsWith("FINAL_ROLL_CALL")) {
     throw new Error("Extended debate may only be threatened before a final roll call.");
   }
   if (!chamberRule(context, chamberId).extendedDebate.available) throw new Error("Extended debate is not configured here.");
-  currentAssignmentForActor(context, actorId, chamberId);
-  if (state.procedure.extendedDebateThreatChamberIds.includes(chamberId)) return state;
+  if (state.procedure.extendedDebateDecisionOpportunities.some(
+    (opportunity) => opportunity.chamberId === chamberId && opportunity.proposalVersion === state.agenda.currentVersion,
+  )) throw new Error("Extended-debate decisions already resolved for this chamber and proposal version.");
+  const proposal = evaluated(state);
+  const decisions = eligibleAssignments(state, context, chamberId).map((assignment): ExtendedDebateActorDecision => {
+    const office = context.structure.offices.find((candidate) => candidate.id === assignment.officeId);
+    if (office === undefined) throw new Error("Extended-debate assignment references an unknown office.");
+    const resolution = decidePoliticalActorExtendedDebate(state.political, context.seed, assignment.actorId, proposal);
+    return {
+      actorId: assignment.actorId,
+      officeId: office.id,
+      assignmentId: assignment.id,
+      choice: resolution.choice,
+      statedReason: resolution.statedReason,
+    };
+  });
+  const opportunity: ExtendedDebateDecisionOpportunity = {
+    id: `${context.seed.recordIds.voteOpportunityPrefix}EXTENDED_DEBATE:${chamberId}:${state.procedure.extendedDebateDecisionOpportunities.length + 1}`,
+    chamberId,
+    proposalVersion: state.agenda.currentVersion,
+    decisions,
+    threatened: decisions.some((decision) => decision.choice === "THREATEN"),
+  };
   return {
     ...state,
     procedure: {
       ...state.procedure,
-      extendedDebateThreatChamberIds: [...state.procedure.extendedDebateThreatChamberIds, chamberId],
+      extendedDebateDecisionOpportunities: [...state.procedure.extendedDebateDecisionOpportunities, opportunity],
     },
   };
 };
@@ -752,7 +903,12 @@ export const resolveFinalRollCall = (
   const chamberId = state.procedure.currentChamberId;
   if (chamberId === null) throw new Error("Final roll call has no chamber.");
   let next = state;
-  if (state.procedure.extendedDebateThreatChamberIds.includes(chamberId)) {
+  if (state.procedure.extendedDebateDecisionOpportunities.some(
+    (opportunity) =>
+      opportunity.chamberId === chamberId &&
+      opportunity.proposalVersion === state.agenda.currentVersion &&
+      opportunity.threatened,
+  )) {
     const cloture = resolveActorVotes(
       next,
       context,
@@ -796,22 +952,20 @@ export const resolveFinalRollCall = (
   return advanceAfterPassedRollCall(next, context, chamberId, opportunity.proposalVersion);
 };
 
-export const castConfiguredTieBreakerVote = (
+export const resolveConfiguredTieBreakerDecision = (
   state: LegislativeRuntimeState,
   context: LegislativeRuntimeContext,
-  actorId: string,
-  assignmentId: string,
-  choice: "YEA" | "NAY",
 ): LegislativeRuntimeState => {
   const opportunity = state.procedure.voteOpportunities.at(-1);
   if (opportunity?.result !== "TIE_BREAK_PENDING") throw new Error("No tie-break vote is pending.");
   const rule = chamberRule(context, opportunity.chamberId);
-  const assignment = context.structure.assignments.find(
-    (candidate) => candidate.id === assignmentId && candidate.actorId === actorId && candidate.currentAtScenarioStart,
-  );
-  if (assignment === undefined || assignment.officeId !== rule.tieBreakerOfficeId) {
+  const assignment = state.activeAssignments.find((candidate) => candidate.officeId === rule.tieBreakerOfficeId);
+  if (assignment === undefined) {
     throw new Error("Tie-break vote requires the configured office's current actor assignment.");
   }
+  const actorId = assignment.actorId;
+  const assignmentId = assignment.id;
+  const choice = decideExecutiveDeputyTieBreak(context.seed, actorId, evaluated(state, opportunity.proposalVersion));
   const vote: RecordedLegislativeVote = {
     opportunityId: opportunity.id,
     chamberId: opportunity.chamberId,
@@ -894,14 +1048,84 @@ export const considerTextExchange = (
   return next;
 };
 
+const CONFIGURED_INSTANT_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d{3})?(Z|[+-]\d{2}:\d{2})$/;
+const GREGORIAN_CENTURY_YEARS = 10 ** 2;
+
+const daysFromCivil = (year: number, month: number, day: number): number => {
+  const adjustedYear = year - (month <= 2 ? 1 : 0);
+  const era = Math.floor(adjustedYear / 400);
+  const yearOfEra = adjustedYear - era * 400;
+  const adjustedMonth = month + (month > 2 ? -3 : 9);
+  const dayOfYear = Math.floor((153 * adjustedMonth + 2) / 5) + day - 1;
+  const dayOfEra = yearOfEra * 365 + Math.floor(yearOfEra / 4) -
+    Math.floor(yearOfEra / GREGORIAN_CENTURY_YEARS) + dayOfYear;
+  return era * 146097 + dayOfEra - 719468;
+};
+
+const civilFromDays = (daysSinceEpoch: number): { readonly year: number; readonly month: number; readonly day: number } => {
+  const shifted = daysSinceEpoch + 719468;
+  const era = Math.floor(shifted / 146097);
+  const dayOfEra = shifted - era * 146097;
+  const yearOfEra = Math.floor(
+    (dayOfEra - Math.floor(dayOfEra / 1460) + Math.floor(dayOfEra / 36524) - Math.floor(dayOfEra / 146096)) / 365,
+  );
+  let year = yearOfEra + era * 400;
+  const dayOfYear = dayOfEra -
+    (365 * yearOfEra + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / GREGORIAN_CENTURY_YEARS));
+  const monthPrime = Math.floor((5 * dayOfYear + 2) / 153);
+  const day = dayOfYear - Math.floor((153 * monthPrime + 2) / 5) + 1;
+  const month = monthPrime + (monthPrime < 10 ? 3 : -9);
+  year += month <= 2 ? 1 : 0;
+  return { year, month, day };
+};
+
+const parseConfiguredInstant = (value: string) => {
+  const match = CONFIGURED_INSTANT_PATTERN.exec(value);
+  if (match === null || !Number.isFinite(Date.parse(value))) {
+    throw new Error("Presentment requires a valid offset-qualified authoritative instant.");
+  }
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: match[4],
+    minute: match[5],
+    second: match[6],
+    millisecond: match[7] ?? ".000",
+    offset: match[8],
+  };
+};
+
+const padded = (value: number): string => String(value).padStart(2, "0");
+
+export const resolveNoSignatureDeadline = (
+  presentedAt: string,
+  rule: LegislativeRuntimeSeed["procedure"]["noSignatureRule"],
+): string => {
+  const startingLocal = parseConfiguredInstant(presentedAt);
+  let dateCursor = daysFromCivil(startingLocal.year, startingLocal.month, startingLocal.day);
+  let counted = 0;
+  while (counted < rule.decisionDays) {
+    dateCursor += 1;
+    const weekday = ((dateCursor + 4) % 7 + 7) % 7;
+    if (!rule.excludedWeekdays.includes(weekday)) counted += 1;
+  }
+  const deadlineDate = civilFromDays(dateCursor);
+  return `${String(deadlineDate.year).padStart(4, "0")}-${padded(deadlineDate.month)}-${padded(deadlineDate.day)}` +
+    `T${startingLocal.hour}:${startingLocal.minute}:${startingLocal.second}${startingLocal.millisecond}${startingLocal.offset}`;
+};
+
 export const presentIdenticalText = (
   state: LegislativeRuntimeState,
   context: LegislativeRuntimeContext,
+  presentedAt: string,
 ): LegislativeRuntimeState => {
   if (state.procedure.stage !== "IDENTICAL_TEXT") throw new Error("Only identical approved text may be presented.");
   const origin = state.procedure.approvedVersionByChamber[context.seed.procedure.originChamberId];
   const other = state.procedure.approvedVersionByChamber[context.seed.procedure.otherChamberId];
   if (origin === undefined || origin !== other) throw new Error("Chambers have not approved identical text.");
+  const resolutionNotBefore = resolveNoSignatureDeadline(presentedAt, context.seed.procedure.noSignatureRule);
   return {
     ...state,
     procedure: {
@@ -913,7 +1137,11 @@ export const presentIdenticalText = (
         executiveActorId: null,
         executiveAssignmentId: null,
         action: "NONE",
-        returnPrevented: null,
+        presentedAt,
+        resolutionNotBefore,
+        noSignatureRuleClass: context.seed.procedure.noSignatureRule.ruleClass,
+        noSignatureTimeZone: context.seed.procedure.noSignatureRule.timeZone,
+        authoritativeReturnStatus: null,
       },
     },
   };
@@ -935,6 +1163,8 @@ const enact = (
     textHash: version.textHash,
     authorizationProvisions: [...version.authorizationProvisions],
     appropriation: { ...version.appropriation },
+    policyTerms: { ...version.policyTerms },
+    legalTermsClassification: version.legalTermsClassification,
     enactmentRoute: route,
   };
   return {
@@ -959,8 +1189,8 @@ export const resolveExecutivePresentmentAction = (
   if (state.procedure.stage !== "PRESENTED" || state.procedure.presentment === null) {
     throw new Error("Executive action requires valid presentment.");
   }
-  const assignment = context.structure.assignments.find(
-    (candidate) => candidate.id === assignmentId && candidate.actorId === actorId && candidate.currentAtScenarioStart,
+  const assignment = state.activeAssignments.find(
+    (candidate) => candidate.id === assignmentId && candidate.actorId === actorId,
   );
   if (assignment === undefined || assignment.officeId !== context.seed.executive.headOfficeId) {
     throw new Error("Presentment action requires the current configured executive-head assignment.");
@@ -981,25 +1211,37 @@ export const resolveExecutivePresentmentAction = (
   return action === "SIGN" ? enact(next, context, "SIGNATURE") : next;
 };
 
-export const resolveNoSignatureRoute = (
+export const resolveNoSignatureBoundary = (
   state: LegislativeRuntimeState,
   context: LegislativeRuntimeContext,
-  returnPrevented: boolean,
+  occurrence: NoSignatureBoundaryOccurrence,
 ): LegislativeRuntimeState => {
   if (state.procedure.stage !== "NO_SIGNATURE_PENDING" || state.procedure.presentment === null) {
     throw new Error("No-signature resolution is not pending.");
+  }
+  if (
+    occurrence.kind !== "NO_SIGNATURE_RESOLUTION_BOUNDARY" ||
+    occurrence.proposalVersion !== state.procedure.presentment.proposalVersion
+  ) throw new Error("No-signature boundary does not match the pending presentment.");
+  const occurredAt = Date.parse(occurrence.occurredAt);
+  const notBefore = Date.parse(state.procedure.presentment.resolutionNotBefore);
+  if (!Number.isFinite(occurredAt) || occurredAt < notBefore) {
+    throw new Error("No-signature resolution boundary occurred before the configured legal deadline.");
   }
   const next = {
     ...state,
     procedure: {
       ...state.procedure,
-      presentment: { ...state.procedure.presentment, returnPrevented },
+      presentment: {
+        ...state.procedure.presentment,
+        authoritativeReturnStatus: occurrence.returnStatus,
+      },
     },
   };
-  if (!returnPrevented && context.seed.procedure.noSignatureRule.enactWhenReturnNotPrevented) {
+  if (occurrence.returnStatus === "RETURN_AVAILABLE" && context.seed.procedure.noSignatureRule.enactWhenReturnNotPrevented) {
     return enact(next, context, "NO_SIGNATURE");
   }
-  if (returnPrevented && context.seed.procedure.noSignatureRule.failWhenReturnPrevented) {
+  if (occurrence.returnStatus === "RETURN_PREVENTED" && context.seed.procedure.noSignatureRule.failWhenReturnPrevented) {
     return terminalFailure(next, "No-signature return-prevented route failed.");
   }
   throw new Error("Configured no-signature rule does not resolve this condition.");
@@ -1037,8 +1279,19 @@ export const resolveVetoOverrideRollCall = (
   return [...required].every((id) => passed.includes(id)) ? enact(next, context, "VETO_OVERRIDE") : next;
 };
 
-export const expireLegislativeProcedure = (state: LegislativeRuntimeState): LegislativeRuntimeState => {
-  if (["ENACTED", "FAILED", "EXPIRED_AT_END_OF_CONGRESS"].includes(state.procedure.stage)) {
+export const resolveLegislatureTermBoundary = (
+  state: LegislativeRuntimeState,
+  context: LegislativeRuntimeContext,
+  occurrence: LegislatureTermBoundaryOccurrence,
+): LegislativeRuntimeState => {
+  const configured = context.seed.procedure.legislatureTermBoundary;
+  if (
+    occurrence.kind !== "LEGISLATURE_TERM_BOUNDARY" ||
+    occurrence.legislatureId !== configured.legislatureId ||
+    Date.parse(occurrence.occurredAt) !== Date.parse(configured.occursAt)
+  ) throw new Error("Legislative expiry requires the exact configured legislature term boundary.");
+  if (state.procedure.stage === "ENACTED") return state;
+  if (["FAILED", "EXPIRED_AT_END_OF_CONGRESS"].includes(state.procedure.stage)) {
     throw new Error("Terminal legislative procedure cannot expire again.");
   }
   return {

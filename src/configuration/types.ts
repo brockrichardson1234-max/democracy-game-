@@ -204,6 +204,29 @@ export interface ProposalDimensionConfiguration {
   readonly maximum: number;
 }
 
+export type OperativeLegalTermValue = number | string;
+
+export interface ProposalLegalTermConfiguration {
+  readonly classification: ScaffoldClassification;
+  readonly appropriation: {
+    readonly dimensionId: string;
+    readonly purpose: string;
+    readonly baseDimensionValue: number;
+    readonly baseAmount: number;
+    readonly amountPerDimensionPoint: number;
+    readonly minimumAmount: number;
+    readonly maximumAmount: number;
+  };
+  readonly policyTerms: readonly {
+    readonly id: string;
+    readonly dimensionId: string;
+    readonly bands: readonly {
+      readonly maximumDimensionValue: number;
+      readonly value: OperativeLegalTermValue;
+    }[];
+  }[];
+}
+
 export interface PoliticalOrganizationConfiguration {
   readonly id: string;
   readonly label: string;
@@ -255,8 +278,16 @@ export interface LegislativeRuntimeSeed {
     readonly maximumAmendmentRoundsPerChamber: number;
     readonly considerationGateMinimumSignals: Readonly<Record<string, number>>;
     readonly noSignatureRule: {
+      readonly ruleClass: "ELAPSED_CALENDAR_DAYS_EXCLUDING_WEEKDAYS";
+      readonly decisionDays: number;
+      readonly excludedWeekdays: readonly number[];
+      readonly timeZone: string;
       readonly enactWhenReturnNotPrevented: boolean;
       readonly failWhenReturnPrevented: boolean;
+    };
+    readonly legislatureTermBoundary: {
+      readonly legislatureId: string;
+      readonly occursAt: string;
     };
   };
   readonly proposal: {
@@ -264,10 +295,7 @@ export interface LegislativeRuntimeSeed {
     readonly title: string;
     readonly initialDimensions: Readonly<Record<string, number>>;
     readonly authorizationProvisions: readonly string[];
-    readonly appropriation: {
-      readonly amount: number;
-      readonly purpose: string;
-    };
+    readonly legalTerms: ProposalLegalTermConfiguration;
   };
   readonly decision: {
     readonly organizationBlend: ConfiguredFraction;
@@ -276,6 +304,8 @@ export interface LegislativeRuntimeSeed {
     readonly coordinationPressure: number;
     readonly commitmentHonorCutoff: number;
     readonly breachCutoff: number;
+    readonly extendedDebateThreatCutoff: number;
+    readonly tieBreakerYeaCutoff: number;
   };
   readonly negotiation: {
     readonly maximumMemoryEntriesPerActor: number;

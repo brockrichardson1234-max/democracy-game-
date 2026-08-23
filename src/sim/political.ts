@@ -141,19 +141,30 @@ export interface PoliticalState {
   readonly commitments: readonly PoliticalCommitment[];
 }
 
+/** Runtime owner of who currently exercises an office in this canonical slice. */
+export interface ActiveOfficeAssignmentState {
+  readonly id: string;
+  readonly officeId: string;
+  readonly actorId: string;
+  readonly effectiveFrom: string;
+  readonly effectiveUntil: string | null;
+  readonly classification: LegislativeRuntimeSeed["profileScaffold"]["classification"];
+}
+
 export interface EvaluatedProposalVersion {
   readonly proposalId: string;
   readonly version: number;
   readonly dimensions: Readonly<Record<string, number>>;
 }
 
-const currentLegislativeAssignments = (structure: GovernmentStructureDescriptor) => {
+const currentLegislativeAssignments = (
+  structure: GovernmentStructureDescriptor,
+  activeAssignments: readonly ActiveOfficeAssignmentState[],
+) => {
   const legislativeOfficeIds = new Set(
     structure.offices.filter((office) => office.kind === "LEGISLATIVE_MEMBER").map((office) => office.id),
   );
-  return structure.assignments.filter(
-    (assignment) => assignment.currentAtScenarioStart && legislativeOfficeIds.has(assignment.officeId),
-  );
+  return activeAssignments.filter((assignment) => legislativeOfficeIds.has(assignment.officeId));
 };
 
 const blend = (shared: number, individual: number, numerator: number, denominator: number): number =>
@@ -162,8 +173,9 @@ const blend = (shared: number, individual: number, numerator: number, denominato
 const deriveOrganizations = (
   structure: GovernmentStructureDescriptor,
   seed: LegislativeRuntimeSeed,
+  activeAssignments: readonly ActiveOfficeAssignmentState[],
 ): readonly PoliticalOrganizationState[] => {
-  const assignments = currentLegislativeAssignments(structure);
+  const assignments = currentLegislativeAssignments(structure, activeAssignments);
   const byOrganization = new Map<string, OrganizationMembership[]>();
   for (const organization of seed.organizations) byOrganization.set(organization.id, []);
 
@@ -230,62 +242,74 @@ const deriveOrganizations = (
   });
 };
 
+const createPoliticalActorState = (
+  actorId: string,
+  membership: OrganizationMembership,
+  organization: PoliticalOrganizationConfiguration,
+  seed: LegislativeRuntimeSeed,
+): PoliticalActorState => {
+  const evaluations = seed.dimensions.map((dimension): ActorDimensionEvaluation => {
+    const shared = organization.postureByDimension[dimension.id];
+    if (shared === undefined) throw new Error(`Organization posture omits ${dimension.id}.`);
+    const unit = deterministicUnit(`${seed.profileScaffold.seed}|${actorId}|${dimension.id}`);
+    const individual = Math.max(
+      dimension.minimum,
+      Math.min(
+        dimension.maximum,
+        shared + (unit * 2 - 1) * seed.decision.actorVariationRadius,
+      ),
+    );
+    const preferredValue = blend(
+      shared,
+      individual,
+      seed.decision.organizationBlend.numerator,
+      seed.decision.organizationBlend.denominator,
+    );
+    return {
+      dimensionId: dimension.id,
+      preferredValue,
+      reservationMinimum: Math.max(dimension.minimum, preferredValue - seed.decision.reservationDistance),
+      reservationMaximum: Math.min(dimension.maximum, preferredValue + seed.decision.reservationDistance),
+    };
+  });
+  return {
+    actorId,
+    membershipId: membership.id,
+    evaluations,
+    supportPosture: "UNASSESSED",
+    negotiationMemory: [],
+    commitmentIds: [],
+    accessibleOrganizationRecordIds: [],
+    pressureByOrganizationId: {},
+    lastDecision: null,
+    autonomyKey: sha256Hex(`${seed.profileScaffold.seed}|${actorId}|autonomy`),
+    commitmentHonorWillingness: deterministicUnit(`${seed.profileScaffold.seed}|${actorId}|honor`),
+    commitmentRenegotiateWillingness: deterministicUnit(`${seed.profileScaffold.seed}|${actorId}|renegotiate`),
+    commitmentBreachWillingness: deterministicUnit(`${seed.profileScaffold.seed}|${actorId}|breach`),
+  };
+};
+
 export const createPoliticalState = (
   structure: GovernmentStructureDescriptor,
   seed: LegislativeRuntimeSeed,
+  activeAssignments: readonly ActiveOfficeAssignmentState[],
 ): PoliticalState => {
-  const organizations = deriveOrganizations(structure, seed);
+  const organizations = deriveOrganizations(structure, seed, activeAssignments);
   const membershipByActor = new Map(
     organizations.flatMap((organization) =>
       organization.memberships.map((membership) => [membership.actorId, { organization, membership }] as const),
     ),
   );
-  const legislativeActors = structure.actors.filter((actor) => actor.role === "LEGISLATIVE");
-  if (membershipByActor.size !== legislativeActors.length) {
+  const legislativeAssignments = currentLegislativeAssignments(structure, activeAssignments);
+  if (membershipByActor.size !== legislativeAssignments.length) {
     throw new Error("Every current legislative actor must have exactly one organization membership.");
   }
-  const actors = legislativeActors.map((actor): PoliticalActorState => {
-    const owned = membershipByActor.get(actor.id);
-    if (owned === undefined) throw new Error(`Political actor ${actor.id} has no membership.`);
-    const evaluations = seed.dimensions.map((dimension): ActorDimensionEvaluation => {
-      const shared = owned.organization.postureByDimension[dimension.id];
-      if (shared === undefined) throw new Error(`Organization posture omits ${dimension.id}.`);
-      const unit = deterministicUnit(`${seed.profileScaffold.seed}|${actor.id}|${dimension.id}`);
-      const individual = Math.max(
-        dimension.minimum,
-        Math.min(
-          dimension.maximum,
-          shared + (unit * 2 - 1) * seed.decision.actorVariationRadius,
-        ),
-      );
-      const preferredValue = blend(
-        shared,
-        individual,
-        seed.decision.organizationBlend.numerator,
-        seed.decision.organizationBlend.denominator,
-      );
-      return {
-        dimensionId: dimension.id,
-        preferredValue,
-        reservationMinimum: Math.max(dimension.minimum, preferredValue - seed.decision.reservationDistance),
-        reservationMaximum: Math.min(dimension.maximum, preferredValue + seed.decision.reservationDistance),
-      };
-    });
-    return {
-      actorId: actor.id,
-      membershipId: owned.membership.id,
-      evaluations,
-      supportPosture: "UNASSESSED",
-      negotiationMemory: [],
-      commitmentIds: [],
-      accessibleOrganizationRecordIds: [],
-      pressureByOrganizationId: {},
-      lastDecision: null,
-      autonomyKey: sha256Hex(`${seed.profileScaffold.seed}|${actor.id}|autonomy`),
-      commitmentHonorWillingness: deterministicUnit(`${seed.profileScaffold.seed}|${actor.id}|honor`),
-      commitmentRenegotiateWillingness: deterministicUnit(`${seed.profileScaffold.seed}|${actor.id}|renegotiate`),
-      commitmentBreachWillingness: deterministicUnit(`${seed.profileScaffold.seed}|${actor.id}|breach`),
-    };
+  const actors = legislativeAssignments.map((assignment): PoliticalActorState => {
+    const owned = membershipByActor.get(assignment.actorId);
+    if (owned === undefined) throw new Error(`Political actor ${assignment.actorId} has no membership.`);
+    const organization = seed.organizations.find((candidate) => candidate.id === owned.organization.id);
+    if (organization === undefined) throw new Error(`Unknown organization ${owned.organization.id}.`);
+    return createPoliticalActorState(assignment.actorId, owned.membership, organization, seed);
   });
   return {
     scaffold: { ...seed.profileScaffold },
@@ -293,6 +317,51 @@ export const createPoliticalState = (
     organizations,
     commitments: [],
   };
+};
+
+export const replacePoliticalOfficeholder = (
+  political: PoliticalState,
+  seed: LegislativeRuntimeSeed,
+  officeId: string,
+  assignmentId: string,
+  actorId: string,
+  proposal: EvaluatedProposalVersion,
+): PoliticalState => {
+  const organization = political.organizations.find((candidate) =>
+    candidate.memberships.some((membership) => membership.officeId === officeId),
+  );
+  const priorMembership = organization?.memberships.find((membership) => membership.officeId === officeId);
+  if (organization === undefined || priorMembership === undefined) {
+    throw new Error("Replacement legislative office has no configured organization membership.");
+  }
+  const configuredOrganization = seed.organizations.find((candidate) => candidate.id === organization.id);
+  if (configuredOrganization === undefined) throw new Error(`Unknown organization ${organization.id}.`);
+  const replacementMembership: OrganizationMembership = {
+    ...priorMembership,
+    assignmentId,
+    actorId,
+  };
+  const organizations = political.organizations.map((candidate) =>
+    candidate.id === organization.id
+      ? {
+          ...candidate,
+          memberships: candidate.memberships.map((membership) =>
+            membership.id === priorMembership.id ? replacementMembership : membership,
+          ),
+        }
+      : candidate,
+  );
+  const incoming = createPoliticalActorState(actorId, replacementMembership, configuredOrganization, seed);
+  return refreshPoliticalSupport({
+    ...political,
+    organizations,
+    actors: [
+      ...political.actors.filter(
+        (actor) => actor.actorId !== priorMembership.actorId && actor.actorId !== actorId,
+      ),
+      incoming,
+    ],
+  }, proposal);
 };
 
 const organizationForActor = (political: PoliticalState, actor: PoliticalActorState) =>
@@ -525,6 +594,42 @@ export interface ActorVoteResolution {
   readonly choice: CanonicalVoteChoice;
   readonly reason: string;
 }
+
+export interface ActorExtendedDebateResolution {
+  readonly actorId: string;
+  readonly choice: "THREATEN" | "DECLINE";
+  readonly statedReason: string;
+}
+
+export const decidePoliticalActorExtendedDebate = (
+  political: PoliticalState,
+  seed: LegislativeRuntimeSeed,
+  actorId: string,
+  proposal: EvaluatedProposalVersion,
+): ActorExtendedDebateResolution => {
+  const actor = political.actors.find((candidate) => candidate.actorId === actorId);
+  if (actor === undefined) throw new Error(`Unknown political actor ${actorId}.`);
+  const breaches = reservationBreaches(actor, proposal).length;
+  const autonomy = deterministicUnit(`${actor.autonomyKey}|${proposal.version}|EXTENDED_DEBATE`);
+  const choice = breaches > 0 && autonomy >= seed.decision.extendedDebateThreatCutoff
+    ? "THREATEN"
+    : "DECLINE";
+  return {
+    actorId,
+    choice,
+    statedReason: choice === "THREATEN" ? "actor-owned reservation supports extended debate" : "actor declined extended debate",
+  };
+};
+
+export const decideExecutiveDeputyTieBreak = (
+  seed: LegislativeRuntimeSeed,
+  actorId: string,
+  proposal: EvaluatedProposalVersion,
+): "YEA" | "NAY" =>
+  deterministicUnit(`${seed.profileScaffold.seed}|${actorId}|${proposal.proposalId}|${proposal.version}|TIE_BREAK`) >=
+    seed.decision.tieBreakerYeaCutoff
+    ? "YEA"
+    : "NAY";
 
 /**
  * Actor-specific decision tree. No projected posture or single support number

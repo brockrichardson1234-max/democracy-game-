@@ -33,6 +33,7 @@ import {
 import type { ParticipationCondition, ProposalTerms, ReportingRequirement } from "../sim/legislature";
 import type { ProposalStatus, LegalAppropriation } from "../sim/proposal";
 import type { RecordedVote } from "../sim/legislative-procedure";
+import { reconcileAdministrationControlBinding } from "./control-binding";
 import {
   availableHousingImplementationSupportUnits,
   type HousingGrantProgramStatus,
@@ -515,19 +516,25 @@ export const reconcileControlBinding = (
   binding: ControlBinding,
   world: WorldState,
 ): ControlBinding => {
-  if (binding.status === "ENDED") return binding;
   const assignment = world.governance.executivePolitical.currentOfficeAssignment;
-  if (
-    assignment.officeId === binding.executiveOfficeId &&
-    assignment.actorId === binding.boundOfficeholderActorId
-  ) {
-    return binding;
-  }
+  const reconciled = reconcileAdministrationControlBinding({
+    id: binding.id,
+    decisionSurface: binding.decisionSurface,
+    executiveOfficeId: binding.executiveOfficeId,
+    boundOfficeholderActorId: binding.boundOfficeholderActorId,
+    status: binding.status,
+    endedAt: binding.endedAtSimulationTime,
+    endReason: binding.endReason,
+  }, {
+    officeId: assignment.officeId,
+    actorId: assignment.actorId,
+    effectiveAt: assignment.effectiveAtSimulationTime,
+  });
   return {
     ...binding,
-    status: "ENDED",
-    endedAtSimulationTime: assignment.effectiveAtSimulationTime,
-    endReason: "BOUND_OFFICEHOLDER_CHANGED",
+    status: reconciled.status,
+    endedAtSimulationTime: reconciled.endedAt,
+    endReason: reconciled.endReason,
   };
 };
 

@@ -29,7 +29,7 @@ const ratio = (
 
 /** All I3 behavior-driving political content participates in the configuration hash. */
 export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   profileScaffold: {
     version: US_V0_PROFILE_SCAFFOLD_VERSION,
     seed: US_V0_PROFILE_SEED,
@@ -124,12 +124,20 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
     maximumTextExchanges: 2,
     maximumAmendmentRoundsPerChamber: 1,
     considerationGateMinimumSignals: {
-      [US_HOUSE_CHAMBER_ID]: 1,
-      [US_SENATE_CHAMBER_ID]: 0,
+      [US_HOUSE_CHAMBER_ID]: 2,
+      [US_SENATE_CHAMBER_ID]: 1,
     },
     noSignatureRule: {
+      ruleClass: "ELAPSED_CALENDAR_DAYS_EXCLUDING_WEEKDAYS",
+      decisionDays: 10,
+      excludedWeekdays: [0],
+      timeZone: "America/New_York",
       enactWhenReturnNotPrevented: true,
       failWhenReturnPrevented: true,
+    },
+    legislatureTermBoundary: {
+      legislatureId: US_CONGRESS_LEGISLATURE_ID,
+      occursAt: "2027-01-03T12:00:00-05:00",
     },
   },
   proposal: {
@@ -145,9 +153,55 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
     authorizationProvisions: [
       "Authorize a bounded housing delivery and recipient-capacity initiative.",
     ],
-    appropriation: {
-      amount: 25_000_000_000,
-      purpose: "Legal budget authority for the enacted housing initiative; not recognized available finance.",
+    legalTerms: {
+      classification: CLASSIFICATION,
+      appropriation: {
+        dimensionId: "appropriation_magnitude",
+        baseDimensionValue: 7,
+        baseAmount: 25_000_000_000,
+        amountPerDimensionPoint: 2_500_000_000,
+        minimumAmount: 7_500_000_000,
+        maximumAmount: 32_500_000_000,
+        purpose: "Legal budget authority for the enacted housing initiative; not recognized available finance.",
+      },
+      policyTerms: [
+        {
+          id: "recipient-flexibility-class",
+          dimensionId: "recipient_flexibility",
+          bands: [
+            { maximumDimensionValue: 3, value: "TIGHT_FEDERAL_SPECIFICATION" },
+            { maximumDimensionValue: 6, value: "BOUNDED_RECIPIENT_DISCRETION" },
+            { maximumDimensionValue: 10, value: "EXPANDED_RECIPIENT_DISCRETION" },
+          ],
+        },
+        {
+          id: "compliance-burden-class",
+          dimensionId: "compliance_burden",
+          bands: [
+            { maximumDimensionValue: 3, value: "STREAMLINED_CORE_ASSURANCE" },
+            { maximumDimensionValue: 6, value: "STANDARD_DOCUMENTED_ASSURANCE" },
+            { maximumDimensionValue: 10, value: "ENHANCED_AUDIT_AND_REPORTING" },
+          ],
+        },
+        {
+          id: "geographic-distribution-rule",
+          dimensionId: "geographic_distribution",
+          bands: [
+            { maximumDimensionValue: 3, value: "FORMULA_NEUTRAL" },
+            { maximumDimensionValue: 6, value: "BALANCED_REGIONAL_ALLOCATION" },
+            { maximumDimensionValue: 10, value: "HIGH_NEED_GEOGRAPHIC_PRIORITY" },
+          ],
+        },
+        {
+          id: "administrative-capacity-support-rule",
+          dimensionId: "administrative_capacity_support",
+          bands: [
+            { maximumDimensionValue: 3, value: "NO_SEPARATE_CAPACITY_SET_ASIDE" },
+            { maximumDimensionValue: 6, value: "LIMITED_TECHNICAL_ASSISTANCE" },
+            { maximumDimensionValue: 10, value: "DEDICATED_CAPACITY_SUPPORT" },
+          ],
+        },
+      ],
     },
   },
   decision: {
@@ -157,6 +211,8 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
     coordinationPressure: 1,
     commitmentHonorCutoff: 0.45,
     breachCutoff: 0.55,
+    extendedDebateThreatCutoff: 0.55,
+    tieBreakerYeaCutoff: 0.5,
   },
   negotiation: {
     maximumMemoryEntriesPerActor: 8,
@@ -181,10 +237,10 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.3.0-i3",
+    configurationVersion: "0.3.1-i3-repair",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.3.0-i3",
-    configurationHash: "d4c88c56d2b51b82bfc4ad8d843ef90673f3d83338c792f7c8bd654c909389be",
+    scenarioVersion: "0.3.1-i3-repair",
+    configurationHash: "09c6fd2c462ad43a298c8a3c2eda89b60b7ae9eadef69ece95b7d6ad1db87b3e",
   },
   capability: "LEGISLATIVE_RUNTIME_SLICE",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },

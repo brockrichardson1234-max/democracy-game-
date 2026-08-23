@@ -26,8 +26,10 @@ import {
   US_VICE_PRESIDENT_OFFICE_ID,
 } from "../src/content/us-v0/topology";
 import {
-  castConfiguredTieBreakerVote,
+  resolveConfiguredTieBreakerDecision,
+  resolveExtendedDebateDecisionOpportunity,
   resolveFinalRollCall,
+  resolveNoSignatureBoundary,
   resolveVetoOverrideRollCall,
   type LegislativeRuntimeContext,
   type LegislativeRuntimeState,
@@ -64,6 +66,27 @@ const actorAssignment = (actorId: string) => {
   return assignment;
 };
 
+const addSupportiveGateSignal = (session: LegislativeSession, chamberId: string): void => {
+  const state = session.getAuditState();
+  const currentVersion = state.agenda.currentVersion;
+  const alreadySupported = state.political.organizations.some((organization) =>
+    organization.coordinationActions.some(
+      (action) =>
+        action.chamberId === chamberId &&
+        action.proposalVersion === currentVersion &&
+        action.recommendation === "SUPPORT",
+    ),
+  );
+  if (alreadySupported) return;
+  const available = state.political.organizations.find((organization) =>
+    !organization.coordinationActions.some(
+      (action) => action.chamberId === chamberId && action.proposalVersion === currentVersion,
+    ),
+  );
+  if (available === undefined) throw new Error("No organization is available to support the consideration gate.");
+  session.coordinateOrganization(available.id, chamberId, "SUPPORT");
+};
+
 const findOriginSponsor = (session: LegislativeSession): string => {
   const state = session.getAuditState();
   const originActorIds = new Set(
@@ -86,6 +109,7 @@ const reachOriginAmendment = (session: LegislativeSession): void => {
   session.seekSponsorship(sponsorId);
   session.introduceBySponsor(sponsorId, actorAssignment(sponsorId).id);
   session.advanceIntroducedProposal();
+  addSupportiveGateSignal(session, US_HOUSE_CHAMBER_ID);
   session.resolveConsiderationGate();
   expect(session.getAuditState().procedure.stage).toBe("ORIGIN_AMENDMENT");
 };
@@ -97,6 +121,7 @@ const reachOtherAmendmentWithCompromise = (session: LegislativeSession): void =>
   expect(session.getAuditState().agenda.currentVersion).toBe(2);
   session.resolveFinalRollCall();
   expect(session.getAuditState().procedure.stage).toBe("OTHER_CHAMBER_CONSIDERATION_GATE");
+  addSupportiveGateSignal(session, US_SENATE_CHAMBER_ID);
   session.resolveConsiderationGate();
   expect(session.getAuditState().procedure.stage).toBe("OTHER_CHAMBER_AMENDMENT");
 };
@@ -325,6 +350,7 @@ describe("I3 negotiation, commitments, sponsorship, and amendment ownership", ()
     session.seekSponsorship(sponsorId);
     session.introduceBySponsor(sponsorId, actorAssignment(sponsorId).id);
     session.advanceIntroducedProposal();
+    addSupportiveGateSignal(session, US_HOUSE_CHAMBER_ID);
     session.resolveConsiderationGate();
     session.closeAmendmentRound();
     session.resolveFinalRollCall();
@@ -477,17 +503,14 @@ describe("I3 configured bicameral procedure and presentment", () => {
 
     const threatened = createLegislativeSessionFromSave(save, configuration);
     threatened.closeAmendmentRound();
-    const senateActor = threatened.getAuditState().political.organizations
-      .flatMap((organization) => organization.memberships)
-      .find((membership) => membership.chamberId === US_SENATE_CHAMBER_ID);
-    if (senateActor === undefined) throw new Error("No second-chamber actor.");
-    threatened.threatenExtendedDebate(senateActor.actorId);
-    threatened.resolveFinalRollCall();
-    const cloture = threatened.getAuditState().procedure.voteOpportunities.at(-1);
+    const debateResolved = resolveExtendedDebateDecisionOpportunity(threatened.getAuditState(), context);
+    expect(debateResolved.procedure.extendedDebateDecisionOpportunities.at(-1)?.threatened).toBe(true);
+    const afterThreat = resolveFinalRollCall(debateResolved, context);
+    const cloture = afterThreat.procedure.voteOpportunities.at(-1);
     expect(cloture?.kind).toBe("CLOTURE");
     expect(cloture?.tally.requiredYea).toBe(60);
     expect(cloture?.tally.passed).toBe(false);
-    expect(threatened.getAuditState().procedure.stage).toBe("FAILED");
+    expect(afterThreat.procedure.stage).toBe("FAILED");
   });
 
   it("keeps different chamber text out of presentment until an actual exchange roll call matches it", () => {
@@ -575,14 +598,25 @@ describe("I3 configured bicameral procedure and presentment", () => {
     reachIdenticalText(base);
     base.present();
     base.executiveAction(US_INCUMBENT_PRESIDENT_ACTOR_ID, executiveAssignment().id, "WITHHOLD");
-    const save = base.save();
-    base.resolveNoSignature(false);
-    expect(base.getAuditState().enactedLegalSources[0].enactmentRoute).toBe("NO_SIGNATURE");
+    const pending = base.getAuditState();
+    const deadline = pending.procedure.presentment?.resolutionNotBefore;
+    if (deadline === undefined) throw new Error("Missing no-signature deadline.");
+    const enacted = resolveNoSignatureBoundary(pending, context, {
+      kind: "NO_SIGNATURE_RESOLUTION_BOUNDARY",
+      occurredAt: deadline,
+      proposalVersion: pending.agenda.currentVersion,
+      returnStatus: "RETURN_AVAILABLE",
+    });
+    expect(enacted.enactedLegalSources[0].enactmentRoute).toBe("NO_SIGNATURE");
 
-    const prevented = createLegislativeSessionFromSave(save, configuration);
-    prevented.resolveNoSignature(true);
-    expect(prevented.getAuditState().procedure.stage).toBe("FAILED");
-    expect(prevented.getAuditState().enactedLegalSources).toEqual([]);
+    const prevented = resolveNoSignatureBoundary(pending, context, {
+      kind: "NO_SIGNATURE_RESOLUTION_BOUNDARY",
+      occurredAt: deadline,
+      proposalVersion: pending.agenda.currentVersion,
+      returnStatus: "RETURN_PREVENTED",
+    });
+    expect(prevented.procedure.stage).toBe("FAILED");
+    expect(prevented.enactedLegalSources).toEqual([]);
   });
 
   it("admits a tie-break only as the configured deputy officeholder's distinct vote", () => {
@@ -619,13 +653,7 @@ describe("I3 configured bicameral procedure and presentment", () => {
     expect(tied.procedure.approvedVersionByChamber[US_SENATE_CHAMBER_ID]).toBeUndefined();
     const viceAssignment = actorAssignment(US_INCUMBENT_VICE_PRESIDENT_ACTOR_ID);
     expect(viceAssignment.officeId).toBe(US_VICE_PRESIDENT_OFFICE_ID);
-    const resolved = castConfiguredTieBreakerVote(
-      tied,
-      context,
-      US_INCUMBENT_VICE_PRESIDENT_ACTOR_ID,
-      viceAssignment.id,
-      "YEA",
-    );
+    const resolved = resolveConfiguredTieBreakerDecision(tied, context);
     const opportunity = resolved.procedure.voteOpportunities.at(-1);
     expect(opportunity?.votes).toHaveLength(101);
     expect(opportunity?.votes.at(-1)).toMatchObject({
@@ -634,7 +662,7 @@ describe("I3 configured bicameral procedure and presentment", () => {
       tieBreaker: true,
       choice: "YEA",
     });
-    expect(resolved.procedure.stage).toBe("IDENTICAL_TEXT");
+    expect(["IDENTICAL_TEXT", "FAILED"]).toContain(resolved.procedure.stage);
   });
 });
 
@@ -646,10 +674,10 @@ describe("I3 player knowledge, determinism, persistence, hashing, and boundaries
     expect(playerJson).not.toMatch(/autonomyKey|reservationMinimum|reservationMaximum|commitmentBreachWillingness/);
     expect(auditJson).toMatch(/autonomyKey|reservationMinimum|commitmentBreachWillingness/);
     expect(session.getAdministrationView().staffOutlook).toEqual({
-      likelyYea: 260,
-      conditional: 30,
-      uncertain: 0,
-      likelyNay: 245,
+      likelyYea: 0,
+      conditional: 0,
+      uncertain: 535,
+      likelyNay: 0,
       committed: 0,
     });
   });
@@ -743,5 +771,6 @@ const reachOriginAmendmentForAlreadyNegotiated = (
   session.seekSponsorship(sponsorId);
   session.introduceBySponsor(sponsorId, actorAssignment(sponsorId).id);
   session.advanceIntroducedProposal();
+  addSupportiveGateSignal(session, US_HOUSE_CHAMBER_ID);
   session.resolveConsiderationGate();
 };

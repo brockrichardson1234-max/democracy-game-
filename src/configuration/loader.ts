@@ -127,10 +127,72 @@ const validateLegislativeRuntimeSeed = (
     Object.keys(seed.proposal.initialDimensions).length !== dimensionIds.size ||
     Object.keys(seed.proposal.initialDimensions).some((id) => !dimensionIds.has(id))
   ) throw new Error("Initial political proposal must define every configured dimension exactly once.");
+  const legalTerms = seed.proposal.legalTerms;
+  const appropriationDimension = seed.dimensions.find(
+    (dimension) => dimension.id === legalTerms.appropriation.dimensionId,
+  );
+  if (appropriationDimension === undefined) throw new Error("Operative appropriation references an unknown proposal dimension.");
+  for (const amount of [
+    legalTerms.appropriation.baseDimensionValue,
+    legalTerms.appropriation.baseAmount,
+    legalTerms.appropriation.amountPerDimensionPoint,
+    legalTerms.appropriation.minimumAmount,
+    legalTerms.appropriation.maximumAmount,
+  ]) {
+    if (!Number.isFinite(amount)) throw new Error("Operative appropriation mapping must contain finite values.");
+  }
+  if (
+    legalTerms.appropriation.baseDimensionValue < appropriationDimension.minimum ||
+    legalTerms.appropriation.baseDimensionValue > appropriationDimension.maximum ||
+    legalTerms.appropriation.minimumAmount < 0 ||
+    legalTerms.appropriation.minimumAmount > legalTerms.appropriation.maximumAmount
+  ) throw new Error("Operative appropriation mapping has invalid bounds.");
+  requireUnique(legalTerms.policyTerms.map((term) => term.id), "operative policy terms");
+  requireUnique(legalTerms.policyTerms.map((term) => term.dimensionId), "operative policy-term dimensions");
+  for (const term of legalTerms.policyTerms) {
+    const dimension = seed.dimensions.find((candidate) => candidate.id === term.dimensionId);
+    if (dimension === undefined) throw new Error(`Operative policy term ${term.id} references an unknown dimension.`);
+    if (term.bands.length === 0) throw new Error(`Operative policy term ${term.id} requires configured bands.`);
+    let priorMaximum = Number.NEGATIVE_INFINITY;
+    for (const band of term.bands) {
+      if (!Number.isFinite(band.maximumDimensionValue) || band.maximumDimensionValue <= priorMaximum) {
+        throw new Error(`Operative policy term ${term.id} bands must be strictly ordered.`);
+      }
+      if (typeof band.value === "string") requireNonempty(band.value, `${term.id} band value`);
+      else if (!Number.isFinite(band.value)) throw new Error(`Operative policy term ${term.id} has a non-finite value.`);
+      priorMaximum = band.maximumDimensionValue;
+    }
+    if (priorMaximum < dimension.maximum) throw new Error(`Operative policy term ${term.id} does not cover its dimension range.`);
+  }
+  const mappedDimensions = new Set([
+    legalTerms.appropriation.dimensionId,
+    ...legalTerms.policyTerms.map((term) => term.dimensionId),
+  ]);
+  if (mappedDimensions.size !== dimensionIds.size || [...dimensionIds].some((id) => !mappedDimensions.has(id))) {
+    throw new Error("Every political dimension must map to exactly one operative legal term.");
+  }
   validateRatio(seed.decision.organizationBlend, "political organization blend");
   if (seed.procedure.maximumTextExchanges < 0 || seed.procedure.maximumAmendmentRoundsPerChamber < 0) {
     throw new Error("Political procedure limits must be nonnegative.");
   }
+  for (const rule of seed.procedure.chamberRules) {
+    const requiredSignals = seed.procedure.considerationGateMinimumSignals[rule.chamberId];
+    if (!Number.isInteger(requiredSignals) || requiredSignals < 0) {
+      throw new Error(`Consideration gate ${rule.chamberId} requires a nonnegative integer signal threshold.`);
+    }
+  }
+  if (
+    seed.procedure.noSignatureRule.ruleClass !== "ELAPSED_CALENDAR_DAYS_EXCLUDING_WEEKDAYS" ||
+    !Number.isInteger(seed.procedure.noSignatureRule.decisionDays) ||
+    seed.procedure.noSignatureRule.decisionDays <= 0 ||
+    seed.procedure.noSignatureRule.excludedWeekdays.some((weekday) => !Number.isInteger(weekday) || weekday < 0 || weekday > 6) ||
+    new Set(seed.procedure.noSignatureRule.excludedWeekdays).size !== seed.procedure.noSignatureRule.excludedWeekdays.length
+  ) throw new Error("No-signature rule has invalid calendar configuration.");
+  requireNonempty(seed.procedure.noSignatureRule.timeZone, "no-signature time zone");
+  if (
+    seed.procedure.legislatureTermBoundary.legislatureId !== seed.procedure.legislatureId ||
+    !Number.isFinite(Date.parse(seed.procedure.legislatureTermBoundary.occursAt))
+  ) throw new Error("Legislature term boundary must identify the configured legislature and valid instant.");
   const executiveOffice = configuration.structure.offices.find(
     (office) => office.id === seed.executive.headOfficeId && office.kind === "EXECUTIVE_HEAD",
   );
@@ -147,9 +209,15 @@ const validateLegislativeRuntimeSeed = (
     seed.decision.coordinationPressure,
     seed.decision.commitmentHonorCutoff,
     seed.decision.breachCutoff,
+    seed.decision.extendedDebateThreatCutoff,
+    seed.decision.tieBreakerYeaCutoff,
   ]) {
     if (!Number.isFinite(value) || value < 0) throw new Error("Political decision parameters must be finite and nonnegative.");
   }
+  if (
+    seed.decision.extendedDebateThreatCutoff > 1 ||
+    seed.decision.tieBreakerYeaCutoff > 1
+  ) throw new Error("Political decision cutoffs must not exceed one.");
 };
 
 type TransitionPosition = Pick<ScheduledTransitionDescriptor, "id" | "at" | "order">;
