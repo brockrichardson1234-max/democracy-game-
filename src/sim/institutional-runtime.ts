@@ -48,6 +48,30 @@ export interface StaticSelectionTopology {
   readonly sourceArtifactId: string;
 }
 
+export interface TermPopulationSignalEntry {
+  readonly cohortId: string;
+  readonly residenceGeographyId: string;
+  readonly eligibleProxyWeight: number;
+  readonly canonicalPreference: string;
+  readonly turnoutDisposition: string;
+  readonly effectiveTicketId: string | null;
+  readonly turnoutNumerator: number;
+  readonly turnoutDenominator: number;
+  readonly participatingWeight: number;
+  readonly readinessClassification: "FALLBACK_SCAFFOLD" | "POPULATION_STATE";
+}
+
+export interface TermPopulationSignalSnapshot {
+  readonly id: string;
+  readonly cycleId: string;
+  readonly stateGeographyId: string;
+  readonly asOf: string;
+  readonly signalVersion: string;
+  readonly entries: readonly TermPopulationSignalEntry[];
+  readonly signal: number;
+  readonly causalInputHash: string;
+}
+
 export interface TermResultRecord {
   readonly officeId: string;
   readonly stateGeographyId: string;
@@ -56,6 +80,7 @@ export interface TermResultRecord {
   readonly outgoingActorId: string | null;
   readonly successorActorId: string;
   readonly successorAssignmentId: string;
+  readonly populationSignalSnapshotId: string;
   readonly populationSignal: number;
   readonly deterministicIncumbencySignal: number;
   readonly causalInputHash: string;
@@ -66,6 +91,7 @@ export interface TermCycleRuntimeState {
   readonly termLabel: string;
   readonly frozenAt: string;
   readonly status: "FROZEN" | "PROCEDURE_EXPIRED" | "OUTGOING_ENDED" | "SUCCESSORS_BEGUN" | "AFFILIATIONS_REBUILT" | "COMPLETE";
+  readonly populationSignals: readonly TermPopulationSignalSnapshot[];
   readonly results: readonly TermResultRecord[];
   readonly endedAssignments: readonly ActiveOfficeAssignmentState[];
   readonly begunAssignments: readonly ActiveOfficeAssignmentState[];
@@ -250,6 +276,20 @@ const ticketById = (
   return ticket;
 };
 
+const assertSelectionActorClosure = (
+  structure: GovernmentStructureDescriptor,
+  selection: IntegratedSelectionConfiguration,
+): void => {
+  for (const ticket of selection.tickets) {
+    for (const actorId of [ticket.headCandidate.actorId, ticket.deputyCandidate.actorId]) {
+      const matches = structure.actors.filter((actor) => actor.id === actorId);
+      if (matches.length !== 1 || matches[0].role !== "EXECUTIVE") {
+        throw new Error(`Configured selection candidate references non-canonical actor ${actorId}.`);
+      }
+    }
+  }
+};
+
 const fallbackTicket = (
   selection: IntegratedSelectionConfiguration,
   cohortId: string,
@@ -290,12 +330,31 @@ const resolvedTurnout = (
   throw new Error(`Resolved Population turnout disposition ${disposition} lacks a configured participation weight.`);
 };
 
+const signalFromTermEntries = (
+  entries: readonly TermPopulationSignalEntry[],
+  selection: IntegratedSelectionConfiguration,
+): number => {
+  const denominator = entries.reduce((total, entry) => total + entry.participatingWeight, 0);
+  const signed = entries.reduce((total, entry) => total + (
+    entry.effectiveTicketId === selection.transfer.playerAlignedTicketId
+      ? entry.participatingWeight
+      : entry.effectiveTicketId === null
+        ? 0
+        : -entry.participatingWeight
+  ), 0);
+  return denominator === 0 ? 0 : signed / denominator;
+};
+
 const populationSignalForGeography = (
   population: WeightedPopulationState,
   selection: IntegratedSelectionConfiguration,
   geographyId: string,
   causalSuffix: string,
-): { readonly signal: number; readonly causalInputHash: string } => {
+): {
+  readonly signal: number;
+  readonly causalInputHash: string;
+  readonly entries: readonly TermPopulationSignalEntry[];
+} => {
   const entries = population.cohorts
     .filter((cohort) => cohort.residenceGeographyId === geographyId)
     .sort((left, right) => left.id.localeCompare(right.id))
@@ -305,27 +364,24 @@ const populationSignalForGeography = (
       const participating = Math.floor(
         cohort.eligibilityProjection.allocatedWeight * turnout.numerator / turnout.denominator,
       );
-      const signed = preference.ticketId === selection.transfer.playerAlignedTicketId
-        ? participating
-        : preference.ticketId === null
-          ? 0
-          : -participating;
       return {
         cohortId: cohort.id,
-        eligible: cohort.eligibilityProjection.allocatedWeight,
-        preference: cohort.politicalState.candidatePreference,
-        turnout: cohort.politicalState.turnoutDisposition,
-        ticketId: preference.ticketId,
-        participating,
-        signed,
-      };
+        residenceGeographyId: cohort.residenceGeographyId,
+        eligibleProxyWeight: cohort.eligibilityProjection.allocatedWeight,
+        canonicalPreference: cohort.politicalState.candidatePreference,
+        turnoutDisposition: cohort.politicalState.turnoutDisposition,
+        effectiveTicketId: preference.ticketId,
+        turnoutNumerator: turnout.numerator,
+        turnoutDenominator: turnout.denominator,
+        participatingWeight: participating,
+        readinessClassification: preference.fallback || turnout.fallback ? "FALLBACK_SCAFFOLD" as const : "POPULATION_STATE" as const,
+      } satisfies TermPopulationSignalEntry;
     });
   if (entries.length === 0) throw new Error(`Configured institutional process lacks Population for ${geographyId}.`);
-  const denominator = entries.reduce((total, entry) => total + entry.participating, 0);
-  const signed = entries.reduce((total, entry) => total + entry.signed, 0);
   return {
-    signal: denominator === 0 ? 0 : signed / denominator,
+    signal: signalFromTermEntries(entries, selection),
     causalInputHash: sha256Hex(JSON.stringify(entries)),
+    entries,
   };
 };
 
@@ -412,16 +468,35 @@ const snapshotTermResults = (
     throw new Error("Assignment-cycle result snapshot cannot occur twice.");
   }
   const cycle = configuredCycle(context.temporal, boundary.ownerId);
-  const results = cycle.officeIds.map((officeId): TermResultRecord => {
-    const outgoing = legislative.activeAssignments.find((assignment) => assignment.officeId === officeId) ?? null;
-    const stateGeographyId = cycle.stateGeographyByOfficeId[officeId];
-    if (stateGeographyId === undefined) throw new Error(`Assignment cycle lacks Population geography for ${officeId}.`);
+  const stateGeographyIds = [...new Set(cycle.officeIds.map((officeId) => {
+    const geographyId = cycle.stateGeographyByOfficeId[officeId];
+    if (geographyId === undefined) throw new Error(`Assignment cycle ${cycle.id} lacks a Population geography.`);
+    return geographyId;
+  }))].sort();
+  const populationSignals = stateGeographyIds.map((stateGeographyId): TermPopulationSignalSnapshot => {
     const population = populationSignalForGeography(
       context.population,
       context.temporal.selection,
       stateGeographyId,
-      `${cycle.stableKey}|${officeId}`,
+      `${cycle.populationSignalVersion}|${cycle.stableKey}|${stateGeographyId}|ROLLOVER_POPULATION`,
     );
+    return {
+      id: `${cycle.populationSignalIdPrefix}${sha256Hex(`${cycle.id}|${stateGeographyId}`).slice(0, 20)}`,
+      cycleId: cycle.id,
+      stateGeographyId,
+      asOf: boundary.at,
+      signalVersion: cycle.populationSignalVersion,
+      entries: population.entries,
+      signal: population.signal,
+      causalInputHash: population.causalInputHash,
+    };
+  });
+  const results = cycle.officeIds.map((officeId): TermResultRecord => {
+    const outgoing = legislative.activeAssignments.find((assignment) => assignment.officeId === officeId) ?? null;
+    const stateGeographyId = cycle.stateGeographyByOfficeId[officeId];
+    if (stateGeographyId === undefined) throw new Error(`Assignment cycle lacks Population geography for ${officeId}.`);
+    const population = populationSignals.find((signal) => signal.stateGeographyId === stateGeographyId);
+    if (population === undefined) throw new Error(`Assignment cycle lacks a frozen Population signal for ${officeId}.`);
     const incumbentActorState = outgoing === null
       ? null
       : legislative.political.actors.find((actor) => actor.actorId === outgoing.actorId) ?? null;
@@ -467,6 +542,7 @@ const snapshotTermResults = (
       outgoingActorId: outgoing?.actorId ?? null,
       successorActorId,
       successorAssignmentId: `${cycle.assignmentIdPrefix}${sha256Hex(`${digest}|assignment`).slice(0, 24)}`,
+      populationSignalSnapshotId: population.id,
       populationSignal: population.signal,
       deterministicIncumbencySignal: incumbency,
       causalInputHash: digest,
@@ -477,6 +553,7 @@ const snapshotTermResults = (
     termLabel: cycle.termLabel,
     frozenAt: boundary.at,
     status: "FROZEN",
+    populationSignals,
     results,
     endedAssignments: [],
     begunAssignments: [],
@@ -890,7 +967,7 @@ const transferAuthority = (
     officeId: entitlement.officeId,
     actorId: entitlement.entitledActorId,
     effectiveFrom: boundary.at,
-    effectiveUntil: null,
+    effectiveUntil: context.temporal.selection.transfer.successorTermEndsAt,
     classification: context.temporal.selection.classification,
   }));
   const activeAssignments = [
@@ -903,7 +980,7 @@ const transferAuthority = (
     headActorId: ticket.headCandidate.actorId,
     deputyActorId: ticket.deputyCandidate.actorId,
     effectiveFrom: boundary.at,
-    effectiveUntil: null,
+    effectiveUntil: context.temporal.selection.transfer.successorTermEndsAt,
     sourceDeclarationId: declaration.id,
     classification: context.temporal.selection.classification,
   };
@@ -927,6 +1004,7 @@ export const applyInstitutionalBoundary = (
   context: InstitutionalTransitionContext,
   boundary: InstitutionalBoundaryConfiguration,
 ): InstitutionalTransitionResult => {
+  assertSelectionActorClosure(context.structure, context.temporal.selection);
   if (institutional.occurrences.some((occurrence) => occurrence.boundaryId === boundary.id)) {
     throw new Error(`Institutional boundary ${boundary.id} has already occurred.`);
   }
@@ -968,7 +1046,9 @@ export const assertInstitutionalRuntimeState = (
   state: InstitutionalRuntimeState,
   temporal: IntegratedTemporalConfiguration,
   topology: StaticSelectionTopology,
+  structure: GovernmentStructureDescriptor,
 ): void => {
+  assertSelectionActorClosure(structure, temporal.selection);
   if (
     state.schemaVersion !== temporal.schemaVersion ||
     state.scheduleVersion !== temporal.scheduleVersion ||
@@ -989,6 +1069,9 @@ export const assertInstitutionalRuntimeState = (
   }
   for (const cycle of state.termCycles) {
     const configured = temporal.assignmentCycles.find((candidate) => candidate.id === cycle.cycleId);
+    const expectedSignalGeographies = configured === undefined
+      ? []
+      : [...new Set(configured.officeIds.map((officeId) => configured.stateGeographyByOfficeId[officeId]))].sort();
     if (
       configured === undefined ||
       cycle.termLabel !== configured.termLabel ||
@@ -998,8 +1081,60 @@ export const assertInstitutionalRuntimeState = (
       cycle.results.some((result) => result.stateGeographyId !== configured.stateGeographyByOfficeId[result.officeId]) ||
       cycle.results.some((result) => result.successorAssignmentId.trim().length === 0 || result.causalInputHash.length !== 64) ||
       cycle.results.some((result) => result.outcome === "RETAIN" && result.successorActorId !== result.outgoingActorId) ||
-      cycle.results.some((result) => result.outcome === "REPLACE" && result.successorActorId === result.outgoingActorId)
+      cycle.results.some((result) => result.outcome === "REPLACE" && result.successorActorId === result.outgoingActorId) ||
+      cycle.populationSignals.length !== expectedSignalGeographies.length ||
+      new Set(cycle.populationSignals.map((signal) => signal.id)).size !== cycle.populationSignals.length ||
+      new Set(cycle.populationSignals.map((signal) => signal.stateGeographyId)).size !== cycle.populationSignals.length
     ) throw new Error(`Institutional assignment cycle ${cycle.cycleId} contradicts its configured authority.`);
+    for (const signal of cycle.populationSignals) {
+      const expectedId = `${configured.populationSignalIdPrefix}${sha256Hex(`${configured.id}|${signal.stateGeographyId}`).slice(0, 20)}`;
+      const signalCausalSuffix =
+        `${configured.populationSignalVersion}|${configured.stableKey}|${signal.stateGeographyId}|ROLLOVER_POPULATION`;
+      const invalidEntries = signal.entries.some((entry) => {
+        const expectedPreference = resolvedTicket(
+          temporal.selection,
+          entry.cohortId,
+          entry.canonicalPreference,
+          signalCausalSuffix,
+        );
+        const expectedTurnout = resolvedTurnout(temporal.selection, entry.turnoutDisposition);
+        return (
+          entry.residenceGeographyId !== signal.stateGeographyId ||
+          !Number.isSafeInteger(entry.eligibleProxyWeight) || entry.eligibleProxyWeight < 0 ||
+          !Number.isSafeInteger(entry.participatingWeight) || entry.participatingWeight < 0 ||
+          !Number.isSafeInteger(entry.turnoutNumerator) || entry.turnoutNumerator < 0 ||
+          !Number.isSafeInteger(entry.turnoutDenominator) || entry.turnoutDenominator <= 0 ||
+          entry.effectiveTicketId !== expectedPreference.ticketId ||
+          entry.turnoutNumerator !== expectedTurnout.numerator ||
+          entry.turnoutDenominator !== expectedTurnout.denominator ||
+          entry.readinessClassification !== (
+            expectedPreference.fallback || expectedTurnout.fallback ? "FALLBACK_SCAFFOLD" : "POPULATION_STATE"
+          ) ||
+          entry.participatingWeight !== Math.floor(
+            entry.eligibleProxyWeight * entry.turnoutNumerator / entry.turnoutDenominator
+          )
+        );
+      });
+      if (
+        !expectedSignalGeographies.includes(signal.stateGeographyId) ||
+        signal.id !== expectedId ||
+        signal.cycleId !== configured.id ||
+        signal.asOf !== cycle.frozenAt ||
+        signal.signalVersion !== configured.populationSignalVersion ||
+        signal.entries.length === 0 ||
+        new Set(signal.entries.map((entry) => entry.cohortId)).size !== signal.entries.length ||
+        invalidEntries ||
+        signal.causalInputHash !== sha256Hex(JSON.stringify(signal.entries)) ||
+        signal.signal !== signalFromTermEntries(signal.entries, temporal.selection)
+      ) throw new Error(`Institutional rollover Population signal ${signal.id} is invalid.`);
+    }
+    for (const result of cycle.results) {
+      const signal = cycle.populationSignals.find((candidate) => candidate.id === result.populationSignalSnapshotId);
+      if (
+        signal?.stateGeographyId !== result.stateGeographyId ||
+        signal.signal !== result.populationSignal
+      ) throw new Error(`Institutional rollover result ${result.officeId} lacks its coherent Population signal.`);
+    }
   }
   const latestCompleteCycle = [...state.termCycles]
     .filter((cycle) => cycle.status === "COMPLETE")
@@ -1097,6 +1232,10 @@ export const assertInstitutionalRuntimeState = (
   }
   if (state.selection.declaration !== null) {
     const counted = declareCountableCertificates(state.selection.certificates);
+    const declaredTicket = temporal.selection.tickets.find((ticket) =>
+      ticket.id === state.selection.declaration!.winningTicketId &&
+      ticket.headCandidate.actorId === counted.winningHeadActorId &&
+      ticket.deputyCandidate.actorId === counted.winningDeputyActorId);
     if (
       counted.headDenominator !== state.selection.declaration.headDenominator ||
       counted.deputyDenominator !== state.selection.declaration.deputyDenominator ||
@@ -1105,16 +1244,19 @@ export const assertInstitutionalRuntimeState = (
       counted.winningDeputyActorId !== state.selection.declaration.winningDeputyActorId ||
       JSON.stringify(counted.headTallies) !== JSON.stringify(state.selection.declaration.headTallies) ||
       JSON.stringify(counted.deputyTallies) !== JSON.stringify(state.selection.declaration.deputyTallies) ||
-      !temporal.selection.tickets.some((ticket) =>
-        ticket.id === state.selection.declaration!.winningTicketId &&
-        ticket.headCandidate.actorId === counted.winningHeadActorId &&
-        ticket.deputyCandidate.actorId === counted.winningDeputyActorId)
+      declaredTicket === undefined
     ) throw new Error("Institutional declaration contradicts countable certificates.");
+    const expectedEntitlements = declaredTicket === undefined ? [] : [
+      { officeId: temporal.selection.transfer.headOfficeId, actorId: declaredTicket.headCandidate.actorId },
+      { officeId: temporal.selection.transfer.deputyOfficeId, actorId: declaredTicket.deputyCandidate.actorId },
+    ];
     if (
       state.selection.entitlements.length !== 2 ||
       state.selection.entitlements.some((entitlement) =>
         entitlement.sourceDeclarationId !== state.selection.declaration!.id ||
-        entitlement.scheduledTransferAt !== temporal.selection.transfer.scheduledAt)
+        entitlement.scheduledTransferAt !== temporal.selection.transfer.scheduledAt ||
+        !expectedEntitlements.some((expected) =>
+          expected.officeId === entitlement.officeId && expected.actorId === entitlement.entitledActorId))
     ) throw new Error("Institutional successor entitlements contradict the declaration.");
   }
 };

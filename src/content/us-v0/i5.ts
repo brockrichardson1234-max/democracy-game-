@@ -1,6 +1,8 @@
 import { sha256Hex } from "../../configuration/sha256";
 import type {
+  ActorIdentityDescriptor,
   AssignmentCycleConfiguration,
+  GovernmentStructureDescriptor,
   InstitutionalBoundaryConfiguration,
   IntegratedTemporalConfiguration,
   ScaffoldClassification,
@@ -16,6 +18,7 @@ import {
 
 export const US_V0_I5_SCHEDULE_VERSION = "us-v0-institutional-calendar-1";
 export const US_V0_I5_ROLLOVER_VERSION = "us-v0-congressional-rollover-1";
+export const US_V0_I5_ROLLOVER_POPULATION_SIGNAL_VERSION = "us-v0-rollover-population-signal-1";
 export const US_V0_I5_ELECTION_SCAFFOLD_VERSION = "us-v0-election-readiness-1";
 export const US_V0_PLAYER_TICKET_ID = "us.selection.ticket.player-aligned-2028";
 export const US_V0_OPPOSITION_TICKET_ID = "us.selection.ticket.opposition-2028";
@@ -29,23 +32,45 @@ export const US_V0_2028_DELEGATE_MEETING = "2028-12-19T12:00:00-05:00";
 export const US_V0_2029_TERM_BOUNDARY = "2029-01-03T12:00:00-05:00";
 export const US_V0_2029_DECLARATION = "2029-01-06T13:00:00-05:00";
 export const US_V0_2029_TRANSFER = "2029-01-20T12:00:00-05:00";
+export const US_V0_2033_EXECUTIVE_TERM_END = "2033-01-20T12:00:00-05:00";
 
 const CLASSIFICATION: ScaffoldClassification =
   "APPROXIMATED_NON_HISTORICAL_SIMULATION_SCAFFOLD";
 
+export const US_V0_I5_OPPOSITION_ACTORS: readonly ActorIdentityDescriptor[] = [
+  {
+    id: US_V0_OPPOSITION_PRESIDENT_ACTOR_ID,
+    label: "Anonymous opposition presidential candidate scaffold",
+    role: "EXECUTIVE",
+    classification: CLASSIFICATION,
+  },
+  {
+    id: US_V0_OPPOSITION_VICE_PRESIDENT_ACTOR_ID,
+    label: "Anonymous opposition vice-presidential candidate scaffold",
+    role: "EXECUTIVE",
+    classification: CLASSIFICATION,
+  },
+];
+
+/** I5 deepens the actor root without changing the accepted I4 structure export. */
+export const US_V0_I5_STRUCTURE: GovernmentStructureDescriptor = {
+  ...US_V0_I4_STRUCTURE,
+  actors: [...US_V0_I4_STRUCTURE.actors, ...US_V0_I5_OPPOSITION_ACTORS],
+};
+
 const stateGeographyForOffice = (officeId: string): string => {
-  const office = US_V0_I4_STRUCTURE.offices.find((candidate) => candidate.id === officeId);
+  const office = US_V0_I5_STRUCTURE.offices.find((candidate) => candidate.id === officeId);
   if (office?.constituency === null || office?.constituency === undefined) {
     throw new Error(`I5 assignment cycle office ${officeId} lacks a configured constituency.`);
   }
   if (office.constituency.kind === "GEOGRAPHY") {
-    const geography = US_V0_I4_STRUCTURE.geographies.find((candidate) => candidate.id === office.constituency?.id);
+    const geography = US_V0_I5_STRUCTURE.geographies.find((candidate) => candidate.id === office.constituency?.id);
     if (geography?.parentGeographyId === null || geography?.parentGeographyId === undefined) {
       throw new Error(`I5 assignment cycle office ${officeId} lacks state Geography nesting.`);
     }
     return geography.parentGeographyId;
   }
-  const jurisdiction = US_V0_I4_STRUCTURE.jurisdictions.find(
+  const jurisdiction = US_V0_I5_STRUCTURE.jurisdictions.find(
     (candidate) => candidate.id === office.constituency?.id,
   );
   const fips = jurisdiction?.externalIdentifiers.find((identifier) => identifier.scheme === "CENSUS_STATEFP")?.value;
@@ -53,7 +78,7 @@ const stateGeographyForOffice = (officeId: string): string => {
   return `us.geography.state.${fips}`;
 };
 
-const houseOfficeIds = US_V0_I4_STRUCTURE.offices
+const houseOfficeIds = US_V0_I5_STRUCTURE.offices
   .filter((office) => office.id.startsWith("us.office.house."))
   .map((office) => office.id)
   .sort();
@@ -66,7 +91,7 @@ const cycle = (
   houseNextBoundary: string,
   senateNextBoundary: string,
 ): AssignmentCycleConfiguration => {
-  const senateOfficeIds = US_V0_I4_STRUCTURE.offices
+  const senateOfficeIds = US_V0_I5_STRUCTURE.offices
     .filter((office) => office.id.startsWith("us.office.senate.") && office.term.ordinaryBoundaryAt === senateBoundary)
     .map((office) => office.id)
     .sort();
@@ -76,6 +101,8 @@ const cycle = (
     termLabel,
     classification: CLASSIFICATION,
     scaffoldVersion: US_V0_I5_ROLLOVER_VERSION,
+    populationSignalVersion: US_V0_I5_ROLLOVER_POPULATION_SIGNAL_VERSION,
+    populationSignalIdPrefix: `us.term-population-signal.${termLabel}.`,
     stableKey: `${US_V0_I5_ROLLOVER_VERSION}|${id}|${at}`,
     officeIds,
     stateGeographyByOfficeId: Object.fromEntries(officeIds.map((officeId) => [officeId, stateGeographyForOffice(officeId)])),
@@ -133,7 +160,7 @@ const boundaries: readonly InstitutionalBoundaryConfiguration[] = [
   { id: `${selectionId}.transfer`, at: US_V0_2029_TRANSFER, phase: 0, order: 0, stableKey: `${selectionId}:transfer`, kind: "AUTHORITY_TRANSFER", ownerId: selectionId },
 ];
 
-const stateGeographyIds = US_V0_I4_STRUCTURE.geographies
+const stateGeographyIds = US_V0_I5_STRUCTURE.geographies
   .filter((geography) => geography.kind === "ADMINISTRATIVE_AREA")
   .map((geography) => geography.id)
   .sort();
@@ -196,6 +223,7 @@ const unhashedTemporalPayload = {
       headOfficeId: US_PRESIDENT_OFFICE_ID,
       deputyOfficeId: US_VICE_PRESIDENT_OFFICE_ID,
       scheduledAt: US_V0_2029_TRANSFER,
+      successorTermEndsAt: US_V0_2033_EXECUTIVE_TERM_END,
       administrationIdPrefix: "us.administration.term-2029.",
       assignmentIdPrefix: "us.assignment.executive.term-2029.",
       bindingIdPrefix: "us.control-binding.term-2029.",

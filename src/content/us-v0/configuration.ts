@@ -10,11 +10,10 @@ import {
   US_INCUMBENT_ADMINISTRATION_ID,
   US_PRESIDENT_OFFICE_ID,
   US_SENATE_CHAMBER_ID,
-  US_V0_I4_STRUCTURE,
   US_VICE_PRESIDENT_OFFICE_ID,
 } from "./topology";
 import i4Manifest from "./i4-artifacts/i4-initialization-manifest.json";
-import { US_V0_I5_TEMPORAL_CONFIGURATION } from "./i5";
+import { US_V0_I5_STRUCTURE, US_V0_I5_TEMPORAL_CONFIGURATION } from "./i5";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -240,14 +239,14 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.5.0-i5",
+    configurationVersion: "0.5.1-i5-repair",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.5.0-i5",
-    configurationHash: "8297b2e6f5f4846acd00538cfde134b9458f8248452e6e6f19eb203757dad40d",
+    scenarioVersion: "0.5.1-i5-repair",
+    configurationHash: "603c489e6ef29397c8f994a0b0a8f8f7c808ee7705a844f33d9cb3d8dbcdda94",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
-  structure: US_V0_I4_STRUCTURE,
+  structure: US_V0_I5_STRUCTURE,
   transitions: [],
   runtimeSeed: US_V0_LEGISLATIVE_SEED,
   integratedRuntime: {

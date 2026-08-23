@@ -38,7 +38,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 2 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 3 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -264,7 +264,7 @@ const parse = (
     throw new Error("Integrated partial save supplies unsupported institutional time state.");
   }
   assertCalendarTimeState(institutional.calendar, configuration.calendar.epoch, temporal.boundaries);
-  assertInstitutionalRuntimeState(institutional, temporal, electoralTopology);
+  assertInstitutionalRuntimeState(institutional, temporal, electoralTopology, configuration.structure);
   let expectedAssignments = baseline.legislative.activeAssignments.map((assignment) => ({ ...assignment }));
   for (const cycle of [...institutional.termCycles].sort(
     (left, right) => Date.parse(left.frozenAt) - Date.parse(right.frozenAt),
@@ -306,7 +306,7 @@ const parse = (
         officeId: entitlement.officeId,
         actorId: entitlement.entitledActorId,
         effectiveFrom: temporal.selection.transfer.scheduledAt,
-        effectiveUntil: null,
+        effectiveUntil: temporal.selection.transfer.successorTermEndsAt,
         classification: temporal.selection.classification,
       })),
     ];
@@ -353,7 +353,7 @@ const parse = (
         headActorId: declaredTicket.headCandidate.actorId,
         deputyActorId: declaredTicket.deputyCandidate.actorId,
         effectiveFrom: temporal.selection.transfer.scheduledAt,
-        effectiveUntil: null,
+        effectiveUntil: temporal.selection.transfer.successorTermEndsAt,
         sourceDeclarationId: institutional.selection.declaration!.id,
         classification: temporal.selection.classification,
       }

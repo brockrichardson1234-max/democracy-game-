@@ -473,6 +473,7 @@ const validateIntegratedRuntimeConfiguration = (
     requireUnique([...cycleIds], "assignment cycles");
     const geographyIds = new Set(configuration.structure.geographies.map((geography) => geography.id));
     const officeIds = new Set(configuration.structure.offices.map((office) => office.id));
+    const actorIds = new Set(configuration.structure.actors.map((actor) => actor.id));
     for (const boundary of temporal.boundaries) {
       if (
         !Number.isFinite(Date.parse(boundary.at)) ||
@@ -487,6 +488,8 @@ const validateIntegratedRuntimeConfiguration = (
       requireUnique(cycle.officeIds, `${cycle.id} offices`);
       if (
         cycle.officeIds.length === 0 ||
+        cycle.populationSignalVersion.trim().length === 0 ||
+        cycle.populationSignalIdPrefix.trim().length === 0 ||
         cycle.officeIds.some((officeId) => !officeIds.has(officeId)) ||
         cycle.officeIds.some((officeId) => !geographyIds.has(cycle.stateGeographyByOfficeId[officeId])) ||
         cycle.officeIds.some((officeId) => !Number.isFinite(Date.parse(cycle.nextBoundaryByOfficeId[officeId])))
@@ -494,12 +497,36 @@ const validateIntegratedRuntimeConfiguration = (
     }
     requireUnique(temporal.selection.stateGeographyIds, "selection geographies");
     requireUnique(temporal.selection.tickets.map((ticket) => ticket.id), "selection tickets");
+    requireUnique(temporal.selection.tickets.flatMap((ticket) => [
+      ticket.headCandidate.id,
+      ticket.deputyCandidate.id,
+    ]), "selection candidate identities");
+    const candidateReferencesValid = temporal.selection.tickets.every((ticket) => {
+      const headActor = configuration.structure.actors.find((actor) => actor.id === ticket.headCandidate.actorId);
+      const deputyActor = configuration.structure.actors.find((actor) => actor.id === ticket.deputyCandidate.actorId);
+      return (
+        ticket.headCandidate.id !== ticket.deputyCandidate.id &&
+        ticket.headCandidate.actorId !== ticket.deputyCandidate.actorId &&
+        actorIds.has(ticket.headCandidate.actorId) &&
+        actorIds.has(ticket.deputyCandidate.actorId) &&
+        !officeIds.has(ticket.headCandidate.actorId) &&
+        !officeIds.has(ticket.deputyCandidate.actorId) &&
+        headActor?.role === "EXECUTIVE" &&
+        deputyActor?.role === "EXECUTIVE"
+      );
+    });
+    const transferAt = Date.parse(temporal.selection.transfer.scheduledAt);
+    const successorTermEndsAt = Date.parse(temporal.selection.transfer.successorTermEndsAt);
     if (
       temporal.selection.stateGeographyIds.some((id) => !geographyIds.has(id)) ||
       temporal.selection.staticTopologyArtifactId !== integrated.electoral.topologyArtifactId ||
       !officeIds.has(temporal.selection.transfer.headOfficeId) ||
       !officeIds.has(temporal.selection.transfer.deputyOfficeId) ||
-      !temporal.selection.tickets.some((ticket) => ticket.id === temporal.selection.transfer.playerAlignedTicketId)
+      !temporal.selection.tickets.some((ticket) => ticket.id === temporal.selection.transfer.playerAlignedTicketId) ||
+      !candidateReferencesValid ||
+      !Number.isFinite(transferAt) ||
+      !Number.isFinite(successorTermEndsAt) ||
+      successorTermEndsAt <= transferAt
     ) throw new Error("Integrated selection configuration has invalid authority references.");
   }
 };

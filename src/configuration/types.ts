@@ -379,6 +379,8 @@ export interface AssignmentCycleConfiguration {
   readonly termLabel: string;
   readonly classification: ScaffoldClassification;
   readonly scaffoldVersion: string;
+  readonly populationSignalVersion: string;
+  readonly populationSignalIdPrefix: string;
   readonly stableKey: string;
   readonly officeIds: readonly string[];
   readonly stateGeographyByOfficeId: Readonly<Record<string, string>>;
@@ -426,6 +428,7 @@ export interface IntegratedSelectionConfiguration {
     readonly headOfficeId: string;
     readonly deputyOfficeId: string;
     readonly scheduledAt: string;
+    readonly successorTermEndsAt: string;
     readonly administrationIdPrefix: string;
     readonly assignmentIdPrefix: string;
     readonly bindingIdPrefix: string;
