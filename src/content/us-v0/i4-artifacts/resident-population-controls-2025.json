@@ -1,0 +1,601 @@
+{
+  "metadata": {
+    "artifactId": "us.i4.population.resident-controls-2025-v1",
+    "vintage": "Census Vintage 2025; 2025-07-01 reference date",
+    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "contentSha256": "b8f1592448a37efcadbd66b95db1de69c0c0665d9d22ae0a8c775d94d19ad484",
+    "rawSourceSha256s": [
+      "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+    ],
+    "sources": [
+      {
+        "sourceId": "USR-SRC-0092",
+        "product": "Census Vintage 2025 NST-EST2025-ALLDATA",
+        "producer": "U.S. Census Bureau",
+        "sourceScope": "50 states plus District of Columbia and national validation row",
+        "locator": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv",
+        "vintage": "Vintage 2025; reference date 2025-07-01",
+        "mappingClass": "DIRECT",
+        "retrievedAt": "2026-08-23",
+        "rawSha256": "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9",
+        "consumed": [
+          "SUMLEV",
+          "STATE",
+          "NAME",
+          "POPESTIMATE2025"
+        ]
+      }
+    ],
+    "derivedFrom": [],
+    "limitations": [
+      "Resident estimates are not citizenship, eligibility, registration, turnout, or votes."
+    ]
+  },
+  "sourceField": "POPESTIMATE2025",
+  "referenceDate": "2025-07-01",
+  "publishedNationalTotal": 341784857,
+  "inScopeNationalTotal": 341784857,
+  "controls": [
+    {
+      "id": "us.population.control.01",
+      "residenceGeographyId": "us.geography.state.01",
+      "stateFips": "01",
+      "stateUsps": "AL",
+      "residentWeight": 5193088,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.02",
+      "residenceGeographyId": "us.geography.state.02",
+      "stateFips": "02",
+      "stateUsps": "AK",
+      "residentWeight": 737270,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.04",
+      "residenceGeographyId": "us.geography.state.04",
+      "stateFips": "04",
+      "stateUsps": "AZ",
+      "residentWeight": 7623818,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.05",
+      "residenceGeographyId": "us.geography.state.05",
+      "stateFips": "05",
+      "stateUsps": "AR",
+      "residentWeight": 3114791,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.06",
+      "residenceGeographyId": "us.geography.state.06",
+      "stateFips": "06",
+      "stateUsps": "CA",
+      "residentWeight": 39355309,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.08",
+      "residenceGeographyId": "us.geography.state.08",
+      "stateFips": "08",
+      "stateUsps": "CO",
+      "residentWeight": 6012561,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.09",
+      "residenceGeographyId": "us.geography.state.09",
+      "stateFips": "09",
+      "stateUsps": "CT",
+      "residentWeight": 3688496,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.10",
+      "residenceGeographyId": "us.geography.state.10",
+      "stateFips": "10",
+      "stateUsps": "DE",
+      "residentWeight": 1059952,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.11",
+      "residenceGeographyId": "us.geography.state.11",
+      "stateFips": "11",
+      "stateUsps": "DC",
+      "residentWeight": 693645,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.12",
+      "residenceGeographyId": "us.geography.state.12",
+      "stateFips": "12",
+      "stateUsps": "FL",
+      "residentWeight": 23462518,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.13",
+      "residenceGeographyId": "us.geography.state.13",
+      "stateFips": "13",
+      "stateUsps": "GA",
+      "residentWeight": 11302748,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.15",
+      "residenceGeographyId": "us.geography.state.15",
+      "stateFips": "15",
+      "stateUsps": "HI",
+      "residentWeight": 1432820,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.16",
+      "residenceGeographyId": "us.geography.state.16",
+      "stateFips": "16",
+      "stateUsps": "ID",
+      "residentWeight": 2029733,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.17",
+      "residenceGeographyId": "us.geography.state.17",
+      "stateFips": "17",
+      "stateUsps": "IL",
+      "residentWeight": 12719141,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.18",
+      "residenceGeographyId": "us.geography.state.18",
+      "stateFips": "18",
+      "stateUsps": "IN",
+      "residentWeight": 6973333,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.19",
+      "residenceGeographyId": "us.geography.state.19",
+      "stateFips": "19",
+      "stateUsps": "IA",
+      "residentWeight": 3238387,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.20",
+      "residenceGeographyId": "us.geography.state.20",
+      "stateFips": "20",
+      "stateUsps": "KS",
+      "residentWeight": 2977220,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.21",
+      "residenceGeographyId": "us.geography.state.21",
+      "stateFips": "21",
+      "stateUsps": "KY",
+      "residentWeight": 4606864,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.22",
+      "residenceGeographyId": "us.geography.state.22",
+      "stateFips": "22",
+      "stateUsps": "LA",
+      "residentWeight": 4618189,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.23",
+      "residenceGeographyId": "us.geography.state.23",
+      "stateFips": "23",
+      "stateUsps": "ME",
+      "residentWeight": 1414874,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.24",
+      "residenceGeographyId": "us.geography.state.24",
+      "stateFips": "24",
+      "stateUsps": "MD",
+      "residentWeight": 6265347,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.25",
+      "residenceGeographyId": "us.geography.state.25",
+      "stateFips": "25",
+      "stateUsps": "MA",
+      "residentWeight": 7154084,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.26",
+      "residenceGeographyId": "us.geography.state.26",
+      "stateFips": "26",
+      "stateUsps": "MI",
+      "residentWeight": 10127884,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.27",
+      "residenceGeographyId": "us.geography.state.27",
+      "stateFips": "27",
+      "stateUsps": "MN",
+      "residentWeight": 5830405,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.28",
+      "residenceGeographyId": "us.geography.state.28",
+      "stateFips": "28",
+      "stateUsps": "MS",
+      "residentWeight": 2954160,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.29",
+      "residenceGeographyId": "us.geography.state.29",
+      "stateFips": "29",
+      "stateUsps": "MO",
+      "residentWeight": 6270541,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.30",
+      "residenceGeographyId": "us.geography.state.30",
+      "stateFips": "30",
+      "stateUsps": "MT",
+      "residentWeight": 1144694,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.31",
+      "residenceGeographyId": "us.geography.state.31",
+      "stateFips": "31",
+      "stateUsps": "NE",
+      "residentWeight": 2018006,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.32",
+      "residenceGeographyId": "us.geography.state.32",
+      "stateFips": "32",
+      "stateUsps": "NV",
+      "residentWeight": 3282188,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.33",
+      "residenceGeographyId": "us.geography.state.33",
+      "stateFips": "33",
+      "stateUsps": "NH",
+      "residentWeight": 1415342,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.34",
+      "residenceGeographyId": "us.geography.state.34",
+      "stateFips": "34",
+      "stateUsps": "NJ",
+      "residentWeight": 9548215,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.35",
+      "residenceGeographyId": "us.geography.state.35",
+      "stateFips": "35",
+      "stateUsps": "NM",
+      "residentWeight": 2125498,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.36",
+      "residenceGeographyId": "us.geography.state.36",
+      "stateFips": "36",
+      "stateUsps": "NY",
+      "residentWeight": 20002427,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.37",
+      "residenceGeographyId": "us.geography.state.37",
+      "stateFips": "37",
+      "stateUsps": "NC",
+      "residentWeight": 11197968,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.38",
+      "residenceGeographyId": "us.geography.state.38",
+      "stateFips": "38",
+      "stateUsps": "ND",
+      "residentWeight": 799358,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.39",
+      "residenceGeographyId": "us.geography.state.39",
+      "stateFips": "39",
+      "stateUsps": "OH",
+      "residentWeight": 11900510,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.40",
+      "residenceGeographyId": "us.geography.state.40",
+      "stateFips": "40",
+      "stateUsps": "OK",
+      "residentWeight": 4123288,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.41",
+      "residenceGeographyId": "us.geography.state.41",
+      "stateFips": "41",
+      "stateUsps": "OR",
+      "residentWeight": 4273586,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.42",
+      "residenceGeographyId": "us.geography.state.42",
+      "stateFips": "42",
+      "stateUsps": "PA",
+      "residentWeight": 13059432,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.44",
+      "residenceGeographyId": "us.geography.state.44",
+      "stateFips": "44",
+      "stateUsps": "RI",
+      "residentWeight": 1114521,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.45",
+      "residenceGeographyId": "us.geography.state.45",
+      "stateFips": "45",
+      "stateUsps": "SC",
+      "residentWeight": 5570274,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.46",
+      "residenceGeographyId": "us.geography.state.46",
+      "stateFips": "46",
+      "stateUsps": "SD",
+      "residentWeight": 935094,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.47",
+      "residenceGeographyId": "us.geography.state.47",
+      "stateFips": "47",
+      "stateUsps": "TN",
+      "residentWeight": 7315076,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.48",
+      "residenceGeographyId": "us.geography.state.48",
+      "stateFips": "48",
+      "stateUsps": "TX",
+      "residentWeight": 31709821,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.49",
+      "residenceGeographyId": "us.geography.state.49",
+      "stateFips": "49",
+      "stateUsps": "UT",
+      "residentWeight": 3538904,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.50",
+      "residenceGeographyId": "us.geography.state.50",
+      "stateFips": "50",
+      "stateUsps": "VT",
+      "residentWeight": 644663,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.51",
+      "residenceGeographyId": "us.geography.state.51",
+      "stateFips": "51",
+      "stateUsps": "VA",
+      "residentWeight": 8880107,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.53",
+      "residenceGeographyId": "us.geography.state.53",
+      "stateFips": "53",
+      "stateUsps": "WA",
+      "residentWeight": 8001020,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.54",
+      "residenceGeographyId": "us.geography.state.54",
+      "stateFips": "54",
+      "stateUsps": "WV",
+      "residentWeight": 1766147,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.55",
+      "residenceGeographyId": "us.geography.state.55",
+      "stateFips": "55",
+      "stateUsps": "WI",
+      "residentWeight": 5972787,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    },
+    {
+      "id": "us.population.control.56",
+      "residenceGeographyId": "us.geography.state.56",
+      "stateFips": "56",
+      "stateUsps": "WY",
+      "residentWeight": 588753,
+      "sourceField": "POPESTIMATE2025",
+      "referenceDate": "2025-07-01",
+      "sourceArtifactId": "us.i4.population.resident-controls-2025-v1",
+      "classification": "DIRECT"
+    }
+  ]
+}

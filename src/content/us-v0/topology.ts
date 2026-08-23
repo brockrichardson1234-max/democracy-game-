@@ -11,6 +11,8 @@ import type {
 import districtArtifact from "./artifacts/house-district-identities-119.json";
 import senateArtifact from "./artifacts/senate-seat-classes.json";
 import stateArtifact from "./artifacts/state-identifiers.json";
+import i4Manifest from "./i4-artifacts/i4-initialization-manifest.json";
+import projectLocatorArtifact from "./i4-artifacts/project-locators.json";
 
 interface StateIdentityRecord {
   readonly stateFips: string;
@@ -36,6 +38,9 @@ interface SenateSeatClassRecord {
 const STATE_ARTIFACT_ID = "us.topology.state-identifiers-v1";
 const DISTRICT_ARTIFACT_ID = "us.topology.house-district-identities-119-v1";
 const SENATE_ARTIFACT_ID = "us.topology.senate-seat-classes-v1";
+const STATE_GEOGRAPHY_ARTIFACT_ID = "us.i4.geography.states-2025-500k-v1";
+const DISTRICT_GEOGRAPHY_ARTIFACT_ID = "us.i4.geography.cd119-2025-500k-v1";
+const PROJECT_LOCATOR_ARTIFACT_ID = "us.i4.geography.project-locators-v1";
 
 export const US_NATIONAL_JURISDICTION_ID = "us.jurisdiction.national";
 export const US_CONGRESS_INSTITUTION_ID = "us.institution.congress";
@@ -65,11 +70,16 @@ const states = stateArtifact.records as readonly StateIdentityRecord[];
 const districts = districtArtifact.districts as readonly DistrictIdentityRecord[];
 const senateSeats = senateArtifact.records as readonly SenateSeatClassRecord[];
 const stateByFips = new Map(states.map((state) => [state.stateFips, state]));
+const i4GeographyMetadata = i4Manifest.artifactMetadata.filter((metadata) =>
+  [STATE_GEOGRAPHY_ARTIFACT_ID, DISTRICT_GEOGRAPHY_ARTIFACT_ID].includes(metadata.artifactId),
+);
 
 const provenanceArtifacts: readonly TopologyProvenanceArtifactDescriptor[] = [
   stateArtifact.metadata,
   districtArtifact.metadata,
   senateArtifact.metadata,
+  ...i4GeographyMetadata,
+  projectLocatorArtifact.metadata,
 ].map((metadata) => ({
   id: metadata.artifactId,
   vintage: metadata.vintage,
@@ -116,7 +126,24 @@ const institutions: readonly InstitutionDescriptor[] = [
   { id: US_TENTH_CIRCUIT_COURT_ID, label: "U.S. Court of Appeals for the Tenth Circuit", kind: "COURT", jurisdictionId: US_NATIONAL_JURISDICTION_ID },
 ];
 
-const geographies: GovernmentStructureDescriptor["geographies"] = districts.map((district) => {
+const stateGeographies: GovernmentStructureDescriptor["geographies"] = states.map((state) => ({
+  id: `us.geography.state.${state.stateFips}`,
+  label: `${state.officialName} state/equivalent Geography`,
+  kind: "ADMINISTRATIVE_AREA",
+  parentJurisdictionId: state.stateUsps === "DC"
+    ? `us.jurisdiction.dc.${state.stateFips}`
+    : `us.jurisdiction.state.${state.stateFips}`,
+  parentGeographyId: null,
+  externalIdentifiers: [
+    { scheme: "CENSUS_STATEFP", value: state.stateFips },
+    { scheme: "USPS", value: state.stateUsps },
+  ],
+  geometryStatus: "GEOMETRY_AVAILABLE",
+  provenanceArtifactId: STATE_ARTIFACT_ID,
+  geometryArtifactId: STATE_GEOGRAPHY_ARTIFACT_ID,
+}));
+
+const districtGeographies: GovernmentStructureDescriptor["geographies"] = districts.map((district) => {
   const state = stateByFips.get(district.stateFips);
   if (state === undefined) throw new Error(`Missing state identity for district ${district.geoid}.`);
   const districtLabel = district.districtCode === "00" ? "At Large" : district.districtCode;
@@ -125,16 +152,40 @@ const geographies: GovernmentStructureDescriptor["geographies"] = districts.map(
     label: `${state.officialName} Congressional District ${districtLabel} (119th identity)`,
     kind: "LEGISLATIVE_CONSTITUENCY",
     parentJurisdictionId: district.stateJurisdictionId,
+    parentGeographyId: `us.geography.state.${district.stateFips}`,
     externalIdentifiers: [
       { scheme: "CENSUS_STATEFP", value: district.stateFips },
       { scheme: "CENSUS_CD119FP", value: district.districtCode },
       { scheme: "CENSUS_GEOID", value: district.geoid },
       { scheme: "CONGRESSIONAL_SESSION", value: "119" },
     ],
-    geometryStatus: "IDENTITY_ONLY",
+    geometryStatus: "GEOMETRY_AVAILABLE",
     provenanceArtifactId: DISTRICT_ARTIFACT_ID,
+    geometryArtifactId: DISTRICT_GEOGRAPHY_ARTIFACT_ID,
   };
 });
+
+const projectLocatorGeographies: GovernmentStructureDescriptor["geographies"] = projectLocatorArtifact.records.map(
+  (locator) => ({
+    id: locator.id,
+    label: locator.label,
+    kind: "PROJECT_LOCATOR",
+    parentJurisdictionId: locator.stateFips === "08"
+      ? "us.jurisdiction.state.08"
+      : "us.jurisdiction.state.48",
+    parentGeographyId: locator.parentGeographyId,
+    externalIdentifiers: [{ scheme: "EVIDENCE_SOURCE_ID", value: locator.sourceId }],
+    geometryStatus: "LOCATOR_ONLY",
+    provenanceArtifactId: PROJECT_LOCATOR_ARTIFACT_ID,
+    geometryArtifactId: PROJECT_LOCATOR_ARTIFACT_ID,
+  }),
+);
+
+const geographies: GovernmentStructureDescriptor["geographies"] = [
+  ...stateGeographies,
+  ...districtGeographies,
+  ...projectLocatorGeographies,
+];
 
 const houseOffices: readonly OfficeDescriptor[] = districts.map((district) => {
   const state = stateByFips.get(district.stateFips);
@@ -284,7 +335,7 @@ const relations: readonly TopologyRelationDescriptor[] = [
   },
 ];
 
-export const US_V0_I2_STRUCTURE: GovernmentStructureDescriptor = {
+export const US_V0_I4_STRUCTURE: GovernmentStructureDescriptor = {
   provenanceArtifacts,
   jurisdictions,
   institutions,
@@ -333,3 +384,6 @@ export const US_V0_I2_STRUCTURE: GovernmentStructureDescriptor = {
   ],
   relations,
 };
+
+/** Compatibility alias: the accepted I2 owners remain intact inside the I4-deepened structure. */
+export const US_V0_I2_STRUCTURE = US_V0_I4_STRUCTURE;

@@ -410,6 +410,55 @@ const validateCausalSchedule = (
   }
 };
 
+const validateIntegratedRuntimeConfiguration = (
+  configuration: GovernmentConfiguration<unknown>,
+): void => {
+  const integrated = configuration.integratedRuntime;
+  if (integrated === undefined || integrated.schemaVersion !== 1) {
+    throw new Error("Integrated partial runtime requires its supported initialization configuration.");
+  }
+  requireUnique(integrated.artifactBindings.map((binding) => binding.id), "integrated runtime artifacts");
+  for (const binding of integrated.artifactBindings) {
+    requireNonempty(binding.id, "integrated artifact ID");
+    requireNonempty(binding.transformationVersion, `${binding.id}.transformationVersion`);
+    if (!SHA_256_PATTERN.test(binding.contentSha256)) {
+      throw new Error(`Integrated artifact ${binding.id} requires a lowercase SHA-256 content hash.`);
+    }
+    if (
+      !Array.isArray(binding.rawSourceSha256s) ||
+      binding.rawSourceSha256s.some((digest) => !SHA_256_PATTERN.test(digest)) ||
+      new Set(binding.rawSourceSha256s).size !== binding.rawSourceSha256s.length
+    ) throw new Error(`Integrated artifact ${binding.id} has invalid raw-source hash pins.`);
+  }
+  const byId = new Map(integrated.artifactBindings.map((binding) => [binding.id, binding]));
+  const expected = [
+    [integrated.geography.stateArtifactId, "GEOGRAPHY"],
+    [integrated.geography.districtArtifactId, "GEOGRAPHY"],
+    [integrated.geography.projectLocatorArtifactId, "GEOGRAPHY"],
+    [integrated.population.controlArtifactId, "POPULATION_CONTROL"],
+    [integrated.population.tenureMeasurementArtifactId, "POPULATION_MEASUREMENT"],
+    [integrated.population.eligibilityProxyArtifactId, "ELIGIBILITY_PROXY"],
+    [integrated.population.cohortArtifactId, "POPULATION_COHORT"],
+    [integrated.electoral.topologyArtifactId, "ELECTORAL_TOPOLOGY"],
+  ] as const;
+  requireUnique(expected.map(([id]) => id), "integrated runtime artifact references");
+  for (const [id, kind] of expected) {
+    if (byId.get(id)?.kind !== kind) throw new Error(`Integrated runtime artifact ${id} is missing or has the wrong kind.`);
+  }
+  if (byId.size !== expected.length) throw new Error("Integrated runtime contains an unconsumed artifact binding.");
+  for (const value of [
+    integrated.population.scaffoldVersion,
+    integrated.population.refinementSemanticVersion,
+    integrated.population.eligibilityIntegerizationVersion,
+  ]) requireNonempty(value, "integrated population semantic version");
+  if (
+    !Number.isInteger(integrated.population.catchmentRatio.numerator) ||
+    !Number.isInteger(integrated.population.catchmentRatio.denominator) ||
+    integrated.population.catchmentRatio.numerator <= 0 ||
+    integrated.population.catchmentRatio.denominator <= integrated.population.catchmentRatio.numerator
+  ) throw new Error("Integrated population catchment ratio must be a proper positive fraction.");
+};
+
 export const loadGovernmentConfiguration = <TRuntimeSeed>(
   configuration: GovernmentConfiguration<TRuntimeSeed>,
 ): LoadedGovernmentConfiguration<TRuntimeSeed> => {
@@ -449,18 +498,30 @@ export const loadGovernmentConfiguration = <TRuntimeSeed>(
       throw new Error("Playable configuration requires exactly one bootstrap boundary.");
     }
     validateCausalSchedule(configuration as GovernmentConfiguration<unknown>);
-  } else if (configuration.capability === "LEGISLATIVE_RUNTIME_SLICE") {
+  } else if (
+    configuration.capability === "LEGISLATIVE_RUNTIME_SLICE" ||
+    configuration.capability === "INTEGRATED_PARTIAL_RUNTIME"
+  ) {
     if (configuration.runtimeSeed === null) {
       throw new Error("Legislative runtime slice requires a political runtime seed.");
     }
     if (configuration.transitions.length !== 0) {
-      throw new Error("Legislative runtime slice cannot fabricate a full-world transition schedule.");
+      throw new Error("Partial runtime cannot fabricate a full-world transition schedule.");
     }
     validateLegislativeRuntimeSeed(
       configuration.runtimeSeed as LegislativeRuntimeSeed,
       configuration as GovernmentConfiguration<unknown>,
     );
-  } else if (configuration.runtimeSeed !== null || configuration.transitions.length !== 0) {
+    if (configuration.capability === "INTEGRATED_PARTIAL_RUNTIME") {
+      validateIntegratedRuntimeConfiguration(configuration as GovernmentConfiguration<unknown>);
+    } else if (configuration.integratedRuntime !== undefined) {
+      throw new Error("Legislative-only runtime cannot carry integrated initialization artifacts.");
+    }
+  } else if (
+    configuration.runtimeSeed !== null ||
+    configuration.transitions.length !== 0 ||
+    configuration.integratedRuntime !== undefined
+  ) {
     throw new Error("Structural-proof configuration cannot contain a runtime seed or schedule.");
   }
 

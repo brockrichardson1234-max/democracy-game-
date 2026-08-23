@@ -40,6 +40,9 @@ export const canonicalConfigurationContent = (
         structure: configuration.structure,
         transitions: configuration.transitions,
         runtimeSeed: configuration.runtimeSeed,
+        ...(configuration.integratedRuntime === undefined
+          ? {}
+          : { integratedRuntime: configuration.integratedRuntime }),
       },
       "root",
     ),

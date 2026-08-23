@@ -15,6 +15,7 @@ import {
   createDeterministicWorldFixture,
 } from "../src/content/gl0-synthetic/configuration";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
+import { US_V0_I4_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i4";
 import {
   advanceWorldTo,
 } from "../src/sim/world";
@@ -44,19 +45,24 @@ describe("I1 production configuration boundary", () => {
   });
 
   it("boots the non-full-world U.S. legislative slice through the same boundary", () => {
-    const bootstrap = bootstrapGovernmentConfiguration(US_V0_STRUCTURAL_CONFIGURATION);
+    const bootstrap = bootstrapGovernmentConfiguration(
+      US_V0_STRUCTURAL_CONFIGURATION,
+      US_V0_I4_RUNTIME_ARTIFACTS,
+    );
     expect(bootstrap.configuration.structure.chambers).toHaveLength(2);
     expect(bootstrap.configuration.structure.chambers.map((chamber) => chamber.seatCount)).toEqual([
       435,
       100,
     ]);
     expect(bootstrap.configuration.calendar.kind).toBe("REAL_CALENDAR");
-    expect(bootstrap.configuration.capability).toBe("LEGISLATIVE_RUNTIME_SLICE");
+    expect(bootstrap.configuration.capability).toBe("INTEGRATED_PARTIAL_RUNTIME");
     expect(bootstrap.playable).toBe(false);
     expect(bootstrap.world).toBeNull();
     expect(bootstrap.configuration.runtimeSeed).not.toBeNull();
     expect(bootstrap.legislativeRuntimeAvailable).toBe(true);
     expect(bootstrap.legislativeRuntime?.political.actors).toHaveLength(535);
+    expect(bootstrap.integratedRuntimeAvailable).toBe(true);
+    expect(bootstrap.integratedRuntime?.legislative).toEqual(bootstrap.legislativeRuntime);
     assertDeclaredConfigurationHash(
       bootstrap.configuration,
       sha256For(US_V0_STRUCTURAL_CONFIGURATION),

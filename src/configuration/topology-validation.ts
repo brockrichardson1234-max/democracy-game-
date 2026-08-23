@@ -104,9 +104,10 @@ export const validateGovernmentStructure = (structure: GovernmentStructureDescri
   structure.jurisdictions.forEach((record) =>
     requireArtifact(record.provenanceArtifactId, `jurisdiction ${record.id}`),
   );
-  structure.geographies.forEach((record) =>
-    requireArtifact(record.provenanceArtifactId, `geography ${record.id}`),
-  );
+  structure.geographies.forEach((record) => {
+    requireArtifact(record.provenanceArtifactId, `geography ${record.id}`);
+    requireArtifact(record.geometryArtifactId ?? null, `geography ${record.id} geometry`);
+  });
   structure.staggerGroups.forEach((record) =>
     requireArtifact(record.provenanceArtifactId, `stagger group ${record.id}`),
   );
@@ -154,6 +155,16 @@ export const validateGovernmentStructure = (structure: GovernmentStructureDescri
   for (const geography of structure.geographies) {
     if (!jurisdictionIds.has(geography.parentJurisdictionId)) {
       throw new Error(`Configuration geography ${geography.id} references unknown parent jurisdiction.`);
+    }
+    if (
+      geography.parentGeographyId !== undefined &&
+      geography.parentGeographyId !== null &&
+      (geography.parentGeographyId === geography.id || !geographyIds.has(geography.parentGeographyId))
+    ) {
+      throw new Error(`Configuration geography ${geography.id} references unknown parent Geography.`);
+    }
+    if (geography.geometryStatus === "GEOMETRY_AVAILABLE" && geography.geometryArtifactId == null) {
+      throw new Error(`Configuration geography ${geography.id} lacks its geometry artifact.`);
     }
   }
   for (const staggerGroup of structure.staggerGroups) {

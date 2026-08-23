@@ -17,6 +17,9 @@ export interface RawSourceDescriptor {
   readonly locator: string;
   readonly retrievedAt: string;
   readonly rawSha256: string | null;
+  readonly vintage?: string;
+  readonly mappingClass?: "DIRECT" | "AGGREGATED" | "APPROXIMATED" | "DERIVED" | "DEFERRED";
+  readonly consumed?: readonly string[];
 }
 
 export interface TopologyProvenanceArtifactDescriptor {
@@ -74,16 +77,21 @@ export interface LegislativeChamberDescriptor {
   readonly seatCount: number;
 }
 
-export type GeographyIdentityKind = "LEGISLATIVE_CONSTITUENCY";
+export type GeographyIdentityKind =
+  | "LEGISLATIVE_CONSTITUENCY"
+  | "ADMINISTRATIVE_AREA"
+  | "PROJECT_LOCATOR";
 
 export interface GeographyIdentityDescriptor {
   readonly id: string;
   readonly label: string;
   readonly kind: GeographyIdentityKind;
   readonly parentJurisdictionId: string;
+  readonly parentGeographyId?: string | null;
   readonly externalIdentifiers: readonly ExternalIdentifierDescriptor[];
-  readonly geometryStatus: "IDENTITY_ONLY";
+  readonly geometryStatus: "IDENTITY_ONLY" | "GEOMETRY_AVAILABLE" | "LOCATOR_ONLY";
   readonly provenanceArtifactId: string;
+  readonly geometryArtifactId?: string | null;
 }
 
 export interface StaggerGroupDescriptor {
@@ -185,6 +193,7 @@ export interface GovernmentStructureDescriptor {
  */
 export type ScenarioCapability =
   | "PLAYABLE_CAUSAL_WORLD"
+  | "INTEGRATED_PARTIAL_RUNTIME"
   | "LEGISLATIVE_RUNTIME_SLICE"
   | "STRUCTURAL_PROOF_ONLY";
 export type ScenarioCalendarKind = "SYNTHETIC_DAY_NUMBER" | "REAL_CALENDAR";
@@ -326,6 +335,46 @@ export interface LegislativeRuntimeSeed {
   };
 }
 
+export type RuntimeArtifactKind =
+  | "GEOGRAPHY"
+  | "POPULATION_CONTROL"
+  | "POPULATION_MEASUREMENT"
+  | "ELIGIBILITY_PROXY"
+  | "POPULATION_COHORT"
+  | "ELECTORAL_TOPOLOGY";
+
+export interface RuntimeArtifactBinding {
+  readonly id: string;
+  readonly kind: RuntimeArtifactKind;
+  readonly contentSha256: string;
+  readonly transformationVersion: string;
+  readonly rawSourceSha256s: readonly string[];
+}
+
+/** Plain data describing the versioned artifacts required by a composed partial runtime. */
+export interface IntegratedRuntimeConfiguration {
+  readonly schemaVersion: number;
+  readonly artifactBindings: readonly RuntimeArtifactBinding[];
+  readonly geography: {
+    readonly stateArtifactId: string;
+    readonly districtArtifactId: string;
+    readonly projectLocatorArtifactId: string;
+  };
+  readonly population: {
+    readonly controlArtifactId: string;
+    readonly cohortArtifactId: string;
+    readonly eligibilityProxyArtifactId: string;
+    readonly tenureMeasurementArtifactId: string;
+    readonly scaffoldVersion: string;
+    readonly refinementSemanticVersion: string;
+    readonly catchmentRatio: ConfiguredFraction;
+    readonly eligibilityIntegerizationVersion: string;
+  };
+  readonly electoral: {
+    readonly topologyArtifactId: string;
+  };
+}
+
 interface ScheduledTransitionBase {
   readonly id: string;
   readonly at: number;
@@ -374,6 +423,8 @@ export interface GovernmentConfiguration<TRuntimeSeed = unknown> {
   readonly transitions: readonly ScheduledTransitionDescriptor[];
   /** Plain immutable data only. Executable callbacks are forbidden. */
   readonly runtimeSeed: TRuntimeSeed | null;
+  /** Optional artifact-pinned initialization for a composed non-playable runtime. */
+  readonly integratedRuntime?: IntegratedRuntimeConfiguration;
 }
 
 export interface LoadedGovernmentConfiguration<TRuntimeSeed = unknown>

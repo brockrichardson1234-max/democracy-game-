@@ -62,7 +62,7 @@ describe("I2 U.S. government topology retained by I3", () => {
     expect(bootstrap.configuration.loaded).toBe(true);
     expect(bootstrap.configuration.identity).toMatchObject({
       configurationId: "us-v0",
-      configurationVersion: "0.3.1-i3-repair",
+      configurationVersion: "0.4.0-i4",
       scenarioId: "us-v0-2026-08-22",
     });
     expect(usStructure.jurisdictions).toHaveLength(52);
@@ -71,7 +71,7 @@ describe("I2 U.S. government topology retained by I3", () => {
     expect(usStructure.jurisdictions.filter((record) => record.kind === "NATIONAL")).toEqual([
       expect.objectContaining({ id: US_NATIONAL_JURISDICTION_ID }),
     ]);
-    expect(bootstrap.configuration.capability).toBe("LEGISLATIVE_RUNTIME_SLICE");
+    expect(bootstrap.configuration.capability).toBe("INTEGRATED_PARTIAL_RUNTIME");
     expect(bootstrap.configuration.runtimeSeed).not.toBeNull();
     expect(bootstrap.configuration.transitions).toEqual([]);
     expect(bootstrap.playable).toBe(false);
@@ -111,19 +111,20 @@ describe("I2 U.S. government topology retained by I3", () => {
         (office) => office.constituency?.kind === "JURISDICTION" && office.constituency.id === dc?.id,
       ),
     ).toEqual([]);
-    expect(usStructure.geographies.some((geography) => geography.parentJurisdictionId === dc?.id)).toBe(
-      false,
-    );
+    expect(usStructure.geographies.filter(
+      (geography) => geography.kind === "LEGISLATIVE_CONSTITUENCY",
+    ).some((geography) => geography.parentJurisdictionId === dc?.id)).toBe(false);
   });
 
-  it("contains 435 unique voting House offices over identity-only 119th districts", () => {
+  it("contains 435 unique voting House offices over the same geometry-deepened 119th districts", () => {
     expect(houseOffices).toHaveLength(435);
     expect(new Set(houseOffices.map((office) => office.id)).size).toBe(435);
-    expect(usStructure.geographies).toHaveLength(435);
-    expect(new Set(usStructure.geographies.map((geography) => geography.id)).size).toBe(435);
-    expect(usStructure.geographies.every((geography) => geography.geometryStatus === "IDENTITY_ONLY")).toBe(
-      true,
+    const districtGeographies = usStructure.geographies.filter(
+      (geography) => geography.kind === "LEGISLATIVE_CONSTITUENCY",
     );
+    expect(districtGeographies).toHaveLength(435);
+    expect(new Set(districtGeographies.map((geography) => geography.id)).size).toBe(435);
+    expect(districtGeographies.every((geography) => geography.geometryStatus === "GEOMETRY_AVAILABLE")).toBe(true);
     for (const office of houseOffices) {
       expect(office.constituency?.kind).toBe("GEOGRAPHY");
       expect(usStructure.geographies.some((geography) => geography.id === office.constituency?.id)).toBe(
@@ -131,7 +132,7 @@ describe("I2 U.S. government topology retained by I3", () => {
       );
     }
     const derivedByFips = new Map<string, number>();
-    for (const geography of usStructure.geographies) {
+    for (const geography of districtGeographies) {
       const fips = geography.externalIdentifiers.find((identifier) => identifier.scheme === "CENSUS_STATEFP")
         ?.value;
       if (fips === undefined) throw new Error("District is missing STATEFP.");

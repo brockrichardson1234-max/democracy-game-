@@ -1,0 +1,3529 @@
+{
+  "metadata": {
+    "artifactId": "us.i4.population.initial-cohorts-2026-08-22-v1",
+    "vintage": "Scenario Day 0, 2026-08-22",
+    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "contentSha256": "c9b2e3348d615568feda3c14635ff1a149d92b4749f6cdb566d5f54b62f24166",
+    "rawSourceSha256s": [],
+    "sources": [],
+    "derivedFrom": [
+      "us.i4.population.resident-controls-2025-v1",
+      "us.i4.population.tenure-input-acs2024-v1",
+      "us.i4.population.cvap-proxy-2020-2024-v1",
+      "us.i4.geography.project-locators-v1"
+    ],
+    "limitations": [
+      "Cohorts are authored aggregate scaffolds, not Census microdata.",
+      "B25008 tenure share is projected onto resident population across different universes.",
+      "Colorado/Texas project catchments are 0.001 modeled splits with state tenure mix retained as a non-observed independence assumption.",
+      "CVAP share is uniform within each state across tenure/catchment cohorts."
+    ]
+  },
+  "scaffoldVersion": "us-v0-population-joint-scaffold-1",
+  "refinementSemanticVersion": "weighted-population-refinement-v1",
+  "catchmentRatio": {
+    "numerator": 1,
+    "denominator": 1000
+  },
+  "classification": "APPROXIMATED_NON_OBSERVED_INDEPENDENCE_ASSUMPTION_STATIC_INITIALIZATION_SCAFFOLD",
+  "cohorts": [
+    {
+      "id": "us.population.cohort.01.nonrenter-exposed",
+      "representedWeight": 3778304,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.01",
+      "stateControlId": "us.population.control.01",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.01",
+        "allocatedWeight": 2856472,
+        "shareNumerator": 3845696,
+        "shareDenominator": 5086767,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.01.renter-exposed",
+      "representedWeight": 1414784,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.01",
+      "stateControlId": "us.population.control.01",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.01",
+        "allocatedWeight": 1069605,
+        "shareNumerator": 3845696,
+        "shareDenominator": 5086767,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.02.nonrenter-exposed",
+      "representedWeight": 518103,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.02",
+      "stateControlId": "us.population.control.02",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.02",
+        "allocatedWeight": 379447,
+        "shareNumerator": 538813,
+        "shareDenominator": 735704,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.02.renter-exposed",
+      "representedWeight": 219167,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.02",
+      "stateControlId": "us.population.control.02",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.02",
+        "allocatedWeight": 160513,
+        "shareNumerator": 538813,
+        "shareDenominator": 735704,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.04.nonrenter-exposed",
+      "representedWeight": 5276224,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.04",
+      "stateControlId": "us.population.control.04",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.04",
+        "allocatedWeight": 3806997,
+        "shareNumerator": 5324115,
+        "shareDenominator": 7378841,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.04.renter-exposed",
+      "representedWeight": 2347594,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.04",
+      "stateControlId": "us.population.control.04",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.04",
+        "allocatedWeight": 1693878,
+        "shareNumerator": 5324115,
+        "shareDenominator": 7378841,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.05.nonrenter-exposed",
+      "representedWeight": 2138995,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.05",
+      "stateControlId": "us.population.control.05",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.05",
+        "allocatedWeight": 1575415,
+        "shareNumerator": 2245940,
+        "shareDenominator": 3049389,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.05.renter-exposed",
+      "representedWeight": 975796,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.05",
+      "stateControlId": "us.population.control.05",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.05",
+        "allocatedWeight": 718695,
+        "shareNumerator": 2245940,
+        "shareDenominator": 3049389,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.06.nonrenter-exposed",
+      "representedWeight": 22867278,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.06",
+      "stateControlId": "us.population.control.06",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.06",
+        "allocatedWeight": 15210634,
+        "shareNumerator": 26132799,
+        "shareDenominator": 39287380,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.06.renter-exposed",
+      "representedWeight": 16488031,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.06",
+      "stateControlId": "us.population.control.06",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.06",
+        "allocatedWeight": 10967349,
+        "shareNumerator": 26132799,
+        "shareDenominator": 39287380,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.08.nonrenter-exposed.project-catchment",
+      "representedWeight": 4208,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "PROJECT_CATCHMENT",
+      "projectLocatorGeographyId": "us.geography.project-locator.stables",
+      "residenceGeographyId": "us.geography.state.08",
+      "stateControlId": "us.population.control.08",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.08",
+        "allocatedWeight": 3126,
+        "shareNumerator": 4355173,
+        "shareDenominator": 5862187,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.08.nonrenter-exposed.state-remainder",
+      "representedWeight": 4204459,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_REMAINDER",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.08",
+      "stateControlId": "us.population.control.08",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.08",
+        "allocatedWeight": 3123603,
+        "shareNumerator": 4355173,
+        "shareDenominator": 5862187,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.08.renter-exposed.project-catchment",
+      "representedWeight": 1803,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "PROJECT_CATCHMENT",
+      "projectLocatorGeographyId": "us.geography.project-locator.stables",
+      "residenceGeographyId": "us.geography.state.08",
+      "stateControlId": "us.population.control.08",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.08",
+        "allocatedWeight": 1340,
+        "shareNumerator": 4355173,
+        "shareDenominator": 5862187,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.08.renter-exposed.state-remainder",
+      "representedWeight": 1802091,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_REMAINDER",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.08",
+      "stateControlId": "us.population.control.08",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.08",
+        "allocatedWeight": 1338821,
+        "shareNumerator": 4355173,
+        "shareDenominator": 5862187,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.09.nonrenter-exposed",
+      "representedWeight": 2612375,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.09",
+      "stateControlId": "us.population.control.09",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.09",
+        "allocatedWeight": 1919626,
+        "shareNumerator": 2663362,
+        "shareDenominator": 3624508,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.09.renter-exposed",
+      "representedWeight": 1076121,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.09",
+      "stateControlId": "us.population.control.09",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.09",
+        "allocatedWeight": 790756,
+        "shareNumerator": 2663362,
+        "shareDenominator": 3624508,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.10.nonrenter-exposed",
+      "representedWeight": 793943,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.10",
+      "stateControlId": "us.population.control.10",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.10",
+        "allocatedWeight": 594074,
+        "shareNumerator": 764113,
+        "shareDenominator": 1021190,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.10.renter-exposed",
+      "representedWeight": 266009,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.10",
+      "stateControlId": "us.population.control.10",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.10",
+        "allocatedWeight": 199043,
+        "shareNumerator": 764113,
+        "shareDenominator": 1021190,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.11.nonrenter-exposed",
+      "representedWeight": 317709,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.11",
+      "stateControlId": "us.population.control.11",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.11",
+        "allocatedWeight": 236259,
+        "shareNumerator": 506632,
+        "shareDenominator": 681294,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.11.renter-exposed",
+      "representedWeight": 375936,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.11",
+      "stateControlId": "us.population.control.11",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.11",
+        "allocatedWeight": 279558,
+        "shareNumerator": 506632,
+        "shareDenominator": 681294,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.12.nonrenter-exposed",
+      "representedWeight": 16044502,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.12",
+      "stateControlId": "us.population.control.12",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.12",
+        "allocatedWeight": 11583060,
+        "shareNumerator": 16182912,
+        "shareDenominator": 22416077,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.12.renter-exposed",
+      "representedWeight": 7418016,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.12",
+      "stateControlId": "us.population.control.12",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.12",
+        "allocatedWeight": 5355313,
+        "shareNumerator": 16182912,
+        "shareDenominator": 22416077,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.13.nonrenter-exposed",
+      "representedWeight": 7707468,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.13",
+      "stateControlId": "us.population.control.13",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.13",
+        "allocatedWeight": 5519371,
+        "shareNumerator": 7834503,
+        "shareDenominator": 10940410,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.13.renter-exposed",
+      "representedWeight": 3595280,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.13",
+      "stateControlId": "us.population.control.13",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.13",
+        "allocatedWeight": 2574605,
+        "shareNumerator": 7834503,
+        "shareDenominator": 10940410,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.15.nonrenter-exposed",
+      "representedWeight": 938333,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.15",
+      "stateControlId": "us.population.control.15",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.15",
+        "allocatedWeight": 684681,
+        "shareNumerator": 1054556,
+        "shareDenominator": 1445235,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.15.renter-exposed",
+      "representedWeight": 494487,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.15",
+      "stateControlId": "us.population.control.15",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.15",
+        "allocatedWeight": 360816,
+        "shareNumerator": 1054556,
+        "shareDenominator": 1445235,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.16.nonrenter-exposed",
+      "representedWeight": 1513487,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.16",
+      "stateControlId": "us.population.control.16",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.16",
+        "allocatedWeight": 1104170,
+        "shareNumerator": 1411149,
+        "shareDenominator": 1934264,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.16.renter-exposed",
+      "representedWeight": 516246,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.16",
+      "stateControlId": "us.population.control.16",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.16",
+        "allocatedWeight": 376629,
+        "shareNumerator": 1411149,
+        "shareDenominator": 1934264,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.17.nonrenter-exposed",
+      "representedWeight": 9073600,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.17",
+      "stateControlId": "us.population.control.17",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.17",
+        "allocatedWeight": 6500637,
+        "shareNumerator": 9094987,
+        "shareDenominator": 12694798,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.17.renter-exposed",
+      "representedWeight": 3645541,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.17",
+      "stateControlId": "us.population.control.17",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.17",
+        "allocatedWeight": 2611790,
+        "shareNumerator": 9094987,
+        "shareDenominator": 12694798,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.18.nonrenter-exposed",
+      "representedWeight": 5175227,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.18",
+      "stateControlId": "us.population.control.18",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.18",
+        "allocatedWeight": 3800317,
+        "shareNumerator": 5030938,
+        "shareDenominator": 6851072,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.18.renter-exposed",
+      "representedWeight": 1798106,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.18",
+      "stateControlId": "us.population.control.18",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.18",
+        "allocatedWeight": 1320401,
+        "shareNumerator": 5030938,
+        "shareDenominator": 6851072,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.19.nonrenter-exposed",
+      "representedWeight": 2453858,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.19",
+      "stateControlId": "us.population.control.19",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.19",
+        "allocatedWeight": 1820418,
+        "shareNumerator": 2381746,
+        "shareDenominator": 3210509,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.19.renter-exposed",
+      "representedWeight": 784529,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.19",
+      "stateControlId": "us.population.control.19",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.19",
+        "allocatedWeight": 582010,
+        "shareNumerator": 2381746,
+        "shareDenominator": 3210509,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.20.nonrenter-exposed",
+      "representedWeight": 2125564,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.20",
+      "stateControlId": "us.population.control.20",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.20",
+        "allocatedWeight": 1539427,
+        "shareNumerator": 2134491,
+        "shareDenominator": 2947198,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.20.renter-exposed",
+      "representedWeight": 851656,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.20",
+      "stateControlId": "us.population.control.20",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.20",
+        "allocatedWeight": 616807,
+        "shareNumerator": 2134491,
+        "shareDenominator": 2947198,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.21.nonrenter-exposed",
+      "representedWeight": 3269509,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.21",
+      "stateControlId": "us.population.control.21",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.21",
+        "allocatedWeight": 2452614,
+        "shareNumerator": 3401787,
+        "shareDenominator": 4534823,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.21.renter-exposed",
+      "representedWeight": 1337355,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.21",
+      "stateControlId": "us.population.control.21",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.21",
+        "allocatedWeight": 1003214,
+        "shareNumerator": 3401787,
+        "shareDenominator": 4534823,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.22.nonrenter-exposed",
+      "representedWeight": 3215619,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.22",
+      "stateControlId": "us.population.control.22",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.22",
+        "allocatedWeight": 2380323,
+        "shareNumerator": 3413948,
+        "shareDenominator": 4611961,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.22.renter-exposed",
+      "representedWeight": 1402570,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.22",
+      "stateControlId": "us.population.control.22",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.22",
+        "allocatedWeight": 1038235,
+        "shareNumerator": 3413948,
+        "shareDenominator": 4611961,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.23.nonrenter-exposed",
+      "representedWeight": 1105443,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.23",
+      "stateControlId": "us.population.control.23",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.23",
+        "allocatedWeight": 887499,
+        "shareNumerator": 1114201,
+        "shareDenominator": 1387816,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.23.renter-exposed",
+      "representedWeight": 309431,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.23",
+      "stateControlId": "us.population.control.23",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.23",
+        "allocatedWeight": 248425,
+        "shareNumerator": 1114201,
+        "shareDenominator": 1387816,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.24.nonrenter-exposed",
+      "representedWeight": 4444131,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.24",
+      "stateControlId": "us.population.control.24",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.24",
+        "allocatedWeight": 3163953,
+        "shareNumerator": 4418305,
+        "shareDenominator": 6206011,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.24.renter-exposed",
+      "representedWeight": 1821216,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.24",
+      "stateControlId": "us.population.control.24",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.24",
+        "allocatedWeight": 1296596,
+        "shareNumerator": 4418305,
+        "shareDenominator": 6206011,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.25.nonrenter-exposed",
+      "representedWeight": 4807659,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.25",
+      "stateControlId": "us.population.control.25",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.25",
+        "allocatedWeight": 3518527,
+        "shareNumerator": 5155255,
+        "shareDenominator": 7044057,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.25.renter-exposed",
+      "representedWeight": 2346425,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.25",
+      "stateControlId": "us.population.control.25",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.25",
+        "allocatedWeight": 1717252,
+        "shareNumerator": 5155255,
+        "shareDenominator": 7044057,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.26.nonrenter-exposed",
+      "representedWeight": 7770973,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.26",
+      "stateControlId": "us.population.control.26",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.26",
+        "allocatedWeight": 5901783,
+        "shareNumerator": 7653711,
+        "shareDenominator": 10077764,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.26.renter-exposed",
+      "representedWeight": 2356911,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.26",
+      "stateControlId": "us.population.control.26",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.26",
+        "allocatedWeight": 1789992,
+        "shareNumerator": 7653711,
+        "shareDenominator": 10077764,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.27.nonrenter-exposed",
+      "representedWeight": 4486899,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.27",
+      "stateControlId": "us.population.control.27",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.27",
+        "allocatedWeight": 3320198,
+        "shareNumerator": 4247053,
+        "shareDenominator": 5739447,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.27.renter-exposed",
+      "representedWeight": 1343506,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.27",
+      "stateControlId": "us.population.control.27",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.27",
+        "allocatedWeight": 994162,
+        "shareNumerator": 4247053,
+        "shareDenominator": 5739447,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.28.nonrenter-exposed",
+      "representedWeight": 2118042,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.28",
+      "stateControlId": "us.population.control.28",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.28",
+        "allocatedWeight": 1596923,
+        "shareNumerator": 2221761,
+        "shareDenominator": 2946782,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.28.renter-exposed",
+      "representedWeight": 836118,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.28",
+      "stateControlId": "us.population.control.28",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.28",
+        "allocatedWeight": 630401,
+        "shareNumerator": 2221761,
+        "shareDenominator": 2946782,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.29.nonrenter-exposed",
+      "representedWeight": 4519497,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.29",
+      "stateControlId": "us.population.control.29",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.29",
+        "allocatedWeight": 3420371,
+        "shareNumerator": 4685988,
+        "shareDenominator": 6191816,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.29.renter-exposed",
+      "representedWeight": 1751044,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.29",
+      "stateControlId": "us.population.control.29",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.29",
+        "allocatedWeight": 1325196,
+        "shareNumerator": 4685988,
+        "shareDenominator": 6191816,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.30.nonrenter-exposed",
+      "representedWeight": 830488,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.30",
+      "stateControlId": "us.population.control.30",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.30",
+        "allocatedWeight": 647812,
+        "shareNumerator": 871202,
+        "shareDenominator": 1116872,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.30.renter-exposed",
+      "representedWeight": 314206,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.30",
+      "stateControlId": "us.population.control.30",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.30",
+        "allocatedWeight": 245092,
+        "shareNumerator": 871202,
+        "shareDenominator": 1116872,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.31.nonrenter-exposed",
+      "representedWeight": 1444916,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.31",
+      "stateControlId": "us.population.control.31",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.31",
+        "allocatedWeight": 1032462,
+        "shareNumerator": 1413882,
+        "shareDenominator": 1978709,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.31.renter-exposed",
+      "representedWeight": 573090,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.31",
+      "stateControlId": "us.population.control.31",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.31",
+        "allocatedWeight": 409500,
+        "shareNumerator": 1413882,
+        "shareDenominator": 1978709,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.32.nonrenter-exposed",
+      "representedWeight": 2015993,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.32",
+      "stateControlId": "us.population.control.32",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.32",
+        "allocatedWeight": 1407591,
+        "shareNumerator": 2223535,
+        "shareDenominator": 3184611,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.32.renter-exposed",
+      "representedWeight": 1266195,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.32",
+      "stateControlId": "us.population.control.32",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.32",
+        "allocatedWeight": 884073,
+        "shareNumerator": 2223535,
+        "shareDenominator": 3184611,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.33.nonrenter-exposed",
+      "representedWeight": 1092317,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.33",
+      "stateControlId": "us.population.control.33",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.33",
+        "allocatedWeight": 868925,
+        "shareNumerator": 1109601,
+        "shareDenominator": 1394868,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.33.renter-exposed",
+      "representedWeight": 323025,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.33",
+      "stateControlId": "us.population.control.33",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.33",
+        "allocatedWeight": 256963,
+        "shareNumerator": 1109601,
+        "shareDenominator": 1394868,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.34.nonrenter-exposed",
+      "representedWeight": 6402022,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.34",
+      "stateControlId": "us.population.control.34",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.34",
+        "allocatedWeight": 4408136,
+        "shareNumerator": 6433712,
+        "shareDenominator": 9343806,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.34.renter-exposed",
+      "representedWeight": 3146193,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.34",
+      "stateControlId": "us.population.control.34",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.34",
+        "allocatedWeight": 2166323,
+        "shareNumerator": 6433712,
+        "shareDenominator": 9343806,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.35.nonrenter-exposed",
+      "representedWeight": 1549522,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.35",
+      "stateControlId": "us.population.control.35",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.35",
+        "allocatedWeight": 1135141,
+        "shareNumerator": 1553239,
+        "shareDenominator": 2120247,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.35.renter-exposed",
+      "representedWeight": 575976,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.35",
+      "stateControlId": "us.population.control.35",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.35",
+        "allocatedWeight": 421945,
+        "shareNumerator": 1553239,
+        "shareDenominator": 2120247,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.36.nonrenter-exposed",
+      "representedWeight": 11635379,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.36",
+      "stateControlId": "us.population.control.36",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.36",
+        "allocatedWeight": 8266696,
+        "shareNumerator": 14104696,
+        "shareDenominator": 19852366,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.36.renter-exposed",
+      "representedWeight": 8367048,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.36",
+      "stateControlId": "us.population.control.36",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.36",
+        "allocatedWeight": 5944615,
+        "shareNumerator": 14104696,
+        "shareDenominator": 19852366,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.37.nonrenter-exposed",
+      "representedWeight": 7751923,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.37",
+      "stateControlId": "us.population.control.37",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.37",
+        "allocatedWeight": 5705837,
+        "shareNumerator": 7898161,
+        "shareDenominator": 10730405,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.37.renter-exposed",
+      "representedWeight": 3446045,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.37",
+      "stateControlId": "us.population.control.37",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.37",
+        "allocatedWeight": 2536476,
+        "shareNumerator": 7898161,
+        "shareDenominator": 10730405,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.38.nonrenter-exposed",
+      "representedWeight": 550615,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.38",
+      "stateControlId": "us.population.control.38",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.38",
+        "allocatedWeight": 408124,
+        "shareNumerator": 581737,
+        "shareDenominator": 784843,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.38.renter-exposed",
+      "representedWeight": 248743,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.38",
+      "stateControlId": "us.population.control.38",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.38",
+        "allocatedWeight": 184372,
+        "shareNumerator": 581737,
+        "shareDenominator": 784843,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.39.nonrenter-exposed",
+      "representedWeight": 8441415,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.39",
+      "stateControlId": "us.population.control.39",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.39",
+        "allocatedWeight": 6401457,
+        "shareNumerator": 8956209,
+        "shareDenominator": 11810292,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.39.renter-exposed",
+      "representedWeight": 3459095,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.39",
+      "stateControlId": "us.population.control.39",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.39",
+        "allocatedWeight": 2623168,
+        "shareNumerator": 8956209,
+        "shareDenominator": 11810292,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.40.nonrenter-exposed",
+      "representedWeight": 2817962,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.40",
+      "stateControlId": "us.population.control.40",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.40",
+        "allocatedWeight": 2045015,
+        "shareNumerator": 2923605,
+        "shareDenominator": 4028630,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.40.renter-exposed",
+      "representedWeight": 1305326,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.40",
+      "stateControlId": "us.population.control.40",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.40",
+        "allocatedWeight": 947284,
+        "shareNumerator": 2923605,
+        "shareDenominator": 4028630,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.41.nonrenter-exposed",
+      "representedWeight": 2843342,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.41",
+      "stateControlId": "us.population.control.41",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.41",
+        "allocatedWeight": 2146497,
+        "shareNumerator": 3211655,
+        "shareDenominator": 4254295,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.41.renter-exposed",
+      "representedWeight": 1430244,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.41",
+      "stateControlId": "us.population.control.41",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.41",
+        "allocatedWeight": 1079721,
+        "shareNumerator": 3211655,
+        "shareDenominator": 4254295,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.42.nonrenter-exposed",
+      "representedWeight": 9592561,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.42",
+      "stateControlId": "us.population.control.42",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.42",
+        "allocatedWeight": 7340193,
+        "shareNumerator": 9961815,
+        "shareDenominator": 13018639,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.42.renter-exposed",
+      "representedWeight": 3466871,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.42",
+      "stateControlId": "us.population.control.42",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.42",
+        "allocatedWeight": 2652837,
+        "shareNumerator": 9961815,
+        "shareDenominator": 13018639,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.44.nonrenter-exposed",
+      "representedWeight": 761695,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.44",
+      "stateControlId": "us.population.control.44",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.44",
+        "allocatedWeight": 571459,
+        "shareNumerator": 826623,
+        "shareDenominator": 1101801,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.44.renter-exposed",
+      "representedWeight": 352826,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.44",
+      "stateControlId": "us.population.control.44",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.44",
+        "allocatedWeight": 264707,
+        "shareNumerator": 826623,
+        "shareDenominator": 1101801,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.45.nonrenter-exposed",
+      "representedWeight": 4101540,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.45",
+      "stateControlId": "us.population.control.45",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.45",
+        "allocatedWeight": 3105132,
+        "shareNumerator": 4009585,
+        "shareDenominator": 5296224,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.45.renter-exposed",
+      "representedWeight": 1468734,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.45",
+      "stateControlId": "us.population.control.45",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.45",
+        "allocatedWeight": 1111927,
+        "shareNumerator": 4009585,
+        "shareDenominator": 5296224,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.46.nonrenter-exposed",
+      "representedWeight": 680961,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.46",
+      "stateControlId": "us.population.control.46",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.46",
+        "allocatedWeight": 502590,
+        "shareNumerator": 669733,
+        "shareDenominator": 907423,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.46.renter-exposed",
+      "representedWeight": 254133,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.46",
+      "stateControlId": "us.population.control.46",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.46",
+        "allocatedWeight": 187566,
+        "shareNumerator": 669733,
+        "shareDenominator": 907423,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.47.nonrenter-exposed",
+      "representedWeight": 5058048,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.47",
+      "stateControlId": "us.population.control.47",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.47",
+        "allocatedWeight": 3776044,
+        "shareNumerator": 5275348,
+        "shareDenominator": 7066381,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.47.renter-exposed",
+      "representedWeight": 2257028,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.47",
+      "stateControlId": "us.population.control.47",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.47",
+        "allocatedWeight": 1684965,
+        "shareNumerator": 5275348,
+        "shareDenominator": 7066381,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.48.nonrenter-exposed.project-catchment",
+      "representedWeight": 21175,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "PROJECT_CATCHMENT",
+      "projectLocatorGeographyId": "us.geography.project-locator.palms",
+      "residenceGeographyId": "us.geography.state.48",
+      "stateControlId": "us.population.control.48",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.48",
+        "allocatedWeight": 13935,
+        "shareNumerator": 19865984,
+        "shareDenominator": 30188421,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.48.nonrenter-exposed.state-remainder",
+      "representedWeight": 21154534,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_REMAINDER",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.48",
+      "stateControlId": "us.population.control.48",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.48",
+        "allocatedWeight": 13921087,
+        "shareNumerator": 19865984,
+        "shareDenominator": 30188421,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.48.renter-exposed.project-catchment",
+      "representedWeight": 10534,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "PROJECT_CATCHMENT",
+      "projectLocatorGeographyId": "us.geography.project-locator.palms",
+      "residenceGeographyId": "us.geography.state.48",
+      "stateControlId": "us.population.control.48",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.48",
+        "allocatedWeight": 6932,
+        "shareNumerator": 19865984,
+        "shareDenominator": 30188421,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.48.renter-exposed.state-remainder",
+      "representedWeight": 10523578,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_REMAINDER",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.48",
+      "stateControlId": "us.population.control.48",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.48",
+        "allocatedWeight": 6925212,
+        "shareNumerator": 19865984,
+        "shareDenominator": 30188421,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.49.nonrenter-exposed",
+      "representedWeight": 2638360,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.49",
+      "stateControlId": "us.population.control.49",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.49",
+        "allocatedWeight": 1782144,
+        "shareNumerator": 2291434,
+        "shareDenominator": 3392334,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.49.renter-exposed",
+      "representedWeight": 900544,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.49",
+      "stateControlId": "us.population.control.49",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.49",
+        "allocatedWeight": 608294,
+        "shareNumerator": 2291434,
+        "shareDenominator": 3392334,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.50.nonrenter-exposed",
+      "representedWeight": 498988,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.50",
+      "stateControlId": "us.population.control.50",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.50",
+        "allocatedWeight": 402364,
+        "shareNumerator": 521797,
+        "shareDenominator": 647102,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.50.renter-exposed",
+      "representedWeight": 145675,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.50",
+      "stateControlId": "us.population.control.50",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.50",
+        "allocatedWeight": 117466,
+        "shareNumerator": 521797,
+        "shareDenominator": 647102,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.51.nonrenter-exposed",
+      "representedWeight": 6238485,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.51",
+      "stateControlId": "us.population.control.51",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.51",
+        "allocatedWeight": 4571085,
+        "shareNumerator": 6378483,
+        "shareDenominator": 8705170,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.51.renter-exposed",
+      "representedWeight": 2641622,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.51",
+      "stateControlId": "us.population.control.51",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.51",
+        "allocatedWeight": 1935578,
+        "shareNumerator": 6378483,
+        "shareDenominator": 8705170,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.53.nonrenter-exposed",
+      "representedWeight": 5403143,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.53",
+      "stateControlId": "us.population.control.53",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.53",
+        "allocatedWeight": 3859525,
+        "shareNumerator": 5583139,
+        "shareDenominator": 7816118,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.53.renter-exposed",
+      "representedWeight": 2597877,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.53",
+      "stateControlId": "us.population.control.53",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.53",
+        "allocatedWeight": 1855692,
+        "shareNumerator": 5583139,
+        "shareDenominator": 7816118,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.54.nonrenter-exposed",
+      "representedWeight": 1368286,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.54",
+      "stateControlId": "us.population.control.54",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.54",
+        "allocatedWeight": 1084303,
+        "shareNumerator": 1409278,
+        "shareDenominator": 1778373,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.54.renter-exposed",
+      "representedWeight": 397861,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.54",
+      "stateControlId": "us.population.control.54",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.54",
+        "allocatedWeight": 315286,
+        "shareNumerator": 1409278,
+        "shareDenominator": 1778373,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.55.nonrenter-exposed",
+      "representedWeight": 4323953,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.55",
+      "stateControlId": "us.population.control.55",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.55",
+        "allocatedWeight": 3293304,
+        "shareNumerator": 4505014,
+        "shareDenominator": 5914871,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.55.renter-exposed",
+      "representedWeight": 1648834,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.55",
+      "stateControlId": "us.population.control.55",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.55",
+        "allocatedWeight": 1255821,
+        "shareNumerator": 4505014,
+        "shareDenominator": 5914871,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.56.nonrenter-exposed",
+      "representedWeight": 442018,
+      "materialExposureClass": "NONRENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.56",
+      "stateControlId": "us.population.control.56",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.56",
+        "allocatedWeight": 334166,
+        "shareNumerator": 440292,
+        "shareDenominator": 582396,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    },
+    {
+      "id": "us.population.cohort.56.renter-exposed",
+      "representedWeight": 146735,
+      "materialExposureClass": "RENTER_EXPOSED",
+      "catchmentClass": "STATE_BACKGROUND",
+      "projectLocatorGeographyId": null,
+      "residenceGeographyId": "us.geography.state.56",
+      "stateControlId": "us.population.control.56",
+      "materialExposureReferences": [],
+      "receivedInformationReferences": [],
+      "politicalState": {
+        "belief": "UNCERTAIN_UNRESOLVED",
+        "attribution": "NONE_UNKNOWN",
+        "salience": "NEUTRAL_LOW",
+        "candidatePreference": "UNRESOLVED",
+        "turnoutDisposition": "UNRESOLVED",
+        "classification": "APPROXIMATED_STATIC_CONFIGURATION_NON_HISTORICAL_SCAFFOLD"
+      },
+      "eligibilityProjection": {
+        "projectionId": "us.population.eligibility-proxy.56",
+        "allocatedWeight": 110932,
+        "shareNumerator": 440292,
+        "shareDenominator": 582396,
+        "allocationPolicy": "DETERMINISTIC_LARGEST_REMAINDER_V1",
+        "classification": "APPROXIMATED_DERIVED_ELIGIBILITY_PROXY"
+      },
+      "lineage": {
+        "version": "us-v0-population-joint-scaffold-1",
+        "generation": 0,
+        "parentCohortId": null,
+        "causeKey": "DAY_0_INITIALIZATION"
+      }
+    }
+  ]
+}

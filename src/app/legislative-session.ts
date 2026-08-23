@@ -299,7 +299,10 @@ export const createLegislativeSession = (
   options: LegislativeSessionOptions = {},
 ): LegislativeSession => {
   const loaded = loadGovernmentConfiguration(configuration);
-  if (loaded.capability !== "LEGISLATIVE_RUNTIME_SLICE" || loaded.runtimeSeed === null) {
+  if (
+    (loaded.capability !== "LEGISLATIVE_RUNTIME_SLICE" && loaded.capability !== "INTEGRATED_PARTIAL_RUNTIME") ||
+    loaded.runtimeSeed === null
+  ) {
     throw new Error("Configuration does not expose a legislative runtime slice.");
   }
   const context = { structure: loaded.structure, seed: loaded.runtimeSeed };
@@ -314,7 +317,10 @@ export const createLegislativeSessionFromSave = (
   options: Pick<LegislativeSessionOptions, "authoritativeInstant"> = {},
 ): LegislativeSession => {
   const loaded = loadGovernmentConfiguration(configuration);
-  if (loaded.capability !== "LEGISLATIVE_RUNTIME_SLICE" || loaded.runtimeSeed === null) {
+  if (
+    (loaded.capability !== "LEGISLATIVE_RUNTIME_SLICE" && loaded.capability !== "INTEGRATED_PARTIAL_RUNTIME") ||
+    loaded.runtimeSeed === null
+  ) {
     throw new Error("Configuration does not expose a legislative runtime slice.");
   }
   const restored = parseLegislativeRuntime(serialized, loaded.identity);

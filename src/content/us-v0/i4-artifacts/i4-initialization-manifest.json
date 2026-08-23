@@ -1,0 +1,376 @@
+{
+  "metadata": {
+    "artifactId": "us.i4.initialization-manifest-v1",
+    "vintage": "Scenario initialization authority through 2026-08-22",
+    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "contentSha256": "889104002e4bc20ffb551063743bbe7b8c1f4a6c065294d54c63f60c1fcc0c87"
+  },
+  "schemaVersion": 1,
+  "artifactBindings": [
+    {
+      "id": "us.i4.geography.states-2025-500k-v1",
+      "kind": "GEOGRAPHY",
+      "contentSha256": "5957b18ea7b2d8188a1cc8596237c213854988e8f1637bb8686b755565588c1f",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": [
+        "9cbfe171dad1555e11770c981d8f4db9e687a65c86f5bdae684eeb487e2e9b80"
+      ]
+    },
+    {
+      "id": "us.i4.geography.cd119-2025-500k-v1",
+      "kind": "GEOGRAPHY",
+      "contentSha256": "c42d12258fb2d1bba794d1a12cfec57e20bd352c1696e017d265cadee1a150df",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": [
+        "8e804518d333d67e24e25c61767c6a7c78fd0a0852179e8cc19c36fd66011010"
+      ]
+    },
+    {
+      "id": "us.i4.geography.project-locators-v1",
+      "kind": "GEOGRAPHY",
+      "contentSha256": "ffb4b43ba107a80adc0b7144d598149c8017f8e0e9048397f80786387ca5f807",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": [
+        "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+        "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9"
+      ]
+    },
+    {
+      "id": "us.i4.population.resident-controls-2025-v1",
+      "kind": "POPULATION_CONTROL",
+      "contentSha256": "b8f1592448a37efcadbd66b95db1de69c0c0665d9d22ae0a8c775d94d19ad484",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": [
+        "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+      ]
+    },
+    {
+      "id": "us.i4.population.tenure-input-acs2024-v1",
+      "kind": "POPULATION_MEASUREMENT",
+      "contentSha256": "2cbae718a99b30d02125f43139d81d41f3fa12fe81d9254b9933847f6ce610b7",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": [
+        "caf0a0ed0ed04f462880589096143d9f89c2e870c0e9e75c99a993cb3bf9c751"
+      ]
+    },
+    {
+      "id": "us.i4.population.cvap-proxy-2020-2024-v1",
+      "kind": "ELIGIBILITY_PROXY",
+      "contentSha256": "04d40bece9dac94986c235f290a554079bcd75b3c7b80a317e5cd65e8d6bf41c",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": [
+        "0c67665c62de843de7a3521a8110de05b4aa158cdc2db304015380615941056c"
+      ]
+    },
+    {
+      "id": "us.i4.population.initial-cohorts-2026-08-22-v1",
+      "kind": "POPULATION_COHORT",
+      "contentSha256": "c9b2e3348d615568feda3c14635ff1a149d92b4749f6cdb566d5f54b62f24166",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": []
+    },
+    {
+      "id": "us.i4.electoral.allocation-2028-v1",
+      "kind": "ELECTORAL_TOPOLOGY",
+      "contentSha256": "3494a784283029812ea22a61b777f8d21596574f920270a9a2ec02b497eaa426",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "rawSourceSha256s": [
+        "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71"
+      ]
+    }
+  ],
+  "artifactMetadata": [
+    {
+      "artifactId": "us.i4.geography.states-2025-500k-v1",
+      "vintage": "2025 Census Cartographic Boundary Files, 1:500,000",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "5957b18ea7b2d8188a1cc8596237c213854988e8f1637bb8686b755565588c1f",
+      "rawSourceSha256s": [
+        "9cbfe171dad1555e11770c981d8f4db9e687a65c86f5bdae684eeb487e2e9b80"
+      ],
+      "sources": [
+        {
+          "sourceId": "USR-SRC-0088",
+          "product": "Census 2025 Cartographic Boundary Files, States, 1:500,000",
+          "producer": "U.S. Census Bureau",
+          "sourceScope": "states and state-equivalents; runtime filters to 50 states plus District of Columbia",
+          "sourceResolution": "cartographic boundary 1:500,000",
+          "locator": "https://www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_state_500k.zip",
+          "vintage": "2025",
+          "mappingClass": "DIRECT",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "9cbfe171dad1555e11770c981d8f4db9e687a65c86f5bdae684eeb487e2e9b80",
+          "consumed": [
+            "cb_2025_us_state_500k.dbf",
+            "cb_2025_us_state_500k.shp",
+            "cb_2025_us_state_500k.prj"
+          ]
+        }
+      ],
+      "derivedFrom": [],
+      "limitations": [
+        "Statistical cartographic boundaries; not legal land descriptions."
+      ],
+      "sourceCrs": "NAD83 geographic coordinates (EPSG:4269)",
+      "runtimeCrs": "NAD83 geographic coordinates (EPSG:4269)",
+      "sourceProjection": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]",
+      "coordinatePolicy": "No simplification; coordinates deterministically rounded to six decimal places.",
+      "featureOrdering": "ascending FIPS"
+    },
+    {
+      "artifactId": "us.i4.geography.cd119-2025-500k-v1",
+      "vintage": "2025 Census Cartographic Boundary Files, 119th Congress, 1:500,000",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "c42d12258fb2d1bba794d1a12cfec57e20bd352c1696e017d265cadee1a150df",
+      "rawSourceSha256s": [
+        "8e804518d333d67e24e25c61767c6a7c78fd0a0852179e8cc19c36fd66011010"
+      ],
+      "sources": [
+        {
+          "sourceId": "USR-SRC-0088",
+          "product": "Census 2025 Cartographic Boundary Files, 119th Congressional Districts, 1:500,000",
+          "producer": "U.S. Census Bureau",
+          "sourceScope": "119th Congressional Districts; runtime filters to 435 apportioned voting districts",
+          "sourceResolution": "cartographic boundary 1:500,000",
+          "locator": "https://www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_cd119_500k.zip",
+          "vintage": "2025 / 119th Congress",
+          "mappingClass": "DIRECT",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "8e804518d333d67e24e25c61767c6a7c78fd0a0852179e8cc19c36fd66011010",
+          "consumed": [
+            "cb_2025_us_cd119_500k.dbf",
+            "cb_2025_us_cd119_500k.shp",
+            "cb_2025_us_cd119_500k.prj"
+          ]
+        }
+      ],
+      "derivedFrom": [],
+      "limitations": [
+        "119th-vintage constituency frame remains frozen after January 2027; no redistricting inference."
+      ],
+      "sourceCrs": "NAD83 geographic coordinates (EPSG:4269)",
+      "runtimeCrs": "NAD83 geographic coordinates (EPSG:4269)",
+      "sourceProjection": "GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]",
+      "coordinatePolicy": "No simplification; coordinates deterministically rounded to six decimal places.",
+      "featureOrdering": "ascending GEOID"
+    },
+    {
+      "artifactId": "us.i4.geography.project-locators-v1",
+      "vintage": "Accepted project evidence frozen 2026-08-22",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "ffb4b43ba107a80adc0b7144d598149c8017f8e0e9048397f80786387ca5f807",
+      "rawSourceSha256s": [
+        "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+        "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9"
+      ],
+      "sources": [
+        {
+          "sourceId": "USR-SRC-0106",
+          "product": "HUD final Stables project-specific nonavailability waiver W-0000102",
+          "producer": "U.S. Department of Housing and Urban Development",
+          "sourceScope": "accepted project identity and supported address only",
+          "locator": "https://www.hud.gov/sites/default/files/Main/documents/Final-Nonavailability-Waiver-CO-DOLA-Arapahoe-Co-HVAC-W-0000102.pdf",
+          "vintage": "effective 2026-08-10",
+          "mappingClass": "DIRECT",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+          "consumed": [
+            "project name",
+            "source address",
+            "Colorado locality"
+          ]
+        },
+        {
+          "sourceId": "USR-SRC-0119",
+          "product": "Texas TABS2025005871 Palms physical-project record",
+          "producer": "Texas Department of Licensing and Regulation",
+          "sourceScope": "accepted project identity and supported address only",
+          "locator": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025005871",
+          "vintage": "registered 2024-11-19; frozen 2026-08-22",
+          "mappingClass": "DIRECT",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9",
+          "consumed": [
+            "project name",
+            "source address",
+            "Texas locality"
+          ]
+        }
+      ],
+      "derivedFrom": [],
+      "limitations": [
+        "Evidence-backed address references only; no geometry or jurisdictional status is inferred."
+      ]
+    },
+    {
+      "artifactId": "us.i4.population.resident-controls-2025-v1",
+      "vintage": "Census Vintage 2025; 2025-07-01 reference date",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "b8f1592448a37efcadbd66b95db1de69c0c0665d9d22ae0a8c775d94d19ad484",
+      "rawSourceSha256s": [
+        "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+      ],
+      "sources": [
+        {
+          "sourceId": "USR-SRC-0092",
+          "product": "Census Vintage 2025 NST-EST2025-ALLDATA",
+          "producer": "U.S. Census Bureau",
+          "sourceScope": "50 states plus District of Columbia and national validation row",
+          "locator": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv",
+          "vintage": "Vintage 2025; reference date 2025-07-01",
+          "mappingClass": "DIRECT",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9",
+          "consumed": [
+            "SUMLEV",
+            "STATE",
+            "NAME",
+            "POPESTIMATE2025"
+          ]
+        }
+      ],
+      "derivedFrom": [],
+      "limitations": [
+        "Resident estimates are not citizenship, eligibility, registration, turnout, or votes."
+      ]
+    },
+    {
+      "artifactId": "us.i4.population.tenure-input-acs2024-v1",
+      "vintage": "ACS 2024 five-year B25008",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "2cbae718a99b30d02125f43139d81d41f3fa12fe81d9254b9933847f6ce610b7",
+      "rawSourceSha256s": [
+        "caf0a0ed0ed04f462880589096143d9f89c2e870c0e9e75c99a993cb3bf9c751"
+      ],
+      "sources": [
+        {
+          "sourceId": "USR-SRC-0111",
+          "product": "ACS 2024 five-year B25008 table-based summary file",
+          "producer": "U.S. Census Bureau",
+          "sourceScope": "state/DC estimates and margins of error; universe is persons in occupied housing units",
+          "locator": "https://www2.census.gov/programs-surveys/acs/summary_file/2024/table-based-SF/data/5YRData/acsdt5y2024-b25008.dat",
+          "vintage": "2020-2024 ACS five-year",
+          "mappingClass": "DERIVED",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "caf0a0ed0ed04f462880589096143d9f89c2e870c0e9e75c99a993cb3bf9c751",
+          "consumed": [
+            "GEO_ID",
+            "B25008_E001",
+            "B25008_M001",
+            "B25008_E002",
+            "B25008_M002",
+            "B25008_E003",
+            "B25008_M003"
+          ]
+        }
+      ],
+      "derivedFrom": [],
+      "limitations": [
+        "Occupied-housing-person tenure share is projected onto the different resident-population universe."
+      ]
+    },
+    {
+      "artifactId": "us.i4.population.cvap-proxy-2020-2024-v1",
+      "vintage": "2020-2024 ACS CVAP special tabulation; released 2026-01-30",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "04d40bece9dac94986c235f290a554079bcd75b3c7b80a317e5cd65e8d6bf41c",
+      "rawSourceSha256s": [
+        "0c67665c62de843de7a3521a8110de05b4aa158cdc2db304015380615941056c"
+      ],
+      "sources": [
+        {
+          "sourceId": "USR-SRC-0111",
+          "product": "2020-2024 ACS CVAP Special Tabulation, CSV files",
+          "producer": "U.S. Census Bureau",
+          "sourceScope": "state/DC total rows from State.csv; CVAP estimate, denominator, and margins of error",
+          "locator": "https://www2.census.gov/programs-surveys/decennial/rdo/datasets/2024/2024-cvap/CVAP_2020-2024_ACS_csv_files.zip",
+          "vintage": "2020-2024 ACS; released 2026-01-30",
+          "mappingClass": "APPROXIMATED",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "0c67665c62de843de7a3521a8110de05b4aa158cdc2db304015380615941056c",
+          "consumed": [
+            "State.csv"
+          ]
+        }
+      ],
+      "derivedFrom": [],
+      "limitations": [
+        "Proxy is not exact legal eligibility, registration, turnout, or votes.",
+        "One state share is applied uniformly across tenure/catchment cohorts as an explicit independence assumption."
+      ]
+    },
+    {
+      "artifactId": "us.i4.population.initial-cohorts-2026-08-22-v1",
+      "vintage": "Scenario Day 0, 2026-08-22",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "c9b2e3348d615568feda3c14635ff1a149d92b4749f6cdb566d5f54b62f24166",
+      "rawSourceSha256s": [],
+      "sources": [],
+      "derivedFrom": [
+        "us.i4.population.resident-controls-2025-v1",
+        "us.i4.population.tenure-input-acs2024-v1",
+        "us.i4.population.cvap-proxy-2020-2024-v1",
+        "us.i4.geography.project-locators-v1"
+      ],
+      "limitations": [
+        "Cohorts are authored aggregate scaffolds, not Census microdata.",
+        "B25008 tenure share is projected onto resident population across different universes.",
+        "Colorado/Texas project catchments are 0.001 modeled splits with state tenure mix retained as a non-observed independence assumption.",
+        "CVAP share is uniform within each state across tenure/catchment cohorts."
+      ]
+    },
+    {
+      "artifactId": "us.i4.electoral.allocation-2028-v1",
+      "vintage": "2020 Census allocation applicable to 2024 and 2028",
+      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "contentSha256": "3494a784283029812ea22a61b777f8d21596574f920270a9a2ec02b497eaa426",
+      "rawSourceSha256s": [
+        "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71"
+      ],
+      "sources": [
+        {
+          "sourceId": "USR-SRC-0091",
+          "product": "National Archives Distribution of Electoral Votes",
+          "producer": "National Archives and Records Administration",
+          "sourceScope": "50 states plus District of Columbia; 2024/2028 allocation",
+          "locator": "https://www.archives.gov/electoral-college/allocation",
+          "vintage": "2020 Census allocation applicable to 2024 and 2028",
+          "mappingClass": "DIRECT",
+          "retrievedAt": "2026-08-23",
+          "rawSha256": "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71",
+          "consumed": [
+            "state/DC allocation rows",
+            "538 total",
+            "270 majority",
+            "Maine/Nebraska allocation method"
+          ]
+        }
+      ],
+      "derivedFrom": [],
+      "limitations": [
+        "Static allocation topology only; contains no election result, certification, elector action, or successor state."
+      ]
+    }
+  ],
+  "geography": {
+    "stateArtifactId": "us.i4.geography.states-2025-500k-v1",
+    "districtArtifactId": "us.i4.geography.cd119-2025-500k-v1",
+    "projectLocatorArtifactId": "us.i4.geography.project-locators-v1"
+  },
+  "population": {
+    "controlArtifactId": "us.i4.population.resident-controls-2025-v1",
+    "cohortArtifactId": "us.i4.population.initial-cohorts-2026-08-22-v1",
+    "eligibilityProxyArtifactId": "us.i4.population.cvap-proxy-2020-2024-v1",
+    "tenureMeasurementArtifactId": "us.i4.population.tenure-input-acs2024-v1",
+    "scaffoldVersion": "us-v0-population-joint-scaffold-1",
+    "refinementSemanticVersion": "weighted-population-refinement-v1",
+    "catchmentRatio": {
+      "numerator": 1,
+      "denominator": 1000
+    },
+    "eligibilityIntegerizationVersion": "us-v0-cvap-proxy-v1-round-half-up-largest-remainder"
+  },
+  "electoral": {
+    "topologyArtifactId": "us.i4.electoral.allocation-2028-v1"
+  }
+}

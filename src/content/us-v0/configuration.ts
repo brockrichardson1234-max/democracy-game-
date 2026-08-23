@@ -1,6 +1,7 @@
 import type {
   GovernmentConfiguration,
   LegislativeRuntimeSeed,
+  RuntimeArtifactBinding,
   ScaffoldClassification,
 } from "../../configuration/types";
 import {
@@ -9,9 +10,10 @@ import {
   US_INCUMBENT_ADMINISTRATION_ID,
   US_PRESIDENT_OFFICE_ID,
   US_SENATE_CHAMBER_ID,
-  US_V0_I2_STRUCTURE,
+  US_V0_I4_STRUCTURE,
   US_VICE_PRESIDENT_OFFICE_ID,
 } from "./topology";
+import i4Manifest from "./i4-artifacts/i4-initialization-manifest.json";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -237,14 +239,21 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.3.1-i3-repair",
+    configurationVersion: "0.4.0-i4",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.3.1-i3-repair",
-    configurationHash: "09c6fd2c462ad43a298c8a3c2eda89b60b7ae9eadef69ece95b7d6ad1db87b3e",
+    scenarioVersion: "0.4.0-i4",
+    configurationHash: "ef671481ca00d7996cf74d74d9c3c2636b5df5db787295bbfb4f47c7a3a2b882",
   },
-  capability: "LEGISLATIVE_RUNTIME_SLICE",
+  capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
-  structure: US_V0_I2_STRUCTURE,
+  structure: US_V0_I4_STRUCTURE,
   transitions: [],
   runtimeSeed: US_V0_LEGISLATIVE_SEED,
+  integratedRuntime: {
+    schemaVersion: i4Manifest.schemaVersion,
+    artifactBindings: i4Manifest.artifactBindings as readonly RuntimeArtifactBinding[],
+    geography: i4Manifest.geography,
+    population: i4Manifest.population,
+    electoral: i4Manifest.electoral,
+  },
 };

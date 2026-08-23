@@ -1,0 +1,941 @@
+{
+  "metadata": {
+    "artifactId": "us.i4.electoral.allocation-2028-v1",
+    "vintage": "2020 Census allocation applicable to 2024 and 2028",
+    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "contentSha256": "3494a784283029812ea22a61b777f8d21596574f920270a9a2ec02b497eaa426",
+    "rawSourceSha256s": [
+      "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71"
+    ],
+    "sources": [
+      {
+        "sourceId": "USR-SRC-0091",
+        "product": "National Archives Distribution of Electoral Votes",
+        "producer": "National Archives and Records Administration",
+        "sourceScope": "50 states plus District of Columbia; 2024/2028 allocation",
+        "locator": "https://www.archives.gov/electoral-college/allocation",
+        "vintage": "2020 Census allocation applicable to 2024 and 2028",
+        "mappingClass": "DIRECT",
+        "retrievedAt": "2026-08-23",
+        "rawSha256": "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71",
+        "consumed": [
+          "state/DC allocation rows",
+          "538 total",
+          "270 majority",
+          "Maine/Nebraska allocation method"
+        ]
+      }
+    ],
+    "derivedFrom": [],
+    "limitations": [
+      "Static allocation topology only; contains no election result, certification, elector action, or successor state."
+    ]
+  },
+  "applicableElection": 2028,
+  "totalElectors": 538,
+  "ordinaryMajority": 270,
+  "allocations": [
+    {
+      "id": "us.electoral.allocation.01",
+      "stateFips": "01",
+      "stateUsps": "AL",
+      "geographyId": "us.geography.state.01",
+      "totalElectors": 9,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.01.statewide",
+          "geographyId": "us.geography.state.01",
+          "electorCount": 9,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.02",
+      "stateFips": "02",
+      "stateUsps": "AK",
+      "geographyId": "us.geography.state.02",
+      "totalElectors": 3,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.02.statewide",
+          "geographyId": "us.geography.state.02",
+          "electorCount": 3,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.04",
+      "stateFips": "04",
+      "stateUsps": "AZ",
+      "geographyId": "us.geography.state.04",
+      "totalElectors": 11,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.04.statewide",
+          "geographyId": "us.geography.state.04",
+          "electorCount": 11,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.05",
+      "stateFips": "05",
+      "stateUsps": "AR",
+      "geographyId": "us.geography.state.05",
+      "totalElectors": 6,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.05.statewide",
+          "geographyId": "us.geography.state.05",
+          "electorCount": 6,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.06",
+      "stateFips": "06",
+      "stateUsps": "CA",
+      "geographyId": "us.geography.state.06",
+      "totalElectors": 54,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.06.statewide",
+          "geographyId": "us.geography.state.06",
+          "electorCount": 54,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.08",
+      "stateFips": "08",
+      "stateUsps": "CO",
+      "geographyId": "us.geography.state.08",
+      "totalElectors": 10,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.08.statewide",
+          "geographyId": "us.geography.state.08",
+          "electorCount": 10,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.09",
+      "stateFips": "09",
+      "stateUsps": "CT",
+      "geographyId": "us.geography.state.09",
+      "totalElectors": 7,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.09.statewide",
+          "geographyId": "us.geography.state.09",
+          "electorCount": 7,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.10",
+      "stateFips": "10",
+      "stateUsps": "DE",
+      "geographyId": "us.geography.state.10",
+      "totalElectors": 3,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.10.statewide",
+          "geographyId": "us.geography.state.10",
+          "electorCount": 3,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.11",
+      "stateFips": "11",
+      "stateUsps": "DC",
+      "geographyId": "us.geography.state.11",
+      "totalElectors": 3,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.11.statewide",
+          "geographyId": "us.geography.state.11",
+          "electorCount": 3,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.12",
+      "stateFips": "12",
+      "stateUsps": "FL",
+      "geographyId": "us.geography.state.12",
+      "totalElectors": 30,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.12.statewide",
+          "geographyId": "us.geography.state.12",
+          "electorCount": 30,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.13",
+      "stateFips": "13",
+      "stateUsps": "GA",
+      "geographyId": "us.geography.state.13",
+      "totalElectors": 16,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.13.statewide",
+          "geographyId": "us.geography.state.13",
+          "electorCount": 16,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.15",
+      "stateFips": "15",
+      "stateUsps": "HI",
+      "geographyId": "us.geography.state.15",
+      "totalElectors": 4,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.15.statewide",
+          "geographyId": "us.geography.state.15",
+          "electorCount": 4,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.16",
+      "stateFips": "16",
+      "stateUsps": "ID",
+      "geographyId": "us.geography.state.16",
+      "totalElectors": 4,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.16.statewide",
+          "geographyId": "us.geography.state.16",
+          "electorCount": 4,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.17",
+      "stateFips": "17",
+      "stateUsps": "IL",
+      "geographyId": "us.geography.state.17",
+      "totalElectors": 19,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.17.statewide",
+          "geographyId": "us.geography.state.17",
+          "electorCount": 19,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.18",
+      "stateFips": "18",
+      "stateUsps": "IN",
+      "geographyId": "us.geography.state.18",
+      "totalElectors": 11,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.18.statewide",
+          "geographyId": "us.geography.state.18",
+          "electorCount": 11,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.19",
+      "stateFips": "19",
+      "stateUsps": "IA",
+      "geographyId": "us.geography.state.19",
+      "totalElectors": 6,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.19.statewide",
+          "geographyId": "us.geography.state.19",
+          "electorCount": 6,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.20",
+      "stateFips": "20",
+      "stateUsps": "KS",
+      "geographyId": "us.geography.state.20",
+      "totalElectors": 6,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.20.statewide",
+          "geographyId": "us.geography.state.20",
+          "electorCount": 6,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.21",
+      "stateFips": "21",
+      "stateUsps": "KY",
+      "geographyId": "us.geography.state.21",
+      "totalElectors": 8,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.21.statewide",
+          "geographyId": "us.geography.state.21",
+          "electorCount": 8,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.22",
+      "stateFips": "22",
+      "stateUsps": "LA",
+      "geographyId": "us.geography.state.22",
+      "totalElectors": 8,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.22.statewide",
+          "geographyId": "us.geography.state.22",
+          "electorCount": 8,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.23",
+      "stateFips": "23",
+      "stateUsps": "ME",
+      "geographyId": "us.geography.state.23",
+      "totalElectors": 4,
+      "method": "DISTRICT_AND_AT_LARGE",
+      "units": [
+        {
+          "id": "us.electoral.unit.23.at-large",
+          "geographyId": "us.geography.state.23",
+          "electorCount": 2,
+          "role": "AT_LARGE",
+          "electorateProjection": "STATE_AGGREGATE"
+        },
+        {
+          "id": "us.electoral.unit.23.district.2301",
+          "geographyId": "us.geography.cd119.2301",
+          "electorCount": 1,
+          "role": "DISTRICT",
+          "electorateProjection": "APPROXIMATED_STATE_AGGREGATE_NO_DISTRICT_POPULATION"
+        },
+        {
+          "id": "us.electoral.unit.23.district.2302",
+          "geographyId": "us.geography.cd119.2302",
+          "electorCount": 1,
+          "role": "DISTRICT",
+          "electorateProjection": "APPROXIMATED_STATE_AGGREGATE_NO_DISTRICT_POPULATION"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.24",
+      "stateFips": "24",
+      "stateUsps": "MD",
+      "geographyId": "us.geography.state.24",
+      "totalElectors": 10,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.24.statewide",
+          "geographyId": "us.geography.state.24",
+          "electorCount": 10,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.25",
+      "stateFips": "25",
+      "stateUsps": "MA",
+      "geographyId": "us.geography.state.25",
+      "totalElectors": 11,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.25.statewide",
+          "geographyId": "us.geography.state.25",
+          "electorCount": 11,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.26",
+      "stateFips": "26",
+      "stateUsps": "MI",
+      "geographyId": "us.geography.state.26",
+      "totalElectors": 15,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.26.statewide",
+          "geographyId": "us.geography.state.26",
+          "electorCount": 15,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.27",
+      "stateFips": "27",
+      "stateUsps": "MN",
+      "geographyId": "us.geography.state.27",
+      "totalElectors": 10,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.27.statewide",
+          "geographyId": "us.geography.state.27",
+          "electorCount": 10,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.28",
+      "stateFips": "28",
+      "stateUsps": "MS",
+      "geographyId": "us.geography.state.28",
+      "totalElectors": 6,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.28.statewide",
+          "geographyId": "us.geography.state.28",
+          "electorCount": 6,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.29",
+      "stateFips": "29",
+      "stateUsps": "MO",
+      "geographyId": "us.geography.state.29",
+      "totalElectors": 10,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.29.statewide",
+          "geographyId": "us.geography.state.29",
+          "electorCount": 10,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.30",
+      "stateFips": "30",
+      "stateUsps": "MT",
+      "geographyId": "us.geography.state.30",
+      "totalElectors": 4,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.30.statewide",
+          "geographyId": "us.geography.state.30",
+          "electorCount": 4,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.31",
+      "stateFips": "31",
+      "stateUsps": "NE",
+      "geographyId": "us.geography.state.31",
+      "totalElectors": 5,
+      "method": "DISTRICT_AND_AT_LARGE",
+      "units": [
+        {
+          "id": "us.electoral.unit.31.at-large",
+          "geographyId": "us.geography.state.31",
+          "electorCount": 2,
+          "role": "AT_LARGE",
+          "electorateProjection": "STATE_AGGREGATE"
+        },
+        {
+          "id": "us.electoral.unit.31.district.3101",
+          "geographyId": "us.geography.cd119.3101",
+          "electorCount": 1,
+          "role": "DISTRICT",
+          "electorateProjection": "APPROXIMATED_STATE_AGGREGATE_NO_DISTRICT_POPULATION"
+        },
+        {
+          "id": "us.electoral.unit.31.district.3102",
+          "geographyId": "us.geography.cd119.3102",
+          "electorCount": 1,
+          "role": "DISTRICT",
+          "electorateProjection": "APPROXIMATED_STATE_AGGREGATE_NO_DISTRICT_POPULATION"
+        },
+        {
+          "id": "us.electoral.unit.31.district.3103",
+          "geographyId": "us.geography.cd119.3103",
+          "electorCount": 1,
+          "role": "DISTRICT",
+          "electorateProjection": "APPROXIMATED_STATE_AGGREGATE_NO_DISTRICT_POPULATION"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.32",
+      "stateFips": "32",
+      "stateUsps": "NV",
+      "geographyId": "us.geography.state.32",
+      "totalElectors": 6,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.32.statewide",
+          "geographyId": "us.geography.state.32",
+          "electorCount": 6,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.33",
+      "stateFips": "33",
+      "stateUsps": "NH",
+      "geographyId": "us.geography.state.33",
+      "totalElectors": 4,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.33.statewide",
+          "geographyId": "us.geography.state.33",
+          "electorCount": 4,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.34",
+      "stateFips": "34",
+      "stateUsps": "NJ",
+      "geographyId": "us.geography.state.34",
+      "totalElectors": 14,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.34.statewide",
+          "geographyId": "us.geography.state.34",
+          "electorCount": 14,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.35",
+      "stateFips": "35",
+      "stateUsps": "NM",
+      "geographyId": "us.geography.state.35",
+      "totalElectors": 5,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.35.statewide",
+          "geographyId": "us.geography.state.35",
+          "electorCount": 5,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.36",
+      "stateFips": "36",
+      "stateUsps": "NY",
+      "geographyId": "us.geography.state.36",
+      "totalElectors": 28,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.36.statewide",
+          "geographyId": "us.geography.state.36",
+          "electorCount": 28,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.37",
+      "stateFips": "37",
+      "stateUsps": "NC",
+      "geographyId": "us.geography.state.37",
+      "totalElectors": 16,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.37.statewide",
+          "geographyId": "us.geography.state.37",
+          "electorCount": 16,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.38",
+      "stateFips": "38",
+      "stateUsps": "ND",
+      "geographyId": "us.geography.state.38",
+      "totalElectors": 3,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.38.statewide",
+          "geographyId": "us.geography.state.38",
+          "electorCount": 3,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.39",
+      "stateFips": "39",
+      "stateUsps": "OH",
+      "geographyId": "us.geography.state.39",
+      "totalElectors": 17,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.39.statewide",
+          "geographyId": "us.geography.state.39",
+          "electorCount": 17,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.40",
+      "stateFips": "40",
+      "stateUsps": "OK",
+      "geographyId": "us.geography.state.40",
+      "totalElectors": 7,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.40.statewide",
+          "geographyId": "us.geography.state.40",
+          "electorCount": 7,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.41",
+      "stateFips": "41",
+      "stateUsps": "OR",
+      "geographyId": "us.geography.state.41",
+      "totalElectors": 8,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.41.statewide",
+          "geographyId": "us.geography.state.41",
+          "electorCount": 8,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.42",
+      "stateFips": "42",
+      "stateUsps": "PA",
+      "geographyId": "us.geography.state.42",
+      "totalElectors": 19,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.42.statewide",
+          "geographyId": "us.geography.state.42",
+          "electorCount": 19,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.44",
+      "stateFips": "44",
+      "stateUsps": "RI",
+      "geographyId": "us.geography.state.44",
+      "totalElectors": 4,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.44.statewide",
+          "geographyId": "us.geography.state.44",
+          "electorCount": 4,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.45",
+      "stateFips": "45",
+      "stateUsps": "SC",
+      "geographyId": "us.geography.state.45",
+      "totalElectors": 9,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.45.statewide",
+          "geographyId": "us.geography.state.45",
+          "electorCount": 9,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.46",
+      "stateFips": "46",
+      "stateUsps": "SD",
+      "geographyId": "us.geography.state.46",
+      "totalElectors": 3,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.46.statewide",
+          "geographyId": "us.geography.state.46",
+          "electorCount": 3,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.47",
+      "stateFips": "47",
+      "stateUsps": "TN",
+      "geographyId": "us.geography.state.47",
+      "totalElectors": 11,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.47.statewide",
+          "geographyId": "us.geography.state.47",
+          "electorCount": 11,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.48",
+      "stateFips": "48",
+      "stateUsps": "TX",
+      "geographyId": "us.geography.state.48",
+      "totalElectors": 40,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.48.statewide",
+          "geographyId": "us.geography.state.48",
+          "electorCount": 40,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.49",
+      "stateFips": "49",
+      "stateUsps": "UT",
+      "geographyId": "us.geography.state.49",
+      "totalElectors": 6,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.49.statewide",
+          "geographyId": "us.geography.state.49",
+          "electorCount": 6,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.50",
+      "stateFips": "50",
+      "stateUsps": "VT",
+      "geographyId": "us.geography.state.50",
+      "totalElectors": 3,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.50.statewide",
+          "geographyId": "us.geography.state.50",
+          "electorCount": 3,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.51",
+      "stateFips": "51",
+      "stateUsps": "VA",
+      "geographyId": "us.geography.state.51",
+      "totalElectors": 13,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.51.statewide",
+          "geographyId": "us.geography.state.51",
+          "electorCount": 13,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.53",
+      "stateFips": "53",
+      "stateUsps": "WA",
+      "geographyId": "us.geography.state.53",
+      "totalElectors": 12,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.53.statewide",
+          "geographyId": "us.geography.state.53",
+          "electorCount": 12,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.54",
+      "stateFips": "54",
+      "stateUsps": "WV",
+      "geographyId": "us.geography.state.54",
+      "totalElectors": 4,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.54.statewide",
+          "geographyId": "us.geography.state.54",
+          "electorCount": 4,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.55",
+      "stateFips": "55",
+      "stateUsps": "WI",
+      "geographyId": "us.geography.state.55",
+      "totalElectors": 10,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.55.statewide",
+          "geographyId": "us.geography.state.55",
+          "electorCount": 10,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    },
+    {
+      "id": "us.electoral.allocation.56",
+      "stateFips": "56",
+      "stateUsps": "WY",
+      "geographyId": "us.geography.state.56",
+      "totalElectors": 3,
+      "method": "STATEWIDE_WINNER_TAKE_ALL",
+      "units": [
+        {
+          "id": "us.electoral.unit.56.statewide",
+          "geographyId": "us.geography.state.56",
+          "electorCount": 3,
+          "role": "STATEWIDE",
+          "electorateProjection": "STATE_AGGREGATE"
+        }
+      ]
+    }
+  ]
+}

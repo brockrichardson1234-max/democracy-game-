@@ -97,6 +97,20 @@ const usExecutionTokens = [
   "ELECTORAL_COLLEGE",
   "FIPS",
   "GEOID",
+  "STATEFP",
+  "CD119FP",
+  "CVAP",
+  "NST-EST2025-POP",
+  "B25008",
+  "RENTER_EXPOSED",
+  "NONRENTER_EXPOSED",
+  "PROJECT_CATCHMENT",
+  "STATE_REMAINDER",
+  "MAINE",
+  "NEBRASKA",
+  "COLORADO",
+  "TEXAS",
+  "us-v0",
 ];
 for (const file of await listSourceFiles(join(root, "src/sim"))) {
   const source = stripComments(await readFile(file, "utf8"));
@@ -109,6 +123,28 @@ for (const file of await listSourceFiles(join(root, "src/sim"))) {
     if (new RegExp(`(^|[^0-9_])${numericToken}([^0-9_]|$)`).test(source)) {
       violations.push(`${relative(root, file)} contains U.S.-specific execution number ${numericToken}`);
     }
+  }
+}
+
+const runtimeSourceFiles = [
+  ...(await listSourceFiles(join(root, "src/sim"))),
+  ...(await listSourceFiles(join(root, "src/configuration"))),
+  ...(await listSourceFiles(join(root, "src/app"))),
+  ...(await listSourceFiles(join(root, "src/content/us-v0"))),
+];
+for (const file of runtimeSourceFiles) {
+  const source = stripComments(await readFile(file, "utf8"));
+  if (/data[\\/]us-v0[\\/]i4-sources/.test(source)) {
+    violations.push(`${relative(root, file)} imports an I4 raw acquisition input into runtime source`);
+  }
+  if (/\bfetch\s*\(|https?:\/\//.test(source)) {
+    violations.push(`${relative(root, file)} introduces live-network U.S. initialization`);
+  }
+}
+
+for (const entry of await readdir(join(root, "src/content/us-v0/i4-artifacts"), { withFileTypes: true })) {
+  if (/district.*(?:population|cvap)|(?:population|cvap).*district/i.test(entry.name)) {
+    violations.push(`src/content/us-v0/i4-artifacts/${entry.name} fabricates district Population/CVAP`);
   }
 }
 

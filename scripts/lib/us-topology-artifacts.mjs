@@ -37,7 +37,10 @@ export const readRequiredZipMember = (archiveBytes, memberName, label = "source"
   return Buffer.from(member);
 };
 
-export const readDbfRecords = (buffer) => {
+export const readDbfRecords = (
+  buffer,
+  requiredFields = ["STATEFP", "CD119FP", "GEOID"],
+) => {
   if (buffer.length < 33) throw new Error("District DBF is too short.");
   const recordCount = buffer.readUInt32LE(4);
   const headerLength = buffer.readUInt16LE(8);
@@ -54,7 +57,7 @@ export const readDbfRecords = (buffer) => {
       length: buffer[offset + 16],
     });
   }
-  for (const requiredField of ["STATEFP", "CD119FP", "GEOID"]) {
+  for (const requiredField of requiredFields) {
     if (!fields.some((field) => field.name === requiredField)) {
       throw new Error(`District DBF is missing required field ${requiredField}.`);
     }

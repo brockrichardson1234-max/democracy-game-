@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "artifactId": "us.i4.geography.project-locators-v1",
+    "vintage": "Accepted project evidence frozen 2026-08-22",
+    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "contentSha256": "ffb4b43ba107a80adc0b7144d598149c8017f8e0e9048397f80786387ca5f807",
+    "rawSourceSha256s": [
+      "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+      "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9"
+    ],
+    "sources": [
+      {
+        "sourceId": "USR-SRC-0106",
+        "product": "HUD final Stables project-specific nonavailability waiver W-0000102",
+        "producer": "U.S. Department of Housing and Urban Development",
+        "sourceScope": "accepted project identity and supported address only",
+        "locator": "https://www.hud.gov/sites/default/files/Main/documents/Final-Nonavailability-Waiver-CO-DOLA-Arapahoe-Co-HVAC-W-0000102.pdf",
+        "vintage": "effective 2026-08-10",
+        "mappingClass": "DIRECT",
+        "retrievedAt": "2026-08-23",
+        "rawSha256": "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+        "consumed": [
+          "project name",
+          "source address",
+          "Colorado locality"
+        ]
+      },
+      {
+        "sourceId": "USR-SRC-0119",
+        "product": "Texas TABS2025005871 Palms physical-project record",
+        "producer": "Texas Department of Licensing and Regulation",
+        "sourceScope": "accepted project identity and supported address only",
+        "locator": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025005871",
+        "vintage": "registered 2024-11-19; frozen 2026-08-22",
+        "mappingClass": "DIRECT",
+        "retrievedAt": "2026-08-23",
+        "rawSha256": "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9",
+        "consumed": [
+          "project name",
+          "source address",
+          "Texas locality"
+        ]
+      }
+    ],
+    "derivedFrom": [],
+    "limitations": [
+      "Evidence-backed address references only; no geometry or jurisdictional status is inferred."
+    ]
+  },
+  "records": [
+    {
+      "id": "us.geography.project-locator.stables",
+      "label": "Stables project locator",
+      "stateFips": "08",
+      "parentGeographyId": "us.geography.state.08",
+      "locatorKind": "SOURCE_ADDRESS_REFERENCE",
+      "supportedAddress": "10850 E. Exposition Ave. Aurora, Colorado",
+      "geometry": null,
+      "sourceId": "USR-SRC-0106",
+      "precisionLimit": "Address text only; no parcel, municipal boundary, catchment polygon, or geocoded point asserted."
+    },
+    {
+      "id": "us.geography.project-locator.palms",
+      "label": "Palms project locator",
+      "stateFips": "48",
+      "parentGeographyId": "us.geography.state.48",
+      "locatorKind": "SOURCE_ADDRESS_REFERENCE",
+      "supportedAddress": "2212 Morris Avenue, Corpus Christi, TX 78405",
+      "geometry": null,
+      "sourceId": "USR-SRC-0119",
+      "precisionLimit": "Address text only; no parcel, municipal boundary, catchment polygon, or geocoded point asserted."
+    }
+  ]
+}
