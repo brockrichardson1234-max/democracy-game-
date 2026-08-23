@@ -188,6 +188,11 @@ export interface LegislativeRuntimeState {
   readonly agenda: LegislativeAgenda;
   readonly political: PoliticalState;
   readonly procedure: LegislativeProcedureState;
+  readonly procedureHistory: readonly {
+    readonly agenda: LegislativeAgenda;
+    readonly procedure: LegislativeProcedureState;
+    readonly archivedAt: string;
+  }[];
   readonly enactedLegalSources: readonly EnactedLegislativeSource[];
 }
 
@@ -260,6 +265,7 @@ const resolveOperativeLegalTerms = (
 
 const makeVersion = (
   seed: LegislativeRuntimeSeed,
+  proposalId: string,
   version: number,
   dimensions: Readonly<Record<string, number>>,
   createdBy: ProposalVersion["createdBy"],
@@ -267,8 +273,8 @@ const makeVersion = (
 ): ProposalVersion => {
   const legalTerms = resolveOperativeLegalTerms(seed, dimensions);
   return {
-    id: `${seed.recordIds.proposalVersionPrefix}${seed.proposal.id}:${version}`,
-    proposalId: seed.proposal.id,
+    id: `${seed.recordIds.proposalVersionPrefix}${proposalId}:${version}`,
+    proposalId,
     version,
     dimensions,
     authorizationProvisions: [...seed.proposal.authorizationProvisions],
@@ -276,7 +282,7 @@ const makeVersion = (
     policyTerms: legalTerms.policyTerms,
     legalTermsClassification: seed.proposal.legalTerms.classification,
     textHash: versionTextHash(
-      seed.proposal.id,
+      proposalId,
       version,
       dimensions,
       seed.proposal.authorizationProvisions,
@@ -303,7 +309,10 @@ const assertDimensions = (
   if (Object.keys(dimensions).some((id) => !configured.has(id))) throw new Error("Proposal contains an unknown dimension.");
 };
 
-const evaluated = (state: LegislativeRuntimeState, version = state.agenda.currentVersion): EvaluatedProposalVersion => {
+export const currentEvaluatedProposal = (
+  state: LegislativeRuntimeState,
+  version = state.agenda.currentVersion,
+): EvaluatedProposalVersion => {
   const record = state.agenda.versions.find((candidate) => candidate.version === version);
   if (record === undefined) throw new Error(`Unknown proposal version ${version}.`);
   return { proposalId: state.agenda.proposalId, version, dimensions: record.dimensions };
@@ -314,7 +323,14 @@ export const createLegislativeRuntimeState = (
   context: LegislativeRuntimeContext,
 ): LegislativeRuntimeState => {
   assertDimensions(context.seed, context.seed.proposal.initialDimensions);
-  const initialVersion = makeVersion(context.seed, 1, context.seed.proposal.initialDimensions, "AGENDA", null);
+  const initialVersion = makeVersion(
+    context.seed,
+    context.seed.proposal.id,
+    1,
+    context.seed.proposal.initialDimensions,
+    "AGENDA",
+    null,
+  );
   const activeAssignments: readonly ActiveOfficeAssignmentState[] = context.structure.assignments
     .filter((assignment) => assignment.currentAtScenarioStart)
     .map((assignment) => ({
@@ -368,6 +384,7 @@ export const createLegislativeRuntimeState = (
       terminalDisposition: null,
       failureReason: null,
     },
+    procedureHistory: [],
     enactedLegalSources: [],
   };
 };
@@ -377,7 +394,7 @@ const withCurrentProposal = (
   agenda: LegislativeAgenda,
   procedure: LegislativeProcedureState = state.procedure,
 ): LegislativeRuntimeState => {
-  const proposal = evaluated({ ...state, agenda }, agenda.currentVersion);
+  const proposal = currentEvaluatedProposal({ ...state, agenda }, agenda.currentVersion);
   return {
     ...state,
     agenda,
@@ -419,7 +436,7 @@ export const replaceActiveOfficeAssignment = (
         office.id,
         replacement.id,
         replacement.actorId,
-        evaluated(state),
+        currentEvaluatedProposal(state),
       )
     : state.political;
   return { ...state, activeAssignments, political };
@@ -435,7 +452,14 @@ export const reviseLegislativeAgenda = (
   }
   assertDimensions(context.seed, dimensions);
   const nextNumber = state.agenda.versions.length + 1;
-  const version = makeVersion(context.seed, nextNumber, dimensions, "AGENDA_REVISION", state.agenda.currentVersion);
+  const version = makeVersion(
+    context.seed,
+    state.agenda.proposalId,
+    nextNumber,
+    dimensions,
+    "AGENDA_REVISION",
+    state.agenda.currentVersion,
+  );
   return withCurrentProposal(state, {
     ...state.agenda,
     versions: [...state.agenda.versions, version],
@@ -500,7 +524,7 @@ export const seekMemberSponsorship = (
     state.political,
     context.seed,
     actorId,
-    evaluated(state),
+    currentEvaluatedProposal(state),
     `sponsorship:${state.agenda.proposalId}:${state.agenda.currentVersion}:${actorId}`,
     "SPONSORSHIP",
   );
@@ -639,7 +663,7 @@ export const requestFormalAmendment = (
   if (priorRounds >= context.seed.procedure.maximumAmendmentRoundsPerChamber) {
     throw new Error("Configured amendment-round limit reached.");
   }
-  const base = evaluated(state);
+  const base = currentEvaluatedProposal(state);
   const proposedDimensions = { ...base.dimensions, ...changes };
   assertDimensions(context.seed, proposedDimensions);
   return {
@@ -757,7 +781,14 @@ export const resolveFormalAmendment = (
     throw new Error("No formal amendment proposal is pending in the current chamber.");
   }
   const candidateNumber = state.agenda.versions.length + 1;
-  const candidate = makeVersion(context.seed, candidateNumber, pending.proposedDimensions, "ADOPTED_AMENDMENT", pending.baseVersion);
+  const candidate = makeVersion(
+    context.seed,
+    state.agenda.proposalId,
+    candidateNumber,
+    pending.proposedDimensions,
+    "ADOPTED_AMENDMENT",
+    pending.baseVersion,
+  );
   const result = resolveActorVotes(
     state,
     context,
@@ -823,7 +854,7 @@ export const resolveExtendedDebateDecisionOpportunity = (
   if (state.procedure.extendedDebateDecisionOpportunities.some(
     (opportunity) => opportunity.chamberId === chamberId && opportunity.proposalVersion === state.agenda.currentVersion,
   )) throw new Error("Extended-debate decisions already resolved for this chamber and proposal version.");
-  const proposal = evaluated(state);
+  const proposal = currentEvaluatedProposal(state);
   const decisions = eligibleAssignments(state, context, chamberId).map((assignment): ExtendedDebateActorDecision => {
     const office = context.structure.offices.find((candidate) => candidate.id === assignment.officeId);
     if (office === undefined) throw new Error("Extended-debate assignment references an unknown office.");
@@ -913,7 +944,7 @@ export const resolveFinalRollCall = (
       next,
       context,
       chamberId,
-      evaluated(next),
+      currentEvaluatedProposal(next),
       "CLOTURE",
       next.procedure.voteOpportunities.length + 1,
     );
@@ -931,7 +962,7 @@ export const resolveFinalRollCall = (
     next,
     context,
     chamberId,
-    evaluated(next),
+    currentEvaluatedProposal(next),
     "FINAL_PASSAGE",
     next.procedure.voteOpportunities.length + 1,
   );
@@ -965,7 +996,11 @@ export const resolveConfiguredTieBreakerDecision = (
   }
   const actorId = assignment.actorId;
   const assignmentId = assignment.id;
-  const choice = decideExecutiveDeputyTieBreak(context.seed, actorId, evaluated(state, opportunity.proposalVersion));
+  const choice = decideExecutiveDeputyTieBreak(
+    context.seed,
+    actorId,
+    currentEvaluatedProposal(state, opportunity.proposalVersion),
+  );
   const vote: RecordedLegislativeVote = {
     opportunityId: opportunity.id,
     chamberId: opportunity.chamberId,
@@ -1011,7 +1046,7 @@ export const considerTextExchange = (
   if (state.procedure.textExchangeCount >= context.seed.procedure.maximumTextExchanges) {
     return terminalFailure(state, "Text-exchange limit exhausted without identical passage.");
   }
-  const proposal = evaluated(state, proposedVersion);
+  const proposal = currentEvaluatedProposal(state, proposedVersion);
   const result = resolveActorVotes(
     state,
     context,
@@ -1260,7 +1295,7 @@ export const resolveVetoOverrideRollCall = (
     state,
     context,
     chamberId,
-    evaluated(state, state.procedure.presentment.proposalVersion),
+    currentEvaluatedProposal(state, state.procedure.presentment.proposalVersion),
     "OVERRIDE",
     state.procedure.voteOpportunities.length + 1,
   );
@@ -1294,13 +1329,99 @@ export const resolveLegislatureTermBoundary = (
   if (["FAILED", "EXPIRED_AT_END_OF_CONGRESS"].includes(state.procedure.stage)) {
     throw new Error("Terminal legislative procedure cannot expire again.");
   }
+  return expireLegislativeProcedureAtBoundary(state, occurrence.occurredAt);
+};
+
+export const expireLegislativeProcedureAtBoundary = (
+  state: LegislativeRuntimeState,
+  occurredAt: string,
+): LegislativeRuntimeState => {
+  if (!Number.isFinite(Date.parse(occurredAt))) throw new Error("Legislative expiry requires a valid configured instant.");
+  if (["ENACTED", "FAILED", "EXPIRED_AT_END_OF_CONGRESS"].includes(state.procedure.stage)) return state;
   return {
     ...state,
+    political: {
+      ...state.political,
+      commitments: state.political.commitments.map((commitment) =>
+        commitment.proposalId === state.agenda.proposalId &&
+        (commitment.status === "ACTIVE" || commitment.status === "PROPOSED")
+          ? { ...commitment, status: "EXPIRED" as const, effectiveUntilEvent: occurredAt }
+          : commitment,
+      ),
+    },
     procedure: {
       ...state.procedure,
       stage: "EXPIRED_AT_END_OF_CONGRESS",
       terminalDisposition: "EXPIRED_AT_END_OF_CONGRESS",
       failureReason: "Procedure expired at an externally supplied congress boundary.",
     },
+  };
+};
+
+export const startNewLegislativeProcedure = (
+  state: LegislativeRuntimeState,
+  context: LegislativeRuntimeContext,
+  proposalId: string,
+  occurredAt: string,
+): LegislativeRuntimeState => {
+  if (state.procedure.stage !== "EXPIRED_AT_END_OF_CONGRESS") {
+    throw new Error("A new institutional-term procedure requires an expired prior procedure.");
+  }
+  if (proposalId.trim().length === 0 || !Number.isFinite(Date.parse(occurredAt))) {
+    throw new Error("New procedure identity and configured instant are required.");
+  }
+  if (
+    proposalId === state.agenda.proposalId ||
+    state.procedureHistory.some((history) => history.agenda.proposalId === proposalId)
+  ) throw new Error("New institutional-term procedure requires a fresh proposal identity.");
+  const prior = state.agenda.versions.find((version) => version.version === state.agenda.currentVersion);
+  if (prior === undefined) throw new Error("Expired procedure lacks its current proposal version.");
+  const version = makeVersion(context.seed, proposalId, 1, prior.dimensions, "AGENDA", null);
+  const procedure: LegislativeProcedureState = {
+    stage: "DRAFT_AGENDA",
+    currentChamberId: null,
+    currentProposalVersion: 1,
+    sponsorship: {
+      status: "NOT_SOUGHT",
+      actorId: null,
+      officeId: null,
+      assignmentId: null,
+      proposalVersion: null,
+    },
+    gates: context.seed.procedure.chamberRules.map((rule) => ({
+      chamberId: rule.chamberId,
+      status: "UNRESOLVED",
+      signalCount: 0,
+    })),
+    amendments: [],
+    voteOpportunities: [],
+    approvedVersionByChamber: {},
+    extendedDebateDecisionOpportunities: [],
+    textExchangeCount: 0,
+    presentment: null,
+    overridePassedChamberIds: [],
+    terminalDisposition: null,
+    failureReason: null,
+  };
+  const agenda: LegislativeAgenda = {
+    proposalId,
+    title: state.agenda.title,
+    versions: [version],
+    currentVersion: 1,
+  };
+  return {
+    ...state,
+    agenda,
+    procedure,
+    procedureHistory: [...state.procedureHistory, {
+      agenda: state.agenda,
+      procedure: state.procedure,
+      archivedAt: occurredAt,
+    }],
+    political: refreshPoliticalSupport(state.political, {
+      proposalId,
+      version: 1,
+      dimensions: version.dimensions,
+    }),
   };
 };

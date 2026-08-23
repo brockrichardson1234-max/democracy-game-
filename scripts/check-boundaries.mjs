@@ -108,6 +108,11 @@ const usExecutionTokens = [
   "STATE_REMAINDER",
   "MAINE",
   "NEBRASKA",
+  "PRESIDENT",
+  "VICE_PRESIDENT",
+  "ELECTORAL_COLLEGE",
+  "CLASS_II",
+  "CLASS_III",
   "COLORADO",
   "TEXAS",
   "us-v0",
@@ -122,6 +127,23 @@ for (const file of await listSourceFiles(join(root, "src/sim"))) {
   for (const numericToken of [435, 538, 270]) {
     if (new RegExp(`(^|[^0-9_])${numericToken}([^0-9_]|$)`).test(source)) {
       violations.push(`${relative(root, file)} contains U.S.-specific execution number ${numericToken}`);
+    }
+  }
+  if (
+    /(?:institutional-runtime|calendar-time)\.(?:ts|js)$/.test(file) &&
+    /(^|[^0-9_])100([^0-9_]|$)/.test(source)
+  ) {
+    violations.push(`${relative(root, file)} contains U.S.-specific institutional execution number 100`);
+  }
+  for (const instantToken of [
+    "2027-01-03",
+    "2028-11-07",
+    "2028-12-19",
+    "2029-01-06",
+    "2029-01-20",
+  ]) {
+    if (source.includes(instantToken)) {
+      violations.push(`${relative(root, file)} contains U.S.-specific configured instant ${instantToken}`);
     }
   }
 }

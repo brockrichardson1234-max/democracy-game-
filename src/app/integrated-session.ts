@@ -1,4 +1,5 @@
 import { assertConfigurationIdentityCompatible, loadGovernmentConfiguration } from "../configuration/loader";
+import { sha256Hex } from "../configuration/sha256";
 import type { GovernmentConfiguration, LegislativeRuntimeSeed } from "../configuration/types";
 import {
   createIntegratedPartialRuntimeState,
@@ -9,17 +10,35 @@ import {
   assertWeightedPopulationConservation,
   mergeWeightedPopulationCohorts,
   refineWeightedPopulationCohort,
+  resolvePopulationPoliticalState,
+  type PopulationPoliticalResolution,
   type PopulationRefinementRequest,
 } from "../sim/population-core";
+import {
+  advanceScheduledState,
+  assertCalendarTimeState,
+  nextConfiguredBoundary,
+} from "../sim/calendar-time";
+import {
+  applyInstitutionalBoundary,
+  assertInstitutionalRuntimeState,
+  type InstitutionalRuntimeState,
+} from "../sim/institutional-runtime";
+import {
+  currentEvaluatedProposal,
+  startNewLegislativeProcedure,
+} from "../sim/legislative-runtime";
+import { rebuildPoliticalStateForAssignments } from "../sim/political";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
 import {
   createInitialLegislativeControlBinding,
   createLegislativeSessionForStateOwner,
+  LEGISLATIVE_ADMINISTRATION_DECISION_SURFACE,
   type LegislativeSession,
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 1 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 2 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -28,8 +47,10 @@ interface IntegratedPartialSaveEnvelope {
   readonly geographyArtifactIds: readonly string[];
   readonly legislativeRuntime: IntegratedPartialRuntimeState["legislative"];
   readonly controlBinding: LegislativeControlBinding;
+  readonly controlBindingHistory: readonly LegislativeControlBinding[];
   readonly population: IntegratedPartialRuntimeState["population"];
   readonly electoralTopology: IntegratedPartialRuntimeState["electoralTopology"];
+  readonly institutional: IntegratedPartialRuntimeState["institutional"];
 }
 
 const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -39,6 +60,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export interface IntegratedPartialRuntimeSession {
   readonly getAuditState: () => IntegratedPartialRuntimeState;
   readonly getControlBindingAudit: () => LegislativeControlBinding;
+  readonly getControlBindingHistoryAudit: () => readonly LegislativeControlBinding[];
   readonly getLegislativeAdministrationView: LegislativeSession["getAdministrationView"];
   readonly reviseAgenda: LegislativeSession["reviseAgenda"];
   readonly beginSponsorSearch: LegislativeSession["beginSponsorSearch"];
@@ -59,12 +81,41 @@ export interface IntegratedPartialRuntimeSession {
   readonly resolveOverride: LegislativeSession["resolveOverride"];
   readonly refinePopulation: (request: PopulationRefinementRequest) => IntegratedPartialRuntimeState;
   readonly mergePopulation: (cohortIds: readonly string[], causeKey: string) => IntegratedPartialRuntimeState;
+  readonly startNewCongressAgenda: () => IntegratedPartialRuntimeState;
+  readonly advanceTo: (instant: string) => IntegratedPartialRuntimeState;
+  readonly advanceToNextBoundary: () => IntegratedPartialRuntimeState;
+  readonly getPublicInstitutionalStatus: () => IntegratedInstitutionalPublicStatus;
   readonly save: () => string;
+}
+
+export interface IntegratedInstitutionalPublicStatus {
+  readonly currentInstant: string;
+  readonly currentTermLabel: string;
+  readonly currentAdministrationId: string;
+  readonly currentHeadActorId: string;
+  readonly currentDeputyActorId: string;
+  readonly controlBindingActive: boolean;
+  readonly nextBoundary: { readonly id: string; readonly at: string; readonly kind: string } | null;
+  readonly selectionStage: InstitutionalRuntimeState["selection"]["stage"];
+  readonly popularResults: InstitutionalRuntimeState["selection"]["popularResults"];
+  readonly attestations: InstitutionalRuntimeState["selection"]["attestations"];
+  readonly appointments: InstitutionalRuntimeState["selection"]["appointments"];
+  readonly certificates: InstitutionalRuntimeState["selection"]["certificates"];
+  readonly declaration: InstitutionalRuntimeState["selection"]["declaration"];
+  readonly entitlements: InstitutionalRuntimeState["selection"]["entitlements"];
+  readonly currentExecutiveAssignments: readonly {
+    readonly id: string;
+    readonly officeId: string;
+    readonly actorId: string;
+    readonly effectiveFrom: string;
+    readonly effectiveUntil: string | null;
+  }[];
 }
 
 const serialize = (
   state: IntegratedPartialRuntimeState,
   controlBinding: LegislativeControlBinding,
+  controlBindingHistory: readonly LegislativeControlBinding[],
 ): string => JSON.stringify({
   formatVersion: INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION,
   configuration: state.configuration,
@@ -72,8 +123,10 @@ const serialize = (
   geographyArtifactIds: state.geography.artifactIds,
   legislativeRuntime: state.legislative,
   controlBinding,
+  controlBindingHistory,
   population: state.population,
   electoralTopology: state.electoralTopology,
+  institutional: state.institutional,
 } satisfies IntegratedPartialSaveEnvelope);
 
 const artifactIdentity = (values: IntegratedPartialRuntimeState["artifactBindings"]): string =>
@@ -156,7 +209,11 @@ const parse = (
   serialized: string,
   configuration: GovernmentConfiguration<LegislativeRuntimeSeed>,
   artifacts: IntegratedRuntimeArtifactBundle,
-): { readonly state: IntegratedPartialRuntimeState; readonly controlBinding: LegislativeControlBinding } => {
+): {
+  readonly state: IntegratedPartialRuntimeState;
+  readonly controlBinding: LegislativeControlBinding;
+  readonly controlBindingHistory: readonly LegislativeControlBinding[];
+} => {
   let parsed: unknown;
   try {
     parsed = JSON.parse(serialized) as unknown;
@@ -172,8 +229,10 @@ const parse = (
     !Array.isArray(parsed.geographyArtifactIds) ||
     !isRecord(parsed.legislativeRuntime) ||
     !isRecord(parsed.controlBinding) ||
+    !Array.isArray(parsed.controlBindingHistory) ||
     !isRecord(parsed.population) ||
-    !isRecord(parsed.electoralTopology)
+    !isRecord(parsed.electoralTopology) ||
+    !isRecord(parsed.institutional)
   ) throw new Error("Invalid integrated partial save envelope.");
   const baseline = createIntegratedPartialRuntimeState(configuration, artifacts);
   assertConfigurationIdentityCompatible(
@@ -199,14 +258,158 @@ const parse = (
   assertPopulationArtifactAuthority(population, baseline.population);
   const electoralTopology = parsed.electoralTopology as unknown as IntegratedPartialRuntimeState["electoralTopology"];
   requireExactArtifactState(electoralTopology, baseline.electoralTopology, "electoral topology");
+  const temporal = configuration.integratedRuntime?.temporal;
+  const institutional = parsed.institutional as unknown as InstitutionalRuntimeState;
+  if (temporal === undefined || baseline.institutional === null) {
+    throw new Error("Integrated partial save supplies unsupported institutional time state.");
+  }
+  assertCalendarTimeState(institutional.calendar, configuration.calendar.epoch, temporal.boundaries);
+  assertInstitutionalRuntimeState(institutional, temporal, electoralTopology);
+  let expectedAssignments = baseline.legislative.activeAssignments.map((assignment) => ({ ...assignment }));
+  for (const cycle of [...institutional.termCycles].sort(
+    (left, right) => Date.parse(left.frozenAt) - Date.parse(right.frozenAt),
+  )) {
+    if (cycle.status !== "COMPLETE") {
+      throw new Error("Integrated partial save contains a partially applied same-instant assignment cycle.");
+    }
+    const configuredCycle = temporal.assignmentCycles.find((candidate) => candidate.id === cycle.cycleId);
+    if (configuredCycle === undefined) throw new Error("Integrated partial save contains an unknown assignment cycle.");
+    const officeIds = new Set(configuredCycle.officeIds);
+    const expectedEnded = expectedAssignments.filter((assignment) => officeIds.has(assignment.officeId))
+      .map((assignment) => ({ ...assignment, effectiveUntil: cycle.frozenAt }));
+    const expectedBegun = cycle.results.map((result) => ({
+      id: result.successorAssignmentId,
+      officeId: result.officeId,
+      actorId: result.successorActorId,
+      effectiveFrom: cycle.frozenAt,
+      effectiveUntil: configuredCycle.nextBoundaryByOfficeId[result.officeId],
+      classification: configuredCycle.classification,
+    }));
+    if (
+      JSON.stringify(cycle.endedAssignments) !== JSON.stringify(expectedEnded) ||
+      JSON.stringify(cycle.begunAssignments) !== JSON.stringify(expectedBegun)
+    ) throw new Error("Integrated partial save assignment-cycle history contradicts its results.");
+    expectedAssignments = [
+      ...expectedAssignments.filter((assignment) => !officeIds.has(assignment.officeId)),
+      ...expectedBegun,
+    ];
+  }
+  if (institutional.selection.stage === "TRANSFERRED") {
+    const executiveOfficeIds = new Set([
+      temporal.selection.transfer.headOfficeId,
+      temporal.selection.transfer.deputyOfficeId,
+    ]);
+    expectedAssignments = [
+      ...expectedAssignments.filter((assignment) => !executiveOfficeIds.has(assignment.officeId)),
+      ...institutional.selection.entitlements.map((entitlement) => ({
+        id: `${temporal.selection.transfer.assignmentIdPrefix}${entitlement.officeId === temporal.selection.transfer.headOfficeId ? "head" : "deputy"}`,
+        officeId: entitlement.officeId,
+        actorId: entitlement.entitledActorId,
+        effectiveFrom: temporal.selection.transfer.scheduledAt,
+        effectiveUntil: null,
+        classification: temporal.selection.classification,
+      })),
+    ];
+  }
+  if (JSON.stringify(validatedLegislative.state.activeAssignments) !== JSON.stringify(expectedAssignments)) {
+    throw new Error("Integrated partial save active assignments contradict configured temporal transitions.");
+  }
+  const headAssignment = validatedLegislative.state.activeAssignments.find(
+    (assignment) => assignment.officeId === temporal.selection.transfer.headOfficeId,
+  );
+  const deputyAssignment = validatedLegislative.state.activeAssignments.find(
+    (assignment) => assignment.officeId === temporal.selection.transfer.deputyOfficeId,
+  );
+  if (
+    headAssignment?.actorId !== institutional.currentAdministration.headActorId ||
+    deputyAssignment?.actorId !== institutional.currentAdministration.deputyActorId
+  ) throw new Error("Integrated partial save current administration contradicts active executive assignments.");
+  const expectedActiveBinding = institutional.currentAdministration.headActorId ===
+    temporal.selection.tickets.find((ticket) => ticket.id === temporal.selection.transfer.playerAlignedTicketId)
+      ?.headCandidate.actorId;
+  if (
+    (expectedActiveBinding && validatedLegislative.controlBinding.status !== "ACTIVE") ||
+    (!expectedActiveBinding && validatedLegislative.controlBinding.status !== "ENDED") ||
+    (validatedLegislative.controlBinding.status === "ACTIVE" &&
+      validatedLegislative.controlBinding.boundOfficeholderActorId !== headAssignment.actorId)
+  ) throw new Error("Integrated partial save ControlBinding contradicts current administration authority.");
+  const controlBindingHistory = parsed.controlBindingHistory as unknown as readonly LegislativeControlBinding[];
+  const transferCompleted = institutional.selection.stage === "TRANSFERRED";
+  const declaredTicket = institutional.selection.declaration === null
+    ? null
+    : temporal.selection.tickets.find(
+        (ticket) => ticket.id === institutional.selection.declaration?.winningTicketId,
+      ) ?? null;
+  if (transferCompleted && declaredTicket === null) {
+    throw new Error("Integrated partial save transfer lacks its configured declared ticket.");
+  }
+  const expectedInitialAdministration = {
+    ...temporal.initialAdministration,
+    sourceDeclarationId: null,
+  };
+  const expectedCurrentAdministration = transferCompleted && declaredTicket !== null
+    ? {
+        id: `${temporal.selection.transfer.administrationIdPrefix}${sha256Hex(declaredTicket.id).slice(0, 16)}`,
+        headActorId: declaredTicket.headCandidate.actorId,
+        deputyActorId: declaredTicket.deputyCandidate.actorId,
+        effectiveFrom: temporal.selection.transfer.scheduledAt,
+        effectiveUntil: null,
+        sourceDeclarationId: institutional.selection.declaration!.id,
+        classification: temporal.selection.classification,
+      }
+    : expectedInitialAdministration;
+  if (
+    JSON.stringify(institutional.currentAdministration) !== JSON.stringify(expectedCurrentAdministration) ||
+    JSON.stringify(institutional.administrationHistory) !== JSON.stringify(
+      transferCompleted
+        ? [{ ...expectedInitialAdministration, effectiveUntil: temporal.selection.transfer.scheduledAt }]
+        : [],
+    )
+  ) throw new Error("Integrated partial save current-administration history contradicts configured succession.");
+  const expectedInitialBinding: LegislativeControlBinding = {
+    id: `${configuration.identity.configurationId}.control-binding.legislative-administration`,
+    decisionSurface: LEGISLATIVE_ADMINISTRATION_DECISION_SURFACE,
+    executiveOfficeId: temporal.selection.transfer.headOfficeId,
+    boundOfficeholderActorId: temporal.initialAdministration.headActorId,
+    status: "ACTIVE",
+    endedAt: null,
+    endReason: null,
+  };
+  const expectedEndedBinding: LegislativeControlBinding = {
+    ...expectedInitialBinding,
+    status: "ENDED",
+    endedAt: temporal.selection.transfer.scheduledAt,
+    endReason: "TERM_ENDED",
+  };
+  const expectedCurrentBinding = transferCompleted &&
+    institutional.selection.declaration?.winningTicketId === temporal.selection.transfer.playerAlignedTicketId
+    ? {
+        id: `${temporal.selection.transfer.bindingIdPrefix}${temporal.selection.transfer.playerAlignedTicketId}`,
+        decisionSurface: LEGISLATIVE_ADMINISTRATION_DECISION_SURFACE,
+        executiveOfficeId: temporal.selection.transfer.headOfficeId,
+        boundOfficeholderActorId: headAssignment.actorId,
+        status: "ACTIVE" as const,
+        endedAt: null,
+        endReason: null,
+      }
+    : transferCompleted ? expectedEndedBinding : expectedInitialBinding;
+  if (
+    controlBindingHistory.some((binding) => binding.status !== "ENDED" || binding.endReason !== "TERM_ENDED") ||
+    (transferCompleted && controlBindingHistory.length !== 1) ||
+    (!transferCompleted && controlBindingHistory.length !== 0) ||
+    JSON.stringify(validatedLegislative.controlBinding) !== JSON.stringify(expectedCurrentBinding) ||
+    (transferCompleted && JSON.stringify(controlBindingHistory[0]) !== JSON.stringify(expectedEndedBinding))
+  ) throw new Error("Integrated partial save ControlBinding history contradicts authority transfer state.");
   return {
     state: {
       ...baseline,
       legislative: validatedLegislative.state,
       population,
       electoralTopology,
+      institutional,
     },
     controlBinding: validatedLegislative.controlBinding,
+    controlBindingHistory,
   };
 };
 
@@ -214,19 +417,102 @@ const createSession = (
   initialState: IntegratedPartialRuntimeState,
   initialBinding: LegislativeControlBinding,
   configuration: GovernmentConfiguration<LegislativeRuntimeSeed>,
+  initialControlBindingHistory: readonly LegislativeControlBinding[] = [],
 ): IntegratedPartialRuntimeSession => {
   let state = initialState;
-  const controlBinding = initialBinding;
+  let controlBinding = initialBinding;
+  let controlBindingHistory = [...initialControlBindingHistory];
+  const temporal = configuration.integratedRuntime?.temporal;
+  if (temporal === undefined || state.institutional === null) {
+    throw new Error("Integrated session requires configured institutional time state.");
+  }
   const legislativeSession = createLegislativeSessionForStateOwner({
     getLegislativeState: () => state.legislative,
     setLegislativeState: (legislative) => { state = { ...state, legislative }; },
   }, {
     structure: configuration.structure,
     seed: configuration.runtimeSeed as LegislativeRuntimeSeed,
-  }, controlBinding, configuration.calendar.epoch);
+  }, controlBinding, configuration.calendar.epoch, {
+    getControlBinding: () => controlBinding,
+    getAdministrationId: () => {
+      if (state.institutional === null) throw new Error("Integrated session lost current administration state.");
+      return state.institutional.currentAdministration.id;
+    },
+    getAuthoritativeInstant: () => {
+      if (state.institutional === null) throw new Error("Integrated session lost canonical calendar state.");
+      return state.institutional.calendar.current;
+    },
+  });
+  const advanceTo = (target: string): IntegratedPartialRuntimeState => {
+    if (state.institutional === null) throw new Error("Integrated session lacks institutional time state.");
+    const advanced = advanceScheduledState(
+      {
+        institutional: state.institutional,
+        legislative: state.legislative,
+        controlBinding,
+        controlBindingHistory,
+      },
+      state.institutional.calendar,
+      configuration.calendar.epoch,
+      target,
+      temporal.boundaries,
+      (value, genericBoundary) => {
+        const boundary = genericBoundary as typeof temporal.boundaries[number];
+        const result = applyInstitutionalBoundary(value.institutional, value.legislative, {
+          temporal,
+          structure: configuration.structure,
+          legislativeSeed: configuration.runtimeSeed as LegislativeRuntimeSeed,
+          population: state.population,
+          topology: state.electoralTopology,
+        }, boundary);
+        let nextBinding = value.controlBinding;
+        if (result.transferredTicket !== null) {
+          const ended: LegislativeControlBinding = {
+            ...value.controlBinding,
+            status: "ENDED",
+            endedAt: boundary.at,
+            endReason: "TERM_ENDED",
+          };
+          nextBinding = result.transferredTicket.id === temporal.selection.transfer.playerAlignedTicketId
+            ? {
+                id: `${temporal.selection.transfer.bindingIdPrefix}${result.transferredTicket.id}`,
+                decisionSurface: LEGISLATIVE_ADMINISTRATION_DECISION_SURFACE,
+                executiveOfficeId: temporal.selection.transfer.headOfficeId,
+                boundOfficeholderActorId: result.transferredTicket.headCandidate.actorId,
+                status: "ACTIVE",
+                endedAt: null,
+                endReason: null,
+              }
+            : ended;
+        }
+        return {
+          institutional: result.institutional,
+          legislative: result.legislative,
+          controlBinding: nextBinding,
+          controlBindingHistory: result.transferredTicket === null
+            ? value.controlBindingHistory
+            : [...value.controlBindingHistory, {
+                ...value.controlBinding,
+                status: "ENDED" as const,
+                endedAt: boundary.at,
+                endReason: "TERM_ENDED" as const,
+              }],
+        };
+      },
+    );
+    controlBinding = advanced.value.controlBinding;
+    controlBindingHistory = [...advanced.value.controlBindingHistory];
+    state = {
+      ...state,
+      legislative: advanced.value.legislative,
+      institutional: { ...advanced.value.institutional, calendar: advanced.calendar },
+    };
+    return deepCopy(state);
+  };
   return {
     getAuditState: () => deepCopy(state),
     getControlBindingAudit: () => deepCopy(controlBinding),
+    getControlBindingHistoryAudit: () => deepCopy(controlBindingHistory),
     getLegislativeAdministrationView: legislativeSession.getAdministrationView,
     reviseAgenda: legislativeSession.reviseAgenda,
     beginSponsorSearch: legislativeSession.beginSponsorSearch,
@@ -253,7 +539,57 @@ const createSession = (
       state = { ...state, population: mergeWeightedPopulationCohorts(state.population, cohortIds, causeKey) };
       return deepCopy(state);
     },
-    save: () => serialize(state, controlBinding),
+    startNewCongressAgenda: () => {
+      if (state.institutional === null) throw new Error("Integrated session lacks institutional time state.");
+      if (controlBinding.status !== "ACTIVE") {
+        throw new Error("No active ControlBinding: administration decision surface unavailable.");
+      }
+      const proposalId = `${temporal.newProcedureIdPrefix}${state.institutional.currentTermLabel}.${state.legislative.procedureHistory.length + 1}`;
+      state = {
+        ...state,
+        legislative: startNewLegislativeProcedure(
+          state.legislative,
+          { structure: configuration.structure, seed: configuration.runtimeSeed as LegislativeRuntimeSeed },
+          proposalId,
+          state.institutional.calendar.current,
+        ),
+      };
+      return deepCopy(state);
+    },
+    advanceTo,
+    advanceToNextBoundary: () => {
+      if (state.institutional === null) throw new Error("Integrated session lacks institutional time state.");
+      const boundary = nextConfiguredBoundary(state.institutional.calendar, temporal.boundaries);
+      return boundary === null ? deepCopy(state) : advanceTo(boundary.at);
+    },
+    getPublicInstitutionalStatus: () => {
+      if (state.institutional === null) throw new Error("Integrated session lacks institutional time state.");
+      const boundary = nextConfiguredBoundary(state.institutional.calendar, temporal.boundaries);
+      const executiveOfficeIds = new Set([
+        temporal.selection.transfer.headOfficeId,
+        temporal.selection.transfer.deputyOfficeId,
+      ]);
+      return deepCopy({
+        currentInstant: state.institutional.calendar.current,
+        currentTermLabel: state.institutional.currentTermLabel,
+        currentAdministrationId: state.institutional.currentAdministration.id,
+        currentHeadActorId: state.institutional.currentAdministration.headActorId,
+        currentDeputyActorId: state.institutional.currentAdministration.deputyActorId,
+        controlBindingActive: controlBinding.status === "ACTIVE",
+        nextBoundary: boundary === null ? null : { id: boundary.id, at: boundary.at, kind: boundary.kind },
+        selectionStage: state.institutional.selection.stage,
+        popularResults: state.institutional.selection.popularResults,
+        attestations: state.institutional.selection.attestations,
+        appointments: state.institutional.selection.appointments,
+        certificates: state.institutional.selection.certificates,
+        declaration: state.institutional.selection.declaration,
+        entitlements: state.institutional.selection.entitlements,
+        currentExecutiveAssignments: state.legislative.activeAssignments.filter(
+          (assignment) => executiveOfficeIds.has(assignment.officeId),
+        ),
+      });
+    },
+    save: () => serialize(state, controlBinding, controlBindingHistory),
   };
 };
 
@@ -270,6 +606,40 @@ export const createIntegratedPartialRuntimeSession = (
   return createSession(state, binding, loaded);
 };
 
+/** Audit/composition proof for future upstream Population state; not a player command surface. */
+export const createIntegratedPartialRuntimeAuditSession = (
+  configuration: GovernmentConfiguration<LegislativeRuntimeSeed>,
+  artifacts: IntegratedRuntimeArtifactBundle,
+  resolutions: readonly PopulationPoliticalResolution[],
+  vacantOfficeIds: readonly string[] = [],
+): IntegratedPartialRuntimeSession => {
+  const loaded = loadGovernmentConfiguration(configuration);
+  let state = createIntegratedPartialRuntimeState(loaded, artifacts);
+  state = { ...state, population: resolvePopulationPoliticalState(state.population, resolutions) };
+  if (vacantOfficeIds.length > 0) {
+    const vacant = new Set(vacantOfficeIds);
+    const activeAssignments = state.legislative.activeAssignments.filter(
+      (assignment) => !vacant.has(assignment.officeId),
+    );
+    if (activeAssignments.length + vacant.size !== state.legislative.activeAssignments.length) {
+      throw new Error("Audit vacancy composition references an unknown or already vacant office.");
+    }
+    const political = rebuildPoliticalStateForAssignments(
+      state.legislative.political,
+      loaded.structure,
+      loaded.runtimeSeed as LegislativeRuntimeSeed,
+      activeAssignments,
+      currentEvaluatedProposal(state.legislative),
+    );
+    state = { ...state, legislative: { ...state.legislative, activeAssignments, political } };
+  }
+  const binding = createInitialLegislativeControlBinding(state.legislative, {
+    structure: loaded.structure,
+    seed: loaded.runtimeSeed as LegislativeRuntimeSeed,
+  });
+  return createSession(state, binding, loaded);
+};
+
 export const createIntegratedPartialRuntimeSessionFromSave = (
   serialized: string,
   configuration: GovernmentConfiguration<LegislativeRuntimeSeed>,
@@ -277,5 +647,5 @@ export const createIntegratedPartialRuntimeSessionFromSave = (
 ): IntegratedPartialRuntimeSession => {
   const loaded = loadGovernmentConfiguration(configuration);
   const restored = parse(serialized, configuration, artifacts);
-  return createSession(restored.state, restored.controlBinding, loaded);
+  return createSession(restored.state, restored.controlBinding, loaded, restored.controlBindingHistory);
 };

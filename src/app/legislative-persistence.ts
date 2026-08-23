@@ -56,6 +56,7 @@ export const parseLegislativeRuntime = (
     !Array.isArray(state.political?.commitments) ||
     !Array.isArray(state.procedure?.voteOpportunities) ||
     !Array.isArray(state.procedure?.extendedDebateDecisionOpportunities) ||
+    !Array.isArray(state.procedureHistory) ||
     !Array.isArray(state.enactedLegalSources)
   ) throw new Error("Invalid legislative save canonical state shape.");
   const assignmentIds = new Set(state.activeAssignments.map((assignment) => assignment.id));

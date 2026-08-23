@@ -14,6 +14,7 @@ import {
   US_VICE_PRESIDENT_OFFICE_ID,
 } from "./topology";
 import i4Manifest from "./i4-artifacts/i4-initialization-manifest.json";
+import { US_V0_I5_TEMPORAL_CONFIGURATION } from "./i5";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -235,14 +236,14 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
   },
 };
 
-/** The full world remains unavailable; this configuration exposes only the canonical legislative slice. */
+/** Bounded integrated runtime through I5; later material, information, and judicial systems remain unavailable. */
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.4.0-i4",
+    configurationVersion: "0.5.0-i5",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.4.0-i4",
-    configurationHash: "f85231d5cbdd57d7d62792f1937254f133da9adedef18198a85a7f6cf7e0cef4",
+    scenarioVersion: "0.5.0-i5",
+    configurationHash: "8297b2e6f5f4846acd00538cfde134b9458f8248452e6e6f19eb203757dad40d",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
@@ -255,5 +256,6 @@ export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<Legislative
     geography: i4Manifest.geography,
     population: i4Manifest.population,
     electoral: i4Manifest.electoral,
+    temporal: US_V0_I5_TEMPORAL_CONFIGURATION,
   },
 };

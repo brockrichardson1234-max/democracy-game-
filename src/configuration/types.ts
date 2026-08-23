@@ -351,6 +351,120 @@ export interface RuntimeArtifactBinding {
   readonly rawSourceSha256s: readonly string[];
 }
 
+export type InstitutionalBoundaryKind =
+  | "TERM_RESULT_SNAPSHOT"
+  | "PROCEDURE_EXPIRY"
+  | "OUTGOING_ASSIGNMENT_END"
+  | "SUCCESSOR_ASSIGNMENT_BEGIN"
+  | "AFFILIATION_REBUILD"
+  | "MEMBERSHIP_RECOMPUTE"
+  | "POPULAR_SELECTION"
+  | "RESULT_ATTESTATION"
+  | "DELEGATE_ACTION"
+  | "COLLEGIATE_DECLARATION"
+  | "AUTHORITY_TRANSFER";
+
+export interface InstitutionalBoundaryConfiguration {
+  readonly id: string;
+  readonly at: string;
+  readonly phase: number;
+  readonly order: number;
+  readonly stableKey: string;
+  readonly kind: InstitutionalBoundaryKind;
+  readonly ownerId: string;
+}
+
+export interface AssignmentCycleConfiguration {
+  readonly id: string;
+  readonly termLabel: string;
+  readonly classification: ScaffoldClassification;
+  readonly scaffoldVersion: string;
+  readonly stableKey: string;
+  readonly officeIds: readonly string[];
+  readonly stateGeographyByOfficeId: Readonly<Record<string, string>>;
+  readonly nextBoundaryByOfficeId: Readonly<Record<string, string>>;
+  readonly assignmentIdPrefix: string;
+  readonly replacementActorIdPrefix: string;
+  readonly populationInfluence: ConfiguredFraction;
+  readonly incumbentInfluence: ConfiguredFraction;
+  readonly retainThreshold: ConfiguredFraction;
+}
+
+export interface SelectionTicketConfiguration {
+  readonly id: string;
+  readonly label: string;
+  readonly alignment: "PLAYER_ALIGNED" | "NON_PLAYER_ALIGNED";
+  readonly headCandidate: { readonly id: string; readonly actorId: string };
+  readonly deputyCandidate: { readonly id: string; readonly actorId: string };
+  readonly classification: ScaffoldClassification;
+}
+
+export interface PopulationSelectionScaffoldConfiguration {
+  readonly version: string;
+  readonly classification: ScaffoldClassification;
+  readonly stableKey: string;
+  readonly unresolvedPreferenceValue: string;
+  readonly unresolvedTurnoutValue: string;
+  readonly preferenceAliases: Readonly<Record<string, string | null>>;
+  readonly turnoutWeights: Readonly<Record<string, ConfiguredFraction>>;
+  readonly fallbackTurnoutWeight: ConfiguredFraction;
+  readonly fallbackPreferenceThresholds: readonly {
+    readonly ticketId: string | null;
+    readonly cumulativeUpperBound: ConfiguredFraction;
+  }[];
+}
+
+export interface IntegratedSelectionConfiguration {
+  readonly id: string;
+  readonly classification: ScaffoldClassification;
+  readonly timingClassification: string;
+  readonly stateGeographyIds: readonly string[];
+  readonly tickets: readonly SelectionTicketConfiguration[];
+  readonly populationScaffold: PopulationSelectionScaffoldConfiguration;
+  readonly staticTopologyArtifactId: string;
+  readonly transfer: {
+    readonly headOfficeId: string;
+    readonly deputyOfficeId: string;
+    readonly scheduledAt: string;
+    readonly administrationIdPrefix: string;
+    readonly assignmentIdPrefix: string;
+    readonly bindingIdPrefix: string;
+    readonly playerAlignedTicketId: string;
+  };
+  readonly recordIds: {
+    readonly snapshotPrefix: string;
+    readonly ballotPrefix: string;
+    readonly resultPrefix: string;
+    readonly attestationPrefix: string;
+    readonly appointmentPrefix: string;
+    readonly certificatePrefix: string;
+    readonly declarationPrefix: string;
+    readonly entitlementPrefix: string;
+  };
+}
+
+export interface IntegratedTemporalConfiguration {
+  readonly schemaVersion: number;
+  readonly scheduleVersion: string;
+  readonly parameterHash: string;
+  readonly scheduleContentHash: string;
+  readonly assignmentCycleContentHash: string;
+  readonly selectionContentHash: string;
+  readonly initialTermLabel: string;
+  readonly boundaries: readonly InstitutionalBoundaryConfiguration[];
+  readonly assignmentCycles: readonly AssignmentCycleConfiguration[];
+  readonly selection: IntegratedSelectionConfiguration;
+  readonly newProcedureIdPrefix: string;
+  readonly initialAdministration: {
+    readonly id: string;
+    readonly headActorId: string;
+    readonly deputyActorId: string;
+    readonly effectiveFrom: string;
+    readonly effectiveUntil: string;
+    readonly classification: ScaffoldClassification;
+  };
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -373,6 +487,7 @@ export interface IntegratedRuntimeConfiguration {
   readonly electoral: {
     readonly topologyArtifactId: string;
   };
+  readonly temporal?: IntegratedTemporalConfiguration;
 }
 
 interface ScheduledTransitionBase {

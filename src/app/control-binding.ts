@@ -6,7 +6,7 @@ export interface AdministrationControlBinding<Instant, Surface extends string> {
   readonly boundOfficeholderActorId: string;
   readonly status: "ACTIVE" | "ENDED";
   readonly endedAt: Instant | null;
-  readonly endReason: "BOUND_OFFICEHOLDER_CHANGED" | null;
+  readonly endReason: "BOUND_OFFICEHOLDER_CHANGED" | "TERM_ENDED" | null;
 }
 
 export const reconcileAdministrationControlBinding = <Instant, Surface extends string>(

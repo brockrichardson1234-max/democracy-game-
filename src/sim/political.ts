@@ -199,7 +199,7 @@ const deriveOrganizations = (
       }
       for (const entry of ranked.slice(cursor, cursor + quota)) {
         const assignment = assignments.find((candidate) => candidate.officeId === entry.office.id);
-        if (assignment === undefined) throw new Error(`No current assignment for ${entry.office.id}.`);
+        if (assignment === undefined) continue;
         byOrganization.get(organizationId)?.push({
           id: `membership:${organizationId}:${entry.office.id}`,
           organizationId,
@@ -317,6 +317,49 @@ export const createPoliticalState = (
     organizations,
     commitments: [],
   };
+};
+
+/** Rebuild current organization references after a configured assignment transition. */
+export const rebuildPoliticalStateForAssignments = (
+  prior: PoliticalState,
+  structure: GovernmentStructureDescriptor,
+  seed: LegislativeRuntimeSeed,
+  activeAssignments: readonly ActiveOfficeAssignmentState[],
+  proposal: EvaluatedProposalVersion,
+): PoliticalState => {
+  const derived = deriveOrganizations(structure, seed, activeAssignments).map((organization) => {
+    const previous = prior.organizations.find((candidate) => candidate.id === organization.id);
+    return previous === undefined
+      ? organization
+      : {
+          ...organization,
+          coordinationActions: previous.coordinationActions,
+          negotiationPosture: previous.negotiationPosture,
+        };
+  });
+  const membershipByActor = new Map(
+    derived.flatMap((organization) => organization.memberships.map(
+      (membership) => [membership.actorId, { organization, membership }] as const,
+    )),
+  );
+  const legislativeAssignments = currentLegislativeAssignments(structure, activeAssignments);
+  if (membershipByActor.size !== legislativeAssignments.length) {
+    throw new Error("Every current legislative actor must have exactly one rebuilt organization membership.");
+  }
+  const actors = legislativeAssignments.map((assignment) => {
+    const owned = membershipByActor.get(assignment.actorId);
+    if (owned === undefined) throw new Error(`Political actor ${assignment.actorId} has no rebuilt membership.`);
+    const retained = prior.actors.find((candidate) => candidate.actorId === assignment.actorId);
+    if (retained !== undefined) return { ...retained, membershipId: owned.membership.id };
+    const configuredOrganization = seed.organizations.find((candidate) => candidate.id === owned.organization.id);
+    if (configuredOrganization === undefined) throw new Error(`Unknown organization ${owned.organization.id}.`);
+    return createPoliticalActorState(assignment.actorId, owned.membership, configuredOrganization, seed);
+  });
+  return refreshPoliticalSupport({
+    ...prior,
+    actors,
+    organizations: derived,
+  }, proposal);
 };
 
 export const replacePoliticalOfficeholder = (

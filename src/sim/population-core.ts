@@ -126,6 +126,53 @@ export interface PopulationAssociation {
   readonly referenceId: string;
 }
 
+export interface PopulationPoliticalResolution {
+  readonly cohortId: string;
+  readonly candidatePreference: string;
+  readonly turnoutDisposition: string;
+  readonly classification: string;
+  readonly causeKey: string;
+}
+
+/** Generic upstream composition seam; changes only Population-owned political state. */
+export const resolvePopulationPoliticalState = (
+  state: WeightedPopulationState,
+  resolutions: readonly PopulationPoliticalResolution[],
+): WeightedPopulationState => {
+  if (new Set(resolutions.map((resolution) => resolution.cohortId)).size !== resolutions.length) {
+    throw new Error("Population political resolutions require unique cohort identities.");
+  }
+  const byId = new Map(resolutions.map((resolution) => [resolution.cohortId, resolution]));
+  for (const resolution of resolutions) {
+    if (
+      !state.cohorts.some((cohort) => cohort.id === resolution.cohortId) ||
+      resolution.candidatePreference.trim().length === 0 ||
+      resolution.turnoutDisposition.trim().length === 0 ||
+      resolution.classification.trim().length === 0 ||
+      resolution.causeKey.trim().length === 0
+    ) throw new Error(`Population political resolution ${resolution.cohortId} is invalid.`);
+  }
+  const next = {
+    ...state,
+    cohorts: state.cohorts.map((cohort) => {
+      const resolution = byId.get(cohort.id);
+      return resolution === undefined
+        ? cohort
+        : {
+            ...cohort,
+            politicalState: {
+              ...cohort.politicalState,
+              candidatePreference: resolution.candidatePreference,
+              turnoutDisposition: resolution.turnoutDisposition,
+              classification: resolution.classification,
+            },
+          };
+    }),
+  };
+  assertWeightedPopulationConservation(next);
+  return next;
+};
+
 export interface PopulationRefinementRequest {
   readonly parentCohortId: string;
   readonly targetedWeight: number;

@@ -425,7 +425,7 @@ export interface ControlBinding {
   readonly boundOfficeholderActorId: string;
   readonly status: "ACTIVE" | "ENDED";
   readonly endedAtSimulationTime: SimulationInstant | null;
-  readonly endReason: "BOUND_OFFICEHOLDER_CHANGED" | null;
+  readonly endReason: "BOUND_OFFICEHOLDER_CHANGED" | "TERM_ENDED" | null;
 }
 
 export type ControlBindingAuditProjection = ControlBinding;

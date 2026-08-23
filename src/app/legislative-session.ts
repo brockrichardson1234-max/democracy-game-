@@ -226,22 +226,31 @@ export interface LegislativeRuntimeStateOwner {
   readonly setLegislativeState: (state: LegislativeRuntimeState) => void;
 }
 
+export interface LegislativeSessionAuthorityOwner {
+  readonly getControlBinding: () => LegislativeControlBinding;
+  readonly getAdministrationId: () => string;
+  readonly getAuthoritativeInstant?: () => string;
+}
+
 export const createLegislativeSessionForStateOwner = (
   owner: LegislativeRuntimeStateOwner,
   context: LegislativeRuntimeContext,
   initialBinding: LegislativeControlBinding,
   authoritativeInstant: string,
+  authorityOwner?: LegislativeSessionAuthorityOwner,
 ): LegislativeSession => {
-  const controlBinding = initialBinding;
+  const getControlBinding = authorityOwner?.getControlBinding ?? (() => initialBinding);
+  const getAdministrationId = authorityOwner?.getAdministrationId ?? (() => context.seed.executive.administrationId);
+  const getAuthoritativeInstant = authorityOwner?.getAuthoritativeInstant ?? (() => authoritativeInstant);
   const commit = (next: LegislativeRuntimeState): AdministrationLegislativeProjection => {
     owner.setLegislativeState(next);
-    return projectAdministrationLegislativeView(next, context.seed.executive.administrationId);
+    return projectAdministrationLegislativeView(next, getAdministrationId());
   };
   const authorized = (
     transition: (state: LegislativeRuntimeState) => LegislativeRuntimeState,
   ): AdministrationLegislativeProjection => {
     const state = owner.getLegislativeState();
-    assertLegislativeAdministrationControl(controlBinding, state, context);
+    assertLegislativeAdministrationControl(getControlBinding(), state, context);
     return commit(transition(state));
   };
   const proposal = (state: LegislativeRuntimeState) => {
@@ -252,11 +261,11 @@ export const createLegislativeSessionForStateOwner = (
   return {
     getAdministrationView: () => projectAdministrationLegislativeView(
       owner.getLegislativeState(),
-      context.seed.executive.administrationId,
+      getAdministrationId(),
     ),
     getAuditState: () => deepCopy(owner.getLegislativeState()),
-    getControlBindingAudit: () => deepCopy(controlBinding),
-    save: () => serializeLegislativeRuntime(owner.getLegislativeState(), controlBinding),
+    getControlBindingAudit: () => deepCopy(getControlBinding()),
+    save: () => serializeLegislativeRuntime(owner.getLegislativeState(), getControlBinding()),
     reviseAgenda: (dimensions) => authorized((state) => reviseLegislativeAgenda(state, context, dimensions)),
     beginSponsorSearch: () => authorized((state) => beginSponsorSearch(state)),
     seekSponsorship: (actorId) => authorized((state) => seekMemberSponsorship(state, context, actorId)),
@@ -269,7 +278,7 @@ export const createLegislativeSessionForStateOwner = (
           state.political,
           context.seed,
           actorId,
-          context.seed.executive.administrationId,
+          getAdministrationId(),
           proposal(state),
           offer,
         );
@@ -298,7 +307,7 @@ export const createLegislativeSessionForStateOwner = (
     closeAmendmentRound: () => authorized((state) => closeAmendmentRound(state, context)),
     resolveFinalRollCall: () => authorized((state) => resolveFinalRollCall(state, context)),
     considerTextExchange: (chamberId, version) => authorized((state) => considerTextExchange(state, context, chamberId, version)),
-    present: () => authorized((state) => presentIdenticalText(state, context, authoritativeInstant)),
+    present: () => authorized((state) => presentIdenticalText(state, context, getAuthoritativeInstant())),
     executiveAction: (actorId, assignmentId, action) =>
       authorized((state) => resolveExecutivePresentmentAction(state, context, actorId, assignmentId, action)),
     resolveOverride: (chamberId) => authorized((state) => resolveVetoOverrideRollCall(state, context, chamberId)),

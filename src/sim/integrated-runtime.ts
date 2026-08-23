@@ -13,6 +13,10 @@ import {
   type WeightedPopulationCohort,
   type WeightedPopulationState,
 } from "./population-core";
+import {
+  createInstitutionalRuntimeState,
+  type InstitutionalRuntimeState,
+} from "./institutional-runtime";
 
 export interface RuntimeArtifactMetadata {
   readonly artifactId: string;
@@ -147,6 +151,7 @@ export interface IntegratedPartialRuntimeState {
   readonly geography: VersionedGeographyState;
   readonly population: WeightedPopulationState;
   readonly electoralTopology: StaticElectoralTopologyState;
+  readonly institutional: InstitutionalRuntimeState | null;
 }
 
 const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { readonly metadata: RuntimeArtifactMetadata }[] => [
@@ -342,5 +347,8 @@ export const createIntegratedPartialRuntimeState = (
     geography,
     population,
     electoralTopology,
+    institutional: configuration.integratedRuntime.temporal === undefined
+      ? null
+      : createInstitutionalRuntimeState(configuration.calendar.epoch, configuration.integratedRuntime.temporal),
   };
 };

@@ -457,6 +457,51 @@ const validateIntegratedRuntimeConfiguration = (
     integrated.population.catchmentRatio.numerator <= 0 ||
     integrated.population.catchmentRatio.denominator <= integrated.population.catchmentRatio.numerator
   ) throw new Error("Integrated population catchment ratio must be a proper positive fraction.");
+  const temporal = integrated.temporal;
+  if (temporal !== undefined) {
+    if (
+      temporal.schemaVersion !== 1 ||
+      !SHA_256_PATTERN.test(temporal.parameterHash) ||
+      !SHA_256_PATTERN.test(temporal.scheduleContentHash) ||
+      !SHA_256_PATTERN.test(temporal.assignmentCycleContentHash) ||
+      !SHA_256_PATTERN.test(temporal.selectionContentHash) ||
+      temporal.scheduleVersion.trim().length === 0 ||
+      temporal.initialTermLabel.trim().length === 0
+    ) throw new Error("Integrated temporal configuration has invalid identity semantics.");
+    requireUnique(temporal.boundaries.map((boundary) => boundary.id), "institutional boundaries");
+    const cycleIds = new Set(temporal.assignmentCycles.map((cycle) => cycle.id));
+    requireUnique([...cycleIds], "assignment cycles");
+    const geographyIds = new Set(configuration.structure.geographies.map((geography) => geography.id));
+    const officeIds = new Set(configuration.structure.offices.map((office) => office.id));
+    for (const boundary of temporal.boundaries) {
+      if (
+        !Number.isFinite(Date.parse(boundary.at)) ||
+        Date.parse(boundary.at) < Date.parse(configuration.calendar.epoch) ||
+        !Number.isSafeInteger(boundary.phase) ||
+        !Number.isSafeInteger(boundary.order) ||
+        boundary.stableKey.trim().length === 0 ||
+        (boundary.ownerId !== temporal.selection.id && !cycleIds.has(boundary.ownerId))
+      ) throw new Error(`Integrated temporal boundary ${boundary.id} is invalid.`);
+    }
+    for (const cycle of temporal.assignmentCycles) {
+      requireUnique(cycle.officeIds, `${cycle.id} offices`);
+      if (
+        cycle.officeIds.length === 0 ||
+        cycle.officeIds.some((officeId) => !officeIds.has(officeId)) ||
+        cycle.officeIds.some((officeId) => !geographyIds.has(cycle.stateGeographyByOfficeId[officeId])) ||
+        cycle.officeIds.some((officeId) => !Number.isFinite(Date.parse(cycle.nextBoundaryByOfficeId[officeId])))
+      ) throw new Error(`Integrated assignment cycle ${cycle.id} has invalid office authority.`);
+    }
+    requireUnique(temporal.selection.stateGeographyIds, "selection geographies");
+    requireUnique(temporal.selection.tickets.map((ticket) => ticket.id), "selection tickets");
+    if (
+      temporal.selection.stateGeographyIds.some((id) => !geographyIds.has(id)) ||
+      temporal.selection.staticTopologyArtifactId !== integrated.electoral.topologyArtifactId ||
+      !officeIds.has(temporal.selection.transfer.headOfficeId) ||
+      !officeIds.has(temporal.selection.transfer.deputyOfficeId) ||
+      !temporal.selection.tickets.some((ticket) => ticket.id === temporal.selection.transfer.playerAlignedTicketId)
+    ) throw new Error("Integrated selection configuration has invalid authority references.");
+  }
 };
 
 export const loadGovernmentConfiguration = <TRuntimeSeed>(
