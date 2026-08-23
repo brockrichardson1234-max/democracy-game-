@@ -56,13 +56,13 @@ const legislativeAssignments = usStructure.assignments.filter((assignment) =>
   legislativeOffices.some((office) => office.id === assignment.officeId),
 );
 
-describe("I2 U.S. government topology", () => {
-  it("loads a complete 52-jurisdiction U.S. identity topology without materializing a world", () => {
+describe("I2 U.S. government topology retained by I3", () => {
+  it("loads the unchanged 52-jurisdiction topology without materializing a full world", () => {
     const bootstrap = bootstrapGovernmentConfiguration(US_V0_STRUCTURAL_CONFIGURATION);
     expect(bootstrap.configuration.loaded).toBe(true);
     expect(bootstrap.configuration.identity).toMatchObject({
       configurationId: "us-v0",
-      configurationVersion: "0.2.0-i2",
+      configurationVersion: "0.3.0-i3",
       scenarioId: "us-v0-2026-08-22",
     });
     expect(usStructure.jurisdictions).toHaveLength(52);
@@ -71,11 +71,12 @@ describe("I2 U.S. government topology", () => {
     expect(usStructure.jurisdictions.filter((record) => record.kind === "NATIONAL")).toEqual([
       expect.objectContaining({ id: US_NATIONAL_JURISDICTION_ID }),
     ]);
-    expect(bootstrap.configuration.capability).toBe("STRUCTURAL_PROOF_ONLY");
-    expect(bootstrap.configuration.runtimeSeed).toBeNull();
+    expect(bootstrap.configuration.capability).toBe("LEGISLATIVE_RUNTIME_SLICE");
+    expect(bootstrap.configuration.runtimeSeed).not.toBeNull();
     expect(bootstrap.configuration.transitions).toEqual([]);
     expect(bootstrap.playable).toBe(false);
     expect(bootstrap.world).toBeNull();
+    expect(bootstrap.legislativeRuntimeAvailable).toBe(true);
     assertDeclaredConfigurationHash(bootstrap.configuration, configurationHash(bootstrap.configuration));
   });
 

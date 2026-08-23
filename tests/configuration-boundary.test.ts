@@ -43,7 +43,7 @@ describe("I1 production configuration boundary", () => {
     expect(bootstrap.world?.configuration).toEqual(GL0_SYNTHETIC_CONFIGURATION.identity);
   });
 
-  it("boots a structurally different, non-playable U.S. topology through the same boundary", () => {
+  it("boots the non-full-world U.S. legislative slice through the same boundary", () => {
     const bootstrap = bootstrapGovernmentConfiguration(US_V0_STRUCTURAL_CONFIGURATION);
     expect(bootstrap.configuration.structure.chambers).toHaveLength(2);
     expect(bootstrap.configuration.structure.chambers.map((chamber) => chamber.seatCount)).toEqual([
@@ -51,10 +51,12 @@ describe("I1 production configuration boundary", () => {
       100,
     ]);
     expect(bootstrap.configuration.calendar.kind).toBe("REAL_CALENDAR");
-    expect(bootstrap.configuration.capability).toBe("STRUCTURAL_PROOF_ONLY");
+    expect(bootstrap.configuration.capability).toBe("LEGISLATIVE_RUNTIME_SLICE");
     expect(bootstrap.playable).toBe(false);
     expect(bootstrap.world).toBeNull();
-    expect(bootstrap.configuration.runtimeSeed).toBeNull();
+    expect(bootstrap.configuration.runtimeSeed).not.toBeNull();
+    expect(bootstrap.legislativeRuntimeAvailable).toBe(true);
+    expect(bootstrap.legislativeRuntime?.political.actors).toHaveLength(535);
     assertDeclaredConfigurationHash(
       bootstrap.configuration,
       sha256For(US_V0_STRUCTURAL_CONFIGURATION),
@@ -71,13 +73,13 @@ describe("I1 production configuration boundary", () => {
           id: "duplicate",
         })),
       },
-    } satisfies GovernmentConfiguration<never>;
+    } satisfies GovernmentConfiguration<unknown>;
     expect(() => loadGovernmentConfiguration(duplicateChamber)).toThrow(/unique IDs/);
 
     const invalidHash = {
       ...US_V0_STRUCTURAL_CONFIGURATION,
       identity: { ...US_V0_STRUCTURAL_CONFIGURATION.identity, configurationHash: "not-a-hash" },
-    } satisfies GovernmentConfiguration<never>;
+    } satisfies GovernmentConfiguration<unknown>;
     expect(() => loadGovernmentConfiguration(invalidHash)).toThrow(/SHA-256/);
 
     const callback = {

@@ -7,7 +7,8 @@ export interface ProposalTerms {
   readonly reportingRequirement: ReportingRequirement;
 }
 
-export type VoteChoice = "YEA" | "NAY";
+/** Smallest shared vote ontology required by configured procedures. */
+export type VoteChoice = "YEA" | "NAY" | "PRESENT";
 
 export type LegislativeCoalition =
   | "SUPPORT_COALITION"

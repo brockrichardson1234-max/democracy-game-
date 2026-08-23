@@ -178,8 +178,123 @@ export interface GovernmentStructureDescriptor {
   readonly relations: readonly TopologyRelationDescriptor[];
 }
 
-export type ScenarioCapability = "PLAYABLE_CAUSAL_WORLD" | "STRUCTURAL_PROOF_ONLY";
+/**
+ * A legislative slice is a real canonical runtime, but deliberately is not a
+ * complete causal world. It exists for configurations whose political
+ * topology can run before Population, material domains, or elections exist.
+ */
+export type ScenarioCapability =
+  | "PLAYABLE_CAUSAL_WORLD"
+  | "LEGISLATIVE_RUNTIME_SLICE"
+  | "STRUCTURAL_PROOF_ONLY";
 export type ScenarioCalendarKind = "SYNTHETIC_DAY_NUMBER" | "REAL_CALENDAR";
+
+export interface ConfiguredFraction {
+  readonly numerator: number;
+  readonly denominator: number;
+}
+
+export interface ConfiguredRatio extends ConfiguredFraction {
+  readonly rounding: "CEILING" | "FLOOR_PLUS_ONE";
+}
+
+export interface ProposalDimensionConfiguration {
+  readonly id: string;
+  readonly minimum: number;
+  readonly maximum: number;
+}
+
+export interface PoliticalOrganizationConfiguration {
+  readonly id: string;
+  readonly label: string;
+  readonly classification: ScaffoldClassification;
+  readonly postureByDimension: Readonly<Record<string, number>>;
+  readonly chamberQuotas: Readonly<Record<string, number>>;
+}
+
+export interface LegislativeChamberRuleConfiguration {
+  readonly chamberId: string;
+  readonly quorum: ConfiguredRatio;
+  readonly ordinaryPassage: {
+    readonly basis: "VOTES_CAST";
+    readonly threshold: ConfiguredRatio;
+    readonly tieFails: boolean;
+  };
+  readonly amendmentPassage: ConfiguredRatio;
+  readonly overridePassage: ConfiguredRatio;
+  readonly extendedDebate: {
+    readonly available: boolean;
+    readonly clotureThreshold: ConfiguredRatio | null;
+  };
+  readonly tieBreakerOfficeId: string | null;
+}
+
+/** Plain behavior-driving political content. No executable callbacks. */
+export interface LegislativeRuntimeSeed {
+  readonly schemaVersion: number;
+  readonly profileScaffold: {
+    readonly version: string;
+    readonly seed: string;
+    readonly classification: ScaffoldClassification;
+  };
+  readonly dimensions: readonly ProposalDimensionConfiguration[];
+  readonly organizations: readonly PoliticalOrganizationConfiguration[];
+  readonly membershipScaffold: {
+    readonly version: string;
+    readonly algorithm: "SHA-256";
+    readonly salt: string;
+    readonly chamberRankTokens: Readonly<Record<string, string>>;
+    readonly organizationOrder: readonly string[];
+  };
+  readonly procedure: {
+    readonly legislatureId: string;
+    readonly originChamberId: string;
+    readonly otherChamberId: string;
+    readonly chamberRules: readonly LegislativeChamberRuleConfiguration[];
+    readonly maximumTextExchanges: number;
+    readonly maximumAmendmentRoundsPerChamber: number;
+    readonly considerationGateMinimumSignals: Readonly<Record<string, number>>;
+    readonly noSignatureRule: {
+      readonly enactWhenReturnNotPrevented: boolean;
+      readonly failWhenReturnPrevented: boolean;
+    };
+  };
+  readonly proposal: {
+    readonly id: string;
+    readonly title: string;
+    readonly initialDimensions: Readonly<Record<string, number>>;
+    readonly authorizationProvisions: readonly string[];
+    readonly appropriation: {
+      readonly amount: number;
+      readonly purpose: string;
+    };
+  };
+  readonly decision: {
+    readonly organizationBlend: ConfiguredFraction;
+    readonly actorVariationRadius: number;
+    readonly reservationDistance: number;
+    readonly coordinationPressure: number;
+    readonly commitmentHonorCutoff: number;
+    readonly breachCutoff: number;
+  };
+  readonly negotiation: {
+    readonly maximumMemoryEntriesPerActor: number;
+    readonly commitmentVisibility: "PARTICIPANTS_AND_ADMINISTRATION";
+  };
+  readonly executive: {
+    readonly headOfficeId: string;
+    readonly deputyOfficeId: string | null;
+    readonly administrationId: string;
+  };
+  readonly recordIds: {
+    readonly proposalVersionPrefix: string;
+    readonly organizationActionPrefix: string;
+    readonly commitmentPrefix: string;
+    readonly amendmentPrefix: string;
+    readonly voteOpportunityPrefix: string;
+    readonly lawPrefix: string;
+  };
+}
 
 interface ScheduledTransitionBase {
   readonly id: string;

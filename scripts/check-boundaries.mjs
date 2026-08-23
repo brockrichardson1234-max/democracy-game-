@@ -162,6 +162,33 @@ for (const file of await listSourceFiles(join(root, "src/configuration"))) {
   }
 }
 
+const genericLegislativeEngineFiles = [
+  join(root, "src/sim/legislature.ts"),
+  join(root, "src/sim/legislative-procedure.ts"),
+  join(root, "src/sim/political.ts"),
+  join(root, "src/sim/legislative-runtime.ts"),
+  join(root, "src/configuration/types.ts"),
+  join(root, "src/configuration/loader.ts"),
+];
+for (const file of genericLegislativeEngineFiles) {
+  const source = stripComments(await readFile(file, "utf8"));
+  for (const token of [
+    "DELIVERY_COALITION",
+    "FISCAL_COMPLIANCE_COALITION",
+    "REGIONAL_BARGAINING_CAUCUS",
+    "us-v0",
+  ]) {
+    if (source.includes(token)) {
+      violations.push(`${relative(root, file)} contains named political content ${token}`);
+    }
+  }
+  for (const numericToken of [435, 218, 100, 51, 60, 290, 67]) {
+    if (new RegExp(`(^|[^0-9_])${numericToken}([^0-9_]|$)`).test(source)) {
+      violations.push(`${relative(root, file)} contains a fixed legislative threshold ${numericToken}`);
+    }
+  }
+}
+
 const syntheticExecutionSymbols = [
   "STATE_A_ID",
   "STATE_B_ID",

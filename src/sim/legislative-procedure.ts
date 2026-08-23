@@ -20,6 +20,30 @@ export interface LegislativeProcedureRules {
   readonly passageRule: PassageRule;
 }
 
+export interface ConfiguredLegislativeThreshold {
+  readonly numerator: number;
+  readonly denominator: number;
+  readonly rounding: "CEILING" | "FLOOR_PLUS_ONE";
+}
+
+/** Shared threshold resolver used by both simple and multi-stage procedures. */
+export const resolveConfiguredLegislativeThreshold = (
+  basis: number,
+  threshold: ConfiguredLegislativeThreshold,
+): number => {
+  if (!Number.isInteger(basis) || basis < 0) throw new Error("Legislative threshold basis must be nonnegative.");
+  if (
+    !Number.isInteger(threshold.numerator) ||
+    !Number.isInteger(threshold.denominator) ||
+    threshold.numerator <= 0 ||
+    threshold.denominator <= 0 ||
+    threshold.numerator > threshold.denominator
+  ) throw new Error("Legislative threshold must be a positive bounded ratio.");
+  return threshold.rounding === "FLOOR_PLUS_ONE"
+    ? Math.floor((basis * threshold.numerator) / threshold.denominator) + 1
+    : Math.ceil((basis * threshold.numerator) / threshold.denominator);
+};
+
 export const HOUSING_GRANT_PROCEDURE_RULES: LegislativeProcedureRules = {
   passageRule: "MAJORITY_OF_SEATS",
 };
@@ -30,7 +54,11 @@ export const resolveRequiredYeaVotes = (
 ): number => {
   switch (rules.passageRule) {
     case "MAJORITY_OF_SEATS":
-      return Math.floor(legislature.seats.length / 2) + 1;
+      return resolveConfiguredLegislativeThreshold(legislature.seats.length, {
+        numerator: 1,
+        denominator: 2,
+        rounding: "FLOOR_PLUS_ONE",
+      });
   }
 };
 
