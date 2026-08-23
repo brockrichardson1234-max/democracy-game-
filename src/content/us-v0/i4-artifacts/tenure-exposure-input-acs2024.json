@@ -2,7 +2,7 @@
   "metadata": {
     "artifactId": "us.i4.population.tenure-input-acs2024-v1",
     "vintage": "ACS 2024 five-year B25008",
-    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "transformationVersion": "us-v0-i4-artifacts-v2",
     "contentSha256": "2cbae718a99b30d02125f43139d81d41f3fa12fe81d9254b9933847f6ce610b7",
     "rawSourceSha256s": [
       "caf0a0ed0ed04f462880589096143d9f89c2e870c0e9e75c99a993cb3bf9c751"

@@ -2,7 +2,7 @@
   "metadata": {
     "artifactId": "us.i4.electoral.allocation-2028-v1",
     "vintage": "2020 Census allocation applicable to 2024 and 2028",
-    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "transformationVersion": "us-v0-i4-artifacts-v2",
     "contentSha256": "3494a784283029812ea22a61b777f8d21596574f920270a9a2ec02b497eaa426",
     "rawSourceSha256s": [
       "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71"

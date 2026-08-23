@@ -2,7 +2,7 @@
   "metadata": {
     "artifactId": "us.i4.population.initial-cohorts-2026-08-22-v1",
     "vintage": "Scenario Day 0, 2026-08-22",
-    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "transformationVersion": "us-v0-i4-artifacts-v2",
     "contentSha256": "c9b2e3348d615568feda3c14635ff1a149d92b4749f6cdb566d5f54b62f24166",
     "rawSourceSha256s": [],
     "sources": [],

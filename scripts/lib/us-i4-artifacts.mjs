@@ -5,10 +5,12 @@ import { unzipSync } from "fflate";
 
 import { readDbfRecords } from "./us-topology-artifacts.mjs";
 
-export const I4_TRANSFORMATION_VERSION = "us-v0-i4-artifacts-v1";
+export const I4_TRANSFORMATION_VERSION = "us-v0-i4-artifacts-v2";
 export const POPULATION_SCAFFOLD_VERSION = "us-v0-population-joint-scaffold-1";
 export const CVAP_TRANSFORMATION_VERSION = "us-v0-cvap-proxy-v1-round-half-up-largest-remainder";
 export const REFINEMENT_SEMANTIC_VERSION = "weighted-population-refinement-v1";
+export const RESIDENT_POPULATION_PRODUCT = "NST-EST2025-POP";
+export const RESIDENT_POPULATION_WORKSHEET = "NST-EST2025-POP";
 
 const SOURCE_CRS = "NAD83 geographic coordinates (EPSG:4269)";
 const RUNTIME_CRS = "NAD83 geographic coordinates (EPSG:4269)";
@@ -38,10 +40,10 @@ const SOURCES = {
   },
   residentPopulation: {
     sourceId: "USR-SRC-0092",
-    product: "Census Vintage 2025 NST-EST2025-ALLDATA",
+    product: `Census Vintage 2025 ${RESIDENT_POPULATION_PRODUCT}`,
     producer: "U.S. Census Bureau",
     sourceScope: "50 states plus District of Columbia and national validation row",
-    locator: "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv",
+    locator: "https://www2.census.gov/programs-surveys/popest/tables/2020-2025/state/totals/NST-EST2025-POP.xlsx",
     vintage: "Vintage 2025; reference date 2025-07-01",
     mappingClass: "DIRECT",
   },
@@ -166,6 +168,77 @@ const parseDelimited = (text, separator) => {
   });
 };
 
+const decodeXmlText = (value) => value
+  .replace(/&amp;/g, "&")
+  .replace(/&lt;/g, "<")
+  .replace(/&gt;/g, ">")
+  .replace(/&quot;/g, '"')
+  .replace(/&apos;/g, "'")
+  .replace(/&#([0-9]+);/g, (_match, codePoint) => String.fromCodePoint(Number(codePoint)))
+  .replace(/&#x([0-9a-f]+);/gi, (_match, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)));
+
+export const parseResidentPopulationWorkbook = (bytes) => {
+  const entries = unzip(bytes, `Census ${RESIDENT_POPULATION_PRODUCT} workbook`);
+  const workbookXml = requiredZipMember(
+    entries,
+    "xl/workbook.xml",
+    `Census ${RESIDENT_POPULATION_PRODUCT} workbook`,
+  ).toString("utf8");
+  const relationshipsXml = requiredZipMember(
+    entries,
+    "xl/_rels/workbook.xml.rels",
+    `Census ${RESIDENT_POPULATION_PRODUCT} workbook`,
+  ).toString("utf8");
+  if (!new RegExp(`<sheet\\s+name="${RESIDENT_POPULATION_WORKSHEET}"[^>]+r:id="rId1"`, "i").test(workbookXml)) {
+    throw new Error(`Resident Population source must be the exact ${RESIDENT_POPULATION_PRODUCT} workbook product.`);
+  }
+  if (!/<Relationship[^>]+Id="rId1"[^>]+Target="worksheets\/sheet1\.xml"/i.test(relationshipsXml)) {
+    throw new Error(`${RESIDENT_POPULATION_PRODUCT} workbook has an unexpected worksheet relationship.`);
+  }
+  const sharedStringsXml = requiredZipMember(
+    entries,
+    "xl/sharedStrings.xml",
+    `Census ${RESIDENT_POPULATION_PRODUCT} workbook`,
+  ).toString("utf8");
+  const sharedStrings = [...sharedStringsXml.matchAll(/<si>([\s\S]*?)<\/si>/gi)].map((sharedString) =>
+    [...sharedString[1].matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gi)]
+      .map((text) => decodeXmlText(text[1]))
+      .join(""),
+  );
+  if (sharedStrings.length === 0) throw new Error(`${RESIDENT_POPULATION_PRODUCT} workbook lacks shared strings.`);
+  const worksheetXml = requiredZipMember(
+    entries,
+    "xl/worksheets/sheet1.xml",
+    `Census ${RESIDENT_POPULATION_PRODUCT} workbook`,
+  ).toString("utf8");
+  const rows = new Map();
+  for (const rowMatch of worksheetXml.matchAll(/<row\s[^>]*r="([0-9]+)"[^>]*>([\s\S]*?)<\/row>/gi)) {
+    const cells = new Map();
+    for (const cellMatch of rowMatch[2].matchAll(/<c\s([^>]*)>([\s\S]*?)<\/c>/gi)) {
+      const reference = cellMatch[1].match(/(?:^|\s)r="([A-Z]+[0-9]+)"/i)?.[1];
+      const value = cellMatch[2].match(/<v>([\s\S]*?)<\/v>/i)?.[1];
+      if (reference === undefined || value === undefined) continue;
+      const type = cellMatch[1].match(/(?:^|\s)t="([^"]+)"/i)?.[1];
+      cells.set(reference.replace(/[0-9]+$/, ""), type === "s" ? sharedStrings[Number(value)] : decodeXmlText(value));
+    }
+    rows.set(Number(rowMatch[1]), cells);
+  }
+  if (rows.get(4)?.get("H") !== "2025") {
+    throw new Error(`${RESIDENT_POPULATION_PRODUCT} workbook lacks the accepted 2025 population column.`);
+  }
+  const estimatesByName = new Map();
+  for (const [rowNumber, cells] of rows) {
+    if (rowNumber < 5) continue;
+    const rawName = cells.get("A");
+    const estimate = cells.get("H");
+    if (rawName === undefined || estimate === undefined) continue;
+    const name = rawName.replace(/^\.+/, "").trim();
+    if (estimatesByName.has(name)) throw new Error(`${RESIDENT_POPULATION_PRODUCT} contains duplicate row ${name}.`);
+    estimatesByName.set(name, estimate);
+  }
+  return estimatesByName;
+};
+
 const parseInteger = (value, label, { positive = true } = {}) => {
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || (positive && parsed <= 0)) throw new Error(`${label} must be a safe integer.`);
@@ -173,6 +246,11 @@ const parseInteger = (value, label, { positive = true } = {}) => {
 };
 
 const round6 = (value) => Math.round(value * 1_000_000) / 1_000_000;
+const DISTRICT_PARENT_TOLERANCE_DEGREES = 0.0001;
+const DISTRICT_AREA_TOLERANCE = 0.02;
+const POLYGON_INDEX_LATITUDE_BUCKET_DEGREES = 0.25;
+const EARTH_MEAN_RADIUS_METERS = 6_371_008.8;
+const polygonContainmentIndexes = new WeakMap();
 
 const parsePolygonShapefile = (bytes, label) => {
   if (bytes.length < 100 || bytes.readInt32BE(0) !== 9994) throw new Error(`${label} has an invalid shapefile header.`);
@@ -185,6 +263,9 @@ const parsePolygonShapefile = (bytes, label) => {
   while (offset < bytes.length) {
     if (offset + 8 > bytes.length) throw new Error(`${label} contains a truncated record header.`);
     const recordNumber = bytes.readInt32BE(offset);
+    if (recordNumber !== shapes.length + 1) {
+      throw new Error(`${label} record order does not preserve DBF/SHP feature pairing.`);
+    }
     const contentLength = bytes.readInt32BE(offset + 4) * 2;
     const start = offset + 8;
     const end = start + contentLength;
@@ -225,37 +306,91 @@ const parsePolygonShapefile = (bytes, label) => {
   return shapes;
 };
 
-const pointOnSegment = ([x, y], [x1, y1], [x2, y2]) => {
-  const epsilon = 1e-6;
-  const cross = (x - x1) * (y2 - y1) - (y - y1) * (x2 - x1);
-  if (Math.abs(cross) > epsilon) return false;
-  return x >= Math.min(x1, x2) - epsilon && x <= Math.max(x1, x2) + epsilon &&
-    y >= Math.min(y1, y2) - epsilon && y <= Math.max(y1, y2) + epsilon;
+const squaredDistanceToSegment = ([x, y], [x1, y1], [x2, y2]) => {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) return (x - x1) ** 2 + (y - y1) ** 2;
+  const position = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / lengthSquared));
+  const nearestX = x1 + position * dx;
+  const nearestY = y1 + position * dy;
+  return (x - nearestX) ** 2 + (y - nearestY) ** 2;
 };
 
-const pointWithinPolygonRings = (point, rings) => {
-  let inside = false;
+const createPolygonContainmentIndex = (rings, tolerance) => {
+  const latitudeBuckets = new Map();
   for (const ring of rings) {
     for (let current = 0, previous = ring.length - 1; current < ring.length; previous = current, current += 1) {
-      if (pointOnSegment(point, ring[previous], ring[current])) return true;
-      const [x, y] = point;
-      const [xi, yi] = ring[current];
-      const [xj, yj] = ring[previous];
-      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+      const segment = { start: ring[previous], end: ring[current] };
+      const firstBucket = Math.floor(
+        (Math.min(segment.start[1], segment.end[1]) - tolerance) / POLYGON_INDEX_LATITUDE_BUCKET_DEGREES,
+      );
+      const lastBucket = Math.floor(
+        (Math.max(segment.start[1], segment.end[1]) + tolerance) / POLYGON_INDEX_LATITUDE_BUCKET_DEGREES,
+      );
+      for (let bucket = firstBucket; bucket <= lastBucket; bucket += 1) {
+        const segments = latitudeBuckets.get(bucket) ?? [];
+        segments.push(segment);
+        latitudeBuckets.set(bucket, segments);
+      }
     }
+  }
+  return { latitudeBuckets, tolerance };
+};
+
+const pointWithinOrNearIndexedPolygon = ([x, y], index) => {
+  const segments = index.latitudeBuckets.get(
+    Math.floor(y / POLYGON_INDEX_LATITUDE_BUCKET_DEGREES),
+  ) ?? [];
+  const toleranceSquared = index.tolerance ** 2;
+  let inside = false;
+  for (const { start, end } of segments) {
+    if (squaredDistanceToSegment([x, y], start, end) <= toleranceSquared) return true;
+    const [x1, y1] = start;
+    const [x2, y2] = end;
+    if ((y1 > y) !== (y2 > y) && x < ((x2 - x1) * (y - y1)) / (y2 - y1) + x1) inside = !inside;
   }
   return inside;
 };
 
-const polygonsHaveValidatedOverlap = (child, parent) => {
-  const candidates = [
-    [(child.bounds[0] + child.bounds[2]) / 2, (child.bounds[1] + child.bounds[3]) / 2],
-    ...child.rings.flatMap((ring) => {
-      const step = Math.max(1, Math.floor(ring.length / 8));
-      return ring.filter((_, index) => index % step === 0).slice(0, 8);
-    }),
-  ];
-  return candidates.some((point) => pointWithinPolygonRings(point, parent.rings));
+const sphericalPolygonAreaSquareMeters = (rings) => Math.abs(
+  rings.reduce((total, ring) => total + ring.reduce((ringTotal, point, index) => {
+    const next = ring[(index + 1) % ring.length];
+    let longitudeDelta = (next[0] - point[0]) * Math.PI / 180;
+    if (longitudeDelta > Math.PI) longitudeDelta -= 2 * Math.PI;
+    if (longitudeDelta < -Math.PI) longitudeDelta += 2 * Math.PI;
+    return ringTotal + longitudeDelta * (
+      2 + Math.sin(point[1] * Math.PI / 180) + Math.sin(next[1] * Math.PI / 180)
+    );
+  }, 0), 0) * EARTH_MEAN_RADIUS_METERS ** 2 / 2,
+);
+
+export const assertDistrictGeometryIdentityAndContainment = ({ record, shape, parent }) => {
+  const sourceLandArea = parseInteger(record.ALAND, `${record.GEOID} ALAND`);
+  const sourceWaterArea = parseInteger(record.AWATER, `${record.GEOID} AWATER`, { positive: false });
+  const calculatedArea = sphericalPolygonAreaSquareMeters(shape.rings);
+  if (
+    calculatedArea < sourceLandArea * (1 - DISTRICT_AREA_TOLERANCE) ||
+    calculatedArea > (sourceLandArea + sourceWaterArea) * (1 + DISTRICT_AREA_TOLERANCE)
+  ) {
+    throw new Error(`District ${record.GEOID} geometry contradicts its source ALAND/AWATER identity.`);
+  }
+  const [minX, minY, maxX, maxY] = shape.bounds;
+  const [stateMinX, stateMinY, stateMaxX, stateMaxY] = parent.geometry.bounds;
+  if (
+    minX < stateMinX - DISTRICT_PARENT_TOLERANCE_DEGREES ||
+    minY < stateMinY - DISTRICT_PARENT_TOLERANCE_DEGREES ||
+    maxX > stateMaxX + DISTRICT_PARENT_TOLERANCE_DEGREES ||
+    maxY > stateMaxY + DISTRICT_PARENT_TOLERANCE_DEGREES
+  ) throw new Error(`District ${record.GEOID} geometry contradicts identifier-based state nesting.`);
+  let parentIndex = polygonContainmentIndexes.get(parent.geometry);
+  if (parentIndex === undefined) {
+    parentIndex = createPolygonContainmentIndex(parent.geometry.rings, DISTRICT_PARENT_TOLERANCE_DEGREES);
+    polygonContainmentIndexes.set(parent.geometry, parentIndex);
+  }
+  if (shape.rings.some((ring) => ring.some((point) => !pointWithinOrNearIndexedPolygon(point, parentIndex)))) {
+    throw new Error(`District ${record.GEOID} geometry is not materially contained by its identifier-assigned state.`);
+  }
 };
 
 const extractGeography = ({ zipBytes, basename, label, requiredFields }) => {
@@ -315,7 +450,7 @@ export const buildGeographyArtifacts = ({
     zipBytes: districtZipBytes,
     basename: "cb_2025_us_cd119_500k",
     label: "2025 119th congressional-district cartographic source",
-    requiredFields: ["STATEFP", "CD119FP", "GEOID"],
+    requiredFields: ["STATEFP", "CD119FP", "GEOID", "ALAND", "AWATER"],
   });
   const stateFeatureByFips = new Map(stateFeatures.map((feature) => [feature.externalIdentifiers.FIPS, feature]));
   const districtFeatures = districtSource.records.map((record, index) => ({ record, shape: districtSource.shapes[index] }))
@@ -327,15 +462,7 @@ export const buildGeographyArtifacts = ({
       }
       const parent = stateFeatureByFips.get(record.STATEFP);
       if (parent === undefined) throw new Error(`District ${record.GEOID} has no in-scope state geography.`);
-      const [minX, minY, maxX, maxY] = shape.bounds;
-      const [stateMinX, stateMinY, stateMaxX, stateMaxY] = parent.geometry.bounds;
-      const tolerance = 0.05;
-      if (minX < stateMinX - tolerance || minY < stateMinY - tolerance || maxX > stateMaxX + tolerance || maxY > stateMaxY + tolerance) {
-        throw new Error(`District ${record.GEOID} geometry contradicts identifier-based state nesting.`);
-      }
-      if (!polygonsHaveValidatedOverlap(shape, parent.geometry)) {
-        throw new Error(`District ${record.GEOID} polygon has no validated overlap with its identifier-assigned state.`);
-      }
+      assertDistrictGeometryIdentityAndContainment({ record, shape, parent });
       return {
         id: districtGeographyId(record.GEOID),
         kind: "LEGISLATIVE_CONSTITUENCY",
@@ -388,8 +515,12 @@ export const buildGeographyArtifacts = ({
             "cb_2025_us_cd119_500k.dbf",
             "cb_2025_us_cd119_500k.shp",
             "cb_2025_us_cd119_500k.prj",
+            "DBF fields STATEFP, CD119FP, GEOID, ALAND, AWATER",
           ])],
-          limitations: ["119th-vintage constituency frame remains frozen after January 2027; no redistricting inference."],
+          limitations: [
+            "119th-vintage constituency frame remains frozen after January 2027; no redistricting inference.",
+            "Per-feature ALAND/AWATER area bounds and all-vertex parent containment are validation checks, not a full GIS topology proof.",
+          ],
         }),
         sourceCrs: SOURCE_CRS,
         runtimeCrs: RUNTIME_CRS,
@@ -403,17 +534,16 @@ export const buildGeographyArtifacts = ({
 };
 
 export const buildResidentPopulationArtifact = ({ bytes, stateIdentityRecords, retrievedAt }) => {
-  const rows = parseDelimited(bytes.toString("utf8"), ",");
-  const stateByFips = new Map(stateIdentityRecords.map((record) => [record.stateFips, record]));
-  const controls = rows.filter((row) => row.SUMLEV === "040" && stateByFips.has(row.STATE)).map((row) => {
-    const identity = stateByFips.get(row.STATE);
-    if (identity.officialName !== row.NAME) throw new Error(`Population row name contradicts state identity ${row.STATE}.`);
+  const estimatesByName = parseResidentPopulationWorkbook(bytes);
+  const controls = stateIdentityRecords.map((identity) => {
+    const estimate = estimatesByName.get(identity.officialName);
+    if (estimate === undefined) throw new Error(`Population workbook lacks accepted state/DC row ${identity.officialName}.`);
     return {
-      id: `us.population.control.${row.STATE}`,
-      residenceGeographyId: stateGeographyId(row.STATE),
-      stateFips: row.STATE,
+      id: `us.population.control.${identity.stateFips}`,
+      residenceGeographyId: stateGeographyId(identity.stateFips),
+      stateFips: identity.stateFips,
       stateUsps: identity.stateUsps,
-      residentWeight: parseInteger(row.POPESTIMATE2025, `${row.NAME} POPESTIMATE2025`),
+      residentWeight: parseInteger(estimate, `${identity.officialName} POPESTIMATE2025`),
       sourceField: "POPESTIMATE2025",
       referenceDate: "2025-07-01",
       sourceArtifactId: "us.i4.population.resident-controls-2025-v1",
@@ -423,9 +553,9 @@ export const buildResidentPopulationArtifact = ({ bytes, stateIdentityRecords, r
   if (controls.length !== 51 || new Set(controls.map((record) => record.stateFips)).size !== 51) {
     throw new Error("Resident population source must yield exactly 50 states plus DC.");
   }
-  const published = rows.find((row) => row.SUMLEV === "010" && row.NAME === "United States");
+  const published = estimatesByName.get("United States");
   if (published === undefined) throw new Error("Resident population source lacks its published United States validation row.");
-  const publishedNationalTotal = parseInteger(published.POPESTIMATE2025, "United States POPESTIMATE2025");
+  const publishedNationalTotal = parseInteger(published, "United States POPESTIMATE2025");
   const inScopeNationalTotal = controls.reduce((total, control) => total + control.residentWeight, 0);
   if (inScopeNationalTotal !== publishedNationalTotal) {
     throw new Error(`The 51-row population sum ${inScopeNationalTotal} differs from published scope ${publishedNationalTotal}.`);
@@ -436,7 +566,9 @@ export const buildResidentPopulationArtifact = ({ bytes, stateIdentityRecords, r
       vintage: "Census Vintage 2025; 2025-07-01 reference date",
       records: { controls, publishedNationalTotal },
       sources: [sourceRecord(SOURCES.residentPopulation, bytes, retrievedAt, [
-        "SUMLEV", "STATE", "NAME", "POPESTIMATE2025",
+        "workbook sheet NST-EST2025-POP",
+        "Geographic Area row labels (column A)",
+        "2025 Population Estimate / POPESTIMATE2025 (column H)",
       ])],
       limitations: ["Resident estimates are not citizenship, eligibility, registration, turnout, or votes."],
     }),
@@ -758,6 +890,25 @@ export const buildProjectLocatorArtifact = async ({ stablesBytes, palmsBytes, re
 export const buildElectoralAllocationArtifact = ({ bytes, stateIdentityRecords, districtIdentityRecords, retrievedAt }) => {
   const html = bytes.toString("utf8");
   const statesByName = new Map(stateIdentityRecords.map((record) => [record.officialName, record]));
+  const methodSection = html.match(
+    /<h2[^>]*>\s*Allocation within each State\s*<\/h2>([\s\S]*?)<h2[^>]*>\s*Current allocations\s*<\/h2>/i,
+  );
+  if (methodSection === null) throw new Error("NARA source lacks its allocation-within-state method section.");
+  const methodText = decodeHtml(methodSection[1]);
+  const exceptionMatch = methodText.match(
+    /All States, except for ([A-Za-z ]+?) and ([A-Za-z ]+?), have a winner-take-all policy/i,
+  );
+  if (
+    exceptionMatch === null ||
+    exceptionMatch[1] !== "Maine" ||
+    exceptionMatch[2] !== "Nebraska" ||
+    !/Maine and Nebraska, however, appoint individual electors based on the winner of the popular vote within each Congressional district and then 2 ["“]at-large["”] electors based on the winner of the overall state-wide popular vote/i.test(methodText)
+  ) throw new Error("NARA source contradicts the accepted Maine/Nebraska district-and-at-large method.");
+  const splitStateFips = new Set([exceptionMatch[1], exceptionMatch[2]].map((name) => {
+    const state = statesByName.get(name);
+    if (state === undefined) throw new Error(`NARA allocation method names unknown state ${name}.`);
+    return state.stateFips;
+  }));
   const parsed = [...html.matchAll(/<p>\s*([^<]+?)\s*-\s*([0-9]+)(?:\s|&nbsp;)*votes?\s*<\/p>/gi)].map((match) => ({
     name: decodeHtml(match[1]),
     electors: Number(match[2]),
@@ -766,7 +917,7 @@ export const buildElectoralAllocationArtifact = ({ bytes, stateIdentityRecords, 
     const state = statesByName.get(name);
     if (state === undefined || !Number.isInteger(electors) || electors <= 0) throw new Error(`Unexpected NARA allocation row ${name}.`);
     const statewideGeographyId = stateGeographyId(state.stateFips);
-    const split = state.stateUsps === "ME" || state.stateUsps === "NE";
+    const split = splitStateFips.has(state.stateFips);
     const districts = split
       ? districtIdentityRecords.filter((district) => district.stateFips === state.stateFips).sort((a, b) => a.geoid.localeCompare(b.geoid))
       : [];

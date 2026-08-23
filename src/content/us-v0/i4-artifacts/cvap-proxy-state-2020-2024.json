@@ -2,7 +2,7 @@
   "metadata": {
     "artifactId": "us.i4.population.cvap-proxy-2020-2024-v1",
     "vintage": "2020-2024 ACS CVAP special tabulation; released 2026-01-30",
-    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "transformationVersion": "us-v0-i4-artifacts-v2",
     "contentSha256": "04d40bece9dac94986c235f290a554079bcd75b3c7b80a317e5cd65e8d6bf41c",
     "rawSourceSha256s": [
       "0c67665c62de843de7a3521a8110de05b4aa158cdc2db304015380615941056c"

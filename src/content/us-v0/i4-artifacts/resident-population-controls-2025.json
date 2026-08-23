@@ -2,27 +2,26 @@
   "metadata": {
     "artifactId": "us.i4.population.resident-controls-2025-v1",
     "vintage": "Census Vintage 2025; 2025-07-01 reference date",
-    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "transformationVersion": "us-v0-i4-artifacts-v2",
     "contentSha256": "b8f1592448a37efcadbd66b95db1de69c0c0665d9d22ae0a8c775d94d19ad484",
     "rawSourceSha256s": [
-      "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+      "20a556d397a46b484dcc78785482a16d06dbf9159e67971fa69b1244b09c7559"
     ],
     "sources": [
       {
         "sourceId": "USR-SRC-0092",
-        "product": "Census Vintage 2025 NST-EST2025-ALLDATA",
+        "product": "Census Vintage 2025 NST-EST2025-POP",
         "producer": "U.S. Census Bureau",
         "sourceScope": "50 states plus District of Columbia and national validation row",
-        "locator": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv",
+        "locator": "https://www2.census.gov/programs-surveys/popest/tables/2020-2025/state/totals/NST-EST2025-POP.xlsx",
         "vintage": "Vintage 2025; reference date 2025-07-01",
         "mappingClass": "DIRECT",
         "retrievedAt": "2026-08-23",
-        "rawSha256": "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9",
+        "rawSha256": "20a556d397a46b484dcc78785482a16d06dbf9159e67971fa69b1244b09c7559",
         "consumed": [
-          "SUMLEV",
-          "STATE",
-          "NAME",
-          "POPESTIMATE2025"
+          "workbook sheet NST-EST2025-POP",
+          "Geographic Area row labels (column A)",
+          "2025 Population Estimate / POPESTIMATE2025 (column H)"
         ]
       }
     ],

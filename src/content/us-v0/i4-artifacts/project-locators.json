@@ -2,7 +2,7 @@
   "metadata": {
     "artifactId": "us.i4.geography.project-locators-v1",
     "vintage": "Accepted project evidence frozen 2026-08-22",
-    "transformationVersion": "us-v0-i4-artifacts-v1",
+    "transformationVersion": "us-v0-i4-artifacts-v2",
     "contentSha256": "ffb4b43ba107a80adc0b7144d598149c8017f8e0e9048397f80786387ca5f807",
     "rawSourceSha256s": [
       "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",

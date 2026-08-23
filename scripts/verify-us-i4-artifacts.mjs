@@ -18,7 +18,7 @@ const artifactDirectory = join(root, "src/content/us-v0/i4-artifacts");
 const sources = {
   stateZipBytes: await readFile(join(sourceDirectory, "state-500k.zip")),
   districtZipBytes: await readFile(districtSourcePath),
-  populationBytes: await readFile(join(sourceDirectory, "nst-est2025-alldata.csv")),
+  populationBytes: await readFile(join(sourceDirectory, "nst-est2025-pop.xlsx")),
   tenureBytes: await readFile(join(sourceDirectory, "acsdt5y2024-b25008.dat")),
   cvapBytes: await readFile(join(sourceDirectory, "cvap-2020-2024.zip")),
   electoralBytes: await readFile(join(sourceDirectory, "nara-electoral-allocation.html")),

@@ -221,76 +221,87 @@ export const projectAdministrationLegislativeView = (
   };
 };
 
-const createSession = (
-  initialState: LegislativeRuntimeState,
+export interface LegislativeRuntimeStateOwner {
+  readonly getLegislativeState: () => LegislativeRuntimeState;
+  readonly setLegislativeState: (state: LegislativeRuntimeState) => void;
+}
+
+export const createLegislativeSessionForStateOwner = (
+  owner: LegislativeRuntimeStateOwner,
   context: LegislativeRuntimeContext,
   initialBinding: LegislativeControlBinding,
   authoritativeInstant: string,
 ): LegislativeSession => {
-  let state = initialState;
   const controlBinding = initialBinding;
   const commit = (next: LegislativeRuntimeState): AdministrationLegislativeProjection => {
-    state = next;
-    return projectAdministrationLegislativeView(state, context.seed.executive.administrationId);
+    owner.setLegislativeState(next);
+    return projectAdministrationLegislativeView(next, context.seed.executive.administrationId);
   };
   const authorized = (
-    transition: () => LegislativeRuntimeState,
+    transition: (state: LegislativeRuntimeState) => LegislativeRuntimeState,
   ): AdministrationLegislativeProjection => {
+    const state = owner.getLegislativeState();
     assertLegislativeAdministrationControl(controlBinding, state, context);
-    return commit(transition());
+    return commit(transition(state));
   };
-  const proposal = () => {
+  const proposal = (state: LegislativeRuntimeState) => {
     const version = state.agenda.versions.find((candidate) => candidate.version === state.agenda.currentVersion);
     if (version === undefined) throw new Error("Current proposal version is missing.");
     return { proposalId: state.agenda.proposalId, version: version.version, dimensions: version.dimensions };
   };
   return {
-    getAdministrationView: () => projectAdministrationLegislativeView(state, context.seed.executive.administrationId),
-    getAuditState: () => deepCopy(state),
+    getAdministrationView: () => projectAdministrationLegislativeView(
+      owner.getLegislativeState(),
+      context.seed.executive.administrationId,
+    ),
+    getAuditState: () => deepCopy(owner.getLegislativeState()),
     getControlBindingAudit: () => deepCopy(controlBinding),
-    save: () => serializeLegislativeRuntime(state, controlBinding),
-    reviseAgenda: (dimensions) => authorized(() => reviseLegislativeAgenda(state, context, dimensions)),
-    beginSponsorSearch: () => authorized(() => beginSponsorSearch(state)),
-    seekSponsorship: (actorId) => authorized(() => seekMemberSponsorship(state, context, actorId)),
-    introduceBySponsor: (actorId, assignmentId) => authorized(() => introduceSponsoredProposal(state, context, actorId, assignmentId)),
-    advanceIntroducedProposal: () => authorized(() => advanceIntroducedProposalToGate(state, context)),
-    resolveConsiderationGate: () => authorized(() => resolveConsiderationGate(state, context)),
+    save: () => serializeLegislativeRuntime(owner.getLegislativeState(), controlBinding),
+    reviseAgenda: (dimensions) => authorized((state) => reviseLegislativeAgenda(state, context, dimensions)),
+    beginSponsorSearch: () => authorized((state) => beginSponsorSearch(state)),
+    seekSponsorship: (actorId) => authorized((state) => seekMemberSponsorship(state, context, actorId)),
+    introduceBySponsor: (actorId, assignmentId) => authorized((state) => introduceSponsoredProposal(state, context, actorId, assignmentId)),
+    advanceIntroducedProposal: () => authorized((state) => advanceIntroducedProposalToGate(state, context)),
+    resolveConsiderationGate: () => authorized((state) => resolveConsiderationGate(state, context)),
     negotiateWithActor: (actorId, offer) => {
-      return authorized(() => {
+      return authorized((state) => {
         const result = negotiateWithActor(
           state.political,
           context.seed,
           actorId,
           context.seed.executive.administrationId,
-          proposal(),
+          proposal(state),
           offer,
         );
         return { ...state, political: result.political };
       });
     },
     negotiateWithOrganization: (organizationId) =>
-      authorized(() => ({ ...state, political: negotiateWithOrganization(state.political, organizationId, proposal()) })),
+      authorized((state) => ({
+        ...state,
+        political: negotiateWithOrganization(state.political, organizationId, proposal(state)),
+      })),
     coordinateOrganization: (organizationId, chamberId, recommendation) =>
-      authorized(() => ({
+      authorized((state) => ({
         ...state,
         political: coordinateOrganization(
           state.political,
           context.seed,
           organizationId,
           chamberId,
-          proposal(),
+          proposal(state),
           recommendation,
         ),
       })),
-    requestAmendment: (changes) => authorized(() => requestFormalAmendment(state, context, changes)),
-    resolveAmendment: () => authorized(() => resolveFormalAmendment(state, context)),
-    closeAmendmentRound: () => authorized(() => closeAmendmentRound(state, context)),
-    resolveFinalRollCall: () => authorized(() => resolveFinalRollCall(state, context)),
-    considerTextExchange: (chamberId, version) => authorized(() => considerTextExchange(state, context, chamberId, version)),
-    present: () => authorized(() => presentIdenticalText(state, context, authoritativeInstant)),
+    requestAmendment: (changes) => authorized((state) => requestFormalAmendment(state, context, changes)),
+    resolveAmendment: () => authorized((state) => resolveFormalAmendment(state, context)),
+    closeAmendmentRound: () => authorized((state) => closeAmendmentRound(state, context)),
+    resolveFinalRollCall: () => authorized((state) => resolveFinalRollCall(state, context)),
+    considerTextExchange: (chamberId, version) => authorized((state) => considerTextExchange(state, context, chamberId, version)),
+    present: () => authorized((state) => presentIdenticalText(state, context, authoritativeInstant)),
     executiveAction: (actorId, assignmentId, action) =>
-      authorized(() => resolveExecutivePresentmentAction(state, context, actorId, assignmentId, action)),
-    resolveOverride: (chamberId) => authorized(() => resolveVetoOverrideRollCall(state, context, chamberId)),
+      authorized((state) => resolveExecutivePresentmentAction(state, context, actorId, assignmentId, action)),
+    resolveOverride: (chamberId) => authorized((state) => resolveVetoOverrideRollCall(state, context, chamberId)),
   };
 };
 
@@ -306,9 +317,12 @@ export const createLegislativeSession = (
     throw new Error("Configuration does not expose a legislative runtime slice.");
   }
   const context = { structure: loaded.structure, seed: loaded.runtimeSeed };
-  const state = createLegislativeRuntimeState(loaded.identity, context);
+  let state = createLegislativeRuntimeState(loaded.identity, context);
   const binding = options.controlBinding ?? createInitialLegislativeControlBinding(state, context);
-  return createSession(state, context, binding, options.authoritativeInstant ?? loaded.calendar.epoch);
+  return createLegislativeSessionForStateOwner({
+    getLegislativeState: () => state,
+    setLegislativeState: (next) => { state = next; },
+  }, context, binding, options.authoritativeInstant ?? loaded.calendar.epoch);
 };
 
 export const createLegislativeSessionFromSave = (
@@ -327,8 +341,12 @@ export const createLegislativeSessionFromSave = (
   if (restored.state.schemaVersion !== loaded.runtimeSeed.schemaVersion) {
     throw new Error("Legislative runtime schema version mismatch.");
   }
-  return createSession(
-    restored.state,
+  let state = restored.state;
+  return createLegislativeSessionForStateOwner(
+    {
+      getLegislativeState: () => state,
+      setLegislativeState: (next) => { state = next; },
+    },
     { structure: loaded.structure, seed: loaded.runtimeSeed },
     restored.controlBinding,
     options.authoritativeInstant ?? loaded.calendar.epoch,

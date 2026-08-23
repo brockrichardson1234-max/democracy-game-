@@ -2,8 +2,8 @@
   "metadata": {
     "artifactId": "us.i4.initialization-manifest-v1",
     "vintage": "Scenario initialization authority through 2026-08-22",
-    "transformationVersion": "us-v0-i4-artifacts-v1",
-    "contentSha256": "889104002e4bc20ffb551063743bbe7b8c1f4a6c065294d54c63f60c1fcc0c87"
+    "transformationVersion": "us-v0-i4-artifacts-v2",
+    "contentSha256": "fd8161f55a19fdffbd10d231cbe111d7fa9d1094ead0b9efb7aa2ffc63e2488b"
   },
   "schemaVersion": 1,
   "artifactBindings": [
@@ -11,7 +11,7 @@
       "id": "us.i4.geography.states-2025-500k-v1",
       "kind": "GEOGRAPHY",
       "contentSha256": "5957b18ea7b2d8188a1cc8596237c213854988e8f1637bb8686b755565588c1f",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": [
         "9cbfe171dad1555e11770c981d8f4db9e687a65c86f5bdae684eeb487e2e9b80"
       ]
@@ -20,7 +20,7 @@
       "id": "us.i4.geography.cd119-2025-500k-v1",
       "kind": "GEOGRAPHY",
       "contentSha256": "c42d12258fb2d1bba794d1a12cfec57e20bd352c1696e017d265cadee1a150df",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": [
         "8e804518d333d67e24e25c61767c6a7c78fd0a0852179e8cc19c36fd66011010"
       ]
@@ -29,7 +29,7 @@
       "id": "us.i4.geography.project-locators-v1",
       "kind": "GEOGRAPHY",
       "contentSha256": "ffb4b43ba107a80adc0b7144d598149c8017f8e0e9048397f80786387ca5f807",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": [
         "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
         "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9"
@@ -39,16 +39,16 @@
       "id": "us.i4.population.resident-controls-2025-v1",
       "kind": "POPULATION_CONTROL",
       "contentSha256": "b8f1592448a37efcadbd66b95db1de69c0c0665d9d22ae0a8c775d94d19ad484",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": [
-        "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+        "20a556d397a46b484dcc78785482a16d06dbf9159e67971fa69b1244b09c7559"
       ]
     },
     {
       "id": "us.i4.population.tenure-input-acs2024-v1",
       "kind": "POPULATION_MEASUREMENT",
       "contentSha256": "2cbae718a99b30d02125f43139d81d41f3fa12fe81d9254b9933847f6ce610b7",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": [
         "caf0a0ed0ed04f462880589096143d9f89c2e870c0e9e75c99a993cb3bf9c751"
       ]
@@ -57,7 +57,7 @@
       "id": "us.i4.population.cvap-proxy-2020-2024-v1",
       "kind": "ELIGIBILITY_PROXY",
       "contentSha256": "04d40bece9dac94986c235f290a554079bcd75b3c7b80a317e5cd65e8d6bf41c",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": [
         "0c67665c62de843de7a3521a8110de05b4aa158cdc2db304015380615941056c"
       ]
@@ -66,14 +66,14 @@
       "id": "us.i4.population.initial-cohorts-2026-08-22-v1",
       "kind": "POPULATION_COHORT",
       "contentSha256": "c9b2e3348d615568feda3c14635ff1a149d92b4749f6cdb566d5f54b62f24166",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": []
     },
     {
       "id": "us.i4.electoral.allocation-2028-v1",
       "kind": "ELECTORAL_TOPOLOGY",
       "contentSha256": "3494a784283029812ea22a61b777f8d21596574f920270a9a2ec02b497eaa426",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "rawSourceSha256s": [
         "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71"
       ]
@@ -83,7 +83,7 @@
     {
       "artifactId": "us.i4.geography.states-2025-500k-v1",
       "vintage": "2025 Census Cartographic Boundary Files, 1:500,000",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "5957b18ea7b2d8188a1cc8596237c213854988e8f1637bb8686b755565588c1f",
       "rawSourceSha256s": [
         "9cbfe171dad1555e11770c981d8f4db9e687a65c86f5bdae684eeb487e2e9b80"
@@ -120,7 +120,7 @@
     {
       "artifactId": "us.i4.geography.cd119-2025-500k-v1",
       "vintage": "2025 Census Cartographic Boundary Files, 119th Congress, 1:500,000",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "c42d12258fb2d1bba794d1a12cfec57e20bd352c1696e017d265cadee1a150df",
       "rawSourceSha256s": [
         "8e804518d333d67e24e25c61767c6a7c78fd0a0852179e8cc19c36fd66011010"
@@ -140,13 +140,15 @@
           "consumed": [
             "cb_2025_us_cd119_500k.dbf",
             "cb_2025_us_cd119_500k.shp",
-            "cb_2025_us_cd119_500k.prj"
+            "cb_2025_us_cd119_500k.prj",
+            "DBF fields STATEFP, CD119FP, GEOID, ALAND, AWATER"
           ]
         }
       ],
       "derivedFrom": [],
       "limitations": [
-        "119th-vintage constituency frame remains frozen after January 2027; no redistricting inference."
+        "119th-vintage constituency frame remains frozen after January 2027; no redistricting inference.",
+        "Per-feature ALAND/AWATER area bounds and all-vertex parent containment are validation checks, not a full GIS topology proof."
       ],
       "sourceCrs": "NAD83 geographic coordinates (EPSG:4269)",
       "runtimeCrs": "NAD83 geographic coordinates (EPSG:4269)",
@@ -157,7 +159,7 @@
     {
       "artifactId": "us.i4.geography.project-locators-v1",
       "vintage": "Accepted project evidence frozen 2026-08-22",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "ffb4b43ba107a80adc0b7144d598149c8017f8e0e9048397f80786387ca5f807",
       "rawSourceSha256s": [
         "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
@@ -205,27 +207,26 @@
     {
       "artifactId": "us.i4.population.resident-controls-2025-v1",
       "vintage": "Census Vintage 2025; 2025-07-01 reference date",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "b8f1592448a37efcadbd66b95db1de69c0c0665d9d22ae0a8c775d94d19ad484",
       "rawSourceSha256s": [
-        "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+        "20a556d397a46b484dcc78785482a16d06dbf9159e67971fa69b1244b09c7559"
       ],
       "sources": [
         {
           "sourceId": "USR-SRC-0092",
-          "product": "Census Vintage 2025 NST-EST2025-ALLDATA",
+          "product": "Census Vintage 2025 NST-EST2025-POP",
           "producer": "U.S. Census Bureau",
           "sourceScope": "50 states plus District of Columbia and national validation row",
-          "locator": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv",
+          "locator": "https://www2.census.gov/programs-surveys/popest/tables/2020-2025/state/totals/NST-EST2025-POP.xlsx",
           "vintage": "Vintage 2025; reference date 2025-07-01",
           "mappingClass": "DIRECT",
           "retrievedAt": "2026-08-23",
-          "rawSha256": "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9",
+          "rawSha256": "20a556d397a46b484dcc78785482a16d06dbf9159e67971fa69b1244b09c7559",
           "consumed": [
-            "SUMLEV",
-            "STATE",
-            "NAME",
-            "POPESTIMATE2025"
+            "workbook sheet NST-EST2025-POP",
+            "Geographic Area row labels (column A)",
+            "2025 Population Estimate / POPESTIMATE2025 (column H)"
           ]
         }
       ],
@@ -237,7 +238,7 @@
     {
       "artifactId": "us.i4.population.tenure-input-acs2024-v1",
       "vintage": "ACS 2024 five-year B25008",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "2cbae718a99b30d02125f43139d81d41f3fa12fe81d9254b9933847f6ce610b7",
       "rawSourceSha256s": [
         "caf0a0ed0ed04f462880589096143d9f89c2e870c0e9e75c99a993cb3bf9c751"
@@ -272,7 +273,7 @@
     {
       "artifactId": "us.i4.population.cvap-proxy-2020-2024-v1",
       "vintage": "2020-2024 ACS CVAP special tabulation; released 2026-01-30",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "04d40bece9dac94986c235f290a554079bcd75b3c7b80a317e5cd65e8d6bf41c",
       "rawSourceSha256s": [
         "0c67665c62de843de7a3521a8110de05b4aa158cdc2db304015380615941056c"
@@ -302,7 +303,7 @@
     {
       "artifactId": "us.i4.population.initial-cohorts-2026-08-22-v1",
       "vintage": "Scenario Day 0, 2026-08-22",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "c9b2e3348d615568feda3c14635ff1a149d92b4749f6cdb566d5f54b62f24166",
       "rawSourceSha256s": [],
       "sources": [],
@@ -322,7 +323,7 @@
     {
       "artifactId": "us.i4.electoral.allocation-2028-v1",
       "vintage": "2020 Census allocation applicable to 2024 and 2028",
-      "transformationVersion": "us-v0-i4-artifacts-v1",
+      "transformationVersion": "us-v0-i4-artifacts-v2",
       "contentSha256": "3494a784283029812ea22a61b777f8d21596574f920270a9a2ec02b497eaa426",
       "rawSourceSha256s": [
         "6c0028d6e956c038302d10926cb0dbed959b87cad4761a49efe2e00d1d79fc71"
