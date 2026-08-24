@@ -27,6 +27,10 @@ import {
   type IntegratedMaterialHousingState,
   type MaterialHousingInitializationSeed,
 } from "./housing";
+import {
+  createIntegratedInformationRuntimeState,
+  type IntegratedInformationRuntimeState,
+} from "./information";
 
 export interface RuntimeArtifactMetadata {
   readonly artifactId: string;
@@ -174,6 +178,7 @@ export interface IntegratedPartialRuntimeState {
   readonly institutional: InstitutionalRuntimeState | null;
   readonly implementation: ProgramImplementationState | null;
   readonly housing: IntegratedMaterialHousingState | null;
+  readonly information: IntegratedInformationRuntimeState | null;
 }
 
 const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { readonly metadata: RuntimeArtifactMetadata }[] => [
@@ -398,5 +403,8 @@ export const createIntegratedPartialRuntimeState = (
       : createInstitutionalRuntimeState(configuration.calendar.epoch, configuration.integratedRuntime.temporal),
     implementation,
     housing,
+    information: configuration.integratedRuntime.information === undefined
+      ? null
+      : createIntegratedInformationRuntimeState(configuration.integratedRuntime.information),
   };
 };

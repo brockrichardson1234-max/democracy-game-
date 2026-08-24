@@ -526,6 +526,31 @@ const validateIntegratedRuntimeConfiguration = (
       !Number.isSafeInteger(housing.expectedProjectCount) || housing.expectedProjectCount <= 0
     ) throw new Error("Integrated Housing configuration has invalid artifact or material semantics.");
   }
+  const information = integrated.information;
+  if (information !== undefined) {
+    const { parameterHash, ...informationWithoutHash } = information;
+    const boundaryIds = new Set(integrated.temporal?.boundaries.map((boundary) => boundary.id) ?? []);
+    const measurementIds = information.measurements.map((measurement) => measurement.id);
+    const artifactIds = information.measurements.map((measurement) => measurement.artifactId);
+    if (
+      information.schemaVersion !== 1 || information.ownerId.trim().length === 0 ||
+      !SHA_256_PATTERN.test(parameterHash) || parameterHash !== sha256Hex(JSON.stringify(informationWithoutHash)) ||
+      information.semanticsVersion.trim().length === 0 || information.measurements.length === 0 ||
+      new Set(measurementIds).size !== measurementIds.length || new Set(artifactIds).size !== artifactIds.length ||
+      information.measurements.some((measurement) =>
+        measurement.referentIds.length === 0 || new Set(measurement.referentIds).size !== measurement.referentIds.length ||
+        !boundaryIds.has(measurement.captureBoundaryId) || !boundaryIds.has(measurement.releaseBoundaryId) ||
+        !Number.isSafeInteger(measurement.deterministicErrorBound) || measurement.deterministicErrorBound < 0) ||
+      !boundaryIds.has(information.claim.releaseBoundaryId) ||
+      information.claim.sourceArtifactIds.some((id) => !artifactIds.includes(id)) ||
+      !boundaryIds.has(information.delivery.boundaryId) || information.delivery.artifactId !== information.claim.id ||
+      !boundaryIds.has(information.exposure.boundaryId) || information.exposure.deliveryId !== information.delivery.id ||
+      information.exposure.materialExposureClass.trim().length === 0 || information.exposure.catchmentClass.trim().length === 0 ||
+      information.exposure.targetNumerator <= 0 || information.exposure.targetDenominator <= 0 ||
+      information.exposure.targetNumerator >= information.exposure.targetDenominator ||
+      !boundaryIds.has(information.response.boundaryId) || information.response.exposureId !== information.exposure.id
+    ) throw new Error("Integrated Information configuration has invalid causal ownership or boundary references.");
+  }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {
     if (
@@ -550,7 +575,7 @@ const validateIntegratedRuntimeConfiguration = (
         !Number.isSafeInteger(boundary.phase) ||
         !Number.isSafeInteger(boundary.order) ||
         boundary.stableKey.trim().length === 0 ||
-        (boundary.ownerId !== temporal.selection.id && !cycleIds.has(boundary.ownerId))
+        (boundary.ownerId !== temporal.selection.id && !cycleIds.has(boundary.ownerId) && boundary.ownerId !== information?.ownerId)
       ) throw new Error(`Integrated temporal boundary ${boundary.id} is invalid.`);
     }
     for (const cycle of temporal.assignmentCycles) {

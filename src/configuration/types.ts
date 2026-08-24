@@ -364,7 +364,13 @@ export type InstitutionalBoundaryKind =
   | "RESULT_ATTESTATION"
   | "DELEGATE_ACTION"
   | "COLLEGIATE_DECLARATION"
-  | "AUTHORITY_TRANSFER";
+  | "AUTHORITY_TRANSFER"
+  | "MEASUREMENT_CAPTURE"
+  | "ARTIFACT_RELEASE"
+  | "CLAIM_RELEASE"
+  | "ARTIFACT_DELIVERY"
+  | "RECIPIENT_EXPOSURE"
+  | "POLITICAL_RESPONSE";
 
 export interface InstitutionalBoundaryConfiguration {
   readonly id: string;
@@ -544,6 +550,62 @@ export interface IntegratedHousingConfiguration {
   readonly classification: ScaffoldClassification;
 }
 
+export interface InformationMeasurementConfiguration {
+  readonly id: string;
+  readonly measurementKind: "ADMINISTRATIVE_RECORD" | "MATERIAL_STATISTICAL";
+  readonly captureBoundaryId: string;
+  readonly releaseBoundaryId: string;
+  readonly artifactId: string;
+  readonly producerId: string;
+  readonly referentIds: readonly string[];
+  readonly deterministicErrorBound: number;
+  readonly classification: ScaffoldClassification;
+}
+
+export interface IntegratedInformationConfiguration {
+  readonly schemaVersion: number;
+  readonly ownerId: string;
+  readonly parameterHash: string;
+  readonly semanticsVersion: string;
+  readonly classification: ScaffoldClassification;
+  readonly measurements: readonly InformationMeasurementConfiguration[];
+  readonly claim: {
+    readonly id: string;
+    readonly sourceArtifactIds: readonly string[];
+    readonly releaseBoundaryId: string;
+    readonly subject: string;
+    readonly assertion: string;
+    readonly originPolicy: "CURRENT_ADMINISTRATION";
+  };
+  readonly delivery: {
+    readonly id: string;
+    readonly artifactId: string;
+    readonly boundaryId: string;
+    readonly channel: string;
+  };
+  readonly exposure: {
+    readonly id: string;
+    readonly deliveryId: string;
+    readonly boundaryId: string;
+    readonly stateGeographyId: string;
+    readonly parentCohortId: string;
+    readonly materialExposureClass: string;
+    readonly catchmentClass: string;
+    readonly targetNumerator: number;
+    readonly targetDenominator: number;
+  };
+  readonly response: {
+    readonly id: string;
+    readonly exposureId: string;
+    readonly boundaryId: string;
+    readonly belief: string;
+    readonly attributionPolicy: "CURRENT_ADMINISTRATION";
+    readonly salience: string;
+    readonly candidatePreference: string;
+    readonly turnoutDisposition: string;
+  };
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -569,6 +631,7 @@ export interface IntegratedRuntimeConfiguration {
   readonly temporal?: IntegratedTemporalConfiguration;
   readonly implementation?: IntegratedImplementationConfiguration;
   readonly housing?: IntegratedHousingConfiguration;
+  readonly information?: IntegratedInformationConfiguration;
 }
 
 interface ScheduledTransitionBase {

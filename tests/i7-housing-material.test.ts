@@ -85,7 +85,7 @@ describe("I7 canonical Housing material route", () => {
     const session = createIntegratedPartialRuntimeSession(US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS);
     const geography = session.getAuditState().geography;
     const population = session.getAuditState().population;
-    session.advanceTo("2028-01-01T00:00:00-05:00");
+    session.advanceTo("2027-10-10T00:00:00-04:00");
     const state = session.getAuditState();
     expect(state.housing?.projects.every((project) => ["USABLE", "PRESERVATION_LOSS_AVOIDED"].includes(project.stage))).toBe(true);
     expect(state.geography).toEqual(geography);

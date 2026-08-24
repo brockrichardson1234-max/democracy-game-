@@ -134,6 +134,54 @@ export interface PopulationPoliticalResolution {
   readonly causeKey: string;
 }
 
+export interface PopulationInformationResponse {
+  readonly cohortIds: readonly string[];
+  readonly exposureId: string;
+  readonly belief: string;
+  readonly attribution: string;
+  readonly salience: string;
+  readonly candidatePreference: string;
+  readonly turnoutDisposition: string;
+  readonly classification: string;
+}
+
+/** Population owns the bounded political incorporation of a received exposure. */
+export const applyPopulationInformationResponse = (
+  state: WeightedPopulationState,
+  response: PopulationInformationResponse,
+): WeightedPopulationState => {
+  if (
+    response.cohortIds.length === 0 ||
+    new Set(response.cohortIds).size !== response.cohortIds.length ||
+    [response.exposureId, response.belief, response.attribution, response.salience,
+      response.candidatePreference, response.turnoutDisposition, response.classification]
+      .some((value) => value.trim().length === 0)
+  ) throw new Error("Population information response is incomplete or duplicates a cohort.");
+  const targetIds = new Set(response.cohortIds);
+  for (const id of targetIds) {
+    const cohort = state.cohorts.find((candidate) => candidate.id === id);
+    if (cohort === undefined || !cohort.receivedInformationReferences.includes(response.exposureId)) {
+      throw new Error(`Population cohort ${id} did not receive exposure ${response.exposureId}.`);
+    }
+  }
+  const next = {
+    ...state,
+    cohorts: state.cohorts.map((cohort) => targetIds.has(cohort.id) ? {
+      ...cohort,
+      politicalState: {
+        belief: response.belief,
+        attribution: response.attribution,
+        salience: response.salience,
+        candidatePreference: response.candidatePreference,
+        turnoutDisposition: response.turnoutDisposition,
+        classification: response.classification,
+      },
+    } : cohort),
+  };
+  assertWeightedPopulationConservation(next);
+  return next;
+};
+
 /** Generic upstream composition seam; changes only Population-owned political state. */
 export const resolvePopulationPoliticalState = (
   state: WeightedPopulationState,

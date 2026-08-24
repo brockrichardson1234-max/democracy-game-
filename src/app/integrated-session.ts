@@ -11,6 +11,7 @@ import {
   mergeWeightedPopulationCohorts,
   refineWeightedPopulationCohort,
   resolvePopulationPoliticalState,
+  applyPopulationInformationResponse,
   type PopulationPoliticalResolution,
   type PopulationRefinementRequest,
 } from "../sim/population-core";
@@ -55,6 +56,16 @@ import {
   assertIntegratedMaterialHousingState,
   type AcceptedMaterialInputReference,
 } from "../sim/housing";
+import {
+  assertIntegratedInformationRuntimeState,
+  captureIntegratedMeasurement,
+  deliverIntegratedArtifact,
+  recordIntegratedExposure,
+  recordIntegratedPopulationResponse,
+  releaseIntegratedClaim,
+  releaseIntegratedMeasurement,
+  type IntegratedInformationObservation,
+} from "../sim/information";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
 import {
   createInitialLegislativeControlBinding,
@@ -64,7 +75,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 5 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 6 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -79,6 +90,7 @@ interface IntegratedPartialSaveEnvelope {
   readonly institutional: IntegratedPartialRuntimeState["institutional"];
   readonly implementation: IntegratedPartialRuntimeState["implementation"];
   readonly housing: IntegratedPartialRuntimeState["housing"];
+  readonly information: IntegratedPartialRuntimeState["information"];
 }
 
 const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -132,6 +144,12 @@ export interface IntegratedPartialRuntimeSession {
     causeKey: string,
   ) => IntegratedPartialRuntimeState;
   readonly getHousingAuditState: () => NonNullable<IntegratedPartialRuntimeState["housing"]>;
+  readonly getInformationAuditState: () => NonNullable<IntegratedPartialRuntimeState["information"]>;
+  readonly getPublicInformationStatus: () => {
+    readonly releasedArtifacts: readonly { readonly id: string; readonly kind: string; readonly releasedAt: string }[];
+    readonly completedDeliveryIds: readonly string[];
+    readonly publicExposureCount: number;
+  };
   readonly save: () => string;
 }
 
@@ -192,6 +210,7 @@ const serialize = (
   institutional: state.institutional,
   implementation: state.implementation,
   housing: state.housing,
+  information: state.information,
 } satisfies IntegratedPartialSaveEnvelope);
 
 const materialInputReferences = (
@@ -334,7 +353,8 @@ const parse = (
     !isRecord(parsed.electoralTopology) ||
     !isRecord(parsed.institutional) ||
     !isRecord(parsed.implementation) ||
-    !isRecord(parsed.housing)
+    !isRecord(parsed.housing) ||
+    !isRecord(parsed.information)
   ) throw new Error("Invalid integrated partial save envelope.");
   const baseline = createIntegratedPartialRuntimeState(configuration, artifacts);
   assertConfigurationIdentityCompatible(
@@ -562,6 +582,49 @@ const parse = (
     institutional.calendar.current,
   );
   requireExactArtifactState(housing, expectedHousing, "Housing deterministic material state");
+  const informationConfiguration = configuration.integratedRuntime?.information;
+  if (baseline.information === null || informationConfiguration === undefined) {
+    throw new Error("Integrated partial save supplies unsupported Information state.");
+  }
+  const information = parsed.information as unknown as NonNullable<IntegratedPartialRuntimeState["information"]>;
+  assertIntegratedInformationRuntimeState(information, informationConfiguration);
+  const processed = new Set(institutional.calendar.processedBoundaryIds);
+  for (const measurement of informationConfiguration.measurements) {
+    const runtime = information.measurements.find((candidate) => candidate.id === measurement.id);
+    const captured = processed.has(measurement.captureBoundaryId);
+    const released = processed.has(measurement.releaseBoundaryId);
+    if (
+      runtime === undefined ||
+      (released ? runtime.status !== "RELEASED" : captured ? runtime.status !== "CAPTURED" : runtime.status !== "SCHEDULED") ||
+      information.artifacts.some((artifact) => artifact.id === measurement.artifactId) !== released
+    ) throw new Error(`Integrated partial save measurement ${measurement.id} contradicts processed boundaries.`);
+  }
+  const claimReleased = processed.has(informationConfiguration.claim.releaseBoundaryId);
+  const delivered = processed.has(informationConfiguration.delivery.boundaryId);
+  const exposed = processed.has(informationConfiguration.exposure.boundaryId);
+  const responded = processed.has(informationConfiguration.response.boundaryId);
+  const claim = information.artifacts.find((artifact) => artifact.id === informationConfiguration.claim.id);
+  if (
+    information.artifacts.some((artifact) => artifact.id === informationConfiguration.claim.id) !== claimReleased ||
+    information.deliveries.some((delivery) => delivery.id === informationConfiguration.delivery.id) !== delivered ||
+    information.exposures.some((exposure) => exposure.id === informationConfiguration.exposure.id) !== exposed ||
+    information.responses.some((response) => response.id === informationConfiguration.response.id) !== responded ||
+    (claim !== undefined && claim.producerId !== temporal.initialAdministration.id) ||
+    information.responses.some((response) => response.attribution !== temporal.initialAdministration.id)
+  ) throw new Error("Integrated partial save Information stages contradict processed boundaries.");
+  for (const response of information.responses) {
+    const exposure = information.exposures.find((candidate) => candidate.id === response.exposureId);
+    for (const cohortId of response.cohortIds) {
+      const cohort = population.cohorts.find((candidate) => candidate.id === cohortId);
+      if (
+        exposure === undefined || cohort === undefined || !cohort.receivedInformationReferences.includes(exposure.id) ||
+        cohort.politicalState.belief !== response.belief || cohort.politicalState.attribution !== response.attribution ||
+        cohort.politicalState.salience !== response.salience ||
+        cohort.politicalState.candidatePreference !== response.candidatePreference ||
+        cohort.politicalState.turnoutDisposition !== response.turnoutDisposition
+      ) throw new Error("Integrated partial save Population response contradicts its targeted exposure.");
+    }
+  }
   return {
     state: {
       ...baseline,
@@ -571,6 +634,7 @@ const parse = (
       institutional,
       implementation,
       housing,
+      information,
     },
     controlBinding: validatedLegislative.controlBinding,
     controlBindingHistory,
@@ -588,8 +652,12 @@ const createSession = (
   let controlBindingHistory = [...initialControlBindingHistory];
   const temporal = configuration.integratedRuntime?.temporal;
   const implementationConfiguration = configuration.integratedRuntime?.implementation;
-  if (temporal === undefined || implementationConfiguration === undefined || state.institutional === null || state.implementation === null) {
-    throw new Error("Integrated session requires configured institutional time and program implementation state.");
+  const informationConfiguration = configuration.integratedRuntime?.information;
+  if (
+    temporal === undefined || implementationConfiguration === undefined || informationConfiguration === undefined ||
+    state.institutional === null || state.implementation === null || state.housing === null || state.information === null
+  ) {
+    throw new Error("Integrated session requires configured institutional, implementation, Housing, and Information state.");
   }
   const synchronizeHousingInputs = (): void => {
     if (state.housing !== null && state.implementation !== null) {
@@ -627,15 +695,93 @@ const createSession = (
       return state.institutional.calendar.current;
     },
   });
+  const advanceMaterialOwners = (
+    implementation: NonNullable<IntegratedPartialRuntimeState["implementation"]>,
+    housing: NonNullable<IntegratedPartialRuntimeState["housing"]>,
+    from: string,
+    to: string,
+  ): {
+    readonly implementation: NonNullable<IntegratedPartialRuntimeState["implementation"]>;
+    readonly housing: NonNullable<IntegratedPartialRuntimeState["housing"]>;
+  } => {
+    const withExistingInputs = admitValidatedMaterialInputs(housing, materialInputReferences(implementation));
+    const advancedHousing = advanceIntegratedMaterialHousing(withExistingInputs, from, to);
+    const advancedImplementation = advanceAdministrativeDeadlines(implementation, to);
+    return {
+      implementation: advancedImplementation,
+      housing: admitValidatedMaterialInputs(advancedHousing, materialInputReferences(advancedImplementation)),
+    };
+  };
+  const captureObservations = (
+    measurement: typeof informationConfiguration.measurements[number],
+    implementation: NonNullable<IntegratedPartialRuntimeState["implementation"]>,
+    housing: NonNullable<IntegratedPartialRuntimeState["housing"]>,
+  ): readonly IntegratedInformationObservation[] => {
+    if (measurement.measurementKind === "ADMINISTRATIVE_RECORD") {
+      const referentId = measurement.referentIds[0];
+      return [
+        ["BUDGET_AUTHORITY_RECORD_COUNT", implementation.publicFinance.historicalBudgetAuthorities.length + implementation.publicFinance.generatedBudgetAuthorities.length],
+        ["FISCAL_CONTROL_RECORD_COUNT", implementation.fiscalExecution.historicalControls.length + implementation.fiscalExecution.generatedControls.length],
+        ["AWARD_RECORD_COUNT", implementation.fiscalExecution.historicalAwards.length + implementation.fiscalExecution.generatedAwards.length],
+        ["PAYMENT_RECORD_COUNT", implementation.fiscalExecution.historicalPayments.length + implementation.fiscalExecution.generatedPayments.length],
+        ["MATERIAL_INPUT_RECORD_COUNT", implementation.materialInputs.length],
+      ].map(([measure, value]) => ({
+        referentId,
+        measure: measure as string,
+        value: value as number,
+        actualValue: value as number,
+        method: "DIRECT_ADMINISTRATIVE_RECORD_CAPTURE",
+        classification: "SIMULATION_GENERATED_DIRECT_RECORD",
+      }));
+    }
+    return measurement.referentIds.flatMap((referentId) => {
+      const region = housing.regions.find((candidate) => candidate.id === referentId);
+      if (region === undefined) throw new Error(`Information measurement lacks material referent ${referentId}.`);
+      const width = measurement.deterministicErrorBound * 2 + 1;
+      const pressureError = measurement.deterministicErrorBound === 0
+        ? 0
+        : Number.parseInt(sha256Hex(`${measurement.id}|${referentId}|PRESSURE`).slice(0, 8), 16) % width - measurement.deterministicErrorBound;
+      return [
+        {
+          referentId,
+          measure: "HOUSING_STOCK_UNITS",
+          value: region.housingStockUnits,
+          actualValue: region.housingStockUnits,
+          method: "BOUNDED_STATISTICAL_CAPTURE",
+          classification: "SIMULATION_GENERATED_MEASUREMENT",
+        },
+        {
+          referentId,
+          measure: "VACANT_UNITS",
+          value: region.vacantUnits,
+          actualValue: region.vacantUnits,
+          method: "BOUNDED_STATISTICAL_CAPTURE",
+          classification: "SIMULATION_GENERATED_MEASUREMENT",
+        },
+        {
+          referentId,
+          measure: "AFFORDABILITY_PRESSURE_BASIS_POINTS",
+          value: region.affordabilityPressureBasisPoints + pressureError,
+          actualValue: region.affordabilityPressureBasisPoints,
+          method: "DETERMINISTIC_BOUNDED_ERROR_MEASUREMENT",
+          classification: "APPROXIMATED_SIMULATION_SCAFFOLD",
+        },
+      ];
+    });
+  };
   const advanceTo = (target: string): IntegratedPartialRuntimeState => {
     if (state.institutional === null) throw new Error("Integrated session lacks institutional time state.");
-    const previousInstant = state.institutional.calendar.current;
     const advanced = advanceScheduledState(
       {
         institutional: state.institutional,
         legislative: state.legislative,
         controlBinding,
         controlBindingHistory,
+        implementation: state.implementation!,
+        housing: state.housing!,
+        information: state.information!,
+        population: state.population,
+        lastInstant: state.institutional.calendar.current,
       },
       state.institutional.calendar,
       configuration.calendar.epoch,
@@ -643,13 +789,90 @@ const createSession = (
       temporal.boundaries,
       (value, genericBoundary) => {
         const boundary = genericBoundary as typeof temporal.boundaries[number];
+        const material = advanceMaterialOwners(value.implementation, value.housing, value.lastInstant, boundary.at);
         const result = applyInstitutionalBoundary(value.institutional, value.legislative, {
           temporal,
           structure: configuration.structure,
           legislativeSeed: configuration.runtimeSeed as LegislativeRuntimeSeed,
-          population: state.population,
+          population: value.population,
           topology: state.electoralTopology,
         }, boundary);
+        let information = value.information;
+        let population = value.population;
+        const measurementCapture = informationConfiguration.measurements.find((measurement) => measurement.captureBoundaryId === boundary.id);
+        const measurementRelease = informationConfiguration.measurements.find((measurement) => measurement.releaseBoundaryId === boundary.id);
+        if (measurementCapture !== undefined) {
+          information = captureIntegratedMeasurement(
+            information,
+            measurementCapture.id,
+            captureObservations(measurementCapture, material.implementation, material.housing),
+            boundary.at,
+          );
+        } else if (measurementRelease !== undefined) {
+          information = releaseIntegratedMeasurement(information, measurementRelease.id, boundary.at);
+        } else if (boundary.id === informationConfiguration.claim.releaseBoundaryId) {
+          information = releaseIntegratedClaim(information, {
+            id: informationConfiguration.claim.id,
+            sourceArtifactIds: informationConfiguration.claim.sourceArtifactIds,
+            producerId: result.institutional.currentAdministration.id,
+            subject: informationConfiguration.claim.subject,
+            assertion: informationConfiguration.claim.assertion,
+            classification: informationConfiguration.classification,
+          }, boundary.at);
+        } else if (boundary.id === informationConfiguration.delivery.boundaryId) {
+          information = deliverIntegratedArtifact(information, informationConfiguration.delivery, boundary.at);
+        } else if (boundary.id === informationConfiguration.exposure.boundaryId) {
+          const parent = population.cohorts.find((cohort) => cohort.id === informationConfiguration.exposure.parentCohortId);
+          const parents = parent === undefined
+            ? population.cohorts.filter((cohort) =>
+                cohort.residenceGeographyId === informationConfiguration.exposure.stateGeographyId &&
+                cohort.materialExposureClass === informationConfiguration.exposure.materialExposureClass &&
+                cohort.catchmentClass === informationConfiguration.exposure.catchmentClass)
+            : [parent];
+          if (parents.length === 0 || parents.some((cohort) => cohort.residenceGeographyId !== informationConfiguration.exposure.stateGeographyId)) {
+            throw new Error("Configured Information exposure lacks its canonical Population cohort scope.");
+          }
+          for (const candidate of parents) {
+            const targetedWeight = Math.floor(
+              candidate.representedWeight * informationConfiguration.exposure.targetNumerator /
+              informationConfiguration.exposure.targetDenominator,
+            );
+            if (targetedWeight <= 0 || targetedWeight >= candidate.representedWeight) continue;
+            population = refineWeightedPopulationCohort(population, {
+              parentCohortId: candidate.id,
+              targetedWeight,
+              causeKey: informationConfiguration.exposure.id,
+              association: { kind: "INFORMATION", referenceId: informationConfiguration.exposure.id },
+            });
+          }
+          const targeted = population.cohorts.filter((cohort) =>
+            cohort.receivedInformationReferences.includes(informationConfiguration.exposure.id));
+          if (targeted.length === 0) throw new Error("Configured Information exposure could not target positive Population weight.");
+          information = recordIntegratedExposure(information, {
+            id: informationConfiguration.exposure.id,
+            deliveryId: informationConfiguration.exposure.deliveryId,
+            subjectCohortIds: targeted.map((cohort) => cohort.id),
+          }, boundary.at);
+        } else if (boundary.id === informationConfiguration.response.boundaryId) {
+          const exposure = information.exposures.find((candidate) => candidate.id === informationConfiguration.response.exposureId);
+          if (exposure === undefined) throw new Error("Population response lacks its prior targeted exposure.");
+          const response = {
+            cohortIds: exposure.subjectCohortIds,
+            exposureId: exposure.id,
+            belief: informationConfiguration.response.belief,
+            attribution: result.institutional.currentAdministration.id,
+            salience: informationConfiguration.response.salience,
+            candidatePreference: informationConfiguration.response.candidatePreference,
+            turnoutDisposition: informationConfiguration.response.turnoutDisposition,
+            classification: informationConfiguration.classification,
+          };
+          population = applyPopulationInformationResponse(population, response);
+          information = recordIntegratedPopulationResponse(information, {
+            id: informationConfiguration.response.id,
+            ...response,
+            appliedAt: boundary.at,
+          });
+        }
         let nextBinding = value.controlBinding;
         if (result.transferredTicket !== null) {
           const ended: LegislativeControlBinding = {
@@ -682,26 +905,30 @@ const createSession = (
                 endedAt: boundary.at,
                 endReason: "TERM_ENDED" as const,
               }],
+          implementation: material.implementation,
+          housing: material.housing,
+          information,
+          population,
+          lastInstant: boundary.at,
         };
       },
     );
     controlBinding = advanced.value.controlBinding;
     controlBindingHistory = [...advanced.value.controlBindingHistory];
-    const implementation = state.implementation === null
-      ? null
-      : advanceAdministrativeDeadlines(state.implementation, advanced.calendar.current);
-    let housing = state.housing;
-    if (housing !== null && implementation !== null) {
-      housing = admitValidatedMaterialInputs(housing, materialInputReferences(state.implementation!));
-      housing = advanceIntegratedMaterialHousing(housing, previousInstant, advanced.calendar.current);
-      housing = admitValidatedMaterialInputs(housing, materialInputReferences(implementation));
-    }
+    const material = advanceMaterialOwners(
+      advanced.value.implementation,
+      advanced.value.housing,
+      advanced.value.lastInstant,
+      advanced.calendar.current,
+    );
     state = {
       ...state,
       legislative: advanced.value.legislative,
       institutional: { ...advanced.value.institutional, calendar: advanced.calendar },
-      implementation,
-      housing,
+      implementation: material.implementation,
+      housing: material.housing,
+      information: advanced.value.information,
+      population: advanced.value.population,
     };
     return deepCopy(state);
   };
@@ -911,6 +1138,22 @@ const createSession = (
       if (state.housing === null) throw new Error("Integrated session lacks Material Housing state.");
       synchronizeHousingInputs();
       return deepCopy(state.housing);
+    },
+    getInformationAuditState: () => {
+      if (state.information === null) throw new Error("Integrated session lacks Information state.");
+      return deepCopy(state.information);
+    },
+    getPublicInformationStatus: () => {
+      if (state.information === null) throw new Error("Integrated session lacks Information state.");
+      return deepCopy({
+        releasedArtifacts: state.information.artifacts.map((artifact) => ({
+          id: artifact.id,
+          kind: artifact.kind,
+          releasedAt: artifact.releasedAt,
+        })),
+        completedDeliveryIds: state.information.deliveries.map((delivery) => delivery.id),
+        publicExposureCount: state.information.exposures.length,
+      });
     },
     save: () => {
       synchronizeHousingInputs();

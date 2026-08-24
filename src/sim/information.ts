@@ -1,5 +1,6 @@
 import type { HousingState } from "./housing";
 import type { SimulationInstant } from "./world";
+import type { IntegratedInformationConfiguration } from "../configuration/types";
 
 export type HousingMeasurementStatus = "SCHEDULED" | "CAPTURED" | "COMPLETED";
 
@@ -393,4 +394,319 @@ export const exposeInformationArtifact = (
       },
     ],
   };
+};
+
+export interface IntegratedInformationObservation {
+  readonly referentId: string;
+  readonly measure: string;
+  readonly value: number | string;
+  readonly actualValue: number | string | null;
+  readonly method: string;
+  readonly classification: string;
+}
+
+export interface IntegratedMeasurementState {
+  readonly id: string;
+  readonly measurementKind: "ADMINISTRATIVE_RECORD" | "MATERIAL_STATISTICAL";
+  readonly artifactId: string;
+  readonly producerId: string;
+  readonly referentIds: readonly string[];
+  readonly status: "SCHEDULED" | "CAPTURED" | "RELEASED";
+  readonly capturedAt: string | null;
+  readonly releasedAt: string | null;
+  readonly observations: readonly IntegratedInformationObservation[];
+  readonly classification: string;
+}
+
+export interface IntegratedInformationArtifact {
+  readonly id: string;
+  readonly kind: "ADMINISTRATIVE_RECORD" | "STATISTICAL_REPORT" | "PUBLIC_CLAIM";
+  readonly sourceMeasurementId: string | null;
+  readonly sourceArtifactIds: readonly string[];
+  readonly producerId: string;
+  readonly subject: string;
+  readonly assertion: string | null;
+  readonly observations: readonly IntegratedInformationObservation[];
+  readonly createdAt: string;
+  readonly releasedAt: string;
+  readonly accessClass: "PUBLIC";
+  readonly classification: string;
+}
+
+export interface IntegratedInformationDelivery {
+  readonly id: string;
+  readonly artifactId: string;
+  readonly channel: string;
+  readonly deliveredAt: string;
+}
+
+export interface IntegratedPopulationExposure {
+  readonly id: string;
+  readonly deliveryId: string;
+  readonly artifactId: string;
+  readonly subjectCohortIds: readonly string[];
+  readonly exposedAt: string;
+}
+
+export interface IntegratedPopulationResponseRecord {
+  readonly id: string;
+  readonly exposureId: string;
+  readonly cohortIds: readonly string[];
+  readonly belief: string;
+  readonly attribution: string;
+  readonly salience: string;
+  readonly candidatePreference: string;
+  readonly turnoutDisposition: string;
+  readonly appliedAt: string;
+  readonly classification: string;
+}
+
+export interface IntegratedInformationRuntimeState {
+  readonly schemaVersion: number;
+  readonly parameterHash: string;
+  readonly semanticsVersion: string;
+  readonly measurements: readonly IntegratedMeasurementState[];
+  readonly artifacts: readonly IntegratedInformationArtifact[];
+  readonly deliveries: readonly IntegratedInformationDelivery[];
+  readonly exposures: readonly IntegratedPopulationExposure[];
+  readonly responses: readonly IntegratedPopulationResponseRecord[];
+}
+
+const validInstant = (value: string, label: string): void => {
+  if (!Number.isFinite(Date.parse(value))) throw new Error(`${label} must be a valid configured instant.`);
+};
+
+export const createIntegratedInformationRuntimeState = (
+  configuration: IntegratedInformationConfiguration,
+): IntegratedInformationRuntimeState => ({
+  schemaVersion: configuration.schemaVersion,
+  parameterHash: configuration.parameterHash,
+  semanticsVersion: configuration.semanticsVersion,
+  measurements: configuration.measurements.map((measurement) => ({
+    id: measurement.id,
+    measurementKind: measurement.measurementKind,
+    artifactId: measurement.artifactId,
+    producerId: measurement.producerId,
+    referentIds: [...measurement.referentIds],
+    status: "SCHEDULED",
+    capturedAt: null,
+    releasedAt: null,
+    observations: [],
+    classification: measurement.classification,
+  })),
+  artifacts: [],
+  deliveries: [],
+  exposures: [],
+  responses: [],
+});
+
+export const captureIntegratedMeasurement = (
+  state: IntegratedInformationRuntimeState,
+  measurementId: string,
+  observations: readonly IntegratedInformationObservation[],
+  at: string,
+): IntegratedInformationRuntimeState => {
+  validInstant(at, "Measurement capture");
+  const measurement = state.measurements.find((candidate) => candidate.id === measurementId);
+  if (measurement === undefined || measurement.status !== "SCHEDULED") {
+    throw new Error(`Measurement ${measurementId} is unavailable for capture.`);
+  }
+  if (
+    observations.length === 0 ||
+    observations.some((observation) => !measurement.referentIds.includes(observation.referentId)) ||
+    new Set(observations.map((observation) => `${observation.referentId}|${observation.measure}`)).size !== observations.length
+  ) throw new Error(`Measurement ${measurementId} has invalid captured observations.`);
+  return {
+    ...state,
+    measurements: state.measurements.map((candidate) => candidate.id === measurementId ? {
+      ...candidate,
+      status: "CAPTURED" as const,
+      capturedAt: at,
+      observations: observations.map((observation) => ({ ...observation })),
+    } : candidate),
+  };
+};
+
+export const releaseIntegratedMeasurement = (
+  state: IntegratedInformationRuntimeState,
+  measurementId: string,
+  at: string,
+): IntegratedInformationRuntimeState => {
+  validInstant(at, "Measurement release");
+  const measurement = state.measurements.find((candidate) => candidate.id === measurementId);
+  if (measurement === undefined || measurement.status !== "CAPTURED" || measurement.capturedAt === null) {
+    throw new Error(`Measurement ${measurementId} cannot release before capture.`);
+  }
+  if (Date.parse(at) < Date.parse(measurement.capturedAt) || state.artifacts.some((artifact) => artifact.id === measurement.artifactId)) {
+    throw new Error(`Measurement ${measurementId} has invalid release ordering or duplicate artifact identity.`);
+  }
+  const kind = measurement.measurementKind === "ADMINISTRATIVE_RECORD" ? "ADMINISTRATIVE_RECORD" : "STATISTICAL_REPORT";
+  const artifact: IntegratedInformationArtifact = {
+    id: measurement.artifactId,
+    kind,
+    sourceMeasurementId: measurement.id,
+    sourceArtifactIds: [],
+    producerId: measurement.producerId,
+    subject: measurement.measurementKind,
+    assertion: null,
+    observations: measurement.observations.map((observation) => ({ ...observation })),
+    createdAt: at,
+    releasedAt: at,
+    accessClass: "PUBLIC",
+    classification: measurement.classification,
+  };
+  return {
+    ...state,
+    measurements: state.measurements.map((candidate) => candidate.id === measurementId
+      ? { ...candidate, status: "RELEASED" as const, releasedAt: at }
+      : candidate),
+    artifacts: [...state.artifacts, artifact],
+  };
+};
+
+export const releaseIntegratedClaim = (
+  state: IntegratedInformationRuntimeState,
+  input: {
+    readonly id: string;
+    readonly sourceArtifactIds: readonly string[];
+    readonly producerId: string;
+    readonly subject: string;
+    readonly assertion: string;
+    readonly classification: string;
+  },
+  at: string,
+): IntegratedInformationRuntimeState => {
+  validInstant(at, "Claim release");
+  const sources = input.sourceArtifactIds.map((id) => state.artifacts.find((artifact) => artifact.id === id));
+  if (
+    state.artifacts.some((artifact) => artifact.id === input.id) ||
+    sources.some((source) => source === undefined || Date.parse(source.releasedAt) > Date.parse(at))
+  ) throw new Error("Public claim requires released source artifacts and a unique identity.");
+  return {
+    ...state,
+    artifacts: [...state.artifacts, {
+      id: input.id,
+      kind: "PUBLIC_CLAIM",
+      sourceMeasurementId: null,
+      sourceArtifactIds: [...input.sourceArtifactIds],
+      producerId: input.producerId,
+      subject: input.subject,
+      assertion: input.assertion,
+      observations: [],
+      createdAt: at,
+      releasedAt: at,
+      accessClass: "PUBLIC",
+      classification: input.classification,
+    }],
+  };
+};
+
+export const deliverIntegratedArtifact = (
+  state: IntegratedInformationRuntimeState,
+  input: { readonly id: string; readonly artifactId: string; readonly channel: string },
+  at: string,
+): IntegratedInformationRuntimeState => {
+  const artifact = state.artifacts.find((candidate) => candidate.id === input.artifactId);
+  if (
+    artifact === undefined || Date.parse(artifact.releasedAt) > Date.parse(at) ||
+    state.deliveries.some((delivery) => delivery.id === input.id)
+  ) throw new Error("Information delivery requires an available artifact and unique identity.");
+  return { ...state, deliveries: [...state.deliveries, { ...input, deliveredAt: at }] };
+};
+
+export const recordIntegratedExposure = (
+  state: IntegratedInformationRuntimeState,
+  input: { readonly id: string; readonly deliveryId: string; readonly subjectCohortIds: readonly string[] },
+  at: string,
+): IntegratedInformationRuntimeState => {
+  const delivery = state.deliveries.find((candidate) => candidate.id === input.deliveryId);
+  if (
+    delivery === undefined || Date.parse(delivery.deliveredAt) > Date.parse(at) ||
+    input.subjectCohortIds.length === 0 || new Set(input.subjectCohortIds).size !== input.subjectCohortIds.length ||
+    state.exposures.some((exposure) => exposure.id === input.id)
+  ) throw new Error("Information exposure requires prior delivery and distinct targeted subjects.");
+  return {
+    ...state,
+    exposures: [...state.exposures, {
+      id: input.id,
+      deliveryId: input.deliveryId,
+      artifactId: delivery.artifactId,
+      subjectCohortIds: [...input.subjectCohortIds],
+      exposedAt: at,
+    }],
+  };
+};
+
+export const recordIntegratedPopulationResponse = (
+  state: IntegratedInformationRuntimeState,
+  response: IntegratedPopulationResponseRecord,
+): IntegratedInformationRuntimeState => {
+  const exposure = state.exposures.find((candidate) => candidate.id === response.exposureId);
+  if (
+    exposure === undefined || Date.parse(exposure.exposedAt) > Date.parse(response.appliedAt) ||
+    JSON.stringify([...response.cohortIds].sort()) !== JSON.stringify([...exposure.subjectCohortIds].sort()) ||
+    state.responses.some((candidate) => candidate.id === response.id)
+  ) throw new Error("Population response requires a prior matching exposure.");
+  return { ...state, responses: [...state.responses, { ...response, cohortIds: [...response.cohortIds] }] };
+};
+
+export const assertIntegratedInformationRuntimeState = (
+  state: IntegratedInformationRuntimeState,
+  configuration: IntegratedInformationConfiguration,
+): void => {
+  if (
+    state.schemaVersion !== configuration.schemaVersion ||
+    state.parameterHash !== configuration.parameterHash ||
+    state.semanticsVersion !== configuration.semanticsVersion ||
+    state.measurements.length !== configuration.measurements.length ||
+    new Set(state.artifacts.map((artifact) => artifact.id)).size !== state.artifacts.length ||
+    new Set(state.deliveries.map((delivery) => delivery.id)).size !== state.deliveries.length ||
+    new Set(state.exposures.map((exposure) => exposure.id)).size !== state.exposures.length ||
+    new Set(state.responses.map((response) => response.id)).size !== state.responses.length
+  ) throw new Error("Information state contradicts configured identity or record ownership.");
+  for (const measurement of state.measurements) {
+    const configured = configuration.measurements.find((candidate) => candidate.id === measurement.id);
+    if (
+      configured === undefined || measurement.artifactId !== configured.artifactId ||
+      measurement.measurementKind !== configured.measurementKind ||
+      JSON.stringify(measurement.referentIds) !== JSON.stringify(configured.referentIds)
+    ) throw new Error(`Information measurement ${measurement.id} contradicts configuration.`);
+    const artifact = state.artifacts.find((candidate) => candidate.id === measurement.artifactId);
+    if (artifact !== undefined && (
+      artifact.sourceMeasurementId !== measurement.id || artifact.producerId !== measurement.producerId ||
+      JSON.stringify(artifact.observations) !== JSON.stringify(measurement.observations) ||
+      artifact.releasedAt !== measurement.releasedAt
+    )) throw new Error(`Information artifact ${artifact.id} contradicts its captured measurement.`);
+  }
+  const claim = state.artifacts.find((artifact) => artifact.id === configuration.claim.id);
+  if (claim !== undefined && (
+    claim.kind !== "PUBLIC_CLAIM" || JSON.stringify(claim.sourceArtifactIds) !== JSON.stringify(configuration.claim.sourceArtifactIds) ||
+    claim.subject !== configuration.claim.subject || claim.assertion !== configuration.claim.assertion
+  )) throw new Error("Public claim artifact contradicts configured authored content.");
+  for (const delivery of state.deliveries) {
+    if (
+      !state.artifacts.some((artifact) => artifact.id === delivery.artifactId) ||
+      delivery.id !== configuration.delivery.id || delivery.artifactId !== configuration.delivery.artifactId ||
+      delivery.channel !== configuration.delivery.channel
+    ) throw new Error("Information delivery has no configured artifact/channel owner.");
+  }
+  for (const exposure of state.exposures) {
+    const delivery = state.deliveries.find((candidate) => candidate.id === exposure.deliveryId);
+    if (
+      delivery?.artifactId !== exposure.artifactId || exposure.id !== configuration.exposure.id ||
+      exposure.deliveryId !== configuration.exposure.deliveryId
+    ) throw new Error("Information exposure contradicts its configured delivery.");
+  }
+  for (const response of state.responses) {
+    const exposure = state.exposures.find((candidate) => candidate.id === response.exposureId);
+    if (
+      exposure === undefined || response.id !== configuration.response.id ||
+      response.exposureId !== configuration.response.exposureId || response.belief !== configuration.response.belief ||
+      response.salience !== configuration.response.salience || response.candidatePreference !== configuration.response.candidatePreference ||
+      response.turnoutDisposition !== configuration.response.turnoutDisposition ||
+      JSON.stringify([...exposure.subjectCohortIds].sort()) !== JSON.stringify([...response.cohortIds].sort())
+    ) {
+      throw new Error("Information response contradicts its recipient exposure.");
+    }
+  }
 };

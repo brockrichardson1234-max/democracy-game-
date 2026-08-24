@@ -10,7 +10,7 @@ import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 
 describe("I7 integrated persistence", () => {
   it("round-trips material progress and remains identical across coarse/fine advancement", () => {
-    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(5);
+    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(6);
     const direct = createIntegratedPartialRuntimeSession(US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS);
     const split = createIntegratedPartialRuntimeSession(US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS);
     direct.advanceTo("2028-01-01T00:00:00-05:00");

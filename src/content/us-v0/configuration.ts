@@ -13,12 +13,13 @@ import {
   US_VICE_PRESIDENT_OFFICE_ID,
 } from "./topology";
 import i4Manifest from "./i4-artifacts/i4-initialization-manifest.json";
-import { US_V0_I5_STRUCTURE, US_V0_I5_TEMPORAL_CONFIGURATION } from "./i5";
+import { US_V0_I5_STRUCTURE } from "./i5";
 import {
   US_V0_I6_ARTIFACT_BINDING,
   US_V0_I6_IMPLEMENTATION_CONFIGURATION,
 } from "./i6";
 import { US_V0_I7_ARTIFACT_BINDING, US_V0_I7_HOUSING_CONFIGURATION } from "./i7";
+import { US_V0_I8_INFORMATION_CONFIGURATION, US_V0_I8_TEMPORAL_CONFIGURATION } from "./i8";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -240,14 +241,14 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
   },
 };
 
-/** Bounded integrated runtime through I7; information and judicial systems remain unavailable. */
+/** Bounded integrated runtime through I8; judicial systems remain unavailable. */
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.7.0-i7",
+    configurationVersion: "0.8.0-i8",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.7.0-i7",
-    configurationHash: "3b344b2752ea979fccc3f1cac39a74d431cfb8d37fafd492ca2ea1faccfc300e",
+    scenarioVersion: "0.8.0-i8",
+    configurationHash: "250c57d6458b1cd945b330892479eecf23753b043d40ba09d937f85c77141fe0",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
@@ -264,8 +265,9 @@ export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<Legislative
     geography: i4Manifest.geography,
     population: i4Manifest.population,
     electoral: i4Manifest.electoral,
-    temporal: US_V0_I5_TEMPORAL_CONFIGURATION,
+    temporal: US_V0_I8_TEMPORAL_CONFIGURATION,
     implementation: US_V0_I6_IMPLEMENTATION_CONFIGURATION,
     housing: US_V0_I7_HOUSING_CONFIGURATION,
+    information: US_V0_I8_INFORMATION_CONFIGURATION,
   },
 };

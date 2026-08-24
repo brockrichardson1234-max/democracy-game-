@@ -18,11 +18,9 @@ import {
   US_V0_2029_DECLARATION,
   US_V0_2029_TERM_BOUNDARY,
   US_V0_2029_TRANSFER,
-  US_V0_I5_PARAMETER_HASH,
   US_V0_I5_ASSIGNMENT_CYCLE_HASH,
-  US_V0_I5_SCHEDULE_VERSION,
-  US_V0_I5_SCHEDULE_HASH,
   US_V0_I5_SELECTION_HASH,
+  US_V0_I5_TEMPORAL_CONFIGURATION,
   US_V0_PLAYER_TICKET_ID,
 } from "../src/content/us-v0/i5";
 
@@ -125,15 +123,15 @@ describe("I5 deterministic temporal persistence", () => {
 
   it("pins schedule/scaffold behavior in the configuration identity", () => {
     const temporal = US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.temporal!;
-    expect(temporal.scheduleVersion).toBe(US_V0_I5_SCHEDULE_VERSION);
-    expect(temporal.parameterHash).toBe(US_V0_I5_PARAMETER_HASH);
-    expect(temporal.scheduleContentHash).toBe(US_V0_I5_SCHEDULE_HASH);
+    for (const acceptedBoundary of US_V0_I5_TEMPORAL_CONFIGURATION.boundaries) {
+      expect(temporal.boundaries.find((boundary) => boundary.id === acceptedBoundary.id)).toEqual(acceptedBoundary);
+    }
     expect(temporal.assignmentCycleContentHash).toBe(US_V0_I5_ASSIGNMENT_CYCLE_HASH);
     expect(temporal.selectionContentHash).toBe(US_V0_I5_SELECTION_HASH);
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.7.0-i7",
-      scenarioVersion: "0.7.0-i7",
-      configurationHash: "3b344b2752ea979fccc3f1cac39a74d431cfb8d37fafd492ca2ea1faccfc300e",
+      configurationVersion: "0.8.0-i8",
+      scenarioVersion: "0.8.0-i8",
+      configurationHash: "250c57d6458b1cd945b330892479eecf23753b043d40ba09d937f85c77141fe0",
     });
   });
 
