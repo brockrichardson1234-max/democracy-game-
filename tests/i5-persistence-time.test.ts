@@ -129,9 +129,9 @@ describe("I5 deterministic temporal persistence", () => {
     expect(temporal.assignmentCycleContentHash).toBe(US_V0_I5_ASSIGNMENT_CYCLE_HASH);
     expect(temporal.selectionContentHash).toBe(US_V0_I5_SELECTION_HASH);
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.10.0-i10",
-      scenarioVersion: "0.10.0-i10",
-      configurationHash: "ad9bfe4b670f66b86c28049aa2a23976e23efcd136c3a226068051887d36b2fe",
+      configurationVersion: "0.10.5-calibration",
+      scenarioVersion: "0.10.5-calibration",
+      configurationHash: "41b515dac1cb913a3562e133f80de2324d1b35bad69979f48a10649750ec90f1",
     });
   });
 

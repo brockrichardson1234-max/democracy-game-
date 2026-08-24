@@ -22,6 +22,7 @@ import { US_V0_I7_ARTIFACT_BINDING, US_V0_I7_HOUSING_CONFIGURATION } from "./i7"
 import { US_V0_I8_INFORMATION_CONFIGURATION } from "./i8";
 import { US_V0_I9_LEGAL_CONTEST_CONFIGURATION, US_V0_I9_TEMPORAL_CONFIGURATION } from "./i9";
 import { US_V0_I10_COMPOSITION_CONFIGURATION } from "./i10";
+import { US_V0_I10_5_CALIBRATION_CONFIGURATION } from "./i10-5";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -243,14 +244,14 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
   },
 };
 
-/** Bounded integrated runtime with the I1-I9 owners composed into one headless vertical. */
+/** Bounded integrated runtime with an explicit audit of provisional calibration content. */
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.10.0-i10",
+    configurationVersion: "0.10.5-calibration",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.10.0-i10",
-    configurationHash: "ad9bfe4b670f66b86c28049aa2a23976e23efcd136c3a226068051887d36b2fe",
+    scenarioVersion: "0.10.5-calibration",
+    configurationHash: "41b515dac1cb913a3562e133f80de2324d1b35bad69979f48a10649750ec90f1",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
@@ -273,5 +274,6 @@ export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<Legislative
     information: US_V0_I8_INFORMATION_CONFIGURATION,
     legalContest: US_V0_I9_LEGAL_CONTEST_CONFIGURATION,
     composition: US_V0_I10_COMPOSITION_CONFIGURATION,
+    calibration: US_V0_I10_5_CALIBRATION_CONFIGURATION,
   },
 };

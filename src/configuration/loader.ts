@@ -615,6 +615,34 @@ const validateIntegratedRuntimeConfiguration = (
       composition.ownerReferences.institutionalOwnerId !== integrated.temporal?.scheduleVersion
     ) throw new Error("Integrated composition configuration has invalid owner references or shortcut policy.");
   }
+  const calibration = integrated.calibration;
+  if (calibration !== undefined) {
+    const { parameterHash, ...calibrationWithoutHash } = calibration;
+    const availableOwnerHashes = new Set([
+      integrated.temporal?.parameterHash,
+      implementation?.parameterHash,
+      housing?.parameterHash,
+      information?.parameterHash,
+      legalContest?.parameterHash,
+      composition?.parameterHash,
+    ].filter((value): value is string => value !== undefined));
+    if (
+      calibration.schemaVersion !== 1 || calibration.version.trim().length === 0 ||
+      !SHA_256_PATTERN.test(parameterHash) || parameterHash !== sha256Hex(JSON.stringify(calibrationWithoutHash)) ||
+      calibration.ownerParameterHashes.length === 0 ||
+      new Set(calibration.ownerParameterHashes).size !== calibration.ownerParameterHashes.length ||
+      calibration.ownerParameterHashes.some((hash) => !availableOwnerHashes.has(hash)) ||
+      !Number.isSafeInteger(calibration.perturbationBasisPoints) || calibration.perturbationBasisPoints <= 0 ||
+      calibration.perturbationBasisPoints > 1_000 || calibration.entries.length === 0 ||
+      new Set(calibration.entries.map((entry) => entry.id)).size !== calibration.entries.length ||
+      calibration.entries.some((entry) =>
+        entry.id.trim().length === 0 || entry.sourcePath.trim().length === 0 || entry.domain.trim().length === 0 ||
+        !calibration.ownerParameterHashes.includes(entry.ownerParameterHash) ||
+        !Number.isFinite(entry.value) || !Number.isFinite(entry.lowerBound) || !Number.isFinite(entry.upperBound) ||
+        entry.lowerBound > entry.value || entry.value > entry.upperBound || entry.lowerBound === entry.upperBound ||
+        entry.systemWideDirectOutcome !== false || !["LOCAL", "OWNER_BOUNDED"].includes(entry.scope))
+    ) throw new Error("Integrated calibration catalog has invalid identity, owner closure, or robustness bounds.");
+  }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {
     if (

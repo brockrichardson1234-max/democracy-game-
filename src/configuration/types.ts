@@ -710,6 +710,29 @@ export interface IntegratedCompositionConfiguration {
   };
 }
 
+export type CalibrationEvidenceClass = "DIRECT" | "DERIVED" | "APPROXIMATED" | "SIMULATION_SCAFFOLD";
+
+export interface IntegratedCalibrationConfiguration {
+  readonly schemaVersion: number;
+  readonly version: string;
+  readonly parameterHash: string;
+  readonly ownerParameterHashes: readonly string[];
+  readonly perturbationBasisPoints: number;
+  readonly entries: readonly {
+    readonly id: string;
+    readonly ownerParameterHash: string;
+    readonly sourcePath: string;
+    readonly domain: string;
+    readonly value: number;
+    readonly lowerBound: number;
+    readonly upperBound: number;
+    readonly evidenceClass: CalibrationEvidenceClass;
+    readonly expectedDirection: "INCREASING" | "DECREASING" | "NEUTRAL_OR_CATEGORICAL";
+    readonly scope: "LOCAL" | "OWNER_BOUNDED";
+    readonly systemWideDirectOutcome: false;
+  }[];
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -738,6 +761,7 @@ export interface IntegratedRuntimeConfiguration {
   readonly information?: IntegratedInformationConfiguration;
   readonly legalContest?: IntegratedLegalContestConfiguration;
   readonly composition?: IntegratedCompositionConfiguration;
+  readonly calibration?: IntegratedCalibrationConfiguration;
 }
 
 interface ScheduledTransitionBase {
