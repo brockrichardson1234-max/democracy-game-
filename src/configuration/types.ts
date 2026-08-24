@@ -370,7 +370,15 @@ export type InstitutionalBoundaryKind =
   | "CLAIM_RELEASE"
   | "ARTIFACT_DELIVERY"
   | "RECIPIENT_EXPOSURE"
-  | "POLITICAL_RESPONSE";
+  | "POLITICAL_RESPONSE"
+  | "LEGAL_CLAIM_FILING"
+  | "LEGAL_CONTEST_ADMISSION"
+  | "INTERIM_RELIEF_REQUEST"
+  | "JUDICIAL_RULING"
+  | "JUDICIAL_ORDER"
+  | "JUDICIAL_NOTICE"
+  | "STAY_DECISION"
+  | "APPELLATE_RULING";
 
 export interface InstitutionalBoundaryConfiguration {
   readonly id: string;
@@ -606,6 +614,82 @@ export interface IntegratedInformationConfiguration {
   };
 }
 
+export interface IntegratedLegalContestConfiguration {
+  readonly schemaVersion: number;
+  readonly ownerId: string;
+  readonly parameterHash: string;
+  readonly semanticsVersion: string;
+  readonly classification: ScaffoldClassification;
+  readonly forumInstitutionId: string;
+  readonly appellateInstitutionId: string;
+  readonly targetInstitutionId: string;
+  readonly legalServiceInstitutionId: string;
+  readonly claimantId: string;
+  readonly relationshipId: string;
+  readonly judicialOffices: readonly {
+    readonly id: string;
+    readonly institutionId: string;
+  }[];
+  readonly judicialActors: readonly {
+    readonly id: string;
+    readonly classification: ScaffoldClassification;
+  }[];
+  readonly judicialAssignments: readonly {
+    readonly id: string;
+    readonly officeId: string;
+    readonly actorId: string;
+    readonly effectiveFrom: string;
+    readonly effectiveUntil: string | null;
+  }[];
+  readonly trigger: {
+    readonly determinationId: string;
+    readonly outcome: "REQUALIFICATION_REJECTED";
+    readonly formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION";
+    readonly prospectiveOnly: true;
+    readonly moneyDamagesRequested: false;
+  };
+  readonly claim: {
+    readonly id: string;
+    readonly contestId: string;
+    readonly filingBoundaryId: string;
+    readonly admissionBoundaryId: string;
+    readonly requestedRelief: string;
+    readonly legalGround: string;
+  };
+  readonly interimRelief: {
+    readonly requestId: string;
+    readonly requestBoundaryId: string;
+    readonly rulingId: string;
+    readonly rulingBoundaryId: string;
+    readonly outcome: "GRANTED_SCOPED" | "DENIED";
+    readonly reasons: readonly string[];
+  };
+  readonly order: {
+    readonly id: string;
+    readonly boundaryId: string;
+    readonly noticeId: string;
+    readonly noticeBoundaryId: string;
+    readonly directives: readonly string[];
+    readonly plaintiffSpecific: true;
+  };
+  readonly appeal: {
+    readonly requestId: string;
+    readonly stayRequestId: string;
+    readonly stayDecisionId: string;
+    readonly stayBoundaryId: string;
+    readonly stayOutcome: "GRANTED" | "DENIED";
+    readonly rulingId: string;
+    readonly rulingBoundaryId: string;
+    readonly rulingOutcome: "AFFIRMED" | "VACATED" | "DISMISSED";
+  };
+  readonly admissionRequirements: {
+    readonly finalAgencyAction: true;
+    readonly concreteClaimantInjury: true;
+    readonly prospectiveNonmoneyRelief: true;
+    readonly reviewableClaim: true;
+  };
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -632,6 +716,7 @@ export interface IntegratedRuntimeConfiguration {
   readonly implementation?: IntegratedImplementationConfiguration;
   readonly housing?: IntegratedHousingConfiguration;
   readonly information?: IntegratedInformationConfiguration;
+  readonly legalContest?: IntegratedLegalContestConfiguration;
 }
 
 interface ScheduledTransitionBase {

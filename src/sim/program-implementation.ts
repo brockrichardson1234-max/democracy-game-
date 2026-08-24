@@ -173,6 +173,21 @@ export interface RelationshipTransitionRecord {
   readonly classification: "SIMULATION_GENERATED";
 }
 
+export interface RelationshipQualificationDeterminationRecord {
+  readonly id: string;
+  readonly relationshipId: string;
+  readonly claimantId: string;
+  readonly institutionId: string;
+  readonly outcome: "REQUALIFICATION_REJECTED";
+  readonly formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION";
+  readonly finalAgencyAction: true;
+  readonly prospectiveOnly: true;
+  readonly moneyDamagesGranted: false;
+  readonly writtenReasons: readonly string[];
+  readonly issuedAt: string;
+  readonly classification: "SIMULATION_GENERATED";
+}
+
 export interface RecipientExpenditureRecord {
   readonly id: string;
   readonly recipientId: string;
@@ -371,6 +386,7 @@ export interface ProgramImplementationState {
     readonly historicalWaivers: readonly HistoricalWaiverRecord[];
     readonly waiverRequests: readonly WaiverRequestRecord[];
     readonly determinations: readonly AdministrativeDeterminationRecord[];
+    readonly relationshipQualificationDeterminations: readonly RelationshipQualificationDeterminationRecord[];
     readonly dynamicBoundaries: readonly DynamicAdministrativeBoundary[];
     readonly administrativeCapacityCommitted: number;
   };
@@ -440,6 +456,7 @@ export const createProgramImplementationState = (
     historicalWaivers: copy(seed.waivers),
     waiverRequests: [],
     determinations: [],
+    relationshipQualificationDeterminations: [],
     dynamicBoundaries: [],
     administrativeCapacityCommitted: 0,
   },
@@ -517,6 +534,7 @@ export const assertProgramImplementationState = (
   unique(obligations.map((entry) => entry.id), "Obligations");
   unique(state.administrativeProgram.waiverRequests.map((entry) => entry.id), "Waiver requests");
   unique(state.administrativeProgram.determinations.map((entry) => entry.id), "Administrative determinations");
+  unique(state.administrativeProgram.relationshipQualificationDeterminations.map((entry) => entry.id), "Relationship qualification determinations");
   unique(state.intergovernmental.transitions.map((entry) => entry.id), "Relationship transitions");
   unique(state.recipientAdministration.commitments.map((entry) => entry.id), "Recipient commitments");
   unique(state.recipientAdministration.activities.map((entry) => entry.id), "Recipient activities");
@@ -592,6 +610,20 @@ export const assertProgramImplementationState = (
     ) {
       throw new Error(`Administrative determination ${determination.id} lacks its request or mutates Housing.`);
     }
+  }
+  for (const determination of state.administrativeProgram.relationshipQualificationDeterminations) {
+    const relationship = state.intergovernmental.historicalRelationships.find(
+      (entry) => entry.id === determination.relationshipId,
+    );
+    if (
+      relationship === undefined || relationship.recipientId !== determination.claimantId ||
+      determination.institutionId !== relationship.federalInstitutionId ||
+      determination.outcome !== "REQUALIFICATION_REJECTED" ||
+      determination.formulaDisposition !== "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION" ||
+      determination.finalAgencyAction !== true || determination.prospectiveOnly !== true ||
+      determination.moneyDamagesGranted !== false || determination.writtenReasons.length === 0 ||
+      determination.classification !== "SIMULATION_GENERATED"
+    ) throw new Error(`Relationship qualification determination ${determination.id} exceeds its administrative owner.`);
   }
   for (const commitment of state.recipientAdministration.commitments) {
     const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === commitment.relationshipId);
@@ -1308,6 +1340,54 @@ export const electRelationshipMember = (
     intergovernmental: {
       ...state.intergovernmental,
       transitions: [...state.intergovernmental.transitions, transition],
+    },
+  };
+};
+
+/** Administrative owner of a bounded final written qualification determination. */
+export const issueFinalRelationshipQualificationDetermination = (
+  state: ProgramImplementationState,
+  input: {
+    readonly id: string;
+    readonly relationshipId: string;
+    readonly claimantId: string;
+    readonly writtenReasons: readonly string[];
+  },
+  at: string,
+): ProgramImplementationState => {
+  const relationship = state.intergovernmental.historicalRelationships.find(
+    (entry) => entry.id === input.relationshipId,
+  );
+  if (
+    relationship === undefined || relationship.recipientId !== input.claimantId ||
+    input.id.trim().length === 0 || input.writtenReasons.length === 0 ||
+    input.writtenReasons.some((reason) => reason.trim().length === 0)
+  ) throw new Error("Final relationship qualification determination lacks its bounded relationship or written record.");
+  if (state.administrativeProgram.relationshipQualificationDeterminations.length > 0) {
+    throw new Error("The bounded relationship qualification determination already exists.");
+  }
+  if (state.fiscalExecution.generatedAwards.some((award) => award.recipientId === relationship.recipientId)) {
+    throw new Error("The bounded prospective requalification route must occur before a generated recipient award.");
+  }
+  const determination: RelationshipQualificationDeterminationRecord = {
+    id: input.id,
+    relationshipId: input.relationshipId,
+    claimantId: input.claimantId,
+    institutionId: relationship.federalInstitutionId,
+    outcome: "REQUALIFICATION_REJECTED",
+    formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION",
+    finalAgencyAction: true,
+    prospectiveOnly: true,
+    moneyDamagesGranted: false,
+    writtenReasons: [...input.writtenReasons],
+    issuedAt: at,
+    classification: "SIMULATION_GENERATED",
+  };
+  return {
+    ...state,
+    administrativeProgram: {
+      ...state.administrativeProgram,
+      relationshipQualificationDeterminations: [determination],
     },
   };
 };

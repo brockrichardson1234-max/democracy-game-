@@ -33,7 +33,7 @@ describe("I8 measurement, information, and public response", () => {
       classification: "APPROXIMATED_NON_HISTORICAL_SIMULATION_SCAFFOLD",
     });
     expect(sha256Hex(canonicalConfigurationContent(US_V0_STRUCTURAL_CONFIGURATION))).toBe(
-      "250c57d6458b1cd945b330892479eecf23753b043d40ba09d937f85c77141fe0",
+      "5b221029b5a98ff2251d2f681c6e28890c2f4092c04d8451dcdce56ecd2af5a3",
     );
     expect(JSON.stringify(US_V0_I8_INFORMATION_CONFIGURATION)).not.toMatch(/poll|approval|democrat|republican|ideology/i);
   });

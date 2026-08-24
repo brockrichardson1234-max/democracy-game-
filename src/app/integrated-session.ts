@@ -45,6 +45,7 @@ import {
   setupRecipientActivity,
   submitRecipientDrawRequest,
   supplySupplementalWaiverRecords,
+  issueFinalRelationshipQualificationDetermination,
   type FutureWaiverRequestInput,
   type BoundedRecipientAwardRequest,
   type RecipientCommitmentRequest,
@@ -66,6 +67,14 @@ import {
   releaseIntegratedMeasurement,
   type IntegratedInformationObservation,
 } from "../sim/information";
+import {
+  applyLegalContestBoundary,
+  assertIntegratedLegalContestRuntimeState,
+  createIntegratedLegalContestRuntimeState,
+  recordAdministrativeOrderResponse,
+  requestSeparateStay,
+  type AdministrativeOrderResponseRecord,
+} from "../sim/legal-contest-runtime";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
 import {
   createInitialLegislativeControlBinding,
@@ -75,7 +84,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 6 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 7 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -91,6 +100,7 @@ interface IntegratedPartialSaveEnvelope {
   readonly implementation: IntegratedPartialRuntimeState["implementation"];
   readonly housing: IntegratedPartialRuntimeState["housing"];
   readonly information: IntegratedPartialRuntimeState["information"];
+  readonly legalContest: IntegratedPartialRuntimeState["legalContest"];
 }
 
 const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -150,6 +160,12 @@ export interface IntegratedPartialRuntimeSession {
     readonly completedDeliveryIds: readonly string[];
     readonly publicExposureCount: number;
   };
+  readonly issueBoundedRelationshipRejection: () => IntegratedPartialRuntimeState;
+  readonly respondToJudicialOrder: (
+    action: AdministrativeOrderResponseRecord["action"],
+  ) => IntegratedPartialRuntimeState;
+  readonly requestJudicialStay: () => IntegratedPartialRuntimeState;
+  readonly getLegalContestAuditState: () => NonNullable<IntegratedPartialRuntimeState["legalContest"]>;
   readonly save: () => string;
 }
 
@@ -211,6 +227,7 @@ const serialize = (
   implementation: state.implementation,
   housing: state.housing,
   information: state.information,
+  legalContest: state.legalContest,
 } satisfies IntegratedPartialSaveEnvelope);
 
 const materialInputReferences = (
@@ -354,7 +371,8 @@ const parse = (
     !isRecord(parsed.institutional) ||
     !isRecord(parsed.implementation) ||
     !isRecord(parsed.housing) ||
-    !isRecord(parsed.information)
+    !isRecord(parsed.information) ||
+    !isRecord(parsed.legalContest)
   ) throw new Error("Invalid integrated partial save envelope.");
   const baseline = createIntegratedPartialRuntimeState(configuration, artifacts);
   assertConfigurationIdentityCompatible(
@@ -625,6 +643,69 @@ const parse = (
       ) throw new Error("Integrated partial save Population response contradicts its targeted exposure.");
     }
   }
+  const legalContestConfiguration = configuration.integratedRuntime?.legalContest;
+  if (baseline.legalContest === null || legalContestConfiguration === undefined) {
+    throw new Error("Integrated partial save supplies unsupported legal-contest state.");
+  }
+  const legalContest = parsed.legalContest as unknown as NonNullable<IntegratedPartialRuntimeState["legalContest"]>;
+  assertIntegratedLegalContestRuntimeState(
+    legalContest,
+    legalContestConfiguration,
+    implementation.administrativeProgram.relationshipQualificationDeterminations,
+  );
+  const determination = implementation.administrativeProgram.relationshipQualificationDeterminations;
+  if (
+    determination.length > 1 ||
+    determination.some((entry) =>
+      entry.id !== legalContestConfiguration.trigger.determinationId ||
+      entry.relationshipId !== legalContestConfiguration.relationshipId ||
+      entry.claimantId !== legalContestConfiguration.claimantId ||
+      entry.institutionId !== legalContestConfiguration.targetInstitutionId ||
+      entry.outcome !== legalContestConfiguration.trigger.outcome ||
+      entry.formulaDisposition !== legalContestConfiguration.trigger.formulaDisposition ||
+      Date.parse(entry.issuedAt) >= Date.parse(
+        temporal.boundaries.find((boundary) => boundary.id === legalContestConfiguration.claim.filingBoundaryId)!.at,
+      ))
+  ) throw new Error("Integrated partial save legal-contest trigger contradicts configured authority.");
+  type LegalReplayEvent =
+    | { readonly at: string; readonly order: number; readonly kind: "BOUNDARY"; readonly boundary: typeof temporal.boundaries[number] }
+    | { readonly at: string; readonly order: number; readonly kind: "RESPONSE" }
+    | { readonly at: string; readonly order: number; readonly kind: "STAY_REQUEST" };
+  const legalEvents: LegalReplayEvent[] = temporal.boundaries
+    .filter((boundary) => institutional.calendar.processedBoundaryIds.includes(boundary.id))
+    .map((boundary) => ({
+      at: boundary.at,
+      order: boundary.phase * 1_000_000 + boundary.order,
+      kind: "BOUNDARY" as const,
+      boundary,
+    }));
+  const savedResponse = legalContest.administrativeResponses[0];
+  if (savedResponse !== undefined) legalEvents.push({ at: savedResponse.respondedAt, order: 900_000_000, kind: "RESPONSE" });
+  const savedStayRequest = legalContest.stayRequests[0];
+  if (savedStayRequest !== undefined) legalEvents.push({ at: savedStayRequest.filedAt, order: 900_000_001, kind: "STAY_REQUEST" });
+  legalEvents.sort((left, right) => Date.parse(left.at) - Date.parse(right.at) || left.order - right.order);
+  let expectedLegalContest = createIntegratedLegalContestRuntimeState(legalContestConfiguration);
+  for (const event of legalEvents) {
+    if (event.kind === "BOUNDARY") {
+      expectedLegalContest = applyLegalContestBoundary(
+        expectedLegalContest,
+        legalContestConfiguration,
+        event.boundary,
+        determination,
+      );
+    } else if (event.kind === "RESPONSE") {
+      expectedLegalContest = recordAdministrativeOrderResponse(
+        expectedLegalContest,
+        legalContestConfiguration,
+        savedResponse.administrationId,
+        savedResponse.action,
+        event.at,
+      );
+    } else {
+      expectedLegalContest = requestSeparateStay(expectedLegalContest, legalContestConfiguration, event.at);
+    }
+  }
+  requireExactArtifactState(legalContest, expectedLegalContest, "deterministic legal-contest state");
   return {
     state: {
       ...baseline,
@@ -635,6 +716,7 @@ const parse = (
       implementation,
       housing,
       information,
+      legalContest,
     },
     controlBinding: validatedLegislative.controlBinding,
     controlBindingHistory,
@@ -653,11 +735,13 @@ const createSession = (
   const temporal = configuration.integratedRuntime?.temporal;
   const implementationConfiguration = configuration.integratedRuntime?.implementation;
   const informationConfiguration = configuration.integratedRuntime?.information;
+  const legalContestConfiguration = configuration.integratedRuntime?.legalContest;
   if (
     temporal === undefined || implementationConfiguration === undefined || informationConfiguration === undefined ||
-    state.institutional === null || state.implementation === null || state.housing === null || state.information === null
+    legalContestConfiguration === undefined || state.institutional === null || state.implementation === null ||
+    state.housing === null || state.information === null || state.legalContest === null
   ) {
-    throw new Error("Integrated session requires configured institutional, implementation, Housing, and Information state.");
+    throw new Error("Integrated session requires configured institutional, implementation, Housing, Information, and legal-contest state.");
   }
   const synchronizeHousingInputs = (): void => {
     if (state.housing !== null && state.implementation !== null) {
@@ -780,6 +864,7 @@ const createSession = (
         implementation: state.implementation!,
         housing: state.housing!,
         information: state.information!,
+        legalContest: state.legalContest!,
         population: state.population,
         lastInstant: state.institutional.calendar.current,
       },
@@ -798,6 +883,12 @@ const createSession = (
           topology: state.electoralTopology,
         }, boundary);
         let information = value.information;
+        const legalContest = applyLegalContestBoundary(
+          value.legalContest,
+          legalContestConfiguration,
+          boundary,
+          material.implementation.administrativeProgram.relationshipQualificationDeterminations,
+        );
         let population = value.population;
         const measurementCapture = informationConfiguration.measurements.find((measurement) => measurement.captureBoundaryId === boundary.id);
         const measurementRelease = informationConfiguration.measurements.find((measurement) => measurement.releaseBoundaryId === boundary.id);
@@ -908,6 +999,7 @@ const createSession = (
           implementation: material.implementation,
           housing: material.housing,
           information,
+          legalContest,
           population,
           lastInstant: boundary.at,
         };
@@ -928,6 +1020,7 @@ const createSession = (
       implementation: material.implementation,
       housing: material.housing,
       information: advanced.value.information,
+      legalContest: advanced.value.legalContest,
       population: advanced.value.population,
     };
     return deepCopy(state);
@@ -1154,6 +1247,71 @@ const createSession = (
         completedDeliveryIds: state.information.deliveries.map((delivery) => delivery.id),
         publicExposureCount: state.information.exposures.length,
       });
+    },
+    issueBoundedRelationshipRejection: () => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) {
+        throw new Error("Integrated implementation state unavailable.");
+      }
+      const filing = temporal.boundaries.find(
+        (boundary) => boundary.id === legalContestConfiguration.claim.filingBoundaryId,
+      );
+      if (filing === undefined || Date.parse(state.institutional.calendar.current) >= Date.parse(filing.at)) {
+        throw new Error("The bounded final determination must precede the configured filing boundary.");
+      }
+      state = {
+        ...state,
+        implementation: issueFinalRelationshipQualificationDetermination(
+          state.implementation,
+          {
+            id: legalContestConfiguration.trigger.determinationId,
+            relationshipId: legalContestConfiguration.relationshipId,
+            claimantId: legalContestConfiguration.claimantId,
+            writtenReasons: [
+              "CONFIGURED_REQUALIFICATION_RECORD_REVIEWED",
+              "ASSOCIATED_FORMULA_AMOUNT_DIRECTED_OUT_PENDING_EXECUTION",
+            ],
+          },
+          state.institutional.calendar.current,
+        ),
+      };
+      return deepCopy(state);
+    },
+    respondToJudicialOrder: (action) => {
+      requireAdministrationAuthority();
+      if (state.legalContest === null || state.institutional === null) {
+        throw new Error("Integrated legal-contest state unavailable.");
+      }
+      state = {
+        ...state,
+        legalContest: recordAdministrativeOrderResponse(
+          state.legalContest,
+          legalContestConfiguration,
+          state.institutional.currentAdministration.id,
+          action,
+          state.institutional.calendar.current,
+        ),
+      };
+      return deepCopy(state);
+    },
+    requestJudicialStay: () => {
+      requireAdministrationAuthority();
+      if (state.legalContest === null || state.institutional === null) {
+        throw new Error("Integrated legal-contest state unavailable.");
+      }
+      state = {
+        ...state,
+        legalContest: requestSeparateStay(
+          state.legalContest,
+          legalContestConfiguration,
+          state.institutional.calendar.current,
+        ),
+      };
+      return deepCopy(state);
+    },
+    getLegalContestAuditState: () => {
+      if (state.legalContest === null) throw new Error("Integrated session lacks legal-contest state.");
+      return deepCopy(state.legalContest);
     },
     save: () => {
       synchronizeHousingInputs();
