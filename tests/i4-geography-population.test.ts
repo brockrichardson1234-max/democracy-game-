@@ -7,7 +7,7 @@ import {
 import { canonicalConfigurationContent } from "../src/configuration/canonical";
 import { sha256Hex } from "../src/configuration/sha256";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
+import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 import districtIdentities from "../src/content/us-v0/artifacts/house-district-identities-119.json";
 import cohortArtifact from "../src/content/us-v0/i4-artifacts/population-initial-cohorts-2026-08-22.json";
 import populationArtifact from "../src/content/us-v0/i4-artifacts/resident-population-controls-2025.json";
@@ -21,7 +21,7 @@ import {
 
 const createSession = () => createIntegratedPartialRuntimeSession(
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I6_RUNTIME_ARTIFACTS,
+  US_V0_I7_RUNTIME_ARTIFACTS,
 );
 
 describe("I4 Geography and real-data initialization", () => {
@@ -179,16 +179,16 @@ describe("I4 Geography and real-data initialization", () => {
     const restored = createIntegratedPartialRuntimeSessionFromSave(
       saved,
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState()).toEqual(direct.getAuditState());
     expect(restored.save()).toBe(saved);
 
     const incompatible = {
-      ...US_V0_I6_RUNTIME_ARTIFACTS,
+      ...US_V0_I7_RUNTIME_ARTIFACTS,
       populationControls: {
-        ...US_V0_I6_RUNTIME_ARTIFACTS.populationControls,
-        metadata: { ...US_V0_I6_RUNTIME_ARTIFACTS.populationControls.metadata, contentSha256: "0".repeat(64) },
+        ...US_V0_I7_RUNTIME_ARTIFACTS.populationControls,
+        metadata: { ...US_V0_I7_RUNTIME_ARTIFACTS.populationControls.metadata, contentSha256: "0".repeat(64) },
       },
     };
     expect(() => createIntegratedPartialRuntimeSessionFromSave(saved, US_V0_STRUCTURAL_CONFIGURATION, incompatible)).toThrow();

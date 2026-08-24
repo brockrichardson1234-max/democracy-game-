@@ -444,6 +444,9 @@ const validateIntegratedRuntimeConfiguration = (
     ...(integrated.implementation === undefined
       ? []
       : [[integrated.implementation.initializationArtifactId, "PROGRAM_INITIALIZATION"]] as const),
+    ...(integrated.housing === undefined
+      ? []
+      : [[integrated.housing.initializationArtifactId, "HOUSING_INITIALIZATION"]] as const),
   ] as const;
   requireUnique(expected.map(([id]) => id), "integrated runtime artifact references");
   for (const [id, kind] of expected) {
@@ -504,6 +507,24 @@ const validateIntegratedRuntimeConfiguration = (
       implementation.futureWaiver.determinationIdPrefix,
       implementation.futureWaiver.materialInputIdPrefix,
     ]) requireNonempty(value, "integrated implementation semantic identity");
+  }
+  const housing = integrated.housing;
+  if (housing !== undefined) {
+    const { parameterHash, ...housingWithoutHash } = housing;
+    if (
+      housing.schemaVersion !== 1 ||
+      !SHA_256_PATTERN.test(parameterHash) ||
+      parameterHash !== sha256Hex(JSON.stringify(housingWithoutHash)) ||
+      housing.initializationArtifactId.trim().length === 0 ||
+      housing.semanticsVersion.trim().length === 0 ||
+      housing.catchmentScaffoldVersion.trim().length === 0 ||
+      housing.materialCalibrationVersion.trim().length === 0 ||
+      !Number.isSafeInteger(housing.physicalToUsableLagDays) ||
+      housing.physicalToUsableLagDays <= 0 ||
+      !Number.isSafeInteger(housing.expectedControlCount) || housing.expectedControlCount <= 0 ||
+      !Number.isSafeInteger(housing.expectedRegionCount) || housing.expectedRegionCount <= 0 ||
+      !Number.isSafeInteger(housing.expectedProjectCount) || housing.expectedProjectCount <= 0
+    ) throw new Error("Integrated Housing configuration has invalid artifact or material semantics.");
   }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {

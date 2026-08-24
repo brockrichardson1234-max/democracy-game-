@@ -5,7 +5,7 @@ import {
   createIntegratedPartialRuntimeSession,
 } from "../src/app/integrated-session";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
+import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 import {
   US_V0_2028_ATTESTATION,
   US_V0_2028_DELEGATE_MEETING,
@@ -23,10 +23,10 @@ import {
 
 const createSession = () => createIntegratedPartialRuntimeSession(
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I6_RUNTIME_ARTIFACTS,
+  US_V0_I7_RUNTIME_ARTIFACTS,
 );
 
-const allResolutions = (ticketId: string) => US_V0_I6_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
+const allResolutions = (ticketId: string) => US_V0_I7_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
   cohortId: cohort.id,
   candidatePreference: ticketId,
   turnoutDisposition: "HIGH",
@@ -36,7 +36,7 @@ const allResolutions = (ticketId: string) => US_V0_I6_RUNTIME_ARTIFACTS.populati
 
 const auditSession = (ticketId: string) => createIntegratedPartialRuntimeAuditSession(
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I6_RUNTIME_ARTIFACTS,
+  US_V0_I7_RUNTIME_ARTIFACTS,
   allResolutions(ticketId),
 );
 
@@ -302,7 +302,7 @@ describe("I5 Population-backed selection, declaration, and succession", () => {
       "us.geography.state.42", "us.geography.state.47", "us.geography.state.48", "us.geography.state.51",
       "us.geography.state.53",
     ]);
-    const resolutions = US_V0_I6_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
+    const resolutions = US_V0_I7_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
       cohortId: cohort.id,
       candidatePreference: oppositionGeographies.has(cohort.residenceGeographyId)
         ? US_V0_OPPOSITION_TICKET_ID
@@ -313,7 +313,7 @@ describe("I5 Population-backed selection, declaration, and succession", () => {
     }));
     const session = createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
       resolutions,
     );
     session.advanceTo(US_V0_2029_DECLARATION);

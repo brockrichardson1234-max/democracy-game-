@@ -12,7 +12,7 @@ import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configurati
 import { US_V0_LEGISLATIVE_SEED } from "../src/content/us-v0/configuration";
 import { canonicalConfigurationContent } from "../src/configuration/canonical";
 import type { GovernmentConfiguration, LegislativeRuntimeSeed } from "../src/configuration/types";
-import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
+import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 import {
   US_V0_OPPOSITION_TICKET_ID,
   US_V0_PLAYER_TICKET_ID,
@@ -47,10 +47,10 @@ const supportiveConfiguration: GovernmentConfiguration<LegislativeRuntimeSeed> =
 
 const createSession = (configuration = US_V0_STRUCTURAL_CONFIGURATION) => createIntegratedPartialRuntimeSession(
   configuration,
-  US_V0_I6_RUNTIME_ARTIFACTS,
+  US_V0_I7_RUNTIME_ARTIFACTS,
 );
 
-const allResolutions = (ticketId: string) => US_V0_I6_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
+const allResolutions = (ticketId: string) => US_V0_I7_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
   cohortId: cohort.id,
   candidatePreference: ticketId,
   turnoutDisposition: "HIGH" as const,
@@ -134,7 +134,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     expect(state.implementation!.publicFinance.generatedBudgetAuthorities[0].status).toBe("APPORTIONED");
     expect(state.implementation!.fiscalExecution.generatedControls).toHaveLength(1);
     expect(() => createIntegratedPartialRuntimeSessionFromSave(
-      session.save(), supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS,
+      session.save(), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
     )).not.toThrow();
     const tampered = JSON.parse(session.save()) as {
       implementation: {
@@ -145,7 +145,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     tampered.implementation.publicFinance.generatedBudgetAuthorities[0].amount.minorUnits += 1;
     tampered.implementation.fiscalExecution.generatedControls[0].amount.minorUnits += 1;
     expect(() => createIntegratedPartialRuntimeSessionFromSave(
-      JSON.stringify(tampered), supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS,
+      JSON.stringify(tampered), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
     )).toThrow(/enacted legal terms/);
   });
 
@@ -163,7 +163,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     const restored = createIntegratedPartialRuntimeSessionFromSave(
       saved,
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState().implementation).toEqual(session.getAuditState().implementation);
 
@@ -181,7 +181,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
       expect(() => createIntegratedPartialRuntimeSessionFromSave(
         JSON.stringify(envelope),
         US_V0_STRUCTURAL_CONFIGURATION,
-        US_V0_I6_RUNTIME_ARTIFACTS,
+        US_V0_I7_RUNTIME_ARTIFACTS,
       )).toThrow(/pinned artifact authority/);
     }
   });
@@ -189,7 +189,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
   it("preserves pending program state through succession and enforces the new binding owner", () => {
     const sessionFor = (ticketId: string) => createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
       allResolutions(ticketId),
     );
     const aligned = sessionFor(US_V0_PLAYER_TICKET_ID);
@@ -223,7 +223,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     const restored = createIntegratedPartialRuntimeSessionFromSave(
       direct.save(),
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
     );
     const target = "2026-09-10T00:00:00-04:00";
     const directState = direct.advanceTo(target).implementation;

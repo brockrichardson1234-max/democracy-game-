@@ -49,6 +49,12 @@ import {
   type RecipientCommitmentRequest,
   type WaiverIntention,
 } from "../sim/program-implementation";
+import {
+  admitValidatedMaterialInputs,
+  advanceIntegratedMaterialHousing,
+  assertIntegratedMaterialHousingState,
+  type AcceptedMaterialInputReference,
+} from "../sim/housing";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
 import {
   createInitialLegislativeControlBinding,
@@ -58,7 +64,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 4 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 5 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -72,6 +78,7 @@ interface IntegratedPartialSaveEnvelope {
   readonly electoralTopology: IntegratedPartialRuntimeState["electoralTopology"];
   readonly institutional: IntegratedPartialRuntimeState["institutional"];
   readonly implementation: IntegratedPartialRuntimeState["implementation"];
+  readonly housing: IntegratedPartialRuntimeState["housing"];
 }
 
 const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -124,6 +131,7 @@ export interface IntegratedPartialRuntimeSession {
     election: "INCLUDE" | "EXCLUDE",
     causeKey: string,
   ) => IntegratedPartialRuntimeState;
+  readonly getHousingAuditState: () => NonNullable<IntegratedPartialRuntimeState["housing"]>;
   readonly save: () => string;
 }
 
@@ -183,7 +191,43 @@ const serialize = (
   electoralTopology: state.electoralTopology,
   institutional: state.institutional,
   implementation: state.implementation,
+  housing: state.housing,
 } satisfies IntegratedPartialSaveEnvelope);
+
+const materialInputReferences = (
+  implementation: NonNullable<IntegratedPartialRuntimeState["implementation"]>,
+): readonly AcceptedMaterialInputReference[] => implementation.materialInputs.map((input) => ({
+  id: input.id,
+  kind: input.kind,
+  sourceOwnerId: input.sourceOwnerId,
+  sourceRecordId: input.sourceRecordId,
+  projectRef: input.projectRef,
+  validatedAt: input.validatedAt,
+  classification: input.classification,
+}));
+
+const reconstructHousingTo = (
+  baseline: NonNullable<IntegratedPartialRuntimeState["housing"]>,
+  implementation: NonNullable<IntegratedPartialRuntimeState["implementation"]>,
+  epoch: string,
+  target: string,
+): NonNullable<IntegratedPartialRuntimeState["housing"]> => {
+  let housing = baseline;
+  let cursor = epoch;
+  const groups = new Map<string, AcceptedMaterialInputReference[]>();
+  for (const input of materialInputReferences(implementation)) {
+    const group = groups.get(input.validatedAt) ?? [];
+    group.push(input);
+    groups.set(input.validatedAt, group);
+  }
+  for (const [at, inputs] of [...groups.entries()].filter(([at]) => Date.parse(at) <= Date.parse(target)).sort(([left], [right]) => Date.parse(left) - Date.parse(right) || left.localeCompare(right))) {
+    if (Date.parse(at) < Date.parse(epoch)) throw new Error("Material input predates the configured scenario epoch.");
+    housing = advanceIntegratedMaterialHousing(housing, cursor, at);
+    housing = admitValidatedMaterialInputs(housing, inputs);
+    cursor = at;
+  }
+  return advanceIntegratedMaterialHousing(housing, cursor, target);
+};
 
 const artifactIdentity = (values: IntegratedPartialRuntimeState["artifactBindings"]): string =>
   JSON.stringify([...values].sort((left, right) => left.id.localeCompare(right.id)));
@@ -289,7 +333,8 @@ const parse = (
     !isRecord(parsed.population) ||
     !isRecord(parsed.electoralTopology) ||
     !isRecord(parsed.institutional) ||
-    !isRecord(parsed.implementation)
+    !isRecord(parsed.implementation) ||
+    !isRecord(parsed.housing)
   ) throw new Error("Invalid integrated partial save envelope.");
   const baseline = createIntegratedPartialRuntimeState(configuration, artifacts);
   assertConfigurationIdentityCompatible(
@@ -500,6 +545,23 @@ const parse = (
     JSON.stringify(validatedLegislative.controlBinding) !== JSON.stringify(expectedCurrentBinding) ||
     (transferCompleted && JSON.stringify(controlBindingHistory[0]) !== JSON.stringify(expectedEndedBinding))
   ) throw new Error("Integrated partial save ControlBinding history contradicts authority transfer state.");
+  if (baseline.housing === null || artifacts.housingInitialization === undefined) {
+    throw new Error("Integrated partial save supplies unsupported Material Housing state.");
+  }
+  const housing = parsed.housing as unknown as NonNullable<IntegratedPartialRuntimeState["housing"]>;
+  assertIntegratedMaterialHousingState(housing);
+  requireExactArtifactState(housing.controls, baseline.housing.controls, "Housing immutable controls");
+  requireExactArtifactState(housing.sourceArtifactId, baseline.housing.sourceArtifactId, "Housing source artifact");
+  requireExactArtifactState(housing.catchmentScaffoldVersion, baseline.housing.catchmentScaffoldVersion, "Housing catchment semantics");
+  requireExactArtifactState(housing.materialCalibrationVersion, baseline.housing.materialCalibrationVersion, "Housing material semantics");
+  requireExactArtifactState(housing.calibration, baseline.housing.calibration, "Housing calibration authority");
+  const expectedHousing = reconstructHousingTo(
+    baseline.housing,
+    implementation,
+    configuration.calendar.epoch,
+    institutional.calendar.current,
+  );
+  requireExactArtifactState(housing, expectedHousing, "Housing deterministic material state");
   return {
     state: {
       ...baseline,
@@ -508,6 +570,7 @@ const parse = (
       electoralTopology,
       institutional,
       implementation,
+      housing,
     },
     controlBinding: validatedLegislative.controlBinding,
     controlBindingHistory,
@@ -528,6 +591,14 @@ const createSession = (
   if (temporal === undefined || implementationConfiguration === undefined || state.institutional === null || state.implementation === null) {
     throw new Error("Integrated session requires configured institutional time and program implementation state.");
   }
+  const synchronizeHousingInputs = (): void => {
+    if (state.housing !== null && state.implementation !== null) {
+      state = {
+        ...state,
+        housing: admitValidatedMaterialInputs(state.housing, materialInputReferences(state.implementation)),
+      };
+    }
+  };
   const requireAdministrationAuthority = (): void => {
     if (controlBinding.status !== "ACTIVE" || state.institutional === null) {
       throw new Error("No active ControlBinding: administration decision surface unavailable.");
@@ -558,6 +629,7 @@ const createSession = (
   });
   const advanceTo = (target: string): IntegratedPartialRuntimeState => {
     if (state.institutional === null) throw new Error("Integrated session lacks institutional time state.");
+    const previousInstant = state.institutional.calendar.current;
     const advanced = advanceScheduledState(
       {
         institutional: state.institutional,
@@ -615,18 +687,29 @@ const createSession = (
     );
     controlBinding = advanced.value.controlBinding;
     controlBindingHistory = [...advanced.value.controlBindingHistory];
+    const implementation = state.implementation === null
+      ? null
+      : advanceAdministrativeDeadlines(state.implementation, advanced.calendar.current);
+    let housing = state.housing;
+    if (housing !== null && implementation !== null) {
+      housing = admitValidatedMaterialInputs(housing, materialInputReferences(state.implementation!));
+      housing = advanceIntegratedMaterialHousing(housing, previousInstant, advanced.calendar.current);
+      housing = admitValidatedMaterialInputs(housing, materialInputReferences(implementation));
+    }
     state = {
       ...state,
       legislative: advanced.value.legislative,
       institutional: { ...advanced.value.institutional, calendar: advanced.calendar },
-      implementation: state.implementation === null
-        ? null
-        : advanceAdministrativeDeadlines(state.implementation, advanced.calendar.current),
+      implementation,
+      housing,
     };
     return deepCopy(state);
   };
   return {
-    getAuditState: () => deepCopy(state),
+    getAuditState: () => {
+      synchronizeHousingInputs();
+      return deepCopy(state);
+    },
     getControlBindingAudit: () => deepCopy(controlBinding),
     getControlBindingHistoryAudit: () => deepCopy(controlBindingHistory),
     getLegislativeAdministrationView: legislativeSession.getAdministrationView,
@@ -824,7 +907,15 @@ const createSession = (
       ) };
       return deepCopy(state);
     },
-    save: () => serialize(state, controlBinding, controlBindingHistory),
+    getHousingAuditState: () => {
+      if (state.housing === null) throw new Error("Integrated session lacks Material Housing state.");
+      synchronizeHousingInputs();
+      return deepCopy(state.housing);
+    },
+    save: () => {
+      synchronizeHousingInputs();
+      return serialize(state, controlBinding, controlBindingHistory);
+    },
   };
 };
 

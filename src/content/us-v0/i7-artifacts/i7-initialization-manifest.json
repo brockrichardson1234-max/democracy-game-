@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "transformationVersion": "us-v0-i7-artifacts-v1",
+  "artifactBindings": [
+    {
+      "id": "us.i7.housing-initialization-v1",
+      "kind": "HOUSING_INITIALIZATION",
+      "contentSha256": "65fba46fee4c82493cd8ebc744352067e958ee99ff1b8d94179e814f20c6857a",
+      "transformationVersion": "us-v0-i7-artifacts-v1",
+      "rawSourceSha256s": [
+        "09a835b84b16180c345d6a18033dadb79bf28d5220828f480185c65c7684a8ce",
+        "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+        "726be6cb35bea348c36cc99097216c6a8dfa228b6cfd769ee55da02ed97bacdc",
+        "739a2663babc08bbce95c542375d18707afed6e4362d68282cefcba644a600f0",
+        "862ccc17d913305d11e6f802ce4518d76b30585ea0b05b251cd8cf21f8661386",
+        "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9",
+        "c0833c328f5db6510541e112e6d6b7688cbadd186c2cf24ddb3c41114ec950ef",
+        "eb98debfe8e8533e9a8e647a8c5dca5dbe11401c4de4e4449b4a2ba7dc75620f"
+      ]
+    }
+  ],
+  "housing": {
+    "initializationArtifactId": "us.i7.housing-initialization-v1",
+    "controlCount": 51,
+    "regionCount": 53,
+    "projectCount": 2,
+    "catchmentScaffoldVersion": "us-v0-housing-catchment-scaffold-1",
+    "materialCalibrationVersion": "us-v0-housing-material-calibration-1"
+  },
+  "sources": [
+    {
+      "sourceId": "USR-SRC-0077/0094/0111",
+      "product": "ACS 2024 five-year table-based summary file B25001",
+      "locator": "https://www2.census.gov/programs-surveys/acs/summary_file/2024/table-based-SF/data/5YRData/acsdt5y2024-b25001.dat",
+      "vintage": "2024 ACS five-year",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "c0833c328f5db6510541e112e6d6b7688cbadd186c2cf24ddb3c41114ec950ef",
+      "consumed": [
+        "B25001_E001",
+        "B25001_M001"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0077/0094/0111",
+      "product": "ACS 2024 five-year table-based summary file B25002",
+      "locator": "https://www2.census.gov/programs-surveys/acs/summary_file/2024/table-based-SF/data/5YRData/acsdt5y2024-b25002.dat",
+      "vintage": "2024 ACS five-year",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "eb98debfe8e8533e9a8e647a8c5dca5dbe11401c4de4e4449b4a2ba7dc75620f",
+      "consumed": [
+        "B25002_E001",
+        "B25002_M001",
+        "B25002_E003",
+        "B25002_M003"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0077/0078/0094",
+      "product": "ACS 2024 five-year table-based summary file B25070",
+      "locator": "https://www2.census.gov/programs-surveys/acs/summary_file/2024/table-based-SF/data/5YRData/acsdt5y2024-b25070.dat",
+      "vintage": "2024 ACS five-year",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "862ccc17d913305d11e6f802ce4518d76b30585ea0b05b251cd8cf21f8661386",
+      "consumed": [
+        "B25070_E001",
+        "B25070_M001",
+        "B25070_E007",
+        "B25070_M007",
+        "B25070_E008",
+        "B25070_M008",
+        "B25070_E009",
+        "B25070_M009",
+        "B25070_E010",
+        "B25070_M010"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0077/0094/0111",
+      "product": "ACS 2024 five-year table-based summary file B25106",
+      "locator": "https://www2.census.gov/programs-surveys/acs/summary_file/2024/table-based-SF/data/5YRData/acsdt5y2024-b25106.dat",
+      "vintage": "2024 ACS five-year",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "09a835b84b16180c345d6a18033dadb79bf28d5220828f480185c65c7684a8ce",
+      "consumed": [
+        "B25106_E001",
+        "B25106_M001",
+        "B25106_E002",
+        "B25106_M002",
+        "B25106_E006",
+        "B25106_M006",
+        "B25106_E010",
+        "B25106_M010",
+        "B25106_E014",
+        "B25106_M014",
+        "B25106_E018",
+        "B25106_M018",
+        "B25106_E022",
+        "B25106_M022",
+        "B25106_E023",
+        "B25106_M023",
+        "B25106_E024",
+        "B25106_M024",
+        "B25106_E028",
+        "B25106_M028",
+        "B25106_E032",
+        "B25106_M032",
+        "B25106_E036",
+        "B25106_M036",
+        "B25106_E040",
+        "B25106_M040",
+        "B25106_E044",
+        "B25106_M044",
+        "B25106_E045",
+        "B25106_M045",
+        "B25106_E046",
+        "B25106_M046"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0075/0098",
+      "product": "BPS state history workbook, final annual 2025 Total Units",
+      "locator": "https://www.census.gov/construction/bps/xls/state_history.xlsx",
+      "vintage": "final annual 2025 posted 2026-05-14",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "726be6cb35bea348c36cc99097216c6a8dfa228b6cfd769ee55da02ed97bacdc",
+      "consumed": [
+        "Total Units worksheet",
+        "2025 row",
+        "state/DC Units columns"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0118",
+      "product": "Corpus Christi February 2025 permit report",
+      "locator": "https://www.corpuschristitx.gov/media/3p2dsj2m/permit-report-feb-2025-pdf.pdf",
+      "vintage": "February 2025",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "739a2663babc08bbce95c542375d18707afed6e4362d68282cefcba644a600f0",
+      "consumed": [
+        "C226687",
+        "C226685",
+        "Palms at Morris",
+        "2212 Morris"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0106",
+      "product": "HUD final Stables waiver W-0000102",
+      "locator": "https://www.hud.gov/sites/default/files/Main/documents/Final-Nonavailability-Waiver-CO-DOLA-Arapahoe-Co-HVAC-W-0000102.pdf",
+      "vintage": "effective 2026-08-10",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+      "consumed": [
+        "W-0000102",
+        "Stables",
+        "85-unit"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0119",
+      "product": "Texas TABS2025005871 Palms physical-project record",
+      "locator": "https://www.tdlr.texas.gov/TABS/Search/Print/TABS2025005871",
+      "vintage": "registered 2024-11-19; frozen 2026-08-22",
+      "retrievedAt": "2026-08-24",
+      "rawSha256": "bc5ba153d9012b191095a1bd154bb0f2cbfc9363c952b28b6fced2de7638c2c9",
+      "consumed": [
+        "project identity",
+        "planned start",
+        "planned completion"
+      ]
+    }
+  ],
+  "contentSha256": "c5c253c2b526c31a6b09fbede97fea7b1666d76e4cfc3dcbba7e4b98f1e8a663"
+}

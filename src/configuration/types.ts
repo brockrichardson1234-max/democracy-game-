@@ -342,7 +342,8 @@ export type RuntimeArtifactKind =
   | "ELIGIBILITY_PROXY"
   | "POPULATION_COHORT"
   | "ELECTORAL_TOPOLOGY"
-  | "PROGRAM_INITIALIZATION";
+  | "PROGRAM_INITIALIZATION"
+  | "HOUSING_INITIALIZATION";
 
 export interface RuntimeArtifactBinding {
   readonly id: string;
@@ -529,6 +530,20 @@ export interface IntegratedImplementationConfiguration {
   };
 }
 
+export interface IntegratedHousingConfiguration {
+  readonly schemaVersion: number;
+  readonly initializationArtifactId: string;
+  readonly parameterHash: string;
+  readonly semanticsVersion: string;
+  readonly catchmentScaffoldVersion: string;
+  readonly materialCalibrationVersion: string;
+  readonly physicalToUsableLagDays: number;
+  readonly expectedControlCount: number;
+  readonly expectedRegionCount: number;
+  readonly expectedProjectCount: number;
+  readonly classification: ScaffoldClassification;
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -553,6 +568,7 @@ export interface IntegratedRuntimeConfiguration {
   };
   readonly temporal?: IntegratedTemporalConfiguration;
   readonly implementation?: IntegratedImplementationConfiguration;
+  readonly housing?: IntegratedHousingConfiguration;
 }
 
 interface ScheduledTransitionBase {

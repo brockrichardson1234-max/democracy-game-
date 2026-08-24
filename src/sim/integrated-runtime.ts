@@ -22,6 +22,11 @@ import {
   type ProgramInitializationSeed,
   type ProgramImplementationState,
 } from "./program-implementation";
+import {
+  createIntegratedMaterialHousingState,
+  type IntegratedMaterialHousingState,
+  type MaterialHousingInitializationSeed,
+} from "./housing";
 
 export interface RuntimeArtifactMetadata {
   readonly artifactId: string;
@@ -143,6 +148,10 @@ export interface ProgramInitializationArtifact extends ProgramInitializationSeed
   readonly metadata: RuntimeArtifactMetadata;
 }
 
+export interface HousingInitializationArtifact extends MaterialHousingInitializationSeed {
+  readonly metadata: RuntimeArtifactMetadata;
+}
+
 export interface IntegratedRuntimeArtifactBundle {
   readonly geography: readonly GeographyArtifact[];
   readonly populationControls: PopulationControlArtifact;
@@ -151,6 +160,7 @@ export interface IntegratedRuntimeArtifactBundle {
   readonly populationCohorts: CohortArtifact;
   readonly electoralTopology: ElectoralTopologyArtifact;
   readonly programInitialization?: ProgramInitializationArtifact;
+  readonly housingInitialization?: HousingInitializationArtifact;
 }
 
 export interface IntegratedPartialRuntimeState {
@@ -163,6 +173,7 @@ export interface IntegratedPartialRuntimeState {
   readonly electoralTopology: StaticElectoralTopologyState;
   readonly institutional: InstitutionalRuntimeState | null;
   readonly implementation: ProgramImplementationState | null;
+  readonly housing: IntegratedMaterialHousingState | null;
 }
 
 const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { readonly metadata: RuntimeArtifactMetadata }[] => [
@@ -173,6 +184,7 @@ const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { reado
   bundle.populationCohorts,
   bundle.electoralTopology,
   ...(bundle.programInitialization === undefined ? [] : [bundle.programInitialization]),
+  ...(bundle.housingInitialization === undefined ? [] : [bundle.housingInitialization]),
 ];
 
 const assertArtifactBindings = (
@@ -358,6 +370,18 @@ export const createIntegratedPartialRuntimeState = (
           bundle.programInitialization.metadata.artifactId,
           bundle.programInitialization,
         );
+  const housingConfiguration = configuration.integratedRuntime.housing;
+  const housing = housingConfiguration === undefined
+    ? null
+    : bundle.housingInitialization === undefined ||
+      bundle.housingInitialization.metadata.artifactId !== housingConfiguration.initializationArtifactId ||
+      bundle.housingInitialization.catchmentScaffoldVersion !== housingConfiguration.catchmentScaffoldVersion ||
+      bundle.housingInitialization.materialCalibrationVersion !== housingConfiguration.materialCalibrationVersion
+      ? (() => { throw new Error("Integrated Housing artifact does not match configured material semantics."); })()
+      : createIntegratedMaterialHousingState(
+          bundle.housingInitialization,
+          housingConfiguration,
+        );
   return {
     schemaVersion: configuration.integratedRuntime.schemaVersion,
     configuration: { ...configuration.identity },
@@ -373,5 +397,6 @@ export const createIntegratedPartialRuntimeState = (
       ? null
       : createInstitutionalRuntimeState(configuration.calendar.epoch, configuration.integratedRuntime.temporal),
     implementation,
+    housing,
   };
 };

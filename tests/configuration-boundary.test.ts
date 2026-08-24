@@ -15,7 +15,7 @@ import {
   createDeterministicWorldFixture,
 } from "../src/content/gl0-synthetic/configuration";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
+import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 import {
   advanceWorldTo,
 } from "../src/sim/world";
@@ -47,7 +47,7 @@ describe("I1 production configuration boundary", () => {
   it("boots the non-full-world U.S. legislative slice through the same boundary", () => {
     const bootstrap = bootstrapGovernmentConfiguration(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
     );
     expect(bootstrap.configuration.structure.chambers).toHaveLength(2);
     expect(bootstrap.configuration.structure.chambers.map((chamber) => chamber.seatCount)).toEqual([

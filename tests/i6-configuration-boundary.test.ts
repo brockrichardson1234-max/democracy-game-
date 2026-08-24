@@ -7,17 +7,17 @@ import type { GovernmentConfiguration, LegislativeRuntimeSeed } from "../src/con
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
 import {
   US_V0_I6_IMPLEMENTATION_CONFIGURATION,
-  US_V0_I6_RUNTIME_ARTIFACTS,
-} from "../src/content/us-v0/i6";
+  US_V0_I7_RUNTIME_ARTIFACTS,
+} from "../src/content/us-v0/i7";
 
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
 
 describe("I6 configuration and static authority boundary", () => {
   it("pins artifacts and every behavior-driving implementation parameter", () => {
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.6.0-i6",
-      scenarioVersion: "0.6.0-i6",
-      configurationHash: "f966d5e31ec9523663ccea288621fc67c1f5d048fd9779081ad26fd3e5a04deb",
+      configurationVersion: "0.7.0-i7",
+      scenarioVersion: "0.7.0-i7",
+      configurationHash: "3b344b2752ea979fccc3f1cac39a74d431cfb8d37fafd492ca2ea1faccfc300e",
     });
     expect(sha256(canonicalConfigurationContent(US_V0_STRUCTURAL_CONFIGURATION))).toBe(
       US_V0_STRUCTURAL_CONFIGURATION.identity.configurationHash,
@@ -25,13 +25,13 @@ describe("I6 configuration and static authority boundary", () => {
     expect(US_V0_I6_IMPLEMENTATION_CONFIGURATION.parameterHash).toBe(
       "3b4e815410f41390add14dd00fc43344129303254eeea0f49d93986e2c391f14",
     );
-    expect(US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.artifactBindings.at(-1)).toMatchObject({
+    expect(US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.artifactBindings.find((binding) => binding.kind === "PROGRAM_INITIALIZATION")).toMatchObject({
       id: "us.i6.finance-home-initialization-v1",
       kind: "PROGRAM_INITIALIZATION",
       contentSha256: "69760b0516ada98fcde881fdf7189d28dd6808591bf113135446590e01383738",
       transformationVersion: "us-v0-i6-artifacts-v1",
     });
-    expect(US_V0_I6_RUNTIME_ARTIFACTS.programInitialization!.metadata.rawSourceSha256s).toHaveLength(12);
+    expect(US_V0_I7_RUNTIME_ARTIFACTS.programInitialization!.metadata.rawSourceSha256s).toHaveLength(12);
   });
 
   it("rejects a behavior mutation whose nested parameter identity was not recomputed", () => {
@@ -64,7 +64,7 @@ describe("I6 configuration and static authority boundary", () => {
   });
 
   it("contains no physical project-state owner in the integrated I6 root", () => {
-    const implementation = US_V0_I6_RUNTIME_ARTIFACTS.programInitialization!;
+    const implementation = US_V0_I7_RUNTIME_ARTIFACTS.programInitialization!;
     expect(JSON.stringify(implementation)).not.toMatch(/physicalProgress|constructionProgress|completionPercent|usableUnits|occupancy|vacancyEffect|stockEffect/);
     expect(implementation.waivers.every((entry) => entry.physicalHousingEffect === null)).toBe(true);
     expect(implementation.recipientExpenditures.every((entry) => entry.physicalHousingEffect === null)).toBe(true);
