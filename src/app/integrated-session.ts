@@ -29,6 +29,26 @@ import {
   startNewLegislativeProcedure,
 } from "../sim/legislative-runtime";
 import { rebuildPoliticalStateForAssignments } from "../sim/political";
+import {
+  admitEnactedFiscalAuthority,
+  advanceAdministrativeDeadlines,
+  approveFiscalControl,
+  assertProgramImplementationState,
+  directWaiverIntention,
+  electRelationshipMember,
+  establishBoundedRecipientAward,
+  establishRecipientCommitment,
+  executeEligiblePayment,
+  openFutureWaiverRequest,
+  requestFiscalControl,
+  setupRecipientActivity,
+  submitRecipientDrawRequest,
+  supplySupplementalWaiverRecords,
+  type FutureWaiverRequestInput,
+  type BoundedRecipientAwardRequest,
+  type RecipientCommitmentRequest,
+  type WaiverIntention,
+} from "../sim/program-implementation";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
 import {
   createInitialLegislativeControlBinding,
@@ -38,7 +58,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 3 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 4 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -51,6 +71,7 @@ interface IntegratedPartialSaveEnvelope {
   readonly population: IntegratedPartialRuntimeState["population"];
   readonly electoralTopology: IntegratedPartialRuntimeState["electoralTopology"];
   readonly institutional: IntegratedPartialRuntimeState["institutional"];
+  readonly implementation: IntegratedPartialRuntimeState["implementation"];
 }
 
 const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -85,7 +106,41 @@ export interface IntegratedPartialRuntimeSession {
   readonly advanceTo: (instant: string) => IntegratedPartialRuntimeState;
   readonly advanceToNextBoundary: () => IntegratedPartialRuntimeState;
   readonly getPublicInstitutionalStatus: () => IntegratedInstitutionalPublicStatus;
+  readonly getPublicImplementationStatus: () => IntegratedImplementationPublicStatus;
+  readonly admitEnactedLawFiscalAuthority: (legalSourceId: string) => IntegratedPartialRuntimeState;
+  readonly requestApportionment: (budgetAuthorityId: string) => IntegratedPartialRuntimeState;
+  readonly approveApportionment: (budgetAuthorityId: string) => IntegratedPartialRuntimeState;
+  readonly establishBoundedAward: (request: BoundedRecipientAwardRequest) => IntegratedPartialRuntimeState;
+  readonly recordRecipientCommitment: (request: RecipientCommitmentRequest) => IntegratedPartialRuntimeState;
+  readonly setUpRecipientActivity: (commitmentId: string) => IntegratedPartialRuntimeState;
+  readonly submitRecipientDraw: (activityId: string, amountMinorUnits: number) => IntegratedPartialRuntimeState;
+  readonly executeRecipientPayment: (drawRequestId: string) => IntegratedPartialRuntimeState;
+  readonly openFutureWaiver: (request: FutureWaiverRequestInput) => IntegratedPartialRuntimeState;
+  readonly directFutureWaiver: (requestId: string, intention: WaiverIntention) => IntegratedPartialRuntimeState;
+  readonly supplyFutureWaiverRecords: (requestId: string, recordTypes: readonly string[]) => IntegratedPartialRuntimeState;
+  readonly electConsortiumMemberParticipation: (
+    relationshipId: string,
+    memberId: string,
+    election: "INCLUDE" | "EXCLUDE",
+    causeKey: string,
+  ) => IntegratedPartialRuntimeState;
   readonly save: () => string;
+}
+
+export interface IntegratedImplementationPublicStatus {
+  readonly detailCoverage: string;
+  readonly nationalBalance: string;
+  readonly historicalBudgetAuthorityCount: number;
+  readonly generatedBudgetAuthorities: readonly {
+    readonly id: string;
+    readonly status: string;
+    readonly minorUnits: number;
+  }[];
+  readonly pendingWaiverRequestIds: readonly string[];
+  readonly publicDeterminationIds: readonly string[];
+  readonly relationshipStatuses: readonly { readonly id: string; readonly status: string }[];
+  readonly materialInputKinds: readonly string[];
+  readonly physicalHousingStatePresent: false;
 }
 
 export interface IntegratedInstitutionalPublicStatus {
@@ -127,6 +182,7 @@ const serialize = (
   population: state.population,
   electoralTopology: state.electoralTopology,
   institutional: state.institutional,
+  implementation: state.implementation,
 } satisfies IntegratedPartialSaveEnvelope);
 
 const artifactIdentity = (values: IntegratedPartialRuntimeState["artifactBindings"]): string =>
@@ -232,7 +288,8 @@ const parse = (
     !Array.isArray(parsed.controlBindingHistory) ||
     !isRecord(parsed.population) ||
     !isRecord(parsed.electoralTopology) ||
-    !isRecord(parsed.institutional)
+    !isRecord(parsed.institutional) ||
+    !isRecord(parsed.implementation)
   ) throw new Error("Invalid integrated partial save envelope.");
   const baseline = createIntegratedPartialRuntimeState(configuration, artifacts);
   assertConfigurationIdentityCompatible(
@@ -265,6 +322,49 @@ const parse = (
   }
   assertCalendarTimeState(institutional.calendar, configuration.calendar.epoch, temporal.boundaries);
   assertInstitutionalRuntimeState(institutional, temporal, electoralTopology, configuration.structure);
+  const implementationConfiguration = configuration.integratedRuntime?.implementation;
+  if (
+    implementationConfiguration === undefined ||
+    baseline.implementation === null ||
+    artifacts.programInitialization === undefined
+  ) throw new Error("Integrated partial save supplies unsupported implementation state.");
+  const implementation = parsed.implementation as unknown as NonNullable<IntegratedPartialRuntimeState["implementation"]>;
+  assertProgramImplementationState(implementation, implementationConfiguration, artifacts.programInitialization);
+  for (const authority of implementation.publicFinance.generatedBudgetAuthorities) {
+    const law = validatedLegislative.state.enactedLegalSources.find((entry) => entry.id === authority.sourceLegalId);
+    if (law === undefined || baseline.implementation === null) {
+      throw new Error(`Generated budget authority ${authority.id} lacks its enacted legal source.`);
+    }
+    const expectedState = admitEnactedFiscalAuthority(
+      baseline.implementation,
+      law,
+      implementationConfiguration,
+      authority.enactedAt,
+    );
+    const expectedAuthority = expectedState.publicFinance.generatedBudgetAuthorities[0];
+    if (
+      expectedAuthority === undefined ||
+      JSON.stringify({ ...authority, status: "AUTHORITY_RECOGNIZED" }) !== JSON.stringify(expectedAuthority)
+    ) throw new Error(`Generated budget authority ${authority.id} contradicts its enacted legal terms.`);
+    const control = implementation.fiscalExecution.generatedControls.find(
+      (entry) => entry.sourceBudgetAuthorityId === authority.id,
+    );
+    if (authority.status === "APPORTIONED") {
+      if (control === undefined) throw new Error(`Apportioned authority ${authority.id} lacks its fiscal control.`);
+      const expectedPending = requestFiscalControl(expectedState, authority.id);
+      const expectedControlled = approveFiscalControl(
+        expectedPending,
+        authority.id,
+        implementationConfiguration,
+        control.approvalAt,
+      );
+      if (JSON.stringify(control) !== JSON.stringify(expectedControlled.fiscalExecution.generatedControls[0])) {
+        throw new Error(`Generated fiscal control ${control.id} contradicts its source authority.`);
+      }
+    } else if (control !== undefined) {
+      throw new Error(`Generated fiscal control ${control.id} precedes apportioned authority state.`);
+    }
+  }
   let expectedAssignments = baseline.legislative.activeAssignments.map((assignment) => ({ ...assignment }));
   for (const cycle of [...institutional.termCycles].sort(
     (left, right) => Date.parse(left.frozenAt) - Date.parse(right.frozenAt),
@@ -407,6 +507,7 @@ const parse = (
       population,
       electoralTopology,
       institutional,
+      implementation,
     },
     controlBinding: validatedLegislative.controlBinding,
     controlBindingHistory,
@@ -423,9 +524,21 @@ const createSession = (
   let controlBinding = initialBinding;
   let controlBindingHistory = [...initialControlBindingHistory];
   const temporal = configuration.integratedRuntime?.temporal;
-  if (temporal === undefined || state.institutional === null) {
-    throw new Error("Integrated session requires configured institutional time state.");
+  const implementationConfiguration = configuration.integratedRuntime?.implementation;
+  if (temporal === undefined || implementationConfiguration === undefined || state.institutional === null || state.implementation === null) {
+    throw new Error("Integrated session requires configured institutional time and program implementation state.");
   }
+  const requireAdministrationAuthority = (): void => {
+    if (controlBinding.status !== "ACTIVE" || state.institutional === null) {
+      throw new Error("No active ControlBinding: administration decision surface unavailable.");
+    }
+    const headAssignment = state.legislative.activeAssignments.find(
+      (assignment) => assignment.officeId === controlBinding.executiveOfficeId,
+    );
+    if (headAssignment?.actorId !== controlBinding.boundOfficeholderActorId) {
+      throw new Error("ControlBinding does not resolve to the current executive assignment.");
+    }
+  };
   const legislativeSession = createLegislativeSessionForStateOwner({
     getLegislativeState: () => state.legislative,
     setLegislativeState: (legislative) => { state = { ...state, legislative }; },
@@ -506,6 +619,9 @@ const createSession = (
       ...state,
       legislative: advanced.value.legislative,
       institutional: { ...advanced.value.institutional, calendar: advanced.calendar },
+      implementation: state.implementation === null
+        ? null
+        : advanceAdministrativeDeadlines(state.implementation, advanced.calendar.current),
     };
     return deepCopy(state);
   };
@@ -588,6 +704,125 @@ const createSession = (
           (assignment) => executiveOfficeIds.has(assignment.officeId),
         ),
       });
+    },
+    getPublicImplementationStatus: () => {
+      if (state.implementation === null) throw new Error("Integrated session lacks implementation state.");
+      const relationships = state.implementation.intergovernmental.historicalRelationships.map(
+        (relationship) => ({ id: relationship.id, status: relationship.status }),
+      );
+      return deepCopy({
+        detailCoverage: state.implementation.detailCoverage,
+        nationalBalance: state.implementation.nationalBalance,
+        historicalBudgetAuthorityCount: state.implementation.publicFinance.historicalBudgetAuthorities.length,
+        generatedBudgetAuthorities: state.implementation.publicFinance.generatedBudgetAuthorities.map((authority) => ({
+          id: authority.id,
+          status: authority.status,
+          minorUnits: authority.amount.minorUnits,
+        })),
+        pendingWaiverRequestIds: state.implementation.administrativeProgram.waiverRequests
+          .filter((request) => request.reviewState !== "DETERMINED").map((request) => request.id),
+        publicDeterminationIds: state.implementation.administrativeProgram.determinations.map((entry) => entry.id),
+        relationshipStatuses: relationships,
+        materialInputKinds: state.implementation.materialInputs.map((entry) => entry.kind),
+        physicalHousingStatePresent: false as const,
+      });
+    },
+    admitEnactedLawFiscalAuthority: (legalSourceId) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      const law = state.legislative.enactedLegalSources.find((entry) => entry.id === legalSourceId);
+      if (law === undefined) throw new Error("Budget authority admission requires an actually enacted legal source.");
+      state = { ...state, implementation: admitEnactedFiscalAuthority(
+        state.implementation, law, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    requestApportionment: (budgetAuthorityId) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: requestFiscalControl(state.implementation, budgetAuthorityId) };
+      return deepCopy(state);
+    },
+    approveApportionment: (budgetAuthorityId) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: approveFiscalControl(
+        state.implementation, budgetAuthorityId, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    establishBoundedAward: (request) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: establishBoundedRecipientAward(
+        state.implementation, request, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    recordRecipientCommitment: (request) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: establishRecipientCommitment(
+        state.implementation, request, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    setUpRecipientActivity: (commitmentId) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: setupRecipientActivity(
+        state.implementation, commitmentId, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    submitRecipientDraw: (activityId, amountMinorUnits) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: submitRecipientDrawRequest(
+        state.implementation, activityId, amountMinorUnits, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    executeRecipientPayment: (drawRequestId) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: executeEligiblePayment(
+        state.implementation, drawRequestId, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    openFutureWaiver: (request) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: openFutureWaiverRequest(
+        state.implementation, request, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    directFutureWaiver: (requestId, intention) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: directWaiverIntention(
+        state.implementation, requestId, intention, implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    supplyFutureWaiverRecords: (requestId, recordTypes) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: supplySupplementalWaiverRecords(
+        state.implementation, requestId, recordTypes,
+      ) };
+      return deepCopy(state);
+    },
+    electConsortiumMemberParticipation: (relationshipId, memberId, election, causeKey) => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) throw new Error("Integrated implementation state unavailable.");
+      state = { ...state, implementation: electRelationshipMember(
+        state.implementation, relationshipId, memberId, election, causeKey,
+        implementationConfiguration, state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
     },
     save: () => serialize(state, controlBinding, controlBindingHistory),
   };

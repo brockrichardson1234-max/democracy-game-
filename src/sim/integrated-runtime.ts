@@ -17,6 +17,11 @@ import {
   createInstitutionalRuntimeState,
   type InstitutionalRuntimeState,
 } from "./institutional-runtime";
+import {
+  createProgramImplementationState,
+  type ProgramInitializationSeed,
+  type ProgramImplementationState,
+} from "./program-implementation";
 
 export interface RuntimeArtifactMetadata {
   readonly artifactId: string;
@@ -134,6 +139,10 @@ export interface ElectoralTopologyArtifact {
   readonly allocations: readonly StaticElectoralAllocation[];
 }
 
+export interface ProgramInitializationArtifact extends ProgramInitializationSeed {
+  readonly metadata: RuntimeArtifactMetadata;
+}
+
 export interface IntegratedRuntimeArtifactBundle {
   readonly geography: readonly GeographyArtifact[];
   readonly populationControls: PopulationControlArtifact;
@@ -141,6 +150,7 @@ export interface IntegratedRuntimeArtifactBundle {
   readonly eligibilityProxies: EligibilityProxyArtifact;
   readonly populationCohorts: CohortArtifact;
   readonly electoralTopology: ElectoralTopologyArtifact;
+  readonly programInitialization?: ProgramInitializationArtifact;
 }
 
 export interface IntegratedPartialRuntimeState {
@@ -152,6 +162,7 @@ export interface IntegratedPartialRuntimeState {
   readonly population: WeightedPopulationState;
   readonly electoralTopology: StaticElectoralTopologyState;
   readonly institutional: InstitutionalRuntimeState | null;
+  readonly implementation: ProgramImplementationState | null;
 }
 
 const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { readonly metadata: RuntimeArtifactMetadata }[] => [
@@ -161,6 +172,7 @@ const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { reado
   bundle.eligibilityProxies,
   bundle.populationCohorts,
   bundle.electoralTopology,
+  ...(bundle.programInitialization === undefined ? [] : [bundle.programInitialization]),
 ];
 
 const assertArtifactBindings = (
@@ -336,6 +348,16 @@ export const createIntegratedPartialRuntimeState = (
     geography,
     bundle.electoralTopology,
   );
+  const implementationConfiguration = configuration.integratedRuntime.implementation;
+  const implementation = implementationConfiguration === undefined
+    ? null
+    : bundle.programInitialization === undefined ||
+      bundle.programInitialization.metadata.artifactId !== implementationConfiguration.initializationArtifactId
+      ? (() => { throw new Error("Integrated implementation artifact does not match configured initialization authority."); })()
+      : createProgramImplementationState(
+          bundle.programInitialization.metadata.artifactId,
+          bundle.programInitialization,
+        );
   return {
     schemaVersion: configuration.integratedRuntime.schemaVersion,
     configuration: { ...configuration.identity },
@@ -350,5 +372,6 @@ export const createIntegratedPartialRuntimeState = (
     institutional: configuration.integratedRuntime.temporal === undefined
       ? null
       : createInstitutionalRuntimeState(configuration.calendar.epoch, configuration.integratedRuntime.temporal),
+    implementation,
   };
 };

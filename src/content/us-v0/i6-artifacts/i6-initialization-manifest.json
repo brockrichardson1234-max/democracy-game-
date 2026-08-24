@@ -1,0 +1,190 @@
+{
+  "metadata": {
+    "artifactId": "us.i6.initialization-manifest-v1",
+    "transformationVersion": "us-v0-i6-artifacts-v1",
+    "contentSha256": "d3fee615fd1e52020a1d18716a081f820a51f9c3a789c52751ec6a9bb1dab8c8"
+  },
+  "schemaVersion": 1,
+  "artifactBindings": [
+    {
+      "id": "us.i6.finance-home-initialization-v1",
+      "kind": "PROGRAM_INITIALIZATION",
+      "contentSha256": "69760b0516ada98fcde881fdf7189d28dd6808591bf113135446590e01383738",
+      "transformationVersion": "us-v0-i6-artifacts-v1",
+      "rawSourceSha256s": [
+        "0f32f348e484437c288f0098d385b228d6e917892947f4e6373792e6eaa6b151",
+        "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+        "19fd72853c768f62e43861334c64657ebf8b7f1d8cc96d2e6a5e9b59f413a666",
+        "24a711da3f8c41234baf80cb9e4b8beec542310ae4ae9f3b7b7fdb53649231ed",
+        "4ce919d6c68c462af2f6cb835551e0b7a94b0225c8f7998faba4e81aa1ea3774",
+        "6fa9f189ad5cd4b4a4271a433b8dcc0f50fb3d46365a07e82aaa0446c5c7018d",
+        "818fd40a2df73633a2f9245deda6f8fc3a54730e2161e8a707c9fa09947b3d25",
+        "8e526f15eea7f9c0a2f55f7b874876e12140608eace5e1fc6d76179f8f4040a4",
+        "b5d8d29b97577632699a88b4032c9ea78a42ff0ec01bd0cbd6f039c59f93c2d8",
+        "e6cb541f97a13fdb763adc70be6fd6a703f28562ae5df29d3f834f0392accbe1",
+        "f55fdd237f72348ac755f9a220b64a0cd08eb428ec75b4d6df6221aaee9d5a28",
+        "fc8fe4fac42f8e9a9af6776c0a571712dcfc74f0e2674b87687733317730787a"
+      ]
+    }
+  ],
+  "implementation": {
+    "initializationArtifactId": "us.i6.finance-home-initialization-v1"
+  },
+  "sourceManifest": [
+    {
+      "sourceId": "USR-SRC-0099",
+      "product": "Public Law 118-42 official HTML",
+      "locator": "https://www.govinfo.gov/content/pkg/PLAW-118publ42/html/PLAW-118publ42.htm",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "818fd40a2df73633a2f9245deda6f8fc3a54730e2161e8a707c9fa09947b3d25",
+      "consumed": [
+        "HOME heading",
+        "$1.25 billion",
+        "availability through 2027-09-30"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0100",
+      "product": "OMB FY2024 HUD HOME apportionment JSON",
+      "locator": "https://apportionment-public.max.gov/Fiscal%20Year%202024/Department%20of%20Housing%20and%20Urban%20Development/JSON/FY2024_Agency%3DHUD_Bureau%3DCOMP%26D_Account%3D086-02052024-04-05-12.01.json",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "4ce919d6c68c462af2f6cb835551e0b7a94b0225c8f7998faba4e81aa1ea3774",
+      "consumed": [
+        "TAS components",
+        "approval timestamp",
+        "P.L. 118-42",
+        "lines 1100 and 6011"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0102",
+      "product": "USAspending Arapahoe County FY2024 HOME award API record",
+      "locator": "https://api.usaspending.gov/api/v2/awards/ASST_NON_M24-DC080221_086/",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "6fa9f189ad5cd4b4a4271a433b8dcc0f50fb3d46365a07e82aaa0446c5c7018d",
+      "consumed": [
+        "FAIN",
+        "recipient",
+        "Assistance Listing",
+        "signed date",
+        "obligation",
+        "aggregate outlay"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0105",
+      "product": "Arapahoe County 2025-2029 Consolidated Plan",
+      "locator": "https://files.arapahoeco.gov/Community%20Resources/Housing/Arapahoe%20County%202025-2029%20ConPlan%20FINAL%20%287.31.2025%29.pdf?t=202508211558390",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "fc8fe4fac42f8e9a9af6776c0a571712dcfc74f0e2674b87687733317730787a",
+      "consumed": [
+        "consortium identity",
+        "lead entity",
+        "plan reference"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0105",
+      "product": "Englewood FY2025-FY2027 consortium renewal record",
+      "locator": "https://englewoodgov.civicweb.net/document/425043/Ordinance%20approving%20an%20amendment%20to%20the%20Intergo.pdf?handle=DF23280518B647C09F93749FBF1B7B3E",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "8e526f15eea7f9c0a2f55f7b874876e12140608eace5e1fc6d76179f8f4040a4",
+      "consumed": [
+        "FY2025-FY2027 roster",
+        "included/excluded members",
+        "qualification interval"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0106",
+      "product": "HUD final Stables BABA nonavailability waiver W-0000102",
+      "locator": "https://www.hud.gov/sites/default/files/Main/documents/Final-Nonavailability-Waiver-CO-DOLA-Arapahoe-Co-HVAC-W-0000102.pdf",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "1714642ebec3ed2ecccaa76693f259cacc4c16a41d18cb82512b3b1b873862c5",
+      "consumed": [
+        "waiver ID",
+        "effective/comment dates",
+        "85-unit reference",
+        "HVAC scope",
+        "findings"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0114",
+      "product": "USAspending Corpus Christi FY2024 HOME award API record",
+      "locator": "https://api.usaspending.gov/api/v2/awards/ASST_NON_M24-MC480502_086/",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "24a711da3f8c41234baf80cb9e4b8beec542310ae4ae9f3b7b7fdb53649231ed",
+      "consumed": [
+        "FAIN",
+        "recipient",
+        "Assistance Listing",
+        "signed date",
+        "obligation",
+        "aggregate outlay"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0117",
+      "product": "Corpus Christi September 2025 check register workbook",
+      "locator": "https://www.corpuschristitx.gov/media/d1ijy2zb/september-2025-check-register.xlsx",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "b5d8d29b97577632699a88b4032c9ea78a42ff0ec01bd0cbd6f039c59f93c2d8",
+      "consumed": [
+        "worksheet row 4493",
+        "date",
+        "fund",
+        "department",
+        "activity",
+        "account",
+        "description",
+        "amount"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0120",
+      "product": "HUD Affordable Housing Programs consortia page",
+      "locator": "https://www.hud.gov/hud-partners/community-affordable-housing-programs",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "19fd72853c768f62e43861334c64657ebf8b7f1d8cc96d2e6a5e9b59f413a666",
+      "consumed": [
+        "consortium qualification",
+        "lead entity",
+        "surviving affordability responsibility"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0039",
+      "product": "Public Law 119-101 authenticated PDF",
+      "locator": "https://www.govinfo.gov/content/pkg/PLAW-119publ101/pdf/PLAW-119publ101.pdf",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "f55fdd237f72348ac755f9a220b64a0cd08eb428ec75b4d6df6221aaee9d5a28",
+      "consumed": [
+        "P.L. 119-101 date",
+        "HOME reform title"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0041/0097",
+      "product": "24 CFR part 92 XML as of 2026-08-19",
+      "locator": "https://www.ecfr.gov/api/versioner/v1/full/2026-08-19/title-24.xml?part=92",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "e6cb541f97a13fdb763adc70be6fd6a703f28562ae5df29d3f834f0392accbe1",
+      "consumed": [
+        "24 CFR part 92 source-scoped operative baseline"
+      ]
+    },
+    {
+      "sourceId": "USR-SRC-0097",
+      "product": "91 FR 23014 indefinite-delay notice HTML",
+      "locator": "https://www.federalregister.gov/documents/2026/04/29/2026-08339/home-investment-partnerships-program-further-program-updates-and-streamlining",
+      "retrievedAt": "2026-08-23",
+      "rawSha256": "0f32f348e484437c288f0098d385b228d6e917892947f4e6373792e6eaa6b151",
+      "consumed": [
+        "92.250",
+        "92.253",
+        "indefinite delay"
+      ]
+    }
+  ]
+}

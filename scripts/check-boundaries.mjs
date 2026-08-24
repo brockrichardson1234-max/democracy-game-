@@ -92,6 +92,12 @@ const usExecutionTokens = [
   "UNITED_STATES",
   "HUD",
   "HOME",
+  "OMB",
+  "BABA",
+  "ARAPAHOE",
+  "CORPUS_CHRISTI",
+  "STABLES",
+  "PALMS",
   "HOUSE",
   "SENATE",
   "ELECTORAL_COLLEGE",
@@ -156,8 +162,8 @@ const runtimeSourceFiles = [
 ];
 for (const file of runtimeSourceFiles) {
   const source = stripComments(await readFile(file, "utf8"));
-  if (/data[\\/]us-v0[\\/]i4-sources/.test(source)) {
-    violations.push(`${relative(root, file)} imports an I4 raw acquisition input into runtime source`);
+  if (/data[\\/]us-v0[\\/]i[46]-sources/.test(source)) {
+    violations.push(`${relative(root, file)} imports a raw acquisition input into runtime source`);
   }
   if (/\bfetch\s*\(|https?:\/\//.test(source)) {
     violations.push(`${relative(root, file)} introduces live-network U.S. initialization`);

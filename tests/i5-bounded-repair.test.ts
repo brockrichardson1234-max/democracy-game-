@@ -11,7 +11,7 @@ import { loadGovernmentConfiguration } from "../src/configuration/loader";
 import { sha256Hex } from "../src/configuration/sha256";
 import type { GovernmentConfiguration, LegislativeRuntimeSeed } from "../src/configuration/types";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { US_V0_I4_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i4";
+import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
 import {
   US_V0_2027_TERM_BOUNDARY,
   US_V0_2029_TRANSFER,
@@ -24,10 +24,10 @@ import {
 
 const createSession = () => createIntegratedPartialRuntimeSession(
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I4_RUNTIME_ARTIFACTS,
+  US_V0_I6_RUNTIME_ARTIFACTS,
 );
 
-const resolutions = (ticketId: string) => US_V0_I4_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
+const resolutions = (ticketId: string) => US_V0_I6_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
   cohortId: cohort.id,
   candidatePreference: ticketId,
   turnoutDisposition: "HIGH",
@@ -38,7 +38,7 @@ const resolutions = (ticketId: string) => US_V0_I4_RUNTIME_ARTIFACTS.populationC
 const auditSession = (ticketId: string, vacantOfficeIds: readonly string[] = []) =>
   createIntegratedPartialRuntimeAuditSession(
     US_V0_STRUCTURAL_CONFIGURATION,
-    US_V0_I4_RUNTIME_ARTIFACTS,
+    US_V0_I6_RUNTIME_ARTIFACTS,
     resolutions(ticketId),
     vacantOfficeIds,
   );
@@ -46,7 +46,7 @@ const auditSession = (ticketId: string, vacantOfficeIds: readonly string[] = [])
 const restore = (serialized: string) => createIntegratedPartialRuntimeSessionFromSave(
   serialized,
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I4_RUNTIME_ARTIFACTS,
+  US_V0_I6_RUNTIME_ARTIFACTS,
 );
 
 interface MutableRepairSave {
@@ -176,7 +176,7 @@ describe("I5 bounded repair", () => {
   it("freezes one coherent rollover Population signal per state and cycle", () => {
     const session = createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
       [],
       ["us.office.house.0602"],
     );

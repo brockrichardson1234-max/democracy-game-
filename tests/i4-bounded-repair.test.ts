@@ -5,7 +5,7 @@ import {
   createIntegratedPartialRuntimeSessionFromSave,
 } from "../src/app/integrated-session";
 import { US_DELIVERY_COALITION_ID, US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { US_V0_I4_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i4";
+import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
 
 interface MutableIntegratedSave {
   population: {
@@ -31,7 +31,7 @@ interface MutableIntegratedSave {
 
 const createSession = () => createIntegratedPartialRuntimeSession(
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I4_RUNTIME_ARTIFACTS,
+  US_V0_I6_RUNTIME_ARTIFACTS,
 );
 
 const mutableSave = (): MutableIntegratedSave =>
@@ -40,7 +40,7 @@ const mutableSave = (): MutableIntegratedSave =>
 const restore = (save: MutableIntegratedSave) => createIntegratedPartialRuntimeSessionFromSave(
   JSON.stringify(save),
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I4_RUNTIME_ARTIFACTS,
+  US_V0_I6_RUNTIME_ARTIFACTS,
 );
 
 describe("I4 bounded repair persistence and composition", () => {
@@ -96,7 +96,7 @@ describe("I4 bounded repair persistence and composition", () => {
     const restored = createIntegratedPartialRuntimeSessionFromSave(
       session.save(),
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState()).toEqual(session.getAuditState());
   });
@@ -122,7 +122,7 @@ describe("I4 bounded repair persistence and composition", () => {
     const restored = createIntegratedPartialRuntimeSessionFromSave(
       session.save(),
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState().legislative.procedure.stage).toBe("SPONSOR_SOUGHT");
     expect(restored.getAuditState().population.cohorts

@@ -5,7 +5,7 @@ import {
   createIntegratedPartialRuntimeSession,
 } from "../src/app/integrated-session";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { US_V0_I4_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i4";
+import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
 import {
   US_V0_2027_TERM_BOUNDARY,
   US_V0_2029_TERM_BOUNDARY,
@@ -15,14 +15,14 @@ import {
 
 const createSession = () => createIntegratedPartialRuntimeSession(
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I4_RUNTIME_ARTIFACTS,
+  US_V0_I6_RUNTIME_ARTIFACTS,
 );
 
 const assignmentByOffice = (session: ReturnType<typeof createSession>) => new Map(
   session.getAuditState().legislative.activeAssignments.map((assignment) => [assignment.officeId, assignment]),
 );
 
-const resolutions = (ticketId: string) => US_V0_I4_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
+const resolutions = (ticketId: string) => US_V0_I6_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
   cohortId: cohort.id,
   candidatePreference: ticketId,
   turnoutDisposition: "HIGH",
@@ -143,7 +143,7 @@ describe("I5 canonical calendar and congressional term transitions", () => {
     const nonExpiring = senate.find((office) => office.term.ordinaryBoundaryAt.includes("2031-01-03"))!;
     const session = createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
       [],
       [expiring.id, nonExpiring.id],
     );
@@ -203,12 +203,12 @@ describe("I5 canonical calendar and congressional term transitions", () => {
   it("makes weighted Population political state causally capable of changing rollover results", () => {
     const aligned = createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
       resolutions(US_V0_PLAYER_TICKET_ID),
     );
     const opposition = createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
       resolutions(US_V0_OPPOSITION_TICKET_ID),
     );
     aligned.advanceTo(US_V0_2027_TERM_BOUNDARY);

@@ -9,7 +9,7 @@ import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configurati
 import { canonicalConfigurationContent } from "../src/configuration/canonical";
 import { sha256Hex } from "../src/configuration/sha256";
 import type { GovernmentConfiguration, LegislativeRuntimeSeed } from "../src/configuration/types";
-import { US_V0_I4_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i4";
+import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
 import {
   US_V0_2027_TERM_BOUNDARY,
   US_V0_2028_ATTESTATION,
@@ -28,13 +28,13 @@ import {
 
 const createSession = () => createIntegratedPartialRuntimeSession(
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I4_RUNTIME_ARTIFACTS,
+  US_V0_I6_RUNTIME_ARTIFACTS,
 );
 
 const restore = (serialized: string) => createIntegratedPartialRuntimeSessionFromSave(
   serialized,
   US_V0_STRUCTURAL_CONFIGURATION,
-  US_V0_I4_RUNTIME_ARTIFACTS,
+  US_V0_I6_RUNTIME_ARTIFACTS,
 );
 
 const comparable = (session: ReturnType<typeof createSession>) => ({
@@ -104,7 +104,7 @@ describe("I5 deterministic temporal persistence", () => {
   });
 
   it("round-trips a player-aligned transfer with the new binding and ended-binding history", () => {
-    const resolutions = US_V0_I4_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
+    const resolutions = US_V0_I6_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
       cohortId: cohort.id,
       candidatePreference: US_V0_PLAYER_TICKET_ID,
       turnoutDisposition: "HIGH",
@@ -113,7 +113,7 @@ describe("I5 deterministic temporal persistence", () => {
     }));
     const session = createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
       resolutions,
     );
     session.advanceTo(US_V0_2029_TRANSFER);
@@ -131,9 +131,9 @@ describe("I5 deterministic temporal persistence", () => {
     expect(temporal.assignmentCycleContentHash).toBe(US_V0_I5_ASSIGNMENT_CYCLE_HASH);
     expect(temporal.selectionContentHash).toBe(US_V0_I5_SELECTION_HASH);
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.5.1-i5-repair",
-      scenarioVersion: "0.5.1-i5-repair",
-      configurationHash: "603c489e6ef29397c8f994a0b0a8f8f7c808ee7705a844f33d9cb3d8dbcdda94",
+      configurationVersion: "0.6.0-i6",
+      scenarioVersion: "0.6.0-i6",
+      configurationHash: "f966d5e31ec9523663ccea288621fc67c1f5d048fd9779081ad26fd3e5a04deb",
     });
   });
 
@@ -162,7 +162,7 @@ describe("I5 deterministic temporal persistence", () => {
     expect(() => createIntegratedPartialRuntimeSessionFromSave(
       session.save(),
       reidentified,
-      US_V0_I4_RUNTIME_ARTIFACTS,
+      US_V0_I6_RUNTIME_ARTIFACTS,
     )).toThrow(/Configuration mismatch/i);
   });
 });

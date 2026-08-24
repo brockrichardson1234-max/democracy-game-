@@ -341,7 +341,8 @@ export type RuntimeArtifactKind =
   | "POPULATION_MEASUREMENT"
   | "ELIGIBILITY_PROXY"
   | "POPULATION_COHORT"
-  | "ELECTORAL_TOPOLOGY";
+  | "ELECTORAL_TOPOLOGY"
+  | "PROGRAM_INITIALIZATION";
 
 export interface RuntimeArtifactBinding {
   readonly id: string;
@@ -468,6 +469,66 @@ export interface IntegratedTemporalConfiguration {
   };
 }
 
+export interface IntegratedImplementationConfiguration {
+  readonly schemaVersion: number;
+  readonly initializationArtifactId: string;
+  readonly parameterHash: string;
+  readonly semanticsVersion: string;
+  readonly classification: ScaffoldClassification;
+  readonly fiscalCohortId: string;
+  readonly currency: string;
+  readonly currencyScale: number;
+  readonly publicFinanceOwnerId: string;
+  readonly fiscalControllerInstitutionId: string;
+  readonly programId: string;
+  readonly administeringInstitutionId: string;
+  readonly legalTermIds: {
+    readonly recipientFlexibility: string;
+    readonly complianceBurden: string;
+    readonly geographicDistribution: string;
+    readonly administrativeCapacitySupport: string;
+  };
+  readonly recipientFlexibility: Readonly<Record<string, {
+    readonly discretionClass: string;
+    readonly maximumRecipientOptions: number;
+  }>>;
+  readonly complianceBurden: Readonly<Record<string, {
+    readonly burdenClass: string;
+    readonly requiredRecordTypes: readonly string[];
+    readonly reviewSteps: number;
+  }>>;
+  readonly geographicDistribution: Readonly<Record<string, {
+    readonly priorityRule: string;
+  }>>;
+  readonly administrativeCapacitySupport: Readonly<Record<string, {
+    readonly capacityClass: string;
+    readonly capacityUnits: number;
+    readonly processingLatencyDays: number;
+  }>>;
+  readonly futureWaiver: {
+    readonly semanticVersion: string;
+    readonly responsibleInstitutionId: string;
+    readonly requiredSupportingRecordTypes: readonly string[];
+    readonly returnReviewDelayDays: number;
+    readonly recordIdPrefix: string;
+    readonly determinationIdPrefix: string;
+    readonly materialInputIdPrefix: string;
+  };
+  readonly recordIds: {
+    readonly budgetAuthorityPrefix: string;
+    readonly fiscalControlPrefix: string;
+    readonly programAllocationPrefix: string;
+    readonly awardPrefix: string;
+    readonly obligationPrefix: string;
+    readonly relationshipTransitionPrefix: string;
+    readonly recipientCommitmentPrefix: string;
+    readonly recipientActivityPrefix: string;
+    readonly drawRequestPrefix: string;
+    readonly paymentPrefix: string;
+    readonly materialInputPrefix: string;
+  };
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -491,6 +552,7 @@ export interface IntegratedRuntimeConfiguration {
     readonly topologyArtifactId: string;
   };
   readonly temporal?: IntegratedTemporalConfiguration;
+  readonly implementation?: IntegratedImplementationConfiguration;
 }
 
 interface ScheduledTransitionBase {

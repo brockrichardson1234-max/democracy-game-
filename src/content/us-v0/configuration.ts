@@ -14,6 +14,10 @@ import {
 } from "./topology";
 import i4Manifest from "./i4-artifacts/i4-initialization-manifest.json";
 import { US_V0_I5_STRUCTURE, US_V0_I5_TEMPORAL_CONFIGURATION } from "./i5";
+import {
+  US_V0_I6_ARTIFACT_BINDING,
+  US_V0_I6_IMPLEMENTATION_CONFIGURATION,
+} from "./i6";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -235,14 +239,14 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
   },
 };
 
-/** Bounded integrated runtime through I5; later material, information, and judicial systems remain unavailable. */
+/** Bounded integrated runtime through I6; physical, information, and judicial systems remain unavailable. */
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.5.1-i5-repair",
+    configurationVersion: "0.6.0-i6",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.5.1-i5-repair",
-    configurationHash: "603c489e6ef29397c8f994a0b0a8f8f7c808ee7705a844f33d9cb3d8dbcdda94",
+    scenarioVersion: "0.6.0-i6",
+    configurationHash: "f966d5e31ec9523663ccea288621fc67c1f5d048fd9779081ad26fd3e5a04deb",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
@@ -251,10 +255,14 @@ export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<Legislative
   runtimeSeed: US_V0_LEGISLATIVE_SEED,
   integratedRuntime: {
     schemaVersion: i4Manifest.schemaVersion,
-    artifactBindings: i4Manifest.artifactBindings as readonly RuntimeArtifactBinding[],
+    artifactBindings: [
+      ...i4Manifest.artifactBindings,
+      US_V0_I6_ARTIFACT_BINDING,
+    ] as readonly RuntimeArtifactBinding[],
     geography: i4Manifest.geography,
     population: i4Manifest.population,
     electoral: i4Manifest.electoral,
     temporal: US_V0_I5_TEMPORAL_CONFIGURATION,
+    implementation: US_V0_I6_IMPLEMENTATION_CONFIGURATION,
   },
 };

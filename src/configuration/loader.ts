@@ -1,4 +1,5 @@
 import { canonicalConfigurationContent } from "./canonical";
+import { sha256Hex } from "./sha256";
 import { validateGovernmentStructure } from "./topology-validation";
 import type {
   GovernmentConfiguration,
@@ -440,6 +441,9 @@ const validateIntegratedRuntimeConfiguration = (
     [integrated.population.eligibilityProxyArtifactId, "ELIGIBILITY_PROXY"],
     [integrated.population.cohortArtifactId, "POPULATION_COHORT"],
     [integrated.electoral.topologyArtifactId, "ELECTORAL_TOPOLOGY"],
+    ...(integrated.implementation === undefined
+      ? []
+      : [[integrated.implementation.initializationArtifactId, "PROGRAM_INITIALIZATION"]] as const),
   ] as const;
   requireUnique(expected.map(([id]) => id), "integrated runtime artifact references");
   for (const [id, kind] of expected) {
@@ -457,6 +461,50 @@ const validateIntegratedRuntimeConfiguration = (
     integrated.population.catchmentRatio.numerator <= 0 ||
     integrated.population.catchmentRatio.denominator <= integrated.population.catchmentRatio.numerator
   ) throw new Error("Integrated population catchment ratio must be a proper positive fraction.");
+  const implementation = integrated.implementation;
+  if (implementation !== undefined) {
+    const { parameterHash, ...implementationWithoutHash } = implementation;
+    const institutionIds = new Set(configuration.structure.institutions.map((institution) => institution.id));
+    const allMappings = [
+      implementation.recipientFlexibility,
+      implementation.complianceBurden,
+      implementation.geographicDistribution,
+      implementation.administrativeCapacitySupport,
+    ];
+    if (
+      implementation.schemaVersion !== 1 ||
+      !SHA_256_PATTERN.test(implementation.parameterHash) ||
+      parameterHash !== sha256Hex(JSON.stringify(implementationWithoutHash)) ||
+      implementation.semanticsVersion.trim().length === 0 ||
+      implementation.programId.trim().length === 0 ||
+      implementation.currency.trim().length === 0 ||
+      !Number.isSafeInteger(implementation.currencyScale) || implementation.currencyScale < 0 ||
+      !institutionIds.has(implementation.administeringInstitutionId) ||
+      !institutionIds.has(implementation.fiscalControllerInstitutionId) ||
+      !institutionIds.has(implementation.futureWaiver.responsibleInstitutionId) ||
+      !Number.isSafeInteger(implementation.futureWaiver.returnReviewDelayDays) ||
+      implementation.futureWaiver.returnReviewDelayDays <= 0 ||
+      implementation.futureWaiver.requiredSupportingRecordTypes.length === 0 ||
+      allMappings.some((mapping) => Object.keys(mapping).length === 0) ||
+      Object.values(implementation.recipientFlexibility).some((entry) =>
+        !Number.isSafeInteger(entry.maximumRecipientOptions) || entry.maximumRecipientOptions <= 0) ||
+      Object.values(implementation.complianceBurden).some((entry) =>
+        !Number.isSafeInteger(entry.reviewSteps) || entry.reviewSteps <= 0 || entry.requiredRecordTypes.length === 0) ||
+      Object.values(implementation.administrativeCapacitySupport).some((entry) =>
+        !Number.isSafeInteger(entry.capacityUnits) || entry.capacityUnits < 0 ||
+        !Number.isSafeInteger(entry.processingLatencyDays) || entry.processingLatencyDays < 0)
+    ) throw new Error("Integrated implementation configuration has invalid owner or behavior semantics.");
+    for (const value of [
+      implementation.fiscalCohortId,
+      implementation.publicFinanceOwnerId,
+      implementation.futureWaiver.semanticVersion,
+      ...Object.values(implementation.legalTermIds),
+      ...Object.values(implementation.recordIds),
+      implementation.futureWaiver.recordIdPrefix,
+      implementation.futureWaiver.determinationIdPrefix,
+      implementation.futureWaiver.materialInputIdPrefix,
+    ]) requireNonempty(value, "integrated implementation semantic identity");
+  }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {
     if (

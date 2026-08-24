@@ -1,2 +1,3 @@
 # Authenticated acquisition inputs must retain exact source bytes and are not text-normalized.
 data/us-v0/i4-sources/* binary
+data/us-v0/i6-sources/* binary
