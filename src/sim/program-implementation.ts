@@ -51,6 +51,7 @@ export interface FiscalControlRecord {
   readonly scope: string;
   readonly ruleProfile: ImplementationRuleProfile | null;
   readonly classification: RecordClassification;
+  readonly sourceIntentionId?: string;
   readonly tas?: string;
   readonly authorityLegalId?: string;
   readonly line1100?: { readonly description: string; readonly amount: ExactMoney };
@@ -66,6 +67,7 @@ export interface ProgramAllocationRecord {
   readonly amount: ExactMoney;
   readonly classification: RecordClassification;
   readonly sourceFiscalControlId?: string;
+  readonly sourceIntentionId?: string;
 }
 
 export interface AwardRecord {
@@ -80,6 +82,10 @@ export interface AwardRecord {
   readonly amount: ExactMoney;
   readonly classification: RecordClassification;
   readonly sourceFiscalControlId?: string;
+  readonly sourceIntentionId?: string;
+  readonly relationshipId?: string;
+  readonly formulaScopeMemberId?: string | null;
+  readonly agreementRef?: string;
 }
 
 export interface ObligationRecord {
@@ -88,6 +94,7 @@ export interface ObligationRecord {
   readonly amount: ExactMoney;
   readonly obligatedAt: string;
   readonly classification: RecordClassification;
+  readonly sourceIntentionId?: string;
 }
 
 export interface PaymentRecord {
@@ -100,6 +107,7 @@ export interface PaymentRecord {
   readonly reconciliation: string;
   readonly classification: RecordClassification;
   readonly drawRequestId?: string;
+  readonly sourceIntentionId?: string;
 }
 
 export interface ProgramIdentityRecord {
@@ -163,14 +171,27 @@ export interface IntergovernmentalRelationshipRecord {
 export interface RelationshipTransitionRecord {
   readonly id: string;
   readonly relationshipId: string;
-  readonly memberId: string;
-  readonly election: "INCLUDE" | "EXCLUDE";
-  readonly newParticipation: "INCLUDED" | "EXCLUDED_FOR_NEW_FORMULA_RELATION";
+  readonly transitionKind: "MEMBER_PARTICIPATION" | "RELATIONSHIP_STATUS";
+  readonly memberId: string | null;
+  readonly election: "INCLUDE" | "EXCLUDE" | null;
+  readonly newParticipation: "INCLUDED" | "EXCLUDED_FOR_NEW_FORMULA_RELATION" | null;
+  readonly newStatus: RelationshipStatus | null;
   readonly formulaScopeChanged: true;
   readonly statewideRefusal: false;
   readonly survivingDuties: readonly string[];
   readonly occurredAt: string;
   readonly classification: "SIMULATION_GENERATED";
+  readonly sourceIntentionId: string;
+}
+
+export interface EffectiveIntergovernmentalRelationship {
+  readonly id: string;
+  readonly recipientId: string;
+  readonly status: RelationshipStatus;
+  readonly members: readonly RelationshipMemberRecord[];
+  readonly newFundingEligible: boolean;
+  readonly survivingDuties: readonly string[];
+  readonly asOf: string;
 }
 
 export interface RecipientExpenditureRecord {
@@ -321,6 +342,7 @@ export interface RecipientCommitmentRecord {
   readonly geographicPriorityAcknowledgement: string;
   readonly committedAt: string;
   readonly classification: "SIMULATION_GENERATED";
+  readonly sourceIntentionId: string;
 }
 
 export interface RecipientActivityRecord {
@@ -329,6 +351,7 @@ export interface RecipientActivityRecord {
   readonly setupAt: string;
   readonly status: "SET_UP";
   readonly classification: "SIMULATION_GENERATED";
+  readonly sourceIntentionId: string;
 }
 
 export interface RecipientDrawRequestRecord {
@@ -338,7 +361,66 @@ export interface RecipientDrawRequestRecord {
   readonly requestedAt: string;
   readonly status: "ELIGIBLE_PENDING_PAYMENT" | "PAID";
   readonly classification: "SIMULATION_GENERATED";
+  readonly sourceIntentionId: string;
 }
+
+export type ImplementationOwnerIntention =
+  | {
+      readonly kind: "REQUEST_FISCAL_CONTROL";
+      readonly payload: { readonly budgetAuthorityId: string };
+    }
+  | {
+      readonly kind: "REQUEST_BOUNDED_AWARD";
+      readonly payload: { readonly request: BoundedRecipientAwardRequest };
+    }
+  | {
+      readonly kind: "REQUEST_RECIPIENT_COMMITMENT";
+      readonly payload: { readonly request: RecipientCommitmentRequest };
+    }
+  | {
+      readonly kind: "REQUEST_RECIPIENT_ACTIVITY_SETUP";
+      readonly payload: { readonly commitmentId: string };
+    }
+  | {
+      readonly kind: "REQUEST_RECIPIENT_DRAW";
+      readonly payload: { readonly activityId: string; readonly amountMinorUnits: number };
+    }
+  | {
+      readonly kind: "REQUEST_FEDERAL_PAYMENT";
+      readonly payload: { readonly drawRequestId: string };
+    }
+  | {
+      readonly kind: "LOCAL_MEMBER_PARTICIPATION_DECISION";
+      readonly payload: {
+        readonly relationshipId: string;
+        readonly memberId: string;
+        readonly election: "INCLUDE" | "EXCLUDE";
+        readonly causeKey: string;
+      };
+    }
+  | {
+      readonly kind: "LOCAL_RELATIONSHIP_STATUS_DECISION";
+      readonly payload: {
+        readonly relationshipId: string;
+        readonly status: RelationshipStatus;
+        readonly causeKey: string;
+      };
+    };
+
+export type ImplementationOwnerIntentionRecord = ImplementationOwnerIntention & {
+  readonly id: string;
+  readonly originatingAdministrationId: string;
+  readonly originatingActorId: string;
+  readonly targetOwnerId: string;
+  readonly matterId: string;
+  readonly submittedAt: string;
+  readonly status: "PENDING" | "RESOLVED" | "REFUSED";
+  readonly resolvedAt: string | null;
+  readonly resultRecordIds: readonly string[];
+  readonly resolutionReason: string | null;
+  readonly semanticVersion: string;
+  readonly classification: "SIMULATION_GENERATED";
+};
 
 export interface ProgramImplementationState {
   readonly schemaVersion: number;
@@ -352,6 +434,9 @@ export interface ProgramImplementationState {
   readonly publicFinance: {
     readonly historicalBudgetAuthorities: readonly BudgetAuthorityRecord[];
     readonly generatedBudgetAuthorities: readonly BudgetAuthorityRecord[];
+  };
+  readonly ownerResolution: {
+    readonly intentions: readonly ImplementationOwnerIntentionRecord[];
   };
   readonly fiscalExecution: {
     readonly historicalControls: readonly FiscalControlRecord[];
@@ -422,6 +507,9 @@ export const createProgramImplementationState = (
     historicalBudgetAuthorities: copy(seed.budgetAuthorities),
     generatedBudgetAuthorities: [],
   },
+  ownerResolution: {
+    intentions: [],
+  },
   fiscalExecution: {
     historicalControls: seed.fiscalControls.map(historicalControl),
     generatedControls: [],
@@ -461,6 +549,117 @@ const unique = (values: readonly string[], label: string): void => {
   if (new Set(values).size !== values.length || values.some((value) => value.trim().length === 0)) {
     throw new Error(`${label} requires unique nonempty identities.`);
   }
+};
+
+const orderedRelationshipTransitions = (
+  transitions: readonly RelationshipTransitionRecord[],
+): readonly RelationshipTransitionRecord[] => [...transitions].sort((left, right) =>
+  Date.parse(left.occurredAt) - Date.parse(right.occurredAt) || left.id.localeCompare(right.id));
+
+export const deriveEffectiveIntergovernmentalRelationship = (
+  state: ProgramImplementationState,
+  relationshipId: string,
+  asOf: string,
+): EffectiveIntergovernmentalRelationship | null => {
+  const historical = state.intergovernmental.historicalRelationships.find((entry) => entry.id === relationshipId);
+  const asOfTime = Date.parse(asOf);
+  if (historical === undefined || !Number.isFinite(asOfTime)) return null;
+  let status = historical.status;
+  let members = historical.members.map((member) => ({ ...member }));
+  for (const transition of orderedRelationshipTransitions(state.intergovernmental.transitions)) {
+    if (transition.relationshipId !== relationshipId || Date.parse(transition.occurredAt) > asOfTime) continue;
+    if (transition.transitionKind === "RELATIONSHIP_STATUS" && transition.newStatus !== null) {
+      status = transition.newStatus;
+    } else if (
+      transition.transitionKind === "MEMBER_PARTICIPATION" &&
+      transition.memberId !== null && transition.newParticipation !== null
+    ) {
+      const participation = transition.newParticipation;
+      members = members.map((member) => member.id === transition.memberId
+        ? { ...member, participation }
+        : member);
+    }
+  }
+  return {
+    id: historical.id,
+    recipientId: historical.recipientId,
+    status,
+    members,
+    newFundingEligible: status === "ACTIVE",
+    survivingDuties: [...historical.survivingDuties],
+    asOf,
+  };
+};
+
+const isMemberEligibleForNewFormula = (
+  relationship: EffectiveIntergovernmentalRelationship,
+  memberId: string | null,
+): boolean => {
+  if (!relationship.newFundingEligible) return false;
+  if (memberId === null) return relationship.members.length === 0;
+  const member = relationship.members.find((entry) => entry.id === memberId);
+  return member !== undefined && (member.participation === "INCLUDED" || member.participation === "LEAD_ENTITY_ACTIVE");
+};
+
+const intentionIdentity = (
+  intention: ImplementationOwnerIntention,
+  originatingAdministrationId: string,
+  originatingActorId: string,
+  targetOwnerId: string,
+  submittedAt: string,
+  configuration: IntegratedImplementationConfiguration,
+): string => `${configuration.ownerResolution.intentionIdPrefix}${sha256Hex(JSON.stringify({
+  semanticVersion: configuration.ownerResolution.semanticVersion,
+  originatingAdministrationId,
+  originatingActorId,
+  targetOwnerId,
+  submittedAt,
+  intention,
+})).slice(0, 24)}`;
+
+export const submitImplementationOwnerIntention = (
+  state: ProgramImplementationState,
+  intention: ImplementationOwnerIntention,
+  origin: { readonly administrationId: string; readonly actorId: string },
+  targetOwnerId: string,
+  matterId: string,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => {
+  if (
+    origin.administrationId.trim().length === 0 || origin.actorId.trim().length === 0 ||
+    targetOwnerId.trim().length === 0 || matterId.trim().length === 0 || !Number.isFinite(Date.parse(at))
+  ) throw new Error("Implementation owner intention requires exact origin, owner, matter, and time.");
+  const id = intentionIdentity(intention, origin.administrationId, origin.actorId, targetOwnerId, at, configuration);
+  if (state.ownerResolution.intentions.some((entry) => entry.id === id)) return state;
+  const record: ImplementationOwnerIntentionRecord = {
+    ...copy(intention),
+    id,
+    originatingAdministrationId: origin.administrationId,
+    originatingActorId: origin.actorId,
+    targetOwnerId,
+    matterId,
+    submittedAt: at,
+    status: "PENDING",
+    resolvedAt: null,
+    resultRecordIds: [],
+    resolutionReason: null,
+    semanticVersion: configuration.ownerResolution.semanticVersion,
+    classification: "SIMULATION_GENERATED",
+  };
+  return { ...state, ownerResolution: { intentions: [...state.ownerResolution.intentions, record] } };
+};
+
+const requirePendingIntention = <Kind extends ImplementationOwnerIntention["kind"]>(
+  state: ProgramImplementationState,
+  intentionId: string,
+  kind: Kind,
+): Extract<ImplementationOwnerIntentionRecord, { readonly kind: Kind }> => {
+  const intention = state.ownerResolution.intentions.find((entry) => entry.id === intentionId);
+  if (intention === undefined || intention.kind !== kind || intention.status !== "PENDING") {
+    throw new Error(`Owner resolution requires pending ${kind} intention ${intentionId}.`);
+  }
+  return intention as Extract<ImplementationOwnerIntentionRecord, { readonly kind: Kind }>;
 };
 
 const exactHistoricalProjection = (state: ProgramImplementationState) => ({
@@ -510,6 +709,7 @@ export const assertProgramImplementationState = (
   const awards = [...state.fiscalExecution.historicalAwards, ...state.fiscalExecution.generatedAwards];
   const obligations = [...state.fiscalExecution.historicalObligations, ...state.fiscalExecution.generatedObligations];
   unique(authorities.map((entry) => entry.id), "Budget authorities");
+  unique(state.ownerResolution.intentions.map((entry) => entry.id), "Implementation owner intentions");
   unique(controls.map((entry) => entry.id), "Fiscal controls");
   unique(payments.map((entry) => entry.id), "Payments");
   unique(allocations.map((entry) => entry.id), "Program allocations");
@@ -523,6 +723,46 @@ export const assertProgramImplementationState = (
   unique(state.recipientAdministration.drawRequests.map((entry) => entry.id), "Recipient draw requests");
   unique(state.materialInputs.map((entry) => entry.id), "Material inputs");
   unique(state.administrativeProgram.dynamicBoundaries.map((entry) => entry.id), "Administrative boundaries");
+  const generatedIds = new Set(generatedResultIds(state));
+  for (const intention of state.ownerResolution.intentions) {
+    const expectedId = intentionIdentity(
+      { kind: intention.kind, payload: copy(intention.payload) } as ImplementationOwnerIntention,
+      intention.originatingAdministrationId,
+      intention.originatingActorId,
+      intention.targetOwnerId,
+      intention.submittedAt,
+      configuration,
+    );
+    const linkedResultIds = [
+      ...state.fiscalExecution.generatedControls,
+      ...state.fiscalExecution.generatedProgramAllocations,
+      ...state.fiscalExecution.generatedAwards,
+      ...state.fiscalExecution.generatedObligations,
+      ...state.fiscalExecution.generatedPayments,
+      ...state.recipientAdministration.commitments,
+      ...state.recipientAdministration.activities,
+      ...state.recipientAdministration.drawRequests,
+      ...state.intergovernmental.transitions,
+    ].filter((entry) => entry.sourceIntentionId === intention.id).map((entry) => entry.id).sort();
+    if (
+      intention.id !== expectedId || intention.semanticVersion !== configuration.ownerResolution.semanticVersion ||
+      intention.classification !== "SIMULATION_GENERATED" || !Number.isFinite(Date.parse(intention.submittedAt)) ||
+      intention.originatingAdministrationId.trim().length === 0 || intention.originatingActorId.trim().length === 0 ||
+      intention.targetOwnerId.trim().length === 0 || intention.matterId.trim().length === 0 ||
+      (intention.status === "PENDING" && (
+        intention.resolvedAt !== null || intention.resultRecordIds.length !== 0 || intention.resolutionReason !== null
+      )) ||
+      (intention.status === "RESOLVED" && (
+        intention.resolvedAt === null || intention.resolutionReason !== null ||
+        intention.resultRecordIds.some((id) => !generatedIds.has(id)) ||
+        JSON.stringify([...intention.resultRecordIds].sort()) !== JSON.stringify(linkedResultIds) ||
+        Date.parse(intention.resolvedAt) < Date.parse(intention.submittedAt)
+      )) ||
+      (intention.status === "REFUSED" && (
+        intention.resolvedAt === null || intention.resultRecordIds.length !== 0 || intention.resolutionReason === null
+      ))
+    ) throw new Error(`Implementation owner intention ${intention.id} contradicts configured semantics.`);
+  }
   for (const monetary of [
     ...authorities.map((entry) => entry.amount),
     ...controls.map((entry) => entry.amount),
@@ -534,15 +774,35 @@ export const assertProgramImplementationState = (
     ...state.recipientAdministration.commitments.map((entry) => entry.amount),
     ...state.recipientAdministration.drawRequests.map((entry) => entry.amount),
   ]) assertExactMoney(monetary);
+  for (const authority of state.publicFinance.generatedBudgetAuthorities) {
+    const expectedUntil = addElapsedCalendarDays(
+      authority.effectiveFrom,
+      configuration.generatedFiscalWindow.availabilityDurationDays,
+    );
+    if (
+      authority.id !== `${configuration.recordIds.budgetAuthorityPrefix}${sha256Hex(authority.sourceLegalId).slice(0, 20)}` ||
+      authority.amount.ownerId !== configuration.publicFinanceOwnerId ||
+      authority.amount.currency !== configuration.currency || authority.amount.scale !== configuration.currencyScale ||
+      authority.amount.fiscalCohort !== configuration.fiscalCohortId || authority.availableUntil !== expectedUntil ||
+      authority.classification !== "SIMULATION_GENERATED" || authority.operativeRuleProfile === undefined ||
+      authority.enactedAt !== authority.effectiveFrom
+    ) throw new Error(`Generated budget authority ${authority.id} contradicts configured fiscal availability semantics.`);
+  }
   for (const control of state.fiscalExecution.generatedControls) {
     const authority = state.publicFinance.generatedBudgetAuthorities.find((entry) => entry.id === control.sourceBudgetAuthorityId);
+    const intention = state.ownerResolution.intentions.find((entry) => entry.id === control.sourceIntentionId);
     const detailedAwardTotal = state.fiscalExecution.generatedAwards
       .filter((entry) => entry.sourceFiscalControlId === control.id)
       .reduce((total, entry) => total + entry.amount.minorUnits, 0);
     if (
       authority === undefined || authority.status !== "APPORTIONED" ||
       control.amount.minorUnits !== authority.amount.minorUnits || control.ruleProfile === null ||
-      detailedAwardTotal >= control.amount.minorUnits
+      detailedAwardTotal >= control.amount.minorUnits ||
+      control.id !== `${configuration.recordIds.fiscalControlPrefix}${sha256Hex(authority.id).slice(0, 20)}` ||
+      control.controllerInstitutionId !== configuration.fiscalControllerInstitutionId ||
+      control.programId !== configuration.programId || control.amount.ownerId !== configuration.fiscalControlOwnerId ||
+      control.classification !== "SIMULATION_GENERATED" || intention?.kind !== "REQUEST_FISCAL_CONTROL" ||
+      intention.status !== "RESOLVED" || intention.payload.budgetAuthorityId !== authority.id
     ) throw new Error(`Generated fiscal control ${control.id} contradicts budget authority progression.`);
   }
   const expectedCapacity = state.fiscalExecution.generatedControls.reduce(
@@ -558,19 +818,59 @@ export const assertProgramImplementationState = (
       (entry) => entry.sourceAwardEventId === award?.sourceAwardEventId,
     );
     const control = state.fiscalExecution.generatedControls.find((entry) => entry.id === award?.sourceFiscalControlId);
+    const intention = state.ownerResolution.intentions.find((entry) => entry.id === obligation.sourceIntentionId);
+    const relationship = award === undefined || award.relationshipId === undefined
+      ? null
+      : deriveEffectiveIntergovernmentalRelationship(state, award.relationshipId, award.signedAt);
     if (
       award === undefined || allocation === undefined || control === undefined ||
       award.recipientId !== allocation.recipientId ||
       obligation.amount.minorUnits !== award.amount.minorUnits ||
       award.amount.minorUnits !== allocation.amount.minorUnits ||
-      award.amount.minorUnits > control.amount.minorUnits
+      award.amount.minorUnits > control.amount.minorUnits ||
+      award.classification !== "SIMULATION_GENERATED" || allocation.classification !== "SIMULATION_GENERATED" ||
+      obligation.classification !== "SIMULATION_GENERATED" ||
+      award.sourceIntentionId !== obligation.sourceIntentionId || allocation.sourceIntentionId !== obligation.sourceIntentionId ||
+      obligation.amount.ownerId !== configuration.federalFiscalExecutionOwnerId ||
+      award.amount.ownerId !== configuration.administeringInstitutionId || allocation.amount.ownerId !== configuration.programId ||
+      intention?.kind !== "REQUEST_BOUNDED_AWARD" || intention.status !== "RESOLVED" ||
+      JSON.stringify(intention.payload.request) !== JSON.stringify({
+        sourceFiscalControlId: control.id,
+        relationshipId: award.relationshipId,
+        formulaScopeMemberId: award.formulaScopeMemberId,
+        recipientId: award.recipientId,
+        amountMinorUnits: award.amount.minorUnits,
+        agreementRef: award.agreementRef,
+        causeKey: intention.payload.request.causeKey,
+      }) ||
+      relationship === null || !isMemberEligibleForNewFormula(relationship, award.formulaScopeMemberId ?? null) ||
+      award.id !== `${configuration.recordIds.awardPrefix}${sha256Hex(award.sourceAwardEventId).slice(0, 20)}` ||
+      allocation.id !== `${configuration.recordIds.programAllocationPrefix}${sha256Hex(award.sourceAwardEventId).slice(0, 20)}` ||
+      obligation.id !== `${configuration.recordIds.obligationPrefix}${sha256Hex(award.sourceAwardEventId).slice(0, 20)}`
     ) throw new Error(`Generated obligation ${obligation.id} lacks its allocation, award, or fiscal control chain.`);
   }
   for (const result of state.intergovernmental.transitions) {
     const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === result.relationshipId);
+    const intention = state.ownerResolution.intentions.find((entry) => entry.id === result.sourceIntentionId);
+    const expectedMemberId = result.transitionKind === "MEMBER_PARTICIPATION"
+      ? `${configuration.recordIds.relationshipTransitionPrefix}${sha256Hex(`${result.relationshipId}|${result.memberId}|${result.election}|${intention?.kind === "LOCAL_MEMBER_PARTICIPATION_DECISION" ? intention.payload.causeKey : ""}`).slice(0, 20)}`
+      : `${configuration.recordIds.relationshipTransitionPrefix}${sha256Hex(`${result.relationshipId}|STATUS|${result.newStatus}|${intention?.kind === "LOCAL_RELATIONSHIP_STATUS_DECISION" ? intention.payload.causeKey : ""}`).slice(0, 20)}`;
     if (
-      relationship === undefined || !relationship.members.some((member) => member.id === result.memberId) ||
-      result.statewideRefusal !== false || JSON.stringify(result.survivingDuties) !== JSON.stringify(relationship.survivingDuties)
+      relationship === undefined || result.id !== expectedMemberId || !Number.isFinite(Date.parse(result.occurredAt)) ||
+      result.classification !== "SIMULATION_GENERATED" || result.formulaScopeChanged !== true ||
+      result.statewideRefusal !== false || JSON.stringify(result.survivingDuties) !== JSON.stringify(relationship.survivingDuties) ||
+      intention?.targetOwnerId !== configuration.intergovernmentalRelationshipOwnerId ||
+      intention.resolvedAt !== result.occurredAt ||
+      (result.transitionKind === "MEMBER_PARTICIPATION" && (
+        intention?.kind !== "LOCAL_MEMBER_PARTICIPATION_DECISION" || intention.status !== "RESOLVED" ||
+        result.memberId === null || !relationship.members.some((member) => member.id === result.memberId) ||
+        result.election === null || result.newStatus !== null ||
+        result.newParticipation !== (result.election === "INCLUDE" ? "INCLUDED" : "EXCLUDED_FOR_NEW_FORMULA_RELATION")
+      )) ||
+      (result.transitionKind === "RELATIONSHIP_STATUS" && (
+        intention?.kind !== "LOCAL_RELATIONSHIP_STATUS_DECISION" || intention.status !== "RESOLVED" ||
+        result.memberId !== null || result.election !== null || result.newParticipation !== null || result.newStatus === null
+      ))
     ) throw new Error(`Relationship transition ${result.id} exceeds its bounded owner.`);
   }
   for (const request of state.administrativeProgram.waiverRequests) {
@@ -594,28 +894,82 @@ export const assertProgramImplementationState = (
     }
   }
   for (const commitment of state.recipientAdministration.commitments) {
-    const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === commitment.relationshipId);
     const obligation = state.fiscalExecution.generatedObligations.find((entry) => entry.id === commitment.sourceObligationId);
+    const award = state.fiscalExecution.generatedAwards.find((entry) => entry.id === obligation?.awardId);
+    const relationship = deriveEffectiveIntergovernmentalRelationship(state, commitment.relationshipId, commitment.committedAt);
     const control = state.fiscalExecution.generatedControls.find((entry) => entry.id === commitment.sourceFiscalControlId);
+    const intention = state.ownerResolution.intentions.find((entry) => entry.id === commitment.sourceIntentionId);
     if (
-      relationship?.recipientId !== commitment.recipientId || obligation === undefined || control === undefined ||
+      relationship?.recipientId !== commitment.recipientId || obligation === undefined || award === undefined || control === undefined ||
+      award.relationshipId !== commitment.relationshipId || !isMemberEligibleForNewFormula(relationship, award.formulaScopeMemberId ?? null) ||
+      award.sourceFiscalControlId !== control.id || intention?.kind !== "REQUEST_RECIPIENT_COMMITMENT" ||
+      intention.status !== "RESOLVED" || JSON.stringify(intention.payload.request) !== JSON.stringify({
+        recipientId: commitment.recipientId,
+        relationshipId: commitment.relationshipId,
+        projectRef: commitment.projectRef,
+        sourceObligationId: commitment.sourceObligationId,
+        amountMinorUnits: commitment.amount.minorUnits,
+        planRef: commitment.planRef,
+        projectSelectionRef: commitment.projectSelectionRef,
+        writtenAgreementRef: commitment.writtenAgreementRef,
+        environmentalClearanceRef: commitment.environmentalClearanceRef,
+        selectedRecipientOption: commitment.selectedRecipientOption,
+        complianceRecordRefs: commitment.complianceRecordRefs,
+        geographicPriorityAcknowledgement: commitment.geographicPriorityAcknowledgement,
+        causeKey: intention.payload.request.causeKey,
+      }) ||
+      commitment.id !== `${configuration.recordIds.recipientCommitmentPrefix}${sha256Hex(`${intention.payload.request.causeKey}|${commitment.projectRef}`).slice(0, 20)}` ||
       commitment.amount.minorUnits <= 0 || commitment.amount.minorUnits > obligation.amount.minorUnits ||
-      commitment.writtenAgreementRef.trim().length === 0 || commitment.environmentalClearanceRef.trim().length === 0
+      commitment.amount.ownerId !== commitment.recipientId || commitment.classification !== "SIMULATION_GENERATED" ||
+      commitment.writtenAgreementRef.trim().length === 0 || commitment.environmentalClearanceRef.trim().length === 0 ||
+      !Number.isSafeInteger(commitment.selectedRecipientOption) || commitment.selectedRecipientOption < 1 ||
+      commitment.selectedRecipientOption > (control.ruleProfile?.maximumRecipientOptions ?? 0) ||
+      control.ruleProfile === null || control.ruleProfile.requiredRecordTypes.some(
+        (required) => !commitment.complianceRecordRefs.includes(required),
+      ) || commitment.geographicPriorityAcknowledgement !== control.ruleProfile.geographicPriorityRule
     ) throw new Error(`Recipient commitment ${commitment.id} lacks its lawful relationship and fiscal chain.`);
   }
   for (const activity of state.recipientAdministration.activities) {
-    if (!state.recipientAdministration.commitments.some((entry) => entry.id === activity.commitmentId)) {
+    const commitment = state.recipientAdministration.commitments.find((entry) => entry.id === activity.commitmentId);
+    const intention = state.ownerResolution.intentions.find((entry) => entry.id === activity.sourceIntentionId);
+    if (
+      commitment === undefined || intention?.kind !== "REQUEST_RECIPIENT_ACTIVITY_SETUP" || intention.status !== "RESOLVED" ||
+      intention.payload.commitmentId !== activity.commitmentId || intention.targetOwnerId !== commitment.recipientId ||
+      activity.id !== `${configuration.recordIds.recipientActivityPrefix}${sha256Hex(activity.commitmentId).slice(0, 20)}` ||
+      activity.status !== "SET_UP" || activity.classification !== "SIMULATION_GENERATED"
+    ) {
       throw new Error(`Recipient activity ${activity.id} lacks its commitment.`);
     }
   }
-  for (const draw of state.recipientAdministration.drawRequests) {
+  for (const [drawIndex, draw] of state.recipientAdministration.drawRequests.entries()) {
     const activity = state.recipientAdministration.activities.find((entry) => entry.id === draw.activityId);
     const commitment = state.recipientAdministration.commitments.find((entry) => entry.id === activity?.commitmentId);
-    if (commitment === undefined || draw.amount.minorUnits <= 0 || draw.amount.minorUnits > commitment.amount.minorUnits) {
+    const intention = state.ownerResolution.intentions.find((entry) => entry.id === draw.sourceIntentionId);
+    const prior = state.recipientAdministration.drawRequests.slice(0, drawIndex)
+      .filter((entry) => entry.activityId === draw.activityId)
+      .reduce((total, entry) => total + entry.amount.minorUnits, 0);
+    if (
+      commitment === undefined || intention?.kind !== "REQUEST_RECIPIENT_DRAW" || intention.status !== "RESOLVED" ||
+      intention.payload.activityId !== draw.activityId || intention.payload.amountMinorUnits !== draw.amount.minorUnits ||
+      intention.targetOwnerId !== commitment.recipientId ||
+      draw.id !== `${configuration.recordIds.drawRequestPrefix}${sha256Hex(`${draw.activityId}|${prior}|${draw.amount.minorUnits}`).slice(0, 20)}` ||
+      draw.amount.minorUnits <= 0 || draw.amount.minorUnits > commitment.amount.minorUnits ||
+      draw.classification !== "SIMULATION_GENERATED"
+    ) {
       throw new Error(`Recipient draw ${draw.id} lacks activity or exceeds commitment.`);
     }
     const payment = state.fiscalExecution.generatedPayments.find((entry) => entry.drawRequestId === draw.id);
-    if ((draw.status === "PAID") !== (payment !== undefined) || (payment !== undefined && payment.amount.minorUnits !== draw.amount.minorUnits)) {
+    const paymentIntention = state.ownerResolution.intentions.find((entry) => entry.id === payment?.sourceIntentionId);
+    if (
+      (draw.status === "PAID") !== (payment !== undefined) ||
+      (payment !== undefined && (
+        payment.amount.minorUnits !== draw.amount.minorUnits || payment.amount.ownerId !== configuration.federalFiscalExecutionOwnerId ||
+        payment.classification !== "SIMULATION_GENERATED" || payment.obligationId !== commitment.sourceObligationId ||
+        payment.id !== `${configuration.recordIds.paymentPrefix}${sha256Hex(draw.id).slice(0, 20)}` ||
+        paymentIntention?.kind !== "REQUEST_FEDERAL_PAYMENT" || paymentIntention.status !== "RESOLVED" ||
+        paymentIntention.payload.drawRequestId !== draw.id || paymentIntention.targetOwnerId !== configuration.federalFiscalExecutionOwnerId
+      ))
+    ) {
       throw new Error(`Recipient draw ${draw.id} contradicts its federal payment state.`);
     }
   }
@@ -729,7 +1083,7 @@ export const admitEnactedFiscalAuthority = (
     ),
     enactedAt: at,
     effectiveFrom: at,
-    availableUntil: null,
+    availableUntil: addElapsedCalendarDays(at, configuration.generatedFiscalWindow.availabilityDurationDays),
     status: "AUTHORITY_RECOGNIZED",
     detailCoverage: "BOUNDED_DETAIL_SCAFFOLD_NATIONAL_DETAIL_UNINSTANTIATED",
     classification: "SIMULATION_GENERATED",
@@ -747,7 +1101,10 @@ export const admitEnactedFiscalAuthority = (
 export const requestFiscalControl = (
   state: ProgramImplementationState,
   authorityId: string,
+  intentionId: string,
 ): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "REQUEST_FISCAL_CONTROL");
+  if (intention.payload.budgetAuthorityId !== authorityId) throw new Error("Fiscal-control intention targets another authority.");
   const authority = state.publicFinance.generatedBudgetAuthorities.find((entry) => entry.id === authorityId);
   if (authority === undefined) throw new Error(`Unknown generated budget authority ${authorityId}.`);
   if (authority.status === "APPORTIONED" || authority.status === "APPORTIONMENT_PENDING") return state;
@@ -764,9 +1121,22 @@ export const requestFiscalControl = (
 export const approveFiscalControl = (
   state: ProgramImplementationState,
   authorityId: string,
+  intentionId: string,
   configuration: IntegratedImplementationConfiguration,
   at: string,
 ): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "REQUEST_FISCAL_CONTROL");
+  if (intention.payload.budgetAuthorityId !== authorityId || intention.targetOwnerId !== configuration.fiscalControlOwnerId) {
+    throw new Error("Fiscal-control owner cannot resolve another intention or target.");
+  }
+  if (
+    state.fiscalExecution.generatedProgramAllocations.length !== state.fiscalExecution.generatedAwards.length ||
+    state.fiscalExecution.generatedAwards.length !== state.fiscalExecution.generatedObligations.length ||
+    state.fiscalExecution.generatedAwards.some((award) =>
+      !state.fiscalExecution.generatedObligations.some((obligation) => obligation.awardId === award.id)) ||
+    state.fiscalExecution.generatedPayments.some((payment) =>
+      !state.recipientAdministration.drawRequests.some((draw) => draw.id === payment.drawRequestId))
+  ) throw new Error("Generated fiscal execution records lack their one-event causal counterparts.");
   const authority = state.publicFinance.generatedBudgetAuthorities.find((entry) => entry.id === authorityId);
   if (authority === undefined || authority.operativeRuleProfile === undefined) {
     throw new Error(`Unknown generated budget authority ${authorityId}.`);
@@ -780,10 +1150,11 @@ export const approveFiscalControl = (
     controllerInstitutionId: configuration.fiscalControllerInstitutionId,
     programId: configuration.programId,
     approvalAt: at,
-    amount: { ...authority.amount, ownerId: configuration.fiscalControllerInstitutionId },
+    amount: { ...authority.amount, ownerId: configuration.fiscalControlOwnerId },
     scope: "BOUNDED_DETAIL_SCAFFOLD_UNINSTANTIATED_NATIONAL_EXECUTION_REMAINS_OUTSIDE_DETAIL",
     ruleProfile: copy(authority.operativeRuleProfile),
     classification: "SIMULATION_GENERATED",
+    sourceIntentionId: intention.id,
   };
   return {
     ...state,
@@ -808,6 +1179,7 @@ export const approveFiscalControl = (
 export interface BoundedRecipientAwardRequest {
   readonly sourceFiscalControlId: string;
   readonly relationshipId: string;
+  readonly formulaScopeMemberId: string | null;
   readonly recipientId: string;
   readonly amountMinorUnits: number;
   readonly agreementRef: string;
@@ -818,16 +1190,24 @@ export interface BoundedRecipientAwardRequest {
 export const establishBoundedRecipientAward = (
   state: ProgramImplementationState,
   request: BoundedRecipientAwardRequest,
+  intentionId: string,
   configuration: IntegratedImplementationConfiguration,
   at: string,
 ): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "REQUEST_BOUNDED_AWARD");
+  if (JSON.stringify(intention.payload.request) !== JSON.stringify(request) || intention.targetOwnerId !== configuration.administeringInstitutionId) {
+    throw new Error("Award owner cannot resolve another intention or target.");
+  }
   const control = state.fiscalExecution.generatedControls.find((entry) => entry.id === request.sourceFiscalControlId);
-  const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === request.relationshipId);
+  const relationship = deriveEffectiveIntergovernmentalRelationship(state, request.relationshipId, at);
+  const authority = state.publicFinance.generatedBudgetAuthorities.find((entry) => entry.id === control?.sourceBudgetAuthorityId);
   const priorDetailedAmount = state.fiscalExecution.generatedAwards
     .filter((entry) => entry.sourceFiscalControlId === request.sourceFiscalControlId)
     .reduce((total, entry) => total + entry.amount.minorUnits, 0);
   if (
-    control === undefined || relationship?.recipientId !== request.recipientId ||
+    control === undefined || authority === undefined || relationship?.recipientId !== request.recipientId ||
+    !isMemberEligibleForNewFormula(relationship, request.formulaScopeMemberId) ||
+    authority.availableUntil === null || Date.parse(at) > Date.parse(authority.availableUntil) ||
     !Number.isSafeInteger(request.amountMinorUnits) || request.amountMinorUnits <= 0 ||
     priorDetailedAmount + request.amountMinorUnits >= control.amount.minorUnits ||
     request.agreementRef.trim().length === 0
@@ -841,6 +1221,7 @@ export const establishBoundedRecipientAward = (
     recipientId: request.recipientId,
     sourceAwardEventId: eventId,
     sourceFiscalControlId: control.id,
+    sourceIntentionId: intention.id,
     amount: { ...amount, purpose: "Bounded program allocation; national detail remains uninstantiated", ownerId: configuration.programId },
     classification: "SIMULATION_GENERATED",
   };
@@ -849,6 +1230,10 @@ export const establishBoundedRecipientAward = (
     fain: `SIMULATION-GENERATED-${sha256Hex(eventId).slice(0, 12)}`,
     sourceAwardEventId: eventId,
     sourceFiscalControlId: control.id,
+    sourceIntentionId: intention.id,
+    relationshipId: relationship.id,
+    formulaScopeMemberId: request.formulaScopeMemberId,
+    agreementRef: request.agreementRef,
     programId: configuration.programId,
     recipientId: request.recipientId,
     recipientName: request.recipientId,
@@ -860,9 +1245,10 @@ export const establishBoundedRecipientAward = (
   const obligation: ObligationRecord = {
     id: `${configuration.recordIds.obligationPrefix}${sha256Hex(eventId).slice(0, 20)}`,
     awardId: award.id,
-    amount: { ...amount, purpose: "Federal obligation under generated award", ownerId: configuration.fiscalControllerInstitutionId },
+    amount: { ...amount, purpose: "Federal obligation under generated award", ownerId: configuration.federalFiscalExecutionOwnerId },
     obligatedAt: at,
     classification: "SIMULATION_GENERATED",
+    sourceIntentionId: intention.id,
   };
   return {
     ...state,
@@ -912,15 +1298,22 @@ const materialInput = (
 export const establishRecipientCommitment = (
   state: ProgramImplementationState,
   request: RecipientCommitmentRequest,
+  intentionId: string,
   configuration: IntegratedImplementationConfiguration,
   at: string,
 ): ProgramImplementationState => {
-  const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === request.relationshipId);
+  const intention = requirePendingIntention(state, intentionId, "REQUEST_RECIPIENT_COMMITMENT");
+  if (JSON.stringify(intention.payload.request) !== JSON.stringify(request) || intention.targetOwnerId !== request.recipientId) {
+    throw new Error("Recipient owner cannot resolve another commitment intention or target.");
+  }
+  const relationship = deriveEffectiveIntergovernmentalRelationship(state, request.relationshipId, at);
   const obligation = state.fiscalExecution.generatedObligations.find((entry) => entry.id === request.sourceObligationId);
   const award = state.fiscalExecution.generatedAwards.find((entry) => entry.id === obligation?.awardId);
   const control = state.fiscalExecution.generatedControls.find((entry) => entry.id === award?.sourceFiscalControlId);
   if (
-    relationship === undefined || relationship.recipientId !== request.recipientId ||
+    relationship === null || relationship.recipientId !== request.recipientId ||
+    award?.relationshipId !== request.relationshipId ||
+    !isMemberEligibleForNewFormula(relationship, award?.formulaScopeMemberId ?? null) ||
     obligation === undefined || award === undefined || award.recipientId !== request.recipientId ||
     control?.ruleProfile === null || control === undefined
   ) {
@@ -961,6 +1354,7 @@ export const establishRecipientCommitment = (
     geographicPriorityAcknowledgement: request.geographicPriorityAcknowledgement,
     committedAt: at,
     classification: "SIMULATION_GENERATED",
+    sourceIntentionId: intention.id,
   };
   const inputs = [
     materialInput(`${configuration.recordIds.materialInputPrefix}${id}.fiscal`, "VALID_FISCAL_RESOURCE_INPUT", configuration.fiscalControllerInstitutionId, control.id, request.projectRef, at),
@@ -981,11 +1375,16 @@ export const establishRecipientCommitment = (
 export const setupRecipientActivity = (
   state: ProgramImplementationState,
   commitmentId: string,
+  intentionId: string,
   configuration: IntegratedImplementationConfiguration,
   at: string,
 ): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "REQUEST_RECIPIENT_ACTIVITY_SETUP");
+  if (intention.payload.commitmentId !== commitmentId) throw new Error("Activity owner cannot resolve another intention.");
   const commitment = state.recipientAdministration.commitments.find((entry) => entry.id === commitmentId);
-  if (commitment === undefined) throw new Error(`Recipient activity requires commitment ${commitmentId}.`);
+  if (commitment === undefined || intention.targetOwnerId !== commitment.recipientId) {
+    throw new Error(`Recipient activity requires owner commitment ${commitmentId}.`);
+  }
   const id = `${configuration.recordIds.recipientActivityPrefix}${sha256Hex(commitmentId).slice(0, 20)}`;
   if (state.recipientAdministration.activities.some((entry) => entry.id === id)) return state;
   return {
@@ -998,6 +1397,7 @@ export const setupRecipientActivity = (
         setupAt: at,
         status: "SET_UP",
         classification: "SIMULATION_GENERATED",
+        sourceIntentionId: intention.id,
       }],
     },
     materialInputs: [...state.materialInputs, materialInput(
@@ -1015,12 +1415,19 @@ export const submitRecipientDrawRequest = (
   state: ProgramImplementationState,
   activityId: string,
   amountMinorUnits: number,
+  intentionId: string,
   configuration: IntegratedImplementationConfiguration,
   at: string,
 ): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "REQUEST_RECIPIENT_DRAW");
+  if (intention.payload.activityId !== activityId || intention.payload.amountMinorUnits !== amountMinorUnits) {
+    throw new Error("Draw owner cannot resolve another intention.");
+  }
   const activity = state.recipientAdministration.activities.find((entry) => entry.id === activityId);
   const commitment = activity === undefined ? undefined : state.recipientAdministration.commitments.find((entry) => entry.id === activity.commitmentId);
-  if (activity === undefined || commitment === undefined) throw new Error("Draw request requires a set-up recipient activity.");
+  if (activity === undefined || commitment === undefined || intention.targetOwnerId !== commitment.recipientId) {
+    throw new Error("Draw request requires its recipient-owned set-up activity.");
+  }
   const prior = state.recipientAdministration.drawRequests
     .filter((entry) => entry.activityId === activityId)
     .reduce((total, entry) => total + entry.amount.minorUnits, 0);
@@ -1039,6 +1446,7 @@ export const submitRecipientDrawRequest = (
         requestedAt: at,
         status: "ELIGIBLE_PENDING_PAYMENT",
         classification: "SIMULATION_GENERATED",
+        sourceIntentionId: intention.id,
       }],
     },
   };
@@ -1047,9 +1455,14 @@ export const submitRecipientDrawRequest = (
 export const executeEligiblePayment = (
   state: ProgramImplementationState,
   drawRequestId: string,
+  intentionId: string,
   configuration: IntegratedImplementationConfiguration,
   at: string,
 ): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "REQUEST_FEDERAL_PAYMENT");
+  if (intention.payload.drawRequestId !== drawRequestId || intention.targetOwnerId !== configuration.federalFiscalExecutionOwnerId) {
+    throw new Error("Federal fiscal owner cannot resolve another payment intention or target.");
+  }
   const draw = state.recipientAdministration.drawRequests.find((entry) => entry.id === drawRequestId);
   if (draw === undefined) throw new Error(`Unknown draw request ${drawRequestId}.`);
   if (draw.status === "PAID") return state;
@@ -1064,12 +1477,13 @@ export const executeEligiblePayment = (
     obligationId: state.fiscalExecution.generatedObligations.find(
       (entry) => entry.id === commitment.sourceObligationId,
     )?.id ?? (() => { throw new Error("Payment lacks its generated obligation."); })(),
-    amount: { ...draw.amount, purpose: "Federal payment/outlay against eligible recipient draw", ownerId: configuration.fiscalControllerInstitutionId },
+    amount: { ...draw.amount, purpose: "Federal payment/outlay against eligible recipient draw", ownerId: configuration.federalFiscalExecutionOwnerId },
     observedAsOf: at,
     projectRef: commitment.projectRef,
     reconciliation: "GENERATED_TRACEABLE_TO_DRAW_REQUEST",
     classification: "SIMULATION_GENERATED",
     drawRequestId: draw.id,
+    sourceIntentionId: intention.id,
   };
   return {
     ...state,
@@ -1238,20 +1652,30 @@ export const advanceAdministrativeDeadlines = (
     .sort((left, right) => Date.parse(left.at) - Date.parse(right.at) || left.phase - right.phase || left.order - right.order || left.stableKey.localeCompare(right.stableKey));
   let current = state;
   for (const boundary of due) {
-    current = {
-      ...current,
-      administrativeProgram: {
-        ...current.administrativeProgram,
-        waiverRequests: current.administrativeProgram.waiverRequests.map((request) =>
-          request.id === boundary.ownerId && request.reviewState === "RETURNED_FOR_SUPPLEMENTAL_RECORD"
-            ? { ...request, reviewState: "REVIEW_READY" }
-            : request),
-        dynamicBoundaries: current.administrativeProgram.dynamicBoundaries.map((entry) =>
-          entry.id === boundary.id ? { ...entry, processed: true } : entry),
-      },
-    };
+    current = applyAdministrativeBoundary(current, boundary.id);
   }
   return current;
+};
+
+export const applyAdministrativeBoundary = (
+  state: ProgramImplementationState,
+  boundaryId: string,
+): ProgramImplementationState => {
+  const boundary = state.administrativeProgram.dynamicBoundaries.find((entry) => entry.id === boundaryId);
+  if (boundary === undefined) throw new Error(`Unknown dynamic administrative boundary ${boundaryId}.`);
+  if (boundary.processed) return state;
+  return {
+    ...state,
+    administrativeProgram: {
+      ...state.administrativeProgram,
+      waiverRequests: state.administrativeProgram.waiverRequests.map((request) =>
+        request.id === boundary.ownerId && request.reviewState === "RETURNED_FOR_SUPPLEMENTAL_RECORD"
+          ? { ...request, reviewState: "REVIEW_READY" }
+          : request),
+      dynamicBoundaries: state.administrativeProgram.dynamicBoundaries.map((entry) =>
+        entry.id === boundary.id ? { ...entry, processed: true } : entry),
+    },
+  };
 };
 
 export const supplySupplementalWaiverRecords = (
@@ -1282,9 +1706,15 @@ export const electRelationshipMember = (
   memberId: string,
   election: "INCLUDE" | "EXCLUDE",
   causeKey: string,
+  intentionId: string,
   configuration: IntegratedImplementationConfiguration,
   at: string,
 ): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "LOCAL_MEMBER_PARTICIPATION_DECISION");
+  if (
+    JSON.stringify(intention.payload) !== JSON.stringify({ relationshipId, memberId, election, causeKey }) ||
+    intention.targetOwnerId !== configuration.intergovernmentalRelationshipOwnerId
+  ) throw new Error("Relationship owner cannot resolve another member decision or target.");
   const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === relationshipId);
   if (relationship === undefined || !relationship.members.some((member) => member.id === memberId)) {
     throw new Error("Relationship member election is outside the instantiated relationship.");
@@ -1294,20 +1724,315 @@ export const electRelationshipMember = (
   const transition: RelationshipTransitionRecord = {
     id,
     relationshipId,
+    transitionKind: "MEMBER_PARTICIPATION",
     memberId,
     election,
     newParticipation: election === "INCLUDE" ? "INCLUDED" : "EXCLUDED_FOR_NEW_FORMULA_RELATION",
+    newStatus: null,
     formulaScopeChanged: true,
     statewideRefusal: false,
     survivingDuties: [...relationship.survivingDuties],
     occurredAt: at,
     classification: "SIMULATION_GENERATED",
+    sourceIntentionId: intention.id,
   };
   return {
     ...state,
     intergovernmental: {
       ...state.intergovernmental,
       transitions: [...state.intergovernmental.transitions, transition],
+    },
+  };
+};
+
+export const transitionRelationshipStatus = (
+  state: ProgramImplementationState,
+  relationshipId: string,
+  status: RelationshipStatus,
+  causeKey: string,
+  intentionId: string,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => {
+  const intention = requirePendingIntention(state, intentionId, "LOCAL_RELATIONSHIP_STATUS_DECISION");
+  if (
+    JSON.stringify(intention.payload) !== JSON.stringify({ relationshipId, status, causeKey }) ||
+    intention.targetOwnerId !== configuration.intergovernmentalRelationshipOwnerId
+  ) throw new Error("Relationship owner cannot resolve another status decision or target.");
+  const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === relationshipId);
+  if (relationship === undefined) throw new Error("Relationship status decision is outside the bounded owner process.");
+  const id = `${configuration.recordIds.relationshipTransitionPrefix}${sha256Hex(`${relationshipId}|STATUS|${status}|${causeKey}`).slice(0, 20)}`;
+  if (state.intergovernmental.transitions.some((entry) => entry.id === id)) return state;
+  const transition: RelationshipTransitionRecord = {
+    id,
+    relationshipId,
+    transitionKind: "RELATIONSHIP_STATUS",
+    memberId: null,
+    election: null,
+    newParticipation: null,
+    newStatus: status,
+    formulaScopeChanged: true,
+    statewideRefusal: false,
+    survivingDuties: [...relationship.survivingDuties],
+    occurredAt: at,
+    classification: "SIMULATION_GENERATED",
+    sourceIntentionId: intention.id,
+  };
+  return {
+    ...state,
+    intergovernmental: {
+      ...state.intergovernmental,
+      transitions: [...state.intergovernmental.transitions, transition],
+    },
+  };
+};
+
+export interface OwnerIntentionOrigin {
+  readonly administrationId: string;
+  readonly actorId: string;
+}
+
+const submittedIntentionId = (
+  state: ProgramImplementationState,
+  intention: ImplementationOwnerIntention,
+  origin: OwnerIntentionOrigin,
+  targetOwnerId: string,
+  at: string,
+  configuration: IntegratedImplementationConfiguration,
+): string => intentionIdentity(intention, origin.administrationId, origin.actorId, targetOwnerId, at, configuration);
+
+export const submitFiscalControlIntention = (
+  state: ProgramImplementationState,
+  budgetAuthorityId: string,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => {
+  const intention = { kind: "REQUEST_FISCAL_CONTROL", payload: { budgetAuthorityId } } as const;
+  const submitted = submitImplementationOwnerIntention(
+    state, intention, origin, configuration.fiscalControlOwnerId, budgetAuthorityId, configuration, at,
+  );
+  return requestFiscalControl(
+    submitted,
+    budgetAuthorityId,
+    submittedIntentionId(submitted, intention, origin, configuration.fiscalControlOwnerId, at, configuration),
+  );
+};
+
+export const submitBoundedAwardIntention = (
+  state: ProgramImplementationState,
+  request: BoundedRecipientAwardRequest,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => submitImplementationOwnerIntention(
+  state,
+  { kind: "REQUEST_BOUNDED_AWARD", payload: { request: copy(request) } },
+  origin,
+  configuration.administeringInstitutionId,
+  request.relationshipId,
+  configuration,
+  at,
+);
+
+export const submitRecipientCommitmentIntention = (
+  state: ProgramImplementationState,
+  request: RecipientCommitmentRequest,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => submitImplementationOwnerIntention(
+  state,
+  { kind: "REQUEST_RECIPIENT_COMMITMENT", payload: { request: copy(request) } },
+  origin,
+  request.recipientId,
+  request.projectRef,
+  configuration,
+  at,
+);
+
+export const submitRecipientActivityIntention = (
+  state: ProgramImplementationState,
+  commitmentId: string,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => {
+  const commitment = state.recipientAdministration.commitments.find((entry) => entry.id === commitmentId);
+  if (commitment === undefined) throw new Error(`Activity intention requires commitment ${commitmentId}.`);
+  return submitImplementationOwnerIntention(
+    state,
+    { kind: "REQUEST_RECIPIENT_ACTIVITY_SETUP", payload: { commitmentId } },
+    origin,
+    commitment.recipientId,
+    commitmentId,
+    configuration,
+    at,
+  );
+};
+
+export const submitRecipientDrawIntention = (
+  state: ProgramImplementationState,
+  activityId: string,
+  amountMinorUnits: number,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => {
+  const activity = state.recipientAdministration.activities.find((entry) => entry.id === activityId);
+  const commitment = state.recipientAdministration.commitments.find((entry) => entry.id === activity?.commitmentId);
+  if (commitment === undefined) throw new Error("Draw intention requires a recipient-owned activity.");
+  return submitImplementationOwnerIntention(
+    state,
+    { kind: "REQUEST_RECIPIENT_DRAW", payload: { activityId, amountMinorUnits } },
+    origin,
+    commitment.recipientId,
+    activityId,
+    configuration,
+    at,
+  );
+};
+
+export const submitFederalPaymentIntention = (
+  state: ProgramImplementationState,
+  drawRequestId: string,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => submitImplementationOwnerIntention(
+  state,
+  { kind: "REQUEST_FEDERAL_PAYMENT", payload: { drawRequestId } },
+  origin,
+  configuration.federalFiscalExecutionOwnerId,
+  drawRequestId,
+  configuration,
+  at,
+);
+
+export const submitLocalMemberDecision = (
+  state: ProgramImplementationState,
+  relationshipId: string,
+  memberId: string,
+  election: "INCLUDE" | "EXCLUDE",
+  causeKey: string,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => submitImplementationOwnerIntention(
+  state,
+  { kind: "LOCAL_MEMBER_PARTICIPATION_DECISION", payload: { relationshipId, memberId, election, causeKey } },
+  origin,
+  configuration.intergovernmentalRelationshipOwnerId,
+  `${relationshipId}|${memberId}`,
+  configuration,
+  at,
+);
+
+export const submitLocalRelationshipStatusDecision = (
+  state: ProgramImplementationState,
+  relationshipId: string,
+  status: RelationshipStatus,
+  causeKey: string,
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => submitImplementationOwnerIntention(
+  state,
+  { kind: "LOCAL_RELATIONSHIP_STATUS_DECISION", payload: { relationshipId, status, causeKey } },
+  origin,
+  configuration.intergovernmentalRelationshipOwnerId,
+  relationshipId,
+  configuration,
+  at,
+);
+
+const generatedResultIds = (state: ProgramImplementationState): readonly string[] => [
+  ...state.fiscalExecution.generatedControls.map((entry) => entry.id),
+  ...state.fiscalExecution.generatedProgramAllocations.map((entry) => entry.id),
+  ...state.fiscalExecution.generatedAwards.map((entry) => entry.id),
+  ...state.fiscalExecution.generatedObligations.map((entry) => entry.id),
+  ...state.fiscalExecution.generatedPayments.map((entry) => entry.id),
+  ...state.recipientAdministration.commitments.map((entry) => entry.id),
+  ...state.recipientAdministration.activities.map((entry) => entry.id),
+  ...state.recipientAdministration.drawRequests.map((entry) => entry.id),
+  ...state.intergovernmental.transitions.map((entry) => entry.id),
+];
+
+export const resolveImplementationOwnerIntention = (
+  state: ProgramImplementationState,
+  intentionId: string,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => {
+  const intention = state.ownerResolution.intentions.find((entry) => entry.id === intentionId);
+  if (intention === undefined) throw new Error(`Unknown implementation intention ${intentionId}.`);
+  if (intention.status !== "PENDING") return state;
+  const before = new Set(generatedResultIds(state));
+  let resolved: ProgramImplementationState;
+  try {
+    switch (intention.kind) {
+      case "REQUEST_FISCAL_CONTROL":
+        resolved = approveFiscalControl(state, intention.payload.budgetAuthorityId, intention.id, configuration, at);
+        break;
+      case "REQUEST_BOUNDED_AWARD":
+        resolved = establishBoundedRecipientAward(state, intention.payload.request, intention.id, configuration, at);
+        break;
+      case "REQUEST_RECIPIENT_COMMITMENT":
+        resolved = establishRecipientCommitment(state, intention.payload.request, intention.id, configuration, at);
+        break;
+      case "REQUEST_RECIPIENT_ACTIVITY_SETUP":
+        resolved = setupRecipientActivity(state, intention.payload.commitmentId, intention.id, configuration, at);
+        break;
+      case "REQUEST_RECIPIENT_DRAW":
+        resolved = submitRecipientDrawRequest(
+          state, intention.payload.activityId, intention.payload.amountMinorUnits, intention.id, configuration, at,
+        );
+        break;
+      case "REQUEST_FEDERAL_PAYMENT":
+        resolved = executeEligiblePayment(state, intention.payload.drawRequestId, intention.id, configuration, at);
+        break;
+      case "LOCAL_MEMBER_PARTICIPATION_DECISION":
+        resolved = electRelationshipMember(
+          state,
+          intention.payload.relationshipId,
+          intention.payload.memberId,
+          intention.payload.election,
+          intention.payload.causeKey,
+          intention.id,
+          configuration,
+          at,
+        );
+        break;
+      case "LOCAL_RELATIONSHIP_STATUS_DECISION":
+        resolved = transitionRelationshipStatus(
+          state,
+          intention.payload.relationshipId,
+          intention.payload.status,
+          intention.payload.causeKey,
+          intention.id,
+          configuration,
+          at,
+        );
+        break;
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Owner resolver refused the intention.";
+    return {
+      ...state,
+      ownerResolution: {
+        intentions: state.ownerResolution.intentions.map((entry) => entry.id === intention.id
+          ? { ...entry, status: "REFUSED", resolvedAt: at, resolutionReason: reason }
+          : entry),
+      },
+    };
+  }
+  const resultRecordIds = generatedResultIds(resolved).filter((id) => !before.has(id));
+  return {
+    ...resolved,
+    ownerResolution: {
+      intentions: resolved.ownerResolution.intentions.map((entry) => entry.id === intention.id
+        ? { ...entry, status: "RESOLVED", resolvedAt: at, resultRecordIds, resolutionReason: null }
+        : entry),
     },
   };
 };

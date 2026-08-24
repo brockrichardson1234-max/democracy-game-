@@ -15,15 +15,15 @@ const sha256 = (value: string): string => createHash("sha256").update(value).dig
 describe("I6 configuration and static authority boundary", () => {
   it("pins artifacts and every behavior-driving implementation parameter", () => {
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.6.0-i6",
-      scenarioVersion: "0.6.0-i6",
-      configurationHash: "f966d5e31ec9523663ccea288621fc67c1f5d048fd9779081ad26fd3e5a04deb",
+      configurationVersion: "0.6.1-i6-repair",
+      scenarioVersion: "0.6.1-i6-repair",
+      configurationHash: "a7c640471f69a6d4ef2535de257e8406e0c493c334b1d43e718d82af9cf31815",
     });
     expect(sha256(canonicalConfigurationContent(US_V0_STRUCTURAL_CONFIGURATION))).toBe(
       US_V0_STRUCTURAL_CONFIGURATION.identity.configurationHash,
     );
     expect(US_V0_I6_IMPLEMENTATION_CONFIGURATION.parameterHash).toBe(
-      "3b4e815410f41390add14dd00fc43344129303254eeea0f49d93986e2c391f14",
+      "b12da415061a25e2fd57bd2f1e153d6d7eaf5dd597c88993d70e822ebe50d35b",
     );
     expect(US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.artifactBindings.at(-1)).toMatchObject({
       id: "us.i6.finance-home-initialization-v1",

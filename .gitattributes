@@ -1,3 +1,6 @@
 # Authenticated acquisition inputs must retain exact source bytes and are not text-normalized.
 data/us-v0/i4-sources/* binary
 data/us-v0/i6-sources/* binary
+src/content/us-v0/artifacts/*.json text eol=lf
+src/content/us-v0/i4-artifacts/*.json text eol=lf
+src/content/us-v0/i6-artifacts/*.json text eol=lf

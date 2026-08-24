@@ -481,6 +481,9 @@ const validateIntegratedRuntimeConfiguration = (
       !Number.isSafeInteger(implementation.currencyScale) || implementation.currencyScale < 0 ||
       !institutionIds.has(implementation.administeringInstitutionId) ||
       !institutionIds.has(implementation.fiscalControllerInstitutionId) ||
+      implementation.fiscalControlOwnerId === implementation.federalFiscalExecutionOwnerId ||
+      !Number.isSafeInteger(implementation.generatedFiscalWindow.availabilityDurationDays) ||
+      implementation.generatedFiscalWindow.availabilityDurationDays <= 0 ||
       !institutionIds.has(implementation.futureWaiver.responsibleInstitutionId) ||
       !Number.isSafeInteger(implementation.futureWaiver.returnReviewDelayDays) ||
       implementation.futureWaiver.returnReviewDelayDays <= 0 ||
@@ -497,6 +500,15 @@ const validateIntegratedRuntimeConfiguration = (
     for (const value of [
       implementation.fiscalCohortId,
       implementation.publicFinanceOwnerId,
+      implementation.fiscalControlOwnerId,
+      implementation.federalFiscalExecutionOwnerId,
+      implementation.intergovernmentalRelationshipOwnerId,
+      implementation.generatedFiscalWindow.semanticVersion,
+      implementation.generatedFiscalWindow.classification,
+      implementation.ownerResolution.semanticVersion,
+      implementation.ownerResolution.effectiveRelationshipSemanticVersion,
+      implementation.ownerResolution.compositeScheduleSemanticVersion,
+      implementation.ownerResolution.intentionIdPrefix,
       implementation.futureWaiver.semanticVersion,
       ...Object.values(implementation.legalTermIds),
       ...Object.values(implementation.recordIds),

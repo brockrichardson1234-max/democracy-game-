@@ -480,8 +480,22 @@ export interface IntegratedImplementationConfiguration {
   readonly currencyScale: number;
   readonly publicFinanceOwnerId: string;
   readonly fiscalControllerInstitutionId: string;
+  readonly fiscalControlOwnerId: string;
+  readonly federalFiscalExecutionOwnerId: string;
+  readonly intergovernmentalRelationshipOwnerId: string;
   readonly programId: string;
   readonly administeringInstitutionId: string;
+  readonly generatedFiscalWindow: {
+    readonly semanticVersion: string;
+    readonly availabilityDurationDays: number;
+    readonly classification: ScaffoldClassification;
+  };
+  readonly ownerResolution: {
+    readonly semanticVersion: string;
+    readonly effectiveRelationshipSemanticVersion: string;
+    readonly compositeScheduleSemanticVersion: string;
+    readonly intentionIdPrefix: string;
+  };
   readonly legalTermIds: {
     readonly recipientFlexibility: string;
     readonly complianceBurden: string;

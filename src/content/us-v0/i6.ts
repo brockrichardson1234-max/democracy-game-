@@ -7,8 +7,12 @@ import i6Manifest from "./i6-artifacts/i6-initialization-manifest.json";
 import { US_V0_I4_RUNTIME_ARTIFACTS } from "./i4";
 import { US_HUD_INSTITUTION_ID } from "./topology";
 
-export const US_V0_I6_SEMANTICS_VERSION = "us-v0-public-finance-home-federalism-1";
+export const US_V0_I6_SEMANTICS_VERSION = "us-v0-public-finance-home-federalism-2";
 export const US_V0_I6_FUTURE_WAIVER_VERSION = "us-v0-future-baba-decision-1";
+export const US_V0_I6_OWNER_RESOLUTION_VERSION = "us-v0-i6-owner-resolution-1";
+export const US_V0_I6_EFFECTIVE_RELATIONSHIP_VERSION = "us-v0-effective-intergovernmental-relationship-1";
+export const US_V0_I6_COMPOSITE_SCHEDULE_VERSION = "us-v0-static-dynamic-composite-schedule-1";
+export const US_V0_I6_GENERATED_FISCAL_WINDOW_VERSION = "us-v0-generated-fiscal-window-1";
 
 const implementationWithoutHash = {
   schemaVersion: 1,
@@ -20,8 +24,22 @@ const implementationWithoutHash = {
   currencyScale: 2,
   publicFinanceOwnerId: "us.public-finance",
   fiscalControllerInstitutionId: "us.institution.omb",
+  fiscalControlOwnerId: "us.fiscal-execution.omb",
+  federalFiscalExecutionOwnerId: "us.fiscal-execution.hud",
+  intergovernmentalRelationshipOwnerId: "us.intergovernmental-relationship.home",
   programId: "us.program.hud.home",
   administeringInstitutionId: US_HUD_INSTITUTION_ID,
+  generatedFiscalWindow: {
+    semanticVersion: US_V0_I6_GENERATED_FISCAL_WINDOW_VERSION,
+    availabilityDurationDays: 1_095,
+    classification: "APPROXIMATED_NON_HISTORICAL_SIMULATION_SCAFFOLD" as const,
+  },
+  ownerResolution: {
+    semanticVersion: US_V0_I6_OWNER_RESOLUTION_VERSION,
+    effectiveRelationshipSemanticVersion: US_V0_I6_EFFECTIVE_RELATIONSHIP_VERSION,
+    compositeScheduleSemanticVersion: US_V0_I6_COMPOSITE_SCHEDULE_VERSION,
+    intentionIdPrefix: "us.implementation-intention.generated.",
+  },
   legalTermIds: {
     recipientFlexibility: "recipient-flexibility-class",
     complianceBurden: "compliance-burden-class",
