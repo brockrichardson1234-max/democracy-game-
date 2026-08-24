@@ -690,6 +690,26 @@ export interface IntegratedLegalContestConfiguration {
   };
 }
 
+export interface IntegratedCompositionConfiguration {
+  readonly schemaVersion: number;
+  readonly semanticsVersion: string;
+  readonly parameterHash: string;
+  readonly classification: ScaffoldClassification;
+  readonly publicProjectionVersion: string;
+  readonly ownerReferences: {
+    readonly implementationOwnerId: string;
+    readonly materialOwnerId: string;
+    readonly informationOwnerId: string;
+    readonly legalContestOwnerId: string;
+    readonly institutionalOwnerId: string;
+  };
+  readonly forbiddenShortcuts: readonly string[];
+  readonly recordIds: {
+    readonly programConstraintPrefix: string;
+    readonly relationshipExecutionPrefix: string;
+  };
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -717,6 +737,7 @@ export interface IntegratedRuntimeConfiguration {
   readonly housing?: IntegratedHousingConfiguration;
   readonly information?: IntegratedInformationConfiguration;
   readonly legalContest?: IntegratedLegalContestConfiguration;
+  readonly composition?: IntegratedCompositionConfiguration;
 }
 
 interface ScheduledTransitionBase {

@@ -62,7 +62,7 @@ describe("I2 U.S. government topology retained by I3", () => {
     expect(bootstrap.configuration.loaded).toBe(true);
     expect(bootstrap.configuration.identity).toMatchObject({
       configurationId: "us-v0",
-      configurationVersion: "0.9.0-i9",
+      configurationVersion: "0.10.0-i10",
       scenarioId: "us-v0-2026-08-22",
     });
     expect(usStructure.jurisdictions).toHaveLength(52);

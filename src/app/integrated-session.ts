@@ -46,6 +46,8 @@ import {
   submitRecipientDrawRequest,
   supplySupplementalWaiverRecords,
   issueFinalRelationshipQualificationDetermination,
+  admitExternalProgramConstraint,
+  executeRelationshipQualificationDisposition,
   type FutureWaiverRequestInput,
   type BoundedRecipientAwardRequest,
   type RecipientCommitmentRequest,
@@ -84,7 +86,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 7 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 8 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -165,8 +167,56 @@ export interface IntegratedPartialRuntimeSession {
     action: AdministrativeOrderResponseRecord["action"],
   ) => IntegratedPartialRuntimeState;
   readonly requestJudicialStay: () => IntegratedPartialRuntimeState;
+  readonly executeBoundedRelationshipDisposition: () => IntegratedPartialRuntimeState;
   readonly getLegalContestAuditState: () => NonNullable<IntegratedPartialRuntimeState["legalContest"]>;
+  readonly getAdministrationCausalProjection: () => IntegratedAdministrationCausalProjection;
   readonly save: () => string;
+}
+
+export interface IntegratedAdministrationCausalProjection {
+  readonly projectionVersion: string;
+  readonly currentInstant: string;
+  readonly currentTermLabel: string;
+  readonly currentAdministrationId: string;
+  readonly controlBindingActive: boolean;
+  readonly legislative: {
+    readonly currentProposalId: string;
+    readonly stage: string;
+    readonly enactedLegalSourceIds: readonly string[];
+  };
+  readonly finance: {
+    readonly budgetAuthorities: readonly { readonly id: string; readonly status: string; readonly minorUnits: number }[];
+    readonly fiscalControlIds: readonly string[];
+    readonly awardIds: readonly string[];
+    readonly obligationIds: readonly string[];
+    readonly paymentIds: readonly string[];
+  };
+  readonly program: {
+    readonly relationshipStatuses: readonly { readonly id: string; readonly status: string }[];
+    readonly recipientCommitmentIds: readonly string[];
+    readonly publicDeterminationIds: readonly string[];
+  };
+  readonly material: {
+    readonly projects: readonly { readonly id: string; readonly stage: string; readonly usableUnitContribution: number }[];
+  };
+  readonly information: {
+    readonly releasedArtifactIds: readonly string[];
+    readonly deliveryCount: number;
+    readonly exposureCount: number;
+  };
+  readonly selection: {
+    readonly stage: InstitutionalRuntimeState["selection"]["stage"];
+    readonly publicResultIds: readonly string[];
+    readonly declarationId: string | null;
+  };
+  readonly legalContest: {
+    readonly claimIds: readonly string[];
+    readonly contestStages: readonly string[];
+    readonly rulingIds: readonly string[];
+    readonly operativeOrderIds: readonly string[];
+    readonly noticeIds: readonly string[];
+    readonly administrativeResponseIds: readonly string[];
+  };
 }
 
 export interface IntegratedImplementationPublicStatus {
@@ -706,6 +756,35 @@ const parse = (
     }
   }
   requireExactArtifactState(legalContest, expectedLegalContest, "deterministic legal-contest state");
+  const compositionConfiguration = configuration.integratedRuntime?.composition;
+  if (compositionConfiguration === undefined) {
+    throw new Error("Integrated partial save lacks configured composition authority.");
+  }
+  const expectedConstraints = legalContest.notices.map((notice) => {
+    const order = legalContest.operativeOrders.find((entry) => entry.id === notice.orderId)!;
+    return {
+      id: `${compositionConfiguration.recordIds.programConstraintPrefix}${order.id}`,
+      sourceOrderId: order.id,
+      subjectInstitutionId: order.subjectInstitutionId,
+      relationshipId: legalContestConfiguration.relationshipId,
+      prohibitedAction: "EXECUTE_CHALLENGED_FORMULA_REDIRECTION" as const,
+      admittedAt: notice.receivedAt,
+      status: "ACTIVE" as const,
+      classification: "SIMULATION_GENERATED" as const,
+    };
+  });
+  requireExactArtifactState(
+    implementation.administrativeProgram.externalLegalConstraints,
+    expectedConstraints,
+    "target-owner judicial constraints",
+  );
+  const expectedExecutionId = `${compositionConfiguration.recordIds.relationshipExecutionPrefix}${legalContestConfiguration.trigger.determinationId}`;
+  if (implementation.intergovernmental.qualificationExecutions.some((entry) =>
+    entry.id !== expectedExecutionId || entry.determinationId !== legalContestConfiguration.trigger.determinationId ||
+    entry.relationshipId !== legalContestConfiguration.relationshipId ||
+    Date.parse(entry.executedAt) > Date.parse(institutional.calendar.current))) {
+    throw new Error("Integrated partial save relationship disposition execution contradicts composition authority.");
+  }
   return {
     state: {
       ...baseline,
@@ -883,12 +962,27 @@ const createSession = (
           topology: state.electoralTopology,
         }, boundary);
         let information = value.information;
+        let implementation = material.implementation;
         const legalContest = applyLegalContestBoundary(
           value.legalContest,
           legalContestConfiguration,
           boundary,
           material.implementation.administrativeProgram.relationshipQualificationDeterminations,
         );
+        const newNotices = legalContest.notices.filter((notice) =>
+          !value.legalContest.notices.some((prior) => prior.id === notice.id));
+        for (const notice of newNotices) {
+          const order = legalContest.operativeOrders.find((entry) => entry.id === notice.orderId);
+          if (order === undefined) throw new Error("Judicial notice lacks its operative order at target-owner admission.");
+          implementation = admitExternalProgramConstraint(implementation, {
+            id: `${configuration.integratedRuntime!.composition!.recordIds.programConstraintPrefix}${order.id}`,
+            sourceOrderId: order.id,
+            subjectInstitutionId: order.subjectInstitutionId,
+            relationshipId: legalContestConfiguration.relationshipId,
+            prohibitedAction: "EXECUTE_CHALLENGED_FORMULA_REDIRECTION",
+            admittedAt: notice.receivedAt,
+          });
+        }
         let population = value.population;
         const measurementCapture = informationConfiguration.measurements.find((measurement) => measurement.captureBoundaryId === boundary.id);
         const measurementRelease = informationConfiguration.measurements.find((measurement) => measurement.releaseBoundaryId === boundary.id);
@@ -996,7 +1090,7 @@ const createSession = (
                 endedAt: boundary.at,
                 endReason: "TERM_ENDED" as const,
               }],
-          implementation: material.implementation,
+          implementation,
           housing: material.housing,
           information,
           legalContest,
@@ -1309,9 +1403,85 @@ const createSession = (
       };
       return deepCopy(state);
     },
+    executeBoundedRelationshipDisposition: () => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null || configuration.integratedRuntime?.composition === undefined) {
+        throw new Error("Integrated implementation state unavailable.");
+      }
+      state = {
+        ...state,
+        implementation: executeRelationshipQualificationDisposition(
+          state.implementation,
+          legalContestConfiguration.trigger.determinationId,
+          `${configuration.integratedRuntime.composition.recordIds.relationshipExecutionPrefix}${legalContestConfiguration.trigger.determinationId}`,
+          state.institutional.calendar.current,
+        ),
+      };
+      return deepCopy(state);
+    },
     getLegalContestAuditState: () => {
       if (state.legalContest === null) throw new Error("Integrated session lacks legal-contest state.");
       return deepCopy(state.legalContest);
+    },
+    getAdministrationCausalProjection: () => {
+      if (
+        state.institutional === null || state.implementation === null || state.housing === null ||
+        state.information === null || state.legalContest === null || configuration.integratedRuntime?.composition === undefined
+      ) throw new Error("Integrated causal administration projection lacks a configured owner.");
+      return deepCopy({
+        projectionVersion: configuration.integratedRuntime.composition.publicProjectionVersion,
+        currentInstant: state.institutional.calendar.current,
+        currentTermLabel: state.institutional.currentTermLabel,
+        currentAdministrationId: state.institutional.currentAdministration.id,
+        controlBindingActive: controlBinding.status === "ACTIVE",
+        legislative: {
+          currentProposalId: state.legislative.agenda.proposalId,
+          stage: state.legislative.procedure.stage,
+          enactedLegalSourceIds: state.legislative.enactedLegalSources.map((entry) => entry.id),
+        },
+        finance: {
+          budgetAuthorities: state.implementation.publicFinance.generatedBudgetAuthorities.map((entry) => ({
+            id: entry.id, status: entry.status, minorUnits: entry.amount.minorUnits,
+          })),
+          fiscalControlIds: state.implementation.fiscalExecution.generatedControls.map((entry) => entry.id),
+          awardIds: state.implementation.fiscalExecution.generatedAwards.map((entry) => entry.id),
+          obligationIds: state.implementation.fiscalExecution.generatedObligations.map((entry) => entry.id),
+          paymentIds: state.implementation.fiscalExecution.generatedPayments.map((entry) => entry.id),
+        },
+        program: {
+          relationshipStatuses: state.implementation.intergovernmental.historicalRelationships.map((entry) => ({
+            id: entry.id, status: entry.status,
+          })),
+          recipientCommitmentIds: state.implementation.recipientAdministration.commitments.map((entry) => entry.id),
+          publicDeterminationIds: [
+            ...state.implementation.administrativeProgram.determinations.map((entry) => entry.id),
+            ...state.implementation.administrativeProgram.relationshipQualificationDeterminations.map((entry) => entry.id),
+          ],
+        },
+        material: {
+          projects: state.housing.projects.map((entry) => ({
+            id: entry.id, stage: entry.stage, usableUnitContribution: entry.usableUnitContribution,
+          })),
+        },
+        information: {
+          releasedArtifactIds: state.information.artifacts.map((entry) => entry.id),
+          deliveryCount: state.information.deliveries.length,
+          exposureCount: state.information.exposures.length,
+        },
+        selection: {
+          stage: state.institutional.selection.stage,
+          publicResultIds: state.institutional.selection.popularResults.map((entry) => entry.id),
+          declarationId: state.institutional.selection.declaration?.id ?? null,
+        },
+        legalContest: {
+          claimIds: state.legalContest.claims.map((entry) => entry.id),
+          contestStages: state.legalContest.contests.map((entry) => entry.stage),
+          rulingIds: state.legalContest.rulings.map((entry) => entry.id),
+          operativeOrderIds: state.legalContest.operativeOrders.map((entry) => entry.id),
+          noticeIds: state.legalContest.notices.map((entry) => entry.id),
+          administrativeResponseIds: state.legalContest.administrativeResponses.map((entry) => entry.id),
+        },
+      });
     },
     save: () => {
       synchronizeHousingInputs();

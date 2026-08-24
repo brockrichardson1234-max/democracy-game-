@@ -42,6 +42,26 @@ describe("I7 canonical Housing material route", () => {
     expect(after.regions).toEqual(held.regions);
   });
 
+  it("gives a same-instant compliance hold precedence over resource availability", () => {
+    const initial = createHousing();
+    const at = "2026-08-22T00:00:00-04:00";
+    const admitted = admitValidatedMaterialInputs(initial, [
+      {
+        id: "input:available", kind: "INPUT_AVAILABILITY", sourceOwnerId: "recipient",
+        sourceRecordId: "commitment:1", projectRef: "us.project.palms-at-morris",
+        validatedAt: at, classification: "SIMULATION_GENERATED",
+      },
+      {
+        id: "input:hold", kind: "COMPLIANCE_HOLD", sourceOwnerId: "program",
+        sourceRecordId: "determination:1", projectRef: "us.project.palms-at-morris",
+        validatedAt: at, classification: "SIMULATION_GENERATED",
+      },
+    ]);
+    expect(admitted.projects.find((project) => project.id === "us.project.palms-at-morris")).toMatchObject({
+      stage: "BLOCKED", complianceHold: true,
+    });
+  });
+
   it("resolves physical completion and usability independently, then adds exact local units once", () => {
     const initial = createHousing();
     const beforeUsable = advanceIntegratedMaterialHousing(

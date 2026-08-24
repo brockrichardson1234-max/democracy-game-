@@ -38,7 +38,7 @@ interface MutableLegalSave {
 
 describe("I9 integrated persistence", () => {
   it("roundtrips the bounded route and deterministic continuation", () => {
-    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(7);
+    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(8);
     const direct = createSession();
     direct.issueBoundedRelationshipRejection();
     direct.advanceTo(US_V0_I9_NOTICE);

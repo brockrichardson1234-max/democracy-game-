@@ -26,7 +26,7 @@ const restore = (serialized: string) => createIntegratedPartialRuntimeSessionFro
 
 describe("I8 integrated persistence", () => {
   it("preserves the full information chain and Population response across save/restore", () => {
-    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(7);
+    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(8);
     const session = createSession();
     session.advanceTo(US_V0_I8_RESPONSE);
     const restored = restore(session.save());

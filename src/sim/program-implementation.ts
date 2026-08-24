@@ -188,6 +188,26 @@ export interface RelationshipQualificationDeterminationRecord {
   readonly classification: "SIMULATION_GENERATED";
 }
 
+export interface ExternalProgramConstraintRecord {
+  readonly id: string;
+  readonly sourceOrderId: string;
+  readonly subjectInstitutionId: string;
+  readonly relationshipId: string;
+  readonly prohibitedAction: "EXECUTE_CHALLENGED_FORMULA_REDIRECTION";
+  readonly status: "ACTIVE";
+  readonly admittedAt: string;
+  readonly classification: "SIMULATION_GENERATED";
+}
+
+export interface RelationshipQualificationExecutionRecord {
+  readonly id: string;
+  readonly determinationId: string;
+  readonly relationshipId: string;
+  readonly formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_EXECUTED";
+  readonly executedAt: string;
+  readonly classification: "SIMULATION_GENERATED";
+}
+
 export interface RecipientExpenditureRecord {
   readonly id: string;
   readonly recipientId: string;
@@ -387,12 +407,14 @@ export interface ProgramImplementationState {
     readonly waiverRequests: readonly WaiverRequestRecord[];
     readonly determinations: readonly AdministrativeDeterminationRecord[];
     readonly relationshipQualificationDeterminations: readonly RelationshipQualificationDeterminationRecord[];
+    readonly externalLegalConstraints: readonly ExternalProgramConstraintRecord[];
     readonly dynamicBoundaries: readonly DynamicAdministrativeBoundary[];
     readonly administrativeCapacityCommitted: number;
   };
   readonly intergovernmental: {
     readonly historicalRelationships: readonly IntergovernmentalRelationshipRecord[];
     readonly transitions: readonly RelationshipTransitionRecord[];
+    readonly qualificationExecutions: readonly RelationshipQualificationExecutionRecord[];
   };
   readonly recipientAdministration: {
     readonly historicalExpenditures: readonly RecipientExpenditureRecord[];
@@ -457,12 +479,14 @@ export const createProgramImplementationState = (
     waiverRequests: [],
     determinations: [],
     relationshipQualificationDeterminations: [],
+    externalLegalConstraints: [],
     dynamicBoundaries: [],
     administrativeCapacityCommitted: 0,
   },
   intergovernmental: {
     historicalRelationships: copy(seed.relationships),
     transitions: [],
+    qualificationExecutions: [],
   },
   recipientAdministration: {
     historicalExpenditures: copy(seed.recipientExpenditures),
@@ -535,7 +559,9 @@ export const assertProgramImplementationState = (
   unique(state.administrativeProgram.waiverRequests.map((entry) => entry.id), "Waiver requests");
   unique(state.administrativeProgram.determinations.map((entry) => entry.id), "Administrative determinations");
   unique(state.administrativeProgram.relationshipQualificationDeterminations.map((entry) => entry.id), "Relationship qualification determinations");
+  unique(state.administrativeProgram.externalLegalConstraints.map((entry) => entry.id), "External program constraints");
   unique(state.intergovernmental.transitions.map((entry) => entry.id), "Relationship transitions");
+  unique(state.intergovernmental.qualificationExecutions.map((entry) => entry.id), "Relationship qualification executions");
   unique(state.recipientAdministration.commitments.map((entry) => entry.id), "Recipient commitments");
   unique(state.recipientAdministration.activities.map((entry) => entry.id), "Recipient activities");
   unique(state.recipientAdministration.drawRequests.map((entry) => entry.id), "Recipient draw requests");
@@ -624,6 +650,27 @@ export const assertProgramImplementationState = (
       determination.moneyDamagesGranted !== false || determination.writtenReasons.length === 0 ||
       determination.classification !== "SIMULATION_GENERATED"
     ) throw new Error(`Relationship qualification determination ${determination.id} exceeds its administrative owner.`);
+  }
+  for (const constraint of state.administrativeProgram.externalLegalConstraints) {
+    const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === constraint.relationshipId);
+    if (
+      relationship === undefined || relationship.federalInstitutionId !== constraint.subjectInstitutionId ||
+      constraint.sourceOrderId.trim().length === 0 || constraint.status !== "ACTIVE" ||
+      constraint.prohibitedAction !== "EXECUTE_CHALLENGED_FORMULA_REDIRECTION" ||
+      constraint.classification !== "SIMULATION_GENERATED"
+    ) throw new Error(`External program constraint ${constraint.id} lacks its bounded subject relationship.`);
+  }
+  for (const execution of state.intergovernmental.qualificationExecutions) {
+    const determination = state.administrativeProgram.relationshipQualificationDeterminations.find(
+      (entry) => entry.id === execution.determinationId,
+    );
+    if (
+      determination === undefined || determination.relationshipId !== execution.relationshipId ||
+      execution.formulaDisposition !== "DIRECTED_OUT_OF_RELATIONSHIP_EXECUTED" ||
+      state.administrativeProgram.externalLegalConstraints.some((constraint) =>
+        constraint.relationshipId === execution.relationshipId && constraint.status === "ACTIVE" &&
+        Date.parse(execution.executedAt) >= Date.parse(constraint.admittedAt))
+    ) throw new Error(`Relationship qualification execution ${execution.id} violates owner authority or an active constraint.`);
   }
   for (const commitment of state.recipientAdministration.commitments) {
     const relationship = state.intergovernmental.historicalRelationships.find((entry) => entry.id === commitment.relationshipId);
@@ -1388,6 +1435,67 @@ export const issueFinalRelationshipQualificationDetermination = (
     administrativeProgram: {
       ...state.administrativeProgram,
       relationshipQualificationDeterminations: [determination],
+    },
+  };
+};
+
+/** Target-owner admission of an external operative constraint; it does not rewrite prior state. */
+export const admitExternalProgramConstraint = (
+  state: ProgramImplementationState,
+  input: Omit<ExternalProgramConstraintRecord, "status" | "classification">,
+): ProgramImplementationState => {
+  const relationship = state.intergovernmental.historicalRelationships.find(
+    (entry) => entry.id === input.relationshipId,
+  );
+  if (
+    relationship === undefined || relationship.federalInstitutionId !== input.subjectInstitutionId ||
+    input.id.trim().length === 0 || input.sourceOrderId.trim().length === 0
+  ) throw new Error("External program constraint lacks its subject relationship or source order.");
+  if (state.administrativeProgram.externalLegalConstraints.some((entry) => entry.id === input.id)) return state;
+  return {
+    ...state,
+    administrativeProgram: {
+      ...state.administrativeProgram,
+      externalLegalConstraints: [...state.administrativeProgram.externalLegalConstraints, {
+        ...input,
+        status: "ACTIVE",
+        classification: "SIMULATION_GENERATED",
+      }],
+    },
+  };
+};
+
+/** Executes only the challenged prospective disposition and honors admitted constraints. */
+export const executeRelationshipQualificationDisposition = (
+  state: ProgramImplementationState,
+  determinationId: string,
+  executionId: string,
+  at: string,
+): ProgramImplementationState => {
+  const determination = state.administrativeProgram.relationshipQualificationDeterminations.find(
+    (entry) => entry.id === determinationId,
+  );
+  if (determination === undefined) throw new Error("Relationship qualification execution lacks its final determination.");
+  if (state.administrativeProgram.externalLegalConstraints.some((constraint) =>
+    constraint.relationshipId === determination.relationshipId && constraint.status === "ACTIVE" &&
+    constraint.prohibitedAction === "EXECUTE_CHALLENGED_FORMULA_REDIRECTION")) {
+    throw new Error("Active external program constraint bars the challenged formula redirection.");
+  }
+  if (state.intergovernmental.qualificationExecutions.some((entry) => entry.determinationId === determinationId)) {
+    return state;
+  }
+  return {
+    ...state,
+    intergovernmental: {
+      ...state.intergovernmental,
+      qualificationExecutions: [...state.intergovernmental.qualificationExecutions, {
+        id: executionId,
+        determinationId,
+        relationshipId: determination.relationshipId,
+        formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_EXECUTED",
+        executedAt: at,
+        classification: "SIMULATION_GENERATED",
+      }],
     },
   };
 };

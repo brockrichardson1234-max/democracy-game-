@@ -597,6 +597,24 @@ const validateIntegratedRuntimeConfiguration = (
       legalContest.order.plaintiffSpecific !== true
     ) throw new Error("Integrated legal-contest configuration has invalid ownership, route, or boundary references.");
   }
+  const composition = integrated.composition;
+  if (composition !== undefined) {
+    const { parameterHash, ...compositionWithoutHash } = composition;
+    if (
+      composition.schemaVersion !== 1 ||
+      !SHA_256_PATTERN.test(parameterHash) || parameterHash !== sha256Hex(JSON.stringify(compositionWithoutHash)) ||
+      composition.semanticsVersion.trim().length === 0 || composition.publicProjectionVersion.trim().length === 0 ||
+      composition.forbiddenShortcuts.length === 0 ||
+      composition.forbiddenShortcuts.some((entry) => entry.trim().length === 0) ||
+      composition.recordIds.programConstraintPrefix.trim().length === 0 ||
+      composition.recordIds.relationshipExecutionPrefix.trim().length === 0 ||
+      composition.ownerReferences.implementationOwnerId !== implementation?.publicFinanceOwnerId ||
+      composition.ownerReferences.materialOwnerId !== housing?.semanticsVersion ||
+      composition.ownerReferences.informationOwnerId !== information?.ownerId ||
+      composition.ownerReferences.legalContestOwnerId !== legalContest?.ownerId ||
+      composition.ownerReferences.institutionalOwnerId !== integrated.temporal?.scheduleVersion
+    ) throw new Error("Integrated composition configuration has invalid owner references or shortcut policy.");
+  }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {
     if (

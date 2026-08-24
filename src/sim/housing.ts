@@ -553,7 +553,7 @@ export const admitValidatedMaterialInputs = (
     const relevant = acceptedInputs.filter((input) => input.projectRef === project.id);
     const latestHold = relevant.filter((input) => input.kind === "COMPLIANCE_HOLD").at(-1);
     const latestRelease = relevant.filter((input) => input.kind === "WAIVER_TERMS" || input.kind === "INPUT_AVAILABILITY").at(-1);
-    const held = latestHold !== undefined && (latestRelease === undefined || instantValue(latestHold.validatedAt, latestHold.id) > instantValue(latestRelease.validatedAt, latestRelease.id));
+    const held = latestHold !== undefined && (latestRelease === undefined || instantValue(latestHold.validatedAt, latestHold.id) >= instantValue(latestRelease.validatedAt, latestRelease.id));
     if (held === project.complianceHold) return project;
     const nextStage: MaterialHousingProjectStage = held ? "BLOCKED" : project.physicalProgressUnits > 0 ? "ACTIVE" : "FUNDED_NOT_STARTED";
     return {
