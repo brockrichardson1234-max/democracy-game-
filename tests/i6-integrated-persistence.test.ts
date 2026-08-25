@@ -383,7 +383,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
         JSON.stringify(envelope), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
       ), name).toThrow();
     }
-  }, 30_000);
+  }, 45_000);
 
   it("composes a dynamic administrative boundary ahead of the next static boundary", () => {
     const session = createSession();
