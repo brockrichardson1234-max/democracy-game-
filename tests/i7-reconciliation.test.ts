@@ -264,7 +264,7 @@ describe("I7 repaired-I6 reconciliation", () => {
     );
     session.resolveOwnerIntention(session.getAuditState().implementation!.ownerResolution.intentions[0].id);
     const envelope = JSON.parse(session.save());
-    expect(envelope.formatVersion).toBe(7);
+    expect(envelope.formatVersion).toBe(8);
     expect(envelope.housing).not.toBeNull();
     envelope.implementation.intergovernmental.transitions[0].newParticipation = "INCLUDED";
     expect(() => createIntegratedPartialRuntimeSessionFromSave(

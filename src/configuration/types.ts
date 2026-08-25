@@ -364,7 +364,14 @@ export type InstitutionalBoundaryKind =
   | "RESULT_ATTESTATION"
   | "DELEGATE_ACTION"
   | "COLLEGIATE_DECLARATION"
-  | "AUTHORITY_TRANSFER";
+  | "AUTHORITY_TRANSFER"
+  | "OBSERVATION_CAPTURE"
+  | "MEASUREMENT_CREATED"
+  | "MEASUREMENT_RELEASED"
+  | "CLAIM_RELEASED"
+  | "INFORMATION_DELIVERED"
+  | "POPULATION_EXPOSED"
+  | "POPULATION_RESPONSE";
 
 export interface InstitutionalBoundaryConfiguration {
   readonly id: string;
@@ -578,6 +585,87 @@ export interface IntegratedHousingConfiguration {
   readonly classification: ScaffoldClassification;
 }
 
+export interface InformationMeasurementConfiguration {
+  readonly id: string;
+  readonly observationId: string;
+  readonly artifactId: string;
+  readonly producerInstitutionId: string;
+  readonly housingRegionIds: readonly string[];
+  readonly housingProjectIds: readonly string[];
+  readonly observationBoundaryId: string;
+  readonly artifactBoundaryId: string;
+  readonly releaseBoundaryId: string;
+  readonly observationIntervalDays: number;
+  readonly observationLagDays: number;
+  readonly captureLagDays: number;
+  readonly releaseLagDays: number;
+  readonly methodVersion: string;
+  readonly deterministicErrorBound: number;
+  readonly classification: ScaffoldClassification;
+}
+
+export interface InformationResponseOutcomeConfiguration {
+  readonly belief: string;
+  readonly attribution: string;
+  readonly salience: string;
+  readonly candidatePreference: string;
+  readonly turnoutDisposition: string;
+}
+
+export interface IntegratedInformationConfiguration {
+  readonly schemaVersion: number;
+  readonly ownerId: string;
+  readonly parameterHash: string;
+  readonly semanticsVersion: string;
+  readonly responseRuleVersion: string;
+  readonly classification: ScaffoldClassification;
+  readonly measurements: readonly InformationMeasurementConfiguration[];
+  readonly claim: {
+    readonly id: string;
+    readonly evidenceArtifactIds: readonly string[];
+    readonly boundaryId: string;
+    readonly claimantPolicy: "CURRENT_ADMINISTRATION";
+    readonly subject: string;
+    readonly position: string;
+    readonly contentVersion: string;
+    readonly classification: ScaffoldClassification;
+  };
+  readonly delivery: {
+    readonly id: string;
+    readonly informationItemId: string;
+    readonly boundaryId: string;
+    readonly channelId: string;
+    readonly audienceCatchmentId: string;
+    readonly classification: ScaffoldClassification;
+  };
+  readonly exposure: {
+    readonly id: string;
+    readonly deliveryId: string;
+    readonly boundaryId: string;
+    readonly targets: readonly {
+      readonly stateGeographyId: string;
+      readonly parentCohortId: string;
+      readonly projectLocatorGeographyId: string | null;
+      readonly materialExposureClass: string;
+      readonly catchmentClass: string;
+      readonly directExperienceEligible: boolean;
+    }[];
+    readonly targetNumerator: number;
+    readonly targetDenominator: number;
+    readonly classification: ScaffoldClassification;
+  };
+  readonly response: {
+    readonly id: string;
+    readonly exposureId: string;
+    readonly boundaryId: string;
+    readonly outcomesByClaimPosition: Readonly<Record<string, {
+      readonly withDirectExperience: InformationResponseOutcomeConfiguration;
+      readonly withoutDirectExperience: InformationResponseOutcomeConfiguration;
+    }>>;
+    readonly classification: ScaffoldClassification;
+  };
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -603,6 +691,7 @@ export interface IntegratedRuntimeConfiguration {
   readonly temporal?: IntegratedTemporalConfiguration;
   readonly implementation?: IntegratedImplementationConfiguration;
   readonly housing?: IntegratedHousingConfiguration;
+  readonly information?: IntegratedInformationConfiguration;
 }
 
 interface ScheduledTransitionBase {

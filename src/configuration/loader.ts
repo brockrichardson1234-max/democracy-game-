@@ -562,6 +562,64 @@ const validateIntegratedRuntimeConfiguration = (
       !Number.isSafeInteger(housing.expectedProjectCount) || housing.expectedProjectCount <= 0
     ) throw new Error("Integrated Housing configuration has invalid artifact or material semantics.");
   }
+  const information = integrated.information;
+  if (information !== undefined) {
+    const { parameterHash, ...informationWithoutHash } = information;
+    const temporalBoundaries = integrated.temporal?.boundaries ?? [];
+    const boundaryById = new Map(temporalBoundaries.map((boundary) => [boundary.id, boundary]));
+    const institutionIds = new Set(configuration.structure.institutions.map((institution) => institution.id));
+    const measurementIds = information.measurements.map((measurement) => measurement.id);
+    const observationIds = information.measurements.map((measurement) => measurement.observationId);
+    const artifactIds = information.measurements.map((measurement) => measurement.artifactId);
+    const allOutcomes = Object.values(information.response.outcomesByClaimPosition)
+      .flatMap((entry) => [entry.withDirectExperience, entry.withoutDirectExperience]);
+    if (
+      information.schemaVersion !== 1 || information.ownerId.trim().length === 0 ||
+      !SHA_256_PATTERN.test(parameterHash) || parameterHash !== sha256Hex(JSON.stringify(informationWithoutHash)) ||
+      information.semanticsVersion.trim().length === 0 || information.responseRuleVersion.trim().length === 0 ||
+      information.measurements.length === 0 || new Set(measurementIds).size !== measurementIds.length ||
+      new Set(observationIds).size !== observationIds.length || new Set(artifactIds).size !== artifactIds.length ||
+      information.measurements.some((measurement) => {
+        const observation = boundaryById.get(measurement.observationBoundaryId);
+        const artifact = boundaryById.get(measurement.artifactBoundaryId);
+        const release = boundaryById.get(measurement.releaseBoundaryId);
+        return !institutionIds.has(measurement.producerInstitutionId) ||
+          measurement.housingRegionIds.length === 0 || measurement.housingProjectIds.length === 0 ||
+          new Set(measurement.housingRegionIds).size !== measurement.housingRegionIds.length ||
+          new Set(measurement.housingProjectIds).size !== measurement.housingProjectIds.length ||
+          !Number.isSafeInteger(measurement.observationIntervalDays) || measurement.observationIntervalDays <= 0 ||
+          !Number.isSafeInteger(measurement.observationLagDays) || measurement.observationLagDays < 0 ||
+          !Number.isSafeInteger(measurement.captureLagDays) || measurement.captureLagDays <= 0 ||
+          !Number.isSafeInteger(measurement.releaseLagDays) || measurement.releaseLagDays <= 0 ||
+          !Number.isSafeInteger(measurement.deterministicErrorBound) || measurement.deterministicErrorBound < 0 ||
+          measurement.methodVersion.trim().length === 0 || observation?.kind !== "OBSERVATION_CAPTURE" ||
+          artifact?.kind !== "MEASUREMENT_CREATED" || release?.kind !== "MEASUREMENT_RELEASED" ||
+          observation.ownerId !== information.ownerId || artifact.ownerId !== information.ownerId ||
+          release.ownerId !== information.ownerId ||
+          Date.parse(artifact.at) - Date.parse(observation.at) !== measurement.captureLagDays * 86_400_000 ||
+          Date.parse(release.at) - Date.parse(artifact.at) !== measurement.releaseLagDays * 86_400_000 ||
+          (housing !== undefined && observation.phase <= housing.housingBoundaryPhase);
+      }) ||
+      information.claim.evidenceArtifactIds.length === 0 ||
+      information.claim.evidenceArtifactIds.some((id) => !artifactIds.includes(id)) ||
+      boundaryById.get(information.claim.boundaryId)?.kind !== "CLAIM_RELEASED" ||
+      !Object.hasOwn(information.response.outcomesByClaimPosition, information.claim.position) ||
+      boundaryById.get(information.delivery.boundaryId)?.kind !== "INFORMATION_DELIVERED" ||
+      information.delivery.informationItemId !== information.claim.id ||
+      boundaryById.get(information.exposure.boundaryId)?.kind !== "POPULATION_EXPOSED" ||
+      information.exposure.deliveryId !== information.delivery.id || information.exposure.targets.length === 0 ||
+      information.exposure.targets.some((target) =>
+        target.stateGeographyId.trim().length === 0 || target.parentCohortId.trim().length === 0 ||
+        target.materialExposureClass.trim().length === 0 || target.catchmentClass.trim().length === 0 ||
+        typeof target.directExperienceEligible !== "boolean") ||
+      !Number.isSafeInteger(information.exposure.targetNumerator) ||
+      !Number.isSafeInteger(information.exposure.targetDenominator) || information.exposure.targetNumerator <= 0 ||
+      information.exposure.targetNumerator >= information.exposure.targetDenominator ||
+      boundaryById.get(information.response.boundaryId)?.kind !== "POPULATION_RESPONSE" ||
+      information.response.exposureId !== information.exposure.id || allOutcomes.length === 0 ||
+      allOutcomes.some((outcome) => Object.values(outcome).some((value) => value.trim().length === 0))
+    ) throw new Error("Integrated Information configuration has invalid causal ownership or boundary semantics.");
+  }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {
     if (
@@ -586,7 +644,8 @@ const validateIntegratedRuntimeConfiguration = (
         !Number.isSafeInteger(boundary.phase) ||
         !Number.isSafeInteger(boundary.order) ||
         boundary.stableKey.trim().length === 0 ||
-        (boundary.ownerId !== temporal.selection.id && !cycleIds.has(boundary.ownerId))
+        (boundary.ownerId !== temporal.selection.id && !cycleIds.has(boundary.ownerId) &&
+          boundary.ownerId !== information?.ownerId)
       ) throw new Error(`Integrated temporal boundary ${boundary.id} is invalid.`);
     }
     for (const cycle of temporal.assignmentCycles) {

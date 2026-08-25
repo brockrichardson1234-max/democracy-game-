@@ -15,9 +15,9 @@ const sha256 = (value: string): string => createHash("sha256").update(value).dig
 describe("I6 configuration and static authority boundary", () => {
   it("pins artifacts and every behavior-driving implementation parameter", () => {
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.7.1-i7-repair",
-      scenarioVersion: "0.7.1-i7-repair",
-      configurationHash: "9c9fa259e8099224ef89dee443aae16454125dd72432c40ee8d3d287ffe3c53f",
+      configurationVersion: "0.8.0-i8-reconciled",
+      scenarioVersion: "0.8.0-i8-reconciled",
+      configurationHash: "215230ab26fa4fa1fc80d2778cfe7ada2f9fc8582894cc917d1ab8b8ec51cf54",
     });
     expect(sha256(canonicalConfigurationContent(US_V0_STRUCTURAL_CONFIGURATION))).toBe(
       US_V0_STRUCTURAL_CONFIGURATION.identity.configurationHash,

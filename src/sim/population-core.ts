@@ -134,6 +134,80 @@ export interface PopulationPoliticalResolution {
   readonly causeKey: string;
 }
 
+export interface PopulationInformationResponse {
+  readonly cohortId: string;
+  readonly exposureId: string;
+  readonly belief: string;
+  readonly attribution: string;
+  readonly salience: string;
+  readonly candidatePreference: string;
+  readonly turnoutDisposition: string;
+  readonly classification: string;
+}
+
+/** Population owns incorporation of material experience; this does not imply public awareness. */
+export const recordPopulationMaterialExperience = (
+  state: WeightedPopulationState,
+  input: {
+    readonly referenceId: string;
+    readonly stateGeographyId: string;
+    readonly projectLocatorGeographyId: string | null;
+    readonly materialExposureClass: string;
+  },
+): WeightedPopulationState => {
+  if (input.referenceId.trim().length === 0 || input.materialExposureClass.trim().length === 0) {
+    throw new Error("Population material experience requires a stable reference and exposure class.");
+  }
+  const next = {
+    ...state,
+    cohorts: state.cohorts.map((cohort) =>
+      cohort.residenceGeographyId === input.stateGeographyId &&
+      cohort.projectLocatorGeographyId === input.projectLocatorGeographyId &&
+      cohort.materialExposureClass === input.materialExposureClass
+        ? {
+            ...cohort,
+            materialExposureReferences: uniqueAppend(cohort.materialExposureReferences, input.referenceId),
+          }
+        : cohort),
+  };
+  assertWeightedPopulationConservation(next);
+  return next;
+};
+
+/** Population owns the bounded political response to an explicitly received exposure. */
+export const applyPopulationInformationResponse = (
+  state: WeightedPopulationState,
+  response: PopulationInformationResponse,
+): WeightedPopulationState => {
+  if (
+    [response.cohortId, response.exposureId, response.belief, response.attribution, response.salience,
+      response.candidatePreference, response.turnoutDisposition, response.classification]
+      .some((value) => value.trim().length === 0)
+  ) throw new Error("Population information response is incomplete.");
+  const cohort = state.cohorts.find((candidate) => candidate.id === response.cohortId);
+  if (cohort === undefined || !cohort.receivedInformationReferences.includes(response.exposureId)) {
+    throw new Error(`Population cohort ${response.cohortId} did not receive exposure ${response.exposureId}.`);
+  }
+  const next = {
+    ...state,
+    cohorts: state.cohorts.map((candidate) => candidate.id === response.cohortId
+      ? {
+          ...candidate,
+          politicalState: {
+            belief: response.belief,
+            attribution: response.attribution,
+            salience: response.salience,
+            candidatePreference: response.candidatePreference,
+            turnoutDisposition: response.turnoutDisposition,
+            classification: response.classification,
+          },
+        }
+      : candidate),
+  };
+  assertWeightedPopulationConservation(next);
+  return next;
+};
+
 /** Generic upstream composition seam; changes only Population-owned political state. */
 export const resolvePopulationPoliticalState = (
   state: WeightedPopulationState,

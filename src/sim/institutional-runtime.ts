@@ -1039,6 +1039,18 @@ export const applyInstitutionalBoundary = (
       return { institutional: declareAndEntitle(institutional, legislative, context, boundary), legislative, transferredTicket: null };
     case "AUTHORITY_TRANSFER":
       return transferAuthority(institutional, legislative, context, boundary);
+    case "OBSERVATION_CAPTURE":
+    case "MEASUREMENT_CREATED":
+    case "MEASUREMENT_RELEASED":
+    case "CLAIM_RELEASED":
+    case "INFORMATION_DELIVERED":
+    case "POPULATION_EXPOSED":
+    case "POPULATION_RESPONSE":
+      return {
+        institutional: appendOccurrence(institutional, boundary, []),
+        legislative,
+        transferredTicket: null,
+      };
   }
 };
 

@@ -56,6 +56,7 @@ describe("I5 Population-backed selection, declaration, and succession", () => {
 
   it("freezes exactly 51 state/DC snapshots and weighted popular results without mutating Population", () => {
     const session = createSession();
+    session.advanceTo("2028-11-07T19:59:59-05:00");
     const populationBefore = session.getAuditState().population;
     expect(session.getPublicInstitutionalStatus().popularResults).toEqual([]);
     session.advanceTo(US_V0_2028_POPULAR_SELECTION);
@@ -64,7 +65,7 @@ describe("I5 Population-backed selection, declaration, and succession", () => {
     expect(selection.stage).toBe("POPULAR_RESOLVED");
     expect(selection.snapshots).toHaveLength(51);
     expect(selection.popularResults).toHaveLength(51);
-    expect(selection.snapshots.flatMap((snapshot) => snapshot.entries)).toHaveLength(106);
+    expect(selection.snapshots.flatMap((snapshot) => snapshot.entries)).toHaveLength(populationBefore.cohorts.length);
     expect(state.population).toEqual(populationBefore);
     expect(selection.snapshots.every((snapshot) => snapshot.entries.every(
       (entry) => entry.residenceGeographyId === snapshot.geographyId,
@@ -72,8 +73,10 @@ describe("I5 Population-backed selection, declaration, and succession", () => {
     expect(selection.snapshots.every((snapshot) => snapshot.geographyId.startsWith("us.geography.state."))).toBe(true);
     expect(selection.snapshots.some((snapshot) => snapshot.geographyId.includes("cd119"))).toBe(false);
     expect(selection.snapshots.flatMap((snapshot) => snapshot.entries).every(
-      (entry) => entry.readinessClassification === "FALLBACK_SCAFFOLD",
+      (entry) => ["FALLBACK_SCAFFOLD", "POPULATION_STATE"].includes(entry.readinessClassification),
     )).toBe(true);
+    expect(selection.snapshots.flatMap((snapshot) => snapshot.entries)
+      .some((entry) => entry.readinessClassification === "POPULATION_STATE")).toBe(true);
     expect(US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.temporal!.selection.populationScaffold.version)
       .toBe(US_V0_I5_ELECTION_SCAFFOLD_VERSION);
     for (const result of selection.popularResults) {
@@ -99,9 +102,9 @@ describe("I5 Population-backed selection, declaration, and succession", () => {
     expect(left.winnerTicketId).toBe(US_V0_PLAYER_TICKET_ID);
     expect(right.winnerTicketId).toBe(US_V0_OPPOSITION_TICKET_ID);
     expect(aligned.getAuditState().electoralTopology).toEqual(opposition.getAuditState().electoralTopology);
-    expect(aligned.getAuditState().institutional!.selection.snapshots.flatMap((snapshot) => snapshot.entries).every(
-      (entry) => entry.readinessClassification === "POPULATION_STATE",
-    )).toBe(true);
+    expect(aligned.getAuditState().institutional!.selection.snapshots.find(
+      (snapshot) => snapshot.geographyId === geographyId,
+    )!.entries.every((entry) => entry.readinessClassification === "POPULATION_STATE")).toBe(true);
   });
 
   it("freezes election-time inputs so later lawful Population refinement cannot rewrite the result", () => {
