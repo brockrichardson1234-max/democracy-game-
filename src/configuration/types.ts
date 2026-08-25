@@ -552,6 +552,26 @@ export interface IntegratedHousingConfiguration {
   readonly catchmentScaffoldVersion: string;
   readonly materialCalibrationVersion: string;
   readonly physicalToUsableLagDays: number;
+  readonly scopedReleaseSemanticVersion: string;
+  readonly materialInputBatchSemanticVersion: string;
+  readonly dependencyPhaseSemanticVersion: string;
+  readonly effectiveMaterialRateSemanticVersion: string;
+  readonly stageReadinessSemanticVersion: string;
+  readonly delaySemanticVersion: string;
+  readonly failureSemanticVersion: string;
+  readonly housingBoundaryPhase: number;
+  readonly requiredGeneratedProjectInputKinds: readonly string[];
+  readonly activationInputKind: string;
+  readonly capacityPrior: {
+    readonly lowUpperPermitsPerThousandMilliUnits: number;
+    readonly highLowerPermitsPerThousandMilliUnits: number;
+    readonly lowRateNumerator: number;
+    readonly lowRateDenominator: number;
+    readonly normalRateNumerator: number;
+    readonly normalRateDenominator: number;
+    readonly highRateNumerator: number;
+    readonly highRateDenominator: number;
+  };
   readonly expectedControlCount: number;
   readonly expectedRegionCount: number;
   readonly expectedProjectCount: number;

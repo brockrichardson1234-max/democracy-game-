@@ -9,6 +9,7 @@ import {
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
 import {
   US_V0_I6_IMPLEMENTATION_CONFIGURATION,
+  US_V0_I7_HOUSING_CONFIGURATION,
   US_V0_I7_RUNTIME_ARTIFACTS,
 } from "../src/content/us-v0/i7";
 import {
@@ -125,12 +126,7 @@ const commitmentRequest = (
   };
 };
 
-const housing = () => createIntegratedMaterialHousingState(housingSeed, {
-  physicalToUsableLagDays: 7,
-  expectedControlCount: 51,
-  expectedRegionCount: 53,
-  expectedProjectCount: 2,
-});
+const housing = () => createIntegratedMaterialHousingState(housingSeed, US_V0_I7_HOUSING_CONFIGURATION);
 
 const references = (state: ProgramImplementationState): readonly AcceptedMaterialInputReference[] =>
   state.materialInputs.map((input) => ({ ...input }));
@@ -254,7 +250,7 @@ describe("I7 repaired-I6 reconciliation", () => {
     expect(state.materialInputs).toEqual([]);
   });
 
-  it("preserves repaired I6 semantic tamper rejection inside save format 6 with Housing state", () => {
+  it("preserves repaired I6 semantic tamper rejection inside save format 7 with Housing state", () => {
     const session = createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
       US_V0_I7_RUNTIME_ARTIFACTS,
@@ -268,7 +264,7 @@ describe("I7 repaired-I6 reconciliation", () => {
     );
     session.resolveOwnerIntention(session.getAuditState().implementation!.ownerResolution.intentions[0].id);
     const envelope = JSON.parse(session.save());
-    expect(envelope.formatVersion).toBe(6);
+    expect(envelope.formatVersion).toBe(7);
     expect(envelope.housing).not.toBeNull();
     envelope.implementation.intergovernmental.transitions[0].newParticipation = "INCLUDED";
     expect(() => createIntegratedPartialRuntimeSessionFromSave(

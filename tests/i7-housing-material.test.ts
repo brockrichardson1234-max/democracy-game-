@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createIntegratedPartialRuntimeSession } from "../src/app/integrated-session";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
-import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
+import { US_V0_I7_HOUSING_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 import {
   admitValidatedMaterialInputs,
   advanceIntegratedMaterialHousing,
@@ -11,12 +11,7 @@ import {
 } from "../src/sim/housing";
 
 const seed = US_V0_I7_RUNTIME_ARTIFACTS.housingInitialization!;
-const createHousing = () => createIntegratedMaterialHousingState(seed, {
-  physicalToUsableLagDays: 7,
-  expectedControlCount: 51,
-  expectedRegionCount: 53,
-  expectedProjectCount: 2,
-});
+const createHousing = () => createIntegratedMaterialHousingState(seed, US_V0_I7_HOUSING_CONFIGURATION);
 
 describe("I7 canonical Housing material route", () => {
   it("treats validated administrative/fiscal records as inputs without direct physical mutation", () => {
@@ -24,15 +19,19 @@ describe("I7 canonical Housing material route", () => {
     const admitted = admitValidatedMaterialInputs(initial, [{
       id: "input:fiscal", kind: "VALID_FISCAL_RESOURCE_INPUT", sourceOwnerId: "finance",
       sourceRecordId: "payment:1", projectRef: "us.project.palms-at-morris",
+      scopeKey: null, releaseOfInputId: null, causalPredecessorInputIds: [],
       validatedAt: "2026-08-22T00:00:00-04:00", classification: "SIMULATION_GENERATED",
     }]);
     expect(admitted.regions).toEqual(initial.regions);
-    expect(admitted.projects).toEqual(initial.projects);
+    expect(admitted.projects.map((project) => project.physicalProgressUnits)).toEqual(
+      initial.projects.map((project) => project.physicalProgressUnits),
+    );
     expect(admitted.acceptedInputs).toHaveLength(1);
 
     const held = admitValidatedMaterialInputs(admitted, [{
       id: "input:hold", kind: "COMPLIANCE_HOLD", sourceOwnerId: "program",
       sourceRecordId: "determination:deny", projectRef: "us.project.palms-at-morris",
+      scopeKey: "BABA_COMPONENT:steel", releaseOfInputId: null, causalPredecessorInputIds: [],
       validatedAt: "2026-08-23T00:00:00-04:00", classification: "SIMULATION_GENERATED",
     }]);
     const after = advanceIntegratedMaterialHousing(held, "2026-08-23T00:00:00-04:00", "2027-08-23T00:00:00-04:00");

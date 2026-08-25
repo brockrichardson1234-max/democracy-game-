@@ -54,10 +54,17 @@ import {
 } from "../sim/program-implementation";
 import {
   admitValidatedMaterialInputs,
+  admitGeneratedMaterialHousingProject,
+  applyMaterialHousingCondition,
   advanceIntegratedMaterialHousing,
   assertIntegratedMaterialHousingState,
+  compareMaterialHousingConditions,
   deriveMaterialHousingBoundaries,
+  finalizePendingMaterialHousingCompletions,
   type AcceptedMaterialInputReference,
+  type GeneratedMaterialHousingProjectInput,
+  type IntegratedMaterialHousingState,
+  type MaterialHousingConditionRecord,
 } from "../sim/housing";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
 import {
@@ -68,7 +75,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 6 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 7 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -145,6 +152,14 @@ export interface IntegratedPartialRuntimeAuditSession extends IntegratedPartialR
     status: RelationshipStatus,
     causeKey: string,
   ) => IntegratedPartialRuntimeState;
+  readonly injectGeneratedHousingProject: (
+    input: GeneratedMaterialHousingProjectInput,
+  ) => IntegratedPartialRuntimeState;
+  readonly injectHousingMaterialCondition: (
+    projectId: string,
+    kind: MaterialHousingConditionRecord["kind"],
+    causeRef: string,
+  ) => IntegratedPartialRuntimeState;
 }
 
 export interface IntegratedImplementationPublicStatus {
@@ -219,6 +234,9 @@ const materialInputReferences = (
       sourceOwnerId: input.sourceOwnerId,
       sourceRecordId: input.sourceRecordId,
       projectRef: input.projectRef,
+      scopeKey: input.scopeKey,
+      releaseOfInputId: input.releaseOfInputId,
+      causalPredecessorInputIds: [...input.causalPredecessorInputIds],
       validatedAt: input.validatedAt,
       classification: input.classification,
     }));
@@ -229,19 +247,44 @@ const reconstructHousingTo = (
   implementation: NonNullable<IntegratedPartialRuntimeState["implementation"]>,
   epoch: string,
   target: string,
+  canonicalHousing?: IntegratedMaterialHousingState,
 ): NonNullable<IntegratedPartialRuntimeState["housing"]> => {
   let housing = baseline;
-  let cursor = epoch;
-  const groups = new Map<string, AcceptedMaterialInputReference[]>();
-  for (const input of materialInputReferences(implementation, baseline)) {
-    const group = groups.get(input.validatedAt) ?? [];
-    group.push(input);
-    groups.set(input.validatedAt, group);
+  for (const project of (canonicalHousing?.projects ?? []).filter((entry) => entry.classification === "SIMULATION_GENERATED")) {
+    housing = admitGeneratedMaterialHousingProject(housing, {
+      housingRegionId: project.housingRegionId,
+      projectLocatorGeographyId: project.projectLocatorGeographyId,
+      relationshipId: project.relationshipId,
+      activityType: project.activityType,
+      expectedUnits: project.expectedUnits,
+      requiredProgressUnits: project.requiredProgressUnits,
+      baseProgressUnitsPerDay: project.baseProgressUnitsPerDay,
+      earliestTransitionAt: project.earliestTransitionAt,
+      causeRef: project.admissionCauseRef ?? (() => { throw new Error("Generated Housing project lacks admission cause."); })(),
+    });
   }
-  for (const [at, inputs] of [...groups.entries()].filter(([at]) => Date.parse(at) <= Date.parse(target)).sort(([left], [right]) => Date.parse(left) - Date.parse(right) || left.localeCompare(right))) {
+  let cursor = epoch;
+  const inputGroups = new Map<string, AcceptedMaterialInputReference[]>();
+  for (const input of materialInputReferences(implementation, housing)) {
+    const group = inputGroups.get(input.validatedAt) ?? [];
+    group.push(input);
+    inputGroups.set(input.validatedAt, group);
+  }
+  const conditionGroups = new Map<string, NonNullable<typeof canonicalHousing>["materialConditions"]>();
+  for (const condition of canonicalHousing?.materialConditions ?? []) {
+    conditionGroups.set(condition.occurredAt, [...(conditionGroups.get(condition.occurredAt) ?? []), condition]);
+  }
+  const instants = [...new Set([...inputGroups.keys(), ...conditionGroups.keys()])]
+    .filter((at) => Date.parse(at) <= Date.parse(target))
+    .sort((left, right) => Date.parse(left) - Date.parse(right) || left.localeCompare(right));
+  for (const at of instants) {
     if (Date.parse(at) < Date.parse(epoch)) throw new Error("Material input predates the configured scenario epoch.");
-    housing = advanceIntegratedMaterialHousing(housing, cursor, at);
-    housing = admitValidatedMaterialInputs(housing, inputs);
+    housing = advanceIntegratedMaterialHousing(housing, cursor, at, { deferCompletionsAtTarget: true });
+    housing = admitValidatedMaterialInputs(housing, inputGroups.get(at) ?? []);
+    for (const condition of [...(conditionGroups.get(at) ?? [])].sort(compareMaterialHousingConditions)) {
+      housing = applyMaterialHousingCondition(housing, condition.projectId, condition.kind, condition.occurredAt, condition.causeRef);
+    }
+    housing = finalizePendingMaterialHousingCompletions(housing, at);
     cursor = at;
   }
   return advanceIntegratedMaterialHousing(housing, cursor, target);
@@ -567,11 +610,13 @@ const parse = (
   requireExactArtifactState(housing.catchmentScaffoldVersion, baseline.housing.catchmentScaffoldVersion, "Housing catchment semantics");
   requireExactArtifactState(housing.materialCalibrationVersion, baseline.housing.materialCalibrationVersion, "Housing material semantics");
   requireExactArtifactState(housing.calibration, baseline.housing.calibration, "Housing calibration authority");
+  requireExactArtifactState(housing.behavior, baseline.housing.behavior, "Housing repaired behavior semantics");
   const expectedHousing = reconstructHousingTo(
     baseline.housing,
     implementation,
     configuration.calendar.epoch,
     institutional.calendar.current,
+    housing,
   );
   requireExactArtifactState(housing, expectedHousing, "Housing deterministic material state");
   return {
@@ -681,49 +726,63 @@ const createSession = (
     while (true) {
       const next = nextCompositeBoundary();
       if (next === null || Date.parse(next.at) > targetTime) break;
-      const staticBoundary = temporal.boundaries.find((entry) => entry.id === next.id);
       const previousInstant = state.institutional!.calendar.current;
+      const sameInstant = compositeBoundaries()
+        .filter((boundary) => Date.parse(boundary.at) === Date.parse(next.at))
+        .filter((boundary) => {
+          const staticBoundary = temporal.boundaries.find((entry) => entry.id === boundary.id);
+          return staticBoundary === undefined || !processedStatic.has(staticBoundary.id);
+        })
+        .sort(compareConfiguredBoundaries);
       if (state.housing !== null) {
         state = {
           ...state,
-          housing: advanceIntegratedMaterialHousing(state.housing, previousInstant, next.at),
+          housing: advanceIntegratedMaterialHousing(
+            state.housing, previousInstant, next.at, { deferCompletionsAtTarget: true },
+          ),
         };
       }
-      if (next.kind === "SUPPLEMENTAL_RECORD_REVIEW_READY") {
-        state = { ...state, implementation: applyAdministrativeBoundary(state.implementation!, next.id) };
-        synchronizeHousingInputs();
-      } else if (staticBoundary !== undefined) {
-        const result = applyInstitutionalBoundary(state.institutional!, state.legislative, {
-          temporal,
-          structure: configuration.structure,
-          legislativeSeed: configuration.runtimeSeed as LegislativeRuntimeSeed,
-          population: state.population,
-          topology: state.electoralTopology,
-        }, staticBoundary);
-        if (result.transferredTicket !== null) {
-          const ended: LegislativeControlBinding = {
-            ...controlBinding,
-            status: "ENDED",
-            endedAt: staticBoundary.at,
-            endReason: "TERM_ENDED",
-          };
-          controlBindingHistory = [...controlBindingHistory, ended];
-          controlBinding = result.transferredTicket.id === temporal.selection.transfer.playerAlignedTicketId
-            ? {
-                id: `${temporal.selection.transfer.bindingIdPrefix}${result.transferredTicket.id}`,
-                decisionSurface: LEGISLATIVE_ADMINISTRATION_DECISION_SURFACE,
-                executiveOfficeId: temporal.selection.transfer.headOfficeId,
-                boundOfficeholderActorId: result.transferredTicket.headCandidate.actorId,
-                status: "ACTIVE",
-                endedAt: null,
-                endReason: null,
-              }
-            : ended;
+      for (const boundary of sameInstant.filter((entry) => !entry.kind.startsWith("HOUSING_"))) {
+        const staticBoundary = temporal.boundaries.find((entry) => entry.id === boundary.id);
+        if (boundary.kind === "SUPPLEMENTAL_RECORD_REVIEW_READY") {
+          state = { ...state, implementation: applyAdministrativeBoundary(state.implementation!, boundary.id) };
+          synchronizeHousingInputs();
+        } else if (staticBoundary !== undefined) {
+          const result = applyInstitutionalBoundary(state.institutional!, state.legislative, {
+            temporal,
+            structure: configuration.structure,
+            legislativeSeed: configuration.runtimeSeed as LegislativeRuntimeSeed,
+            population: state.population,
+            topology: state.electoralTopology,
+          }, staticBoundary);
+          if (result.transferredTicket !== null) {
+            const ended: LegislativeControlBinding = {
+              ...controlBinding,
+              status: "ENDED",
+              endedAt: staticBoundary.at,
+              endReason: "TERM_ENDED",
+            };
+            controlBindingHistory = [...controlBindingHistory, ended];
+            controlBinding = result.transferredTicket.id === temporal.selection.transfer.playerAlignedTicketId
+              ? {
+                  id: `${temporal.selection.transfer.bindingIdPrefix}${result.transferredTicket.id}`,
+                  decisionSurface: LEGISLATIVE_ADMINISTRATION_DECISION_SURFACE,
+                  executiveOfficeId: temporal.selection.transfer.headOfficeId,
+                  boundOfficeholderActorId: result.transferredTicket.headCandidate.actorId,
+                  status: "ACTIVE",
+                  endedAt: null,
+                  endReason: null,
+                }
+              : ended;
+          }
+          processedStatic.add(staticBoundary.id);
+          state = { ...state, legislative: result.legislative, institutional: result.institutional };
+        } else {
+          throw new Error(`Unknown canonical composite boundary ${boundary.id}.`);
         }
-        processedStatic.add(staticBoundary.id);
-        state = { ...state, legislative: result.legislative, institutional: result.institutional };
-      } else if (!next.kind.startsWith("HOUSING_")) {
-        throw new Error(`Unknown canonical composite boundary ${next.id}.`);
+      }
+      if (state.housing !== null) {
+        state = { ...state, housing: finalizePendingMaterialHousingCompletions(state.housing, next.at) };
       }
       state = {
         ...state,
@@ -1003,6 +1062,21 @@ const createSession = (
         { administrationId: `relationship-owner:${relationshipId}`, actorId: implementationConfiguration.intergovernmentalRelationshipOwnerId },
         implementationConfiguration,
         state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    injectGeneratedHousingProject: (input) => {
+      if (state.housing === null || state.institutional === null) throw new Error("Integrated Housing audit state unavailable.");
+      if (Date.parse(input.earliestTransitionAt) < Date.parse(state.institutional.calendar.current)) {
+        throw new Error("Generated Housing project cannot begin before canonical audit time.");
+      }
+      state = { ...state, housing: admitGeneratedMaterialHousingProject(state.housing, input) };
+      return deepCopy(state);
+    },
+    injectHousingMaterialCondition: (projectId, kind, causeRef) => {
+      if (state.housing === null || state.institutional === null) throw new Error("Integrated Housing audit state unavailable.");
+      state = { ...state, housing: applyMaterialHousingCondition(
+        state.housing, projectId, kind, state.institutional.calendar.current, causeRef,
       ) };
       return deepCopy(state);
     },

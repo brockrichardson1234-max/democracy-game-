@@ -320,6 +320,9 @@ export interface MaterialInputRecord {
   readonly sourceOwnerId: string;
   readonly sourceRecordId: string;
   readonly projectRef: string;
+  readonly scopeKey: string | null;
+  readonly releaseOfInputId: string | null;
+  readonly causalPredecessorInputIds: readonly string[];
   readonly validatedAt: string;
   readonly classification: "SIMULATION_GENERATED";
   readonly physicalHousingMutation: false;
@@ -1004,8 +1007,59 @@ export const assertProgramImplementationState = (
       throw new Error(`Administrative boundary ${boundary.id} lacks its owning request.`);
     }
   }
-  if (state.materialInputs.some((entry) => entry.physicalHousingMutation !== false)) {
-    throw new Error("I7-facing input records cannot mutate Housing.");
+  const materialInputIds = new Set(state.materialInputs.map((entry) => entry.id));
+  for (const input of state.materialInputs) {
+    const determination = state.administrativeProgram.determinations.find((entry) => entry.id === input.sourceRecordId);
+    const waiverRequest = determination === undefined
+      ? undefined
+      : state.administrativeProgram.waiverRequests.find((entry) => entry.id === determination.requestId);
+    const released = input.releaseOfInputId === null
+      ? null
+      : state.materialInputs.find((entry) => entry.id === input.releaseOfInputId) ?? null;
+    const waiverKindIndex = determination?.outcome === "SCOPED_WAIVER_GRANTED"
+      ? input.kind === "WAIVER_TERMS" ? 0 : input.kind === "INPUT_AVAILABILITY" ? 1 : -1
+      : determination?.outcome === "DENIED" && input.kind === "COMPLIANCE_HOLD" ? 0 : -1;
+    const expectedWaiverInputId = determination === undefined || waiverKindIndex < 0
+      ? null
+      : `${configuration.futureWaiver.materialInputIdPrefix}${sha256Hex(`${determination.id}|${input.kind}|${waiverKindIndex}`).slice(0, 20)}`;
+    if (
+      input.physicalHousingMutation !== false || input.classification !== "SIMULATION_GENERATED" ||
+      !Number.isFinite(Date.parse(input.validatedAt)) ||
+      (input.scopeKey !== null && input.scopeKey.trim().length === 0) ||
+      input.causalPredecessorInputIds.some((id) => !materialInputIds.has(id)) ||
+      (input.kind === "COMPLIANCE_HOLD" && (input.scopeKey === null || input.releaseOfInputId !== null)) ||
+      (input.releaseOfInputId !== null && (
+        !["WAIVER_TERMS", "INPUT_AVAILABILITY"].includes(input.kind) || released?.kind !== "COMPLIANCE_HOLD" ||
+        released.projectRef !== input.projectRef || released.scopeKey !== input.scopeKey ||
+        Date.parse(released.validatedAt) > Date.parse(input.validatedAt) ||
+        input.causalPredecessorInputIds.length !== 1 || input.causalPredecessorInputIds[0] !== released.id
+      )) ||
+      (input.releaseOfInputId === null && input.causalPredecessorInputIds.length > 0)
+    ) throw new Error(`I7-facing material input ${input.id} contradicts its scoped causal authority.`);
+    if (determination === undefined) {
+      if (input.scopeKey !== null || input.releaseOfInputId !== null || input.causalPredecessorInputIds.length > 0) {
+        throw new Error(`Non-waiver material input ${input.id} acquired waiver-release authority.`);
+      }
+    } else if (
+      waiverRequest === undefined || determination.outcome === "RETURNED_FOR_RECORD" || waiverKindIndex < 0 ||
+      input.id !== expectedWaiverInputId || input.sourceOwnerId !== configuration.futureWaiver.responsibleInstitutionId ||
+      input.projectRef !== waiverRequest.projectRef || input.validatedAt !== determination.decidedAt ||
+      input.scopeKey !== `BABA_COMPONENT:${waiverRequest.inputComponent}`
+    ) {
+      throw new Error(`Waiver material input ${input.id} contradicts its owner determination.`);
+    }
+    if (determination?.outcome === "SCOPED_WAIVER_GRANTED") {
+      const siblingReleaseRelations = state.materialInputs
+        .filter((entry) => entry.sourceRecordId === determination.id)
+        .map((entry) => JSON.stringify({
+          scopeKey: entry.scopeKey,
+          releaseOfInputId: entry.releaseOfInputId,
+          causalPredecessorInputIds: [...entry.causalPredecessorInputIds],
+        }));
+      if (new Set(siblingReleaseRelations).size !== 1) {
+        throw new Error(`Waiver material inputs for ${determination.id} disagree about scoped release authority.`);
+      }
+    }
   }
 };
 
@@ -1284,12 +1338,20 @@ const materialInput = (
   sourceRecordId: string,
   projectRef: string,
   at: string,
+  relation: {
+    readonly scopeKey: string | null;
+    readonly releaseOfInputId: string | null;
+    readonly causalPredecessorInputIds: readonly string[];
+  } = { scopeKey: null, releaseOfInputId: null, causalPredecessorInputIds: [] },
 ): MaterialInputRecord => ({
   id,
   kind,
   sourceOwnerId,
   sourceRecordId,
   projectRef,
+  scopeKey: relation.scopeKey,
+  releaseOfInputId: relation.releaseOfInputId,
+  causalPredecessorInputIds: [...relation.causalPredecessorInputIds],
   validatedAt: at,
   classification: "SIMULATION_GENERATED",
   physicalHousingMutation: false,
@@ -1621,6 +1683,12 @@ export const directWaiverIntention = (
   };
   const kind: MaterialInputKind = granted ? "WAIVER_TERMS" : "COMPLIANCE_HOLD";
   const availabilityKind: MaterialInputKind = granted ? "INPUT_AVAILABILITY" : "COMPLIANCE_HOLD";
+  const scopeKey = `BABA_COMPONENT:${request.inputComponent}`;
+  const releasedHold = granted
+    ? [...state.materialInputs].reverse().find((input) =>
+        input.kind === "COMPLIANCE_HOLD" && input.projectRef === request.projectRef && input.scopeKey === scopeKey &&
+        !state.materialInputs.some((release) => release.releaseOfInputId === input.id)) ?? null
+    : null;
   const inputs = [kind, ...(granted ? [availabilityKind] : [])].map((inputKind, index) => materialInput(
     `${configuration.futureWaiver.materialInputIdPrefix}${sha256Hex(`${determination.id}|${inputKind}|${index}`).slice(0, 20)}`,
     inputKind,
@@ -1628,6 +1696,11 @@ export const directWaiverIntention = (
     determination.id,
     request.projectRef,
     at,
+    {
+      scopeKey,
+      releaseOfInputId: granted ? releasedHold?.id ?? null : null,
+      causalPredecessorInputIds: granted && releasedHold !== null ? [releasedHold.id] : [],
+    },
   ));
   return {
     ...state,

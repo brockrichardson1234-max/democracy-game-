@@ -531,6 +531,30 @@ const validateIntegratedRuntimeConfiguration = (
       housing.semanticsVersion.trim().length === 0 ||
       housing.catchmentScaffoldVersion.trim().length === 0 ||
       housing.materialCalibrationVersion.trim().length === 0 ||
+      housing.scopedReleaseSemanticVersion.trim().length === 0 ||
+      housing.materialInputBatchSemanticVersion.trim().length === 0 ||
+      housing.dependencyPhaseSemanticVersion.trim().length === 0 ||
+      housing.effectiveMaterialRateSemanticVersion.trim().length === 0 ||
+      housing.stageReadinessSemanticVersion.trim().length === 0 ||
+      housing.delaySemanticVersion.trim().length === 0 ||
+      housing.failureSemanticVersion.trim().length === 0 ||
+      !Number.isSafeInteger(housing.housingBoundaryPhase) || housing.housingBoundaryPhase <= 0 ||
+      housing.requiredGeneratedProjectInputKinds.length === 0 ||
+      new Set(housing.requiredGeneratedProjectInputKinds).size !== housing.requiredGeneratedProjectInputKinds.length ||
+      housing.requiredGeneratedProjectInputKinds.some((kind) => kind.trim().length === 0) ||
+      housing.activationInputKind.trim().length === 0 ||
+      !Number.isSafeInteger(housing.capacityPrior.lowUpperPermitsPerThousandMilliUnits) ||
+      !Number.isSafeInteger(housing.capacityPrior.highLowerPermitsPerThousandMilliUnits) ||
+      housing.capacityPrior.lowUpperPermitsPerThousandMilliUnits < 0 ||
+      housing.capacityPrior.highLowerPermitsPerThousandMilliUnits <= housing.capacityPrior.lowUpperPermitsPerThousandMilliUnits ||
+      [
+        housing.capacityPrior.lowRateNumerator,
+        housing.capacityPrior.lowRateDenominator,
+        housing.capacityPrior.normalRateNumerator,
+        housing.capacityPrior.normalRateDenominator,
+        housing.capacityPrior.highRateNumerator,
+        housing.capacityPrior.highRateDenominator,
+      ].some((value) => !Number.isSafeInteger(value) || value <= 0) ||
       !Number.isSafeInteger(housing.physicalToUsableLagDays) ||
       housing.physicalToUsableLagDays <= 0 ||
       !Number.isSafeInteger(housing.expectedControlCount) || housing.expectedControlCount <= 0 ||

@@ -14,9 +14,9 @@ const sha256 = (value: string): string => createHash("sha256").update(value).dig
 describe("I7 authenticated Housing initialization", () => {
   it("pins the selected Housing controls and all behavior-driving material semantics", () => {
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.7.0-i7-reconciled",
-      scenarioVersion: "0.7.0-i7-reconciled",
-      configurationHash: "d71567db40f321f19b310c5f8ec20253c3455e95e9352d636f6a8b5833186d35",
+      configurationVersion: "0.7.1-i7-repair",
+      scenarioVersion: "0.7.1-i7-repair",
+      configurationHash: "9c9fa259e8099224ef89dee443aae16454125dd72432c40ee8d3d287ffe3c53f",
     });
     expect(sha256(canonicalConfigurationContent(US_V0_STRUCTURAL_CONFIGURATION))).toBe(
       US_V0_STRUCTURAL_CONFIGURATION.identity.configurationHash,
@@ -28,6 +28,17 @@ describe("I7 authenticated Housing initialization", () => {
       catchmentScaffoldVersion: US_V0_I7_HOUSING_CONFIGURATION.catchmentScaffoldVersion,
       materialCalibrationVersion: US_V0_I7_HOUSING_CONFIGURATION.materialCalibrationVersion,
       physicalToUsableLagDays: US_V0_I7_HOUSING_CONFIGURATION.physicalToUsableLagDays,
+      scopedReleaseSemanticVersion: US_V0_I7_HOUSING_CONFIGURATION.scopedReleaseSemanticVersion,
+      materialInputBatchSemanticVersion: US_V0_I7_HOUSING_CONFIGURATION.materialInputBatchSemanticVersion,
+      dependencyPhaseSemanticVersion: US_V0_I7_HOUSING_CONFIGURATION.dependencyPhaseSemanticVersion,
+      effectiveMaterialRateSemanticVersion: US_V0_I7_HOUSING_CONFIGURATION.effectiveMaterialRateSemanticVersion,
+      stageReadinessSemanticVersion: US_V0_I7_HOUSING_CONFIGURATION.stageReadinessSemanticVersion,
+      delaySemanticVersion: US_V0_I7_HOUSING_CONFIGURATION.delaySemanticVersion,
+      failureSemanticVersion: US_V0_I7_HOUSING_CONFIGURATION.failureSemanticVersion,
+      housingBoundaryPhase: US_V0_I7_HOUSING_CONFIGURATION.housingBoundaryPhase,
+      requiredGeneratedProjectInputKinds: US_V0_I7_HOUSING_CONFIGURATION.requiredGeneratedProjectInputKinds,
+      activationInputKind: US_V0_I7_HOUSING_CONFIGURATION.activationInputKind,
+      capacityPrior: US_V0_I7_HOUSING_CONFIGURATION.capacityPrior,
       expectedControlCount: US_V0_I7_HOUSING_CONFIGURATION.expectedControlCount,
       expectedRegionCount: US_V0_I7_HOUSING_CONFIGURATION.expectedRegionCount,
       expectedProjectCount: US_V0_I7_HOUSING_CONFIGURATION.expectedProjectCount,

@@ -1,5 +1,7 @@
 import type { SimulationInstant } from "./world";
 import { addElapsedCalendarDays, formatConfiguredEpochMilliseconds } from "../configuration/instant";
+import { sha256Hex } from "../configuration/sha256";
+import type { IntegratedHousingConfiguration } from "../configuration/types";
 
 export type HousingProjectStatus = "FUNDED_NOT_STARTED" | "ACTIVE" | "COMPLETED";
 
@@ -296,6 +298,9 @@ export interface AcceptedMaterialInputReference {
   readonly sourceOwnerId: string;
   readonly sourceRecordId: string;
   readonly projectRef: string;
+  readonly scopeKey: string | null;
+  readonly releaseOfInputId: string | null;
+  readonly causalPredecessorInputIds: readonly string[];
   readonly validatedAt: string;
   readonly classification: string;
 }
@@ -316,11 +321,13 @@ export interface MaterialHousingProject {
   readonly stateGeographyId: string;
   readonly projectLocatorGeographyId: string;
   readonly relationshipId: string;
+  readonly admissionCauseRef: string | null;
   readonly activityType: "NEW_CONSTRUCTION" | "REHABILITATION" | "PRESERVATION";
   readonly expectedUnits: number;
   readonly stage: MaterialHousingProjectStage;
   readonly physicalProgressUnits: number;
   readonly activeElapsedMilliseconds: number;
+  readonly pendingPhysicalCompletionAt: string | null;
   readonly requiredProgressUnits: number;
   readonly baseProgressUnitsPerDay: number;
   readonly earliestTransitionAt: string;
@@ -335,6 +342,16 @@ export interface MaterialHousingProject {
   readonly usableUnitContribution: number;
   readonly history: readonly MaterialHousingProjectHistoryRecord[];
   readonly classification: string;
+}
+
+export interface MaterialHousingConditionRecord {
+  readonly id: string;
+  readonly projectId: string;
+  readonly kind: "MATERIAL_DELAY_STARTED" | "MATERIAL_DELAY_CLEARED" | "MATERIAL_PROJECT_FAILED";
+  readonly occurredAt: string;
+  readonly causeRef: string;
+  readonly semanticVersion: string;
+  readonly classification: "APPROXIMATED_SIMULATION_SCAFFOLD";
 }
 
 export interface MaterialExposureReference {
@@ -390,7 +407,7 @@ export interface MaterialHousingInitializationSeed {
     readonly classification: string;
   }[];
   readonly projects: readonly Omit<MaterialHousingProject,
-    "activeElapsedMilliseconds" | "physicalCompletionAt" | "usableAt" | "usableUnitContribution" | "history">[];
+    "admissionCauseRef" | "activeElapsedMilliseconds" | "pendingPhysicalCompletionAt" | "physicalCompletionAt" | "usableAt" | "usableUnitContribution" | "history">[];
   readonly calibration: {
     readonly pressureFormula: string;
     readonly usableVacancyContributionNumerator: number;
@@ -410,8 +427,21 @@ export interface IntegratedMaterialHousingState {
   readonly regions: readonly MaterialHousingRegion[];
   readonly projects: readonly MaterialHousingProject[];
   readonly acceptedInputs: readonly AcceptedMaterialInputReference[];
+  readonly materialConditions: readonly MaterialHousingConditionRecord[];
   readonly materialExposureReferences: readonly MaterialExposureReference[];
   readonly calibration: MaterialHousingCalibration;
+  readonly behavior: Pick<IntegratedHousingConfiguration,
+    | "scopedReleaseSemanticVersion"
+    | "materialInputBatchSemanticVersion"
+    | "dependencyPhaseSemanticVersion"
+    | "effectiveMaterialRateSemanticVersion"
+    | "stageReadinessSemanticVersion"
+    | "delaySemanticVersion"
+    | "failureSemanticVersion"
+    | "housingBoundaryPhase"
+    | "requiredGeneratedProjectInputKinds"
+    | "activationInputKind"
+    | "capacityPrior">;
 }
 
 const exactCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -437,12 +467,22 @@ const materialPressure = (
 
 export const createIntegratedMaterialHousingState = (
   seed: MaterialHousingInitializationSeed,
-  configuration: {
-    readonly physicalToUsableLagDays: number;
-    readonly expectedControlCount: number;
-    readonly expectedRegionCount: number;
-    readonly expectedProjectCount: number;
-  },
+  configuration: Pick<IntegratedHousingConfiguration,
+    | "physicalToUsableLagDays"
+    | "expectedControlCount"
+    | "expectedRegionCount"
+    | "expectedProjectCount"
+    | "scopedReleaseSemanticVersion"
+    | "materialInputBatchSemanticVersion"
+    | "dependencyPhaseSemanticVersion"
+    | "effectiveMaterialRateSemanticVersion"
+    | "stageReadinessSemanticVersion"
+    | "delaySemanticVersion"
+    | "failureSemanticVersion"
+    | "housingBoundaryPhase"
+    | "requiredGeneratedProjectInputKinds"
+    | "activationInputKind"
+    | "capacityPrior">,
 ): IntegratedMaterialHousingState => {
   if (
     seed.controls.length !== configuration.expectedControlCount ||
@@ -456,7 +496,9 @@ export const createIntegratedMaterialHousingState = (
   }
   const projects = seed.projects.map((project): MaterialHousingProject => ({
     ...exactCopy(project),
+    admissionCauseRef: null,
     activeElapsedMilliseconds: 0,
+    pendingPhysicalCompletionAt: null,
     physicalCompletionAt: null,
     usableAt: null,
     usableUnitContribution: 0,
@@ -489,6 +531,7 @@ export const createIntegratedMaterialHousingState = (
     regions,
     projects,
     acceptedInputs: [],
+    materialConditions: [],
     materialExposureReferences: [],
     calibration: {
       semanticVersion: seed.materialCalibrationVersion,
@@ -499,6 +542,19 @@ export const createIntegratedMaterialHousingState = (
       delayedRateDenominator: seed.calibration.delayedRateDenominator,
       physicalToUsableLagDays: configuration.physicalToUsableLagDays,
       classification: seed.calibration.classification,
+    },
+    behavior: {
+      scopedReleaseSemanticVersion: configuration.scopedReleaseSemanticVersion,
+      materialInputBatchSemanticVersion: configuration.materialInputBatchSemanticVersion,
+      dependencyPhaseSemanticVersion: configuration.dependencyPhaseSemanticVersion,
+      effectiveMaterialRateSemanticVersion: configuration.effectiveMaterialRateSemanticVersion,
+      stageReadinessSemanticVersion: configuration.stageReadinessSemanticVersion,
+      delaySemanticVersion: configuration.delaySemanticVersion,
+      failureSemanticVersion: configuration.failureSemanticVersion,
+      housingBoundaryPhase: configuration.housingBoundaryPhase,
+      requiredGeneratedProjectInputKinds: [...configuration.requiredGeneratedProjectInputKinds],
+      activationInputKind: configuration.activationInputKind,
+      capacityPrior: exactCopy(configuration.capacityPrior),
     },
   };
   assertIntegratedMaterialHousingState(state);
@@ -536,44 +592,416 @@ export const assertIntegratedMaterialHousingState = (state: IntegratedMaterialHo
   if (new Set(state.acceptedInputs.map((entry) => entry.id)).size !== state.acceptedInputs.length) {
     throw new Error("Material Housing accepted inputs require unique identities.");
   }
+  for (const input of state.acceptedInputs) validateMaterialInputRelation(input, state.acceptedInputs);
+  if (
+    new Set(state.materialConditions.map((entry) => entry.id)).size !== state.materialConditions.length ||
+    state.behavior.scopedReleaseSemanticVersion.trim().length === 0 ||
+    state.behavior.materialInputBatchSemanticVersion.trim().length === 0 ||
+    state.behavior.dependencyPhaseSemanticVersion.trim().length === 0 ||
+    state.behavior.effectiveMaterialRateSemanticVersion.trim().length === 0 ||
+    state.behavior.stageReadinessSemanticVersion.trim().length === 0 ||
+    state.behavior.delaySemanticVersion.trim().length === 0 ||
+    state.behavior.failureSemanticVersion.trim().length === 0 ||
+    !Number.isSafeInteger(state.behavior.housingBoundaryPhase) || state.behavior.housingBoundaryPhase <= 0
+  ) throw new Error("Material Housing state lacks configured repaired behavior semantics.");
+  for (const condition of state.materialConditions) {
+    const semanticVersion = condition.kind === "MATERIAL_PROJECT_FAILED"
+      ? state.behavior.failureSemanticVersion
+      : state.behavior.delaySemanticVersion;
+    const expectedId = `housing-condition:${sha256Hex(JSON.stringify({
+      semanticVersion,
+      projectId: condition.projectId,
+      kind: condition.kind,
+      occurredAt: condition.occurredAt,
+      causeRef: condition.causeRef,
+    })).slice(0, 24)}`;
+    if (
+      condition.id !== expectedId || condition.semanticVersion !== semanticVersion ||
+      condition.classification !== "APPROXIMATED_SIMULATION_SCAFFOLD" ||
+      !projectIds.has(condition.projectId) || !Number.isFinite(Date.parse(condition.occurredAt)) ||
+      condition.causeRef.trim().length === 0
+    ) throw new Error(`Material Housing condition ${condition.id} contradicts configured semantics.`);
+  }
+  for (const project of state.projects) {
+    if (
+      new Set(project.history.map((entry) => entry.id)).size !== project.history.length ||
+      project.physicalProgressUnits < 0 || project.physicalProgressUnits > project.requiredProgressUnits ||
+      project.activeElapsedMilliseconds < 0 ||
+      (project.stage === "FAILED" && (
+        project.physicalCompletionAt !== null || project.usableAt !== null || project.usableUnitContribution !== 0 ||
+        !conditionState(state, project.id).failed
+      )) ||
+      (project.pendingPhysicalCompletionAt !== null && (
+        project.physicalCompletionAt !== null || project.complianceHold || !["ACTIVE", "DELAYED"].includes(project.stage)
+      ))
+    ) throw new Error(`Material Housing project ${project.id} has contradictory dynamic state.`);
+    if (project.classification === "SIMULATION_GENERATED") {
+      if (project.admissionCauseRef === null) throw new Error(`Generated Material Housing project ${project.id} lacks admission causality.`);
+      const identityPayload = {
+        semanticVersion: state.behavior.stageReadinessSemanticVersion,
+        housingRegionId: project.housingRegionId,
+        projectLocatorGeographyId: project.projectLocatorGeographyId,
+        relationshipId: project.relationshipId,
+        activityType: project.activityType,
+        expectedUnits: project.expectedUnits,
+        requiredProgressUnits: project.requiredProgressUnits,
+        baseProgressUnitsPerDay: project.baseProgressUnitsPerDay,
+        earliestTransitionAt: project.earliestTransitionAt,
+        causeRef: project.admissionCauseRef,
+      };
+      if (project.id !== `housing-project:generated:${sha256Hex(JSON.stringify(identityPayload)).slice(0, 24)}`) {
+        throw new Error(`Generated Material Housing project ${project.id} lacks deterministic identity.`);
+      }
+    } else if (project.admissionCauseRef !== null) {
+      throw new Error(`Historical Material Housing project ${project.id} cannot acquire generated admission causality.`);
+    }
+  }
+};
+
+const materialConditionOrder: Readonly<Record<MaterialHousingConditionRecord["kind"], number>> = {
+  MATERIAL_DELAY_STARTED: 0,
+  MATERIAL_DELAY_CLEARED: 1,
+  MATERIAL_PROJECT_FAILED: 2,
+};
+
+export const compareMaterialHousingConditions = (
+  left: MaterialHousingConditionRecord,
+  right: MaterialHousingConditionRecord,
+): number => instantValue(left.occurredAt, left.id) - instantValue(right.occurredAt, right.id) ||
+  materialConditionOrder[left.kind] - materialConditionOrder[right.kind] || left.id.localeCompare(right.id);
+
+const orderedConditions = (
+  state: IntegratedMaterialHousingState,
+  projectId: string,
+): readonly MaterialHousingConditionRecord[] => state.materialConditions
+  .filter((condition) => condition.projectId === projectId)
+  .sort(compareMaterialHousingConditions);
+
+const conditionState = (state: IntegratedMaterialHousingState, projectId: string): { delayed: boolean; failed: boolean } => {
+  let delayed = false;
+  let failed = false;
+  for (const condition of orderedConditions(state, projectId)) {
+    if (condition.kind === "MATERIAL_DELAY_STARTED") delayed = true;
+    if (condition.kind === "MATERIAL_DELAY_CLEARED") delayed = false;
+    if (condition.kind === "MATERIAL_PROJECT_FAILED") failed = true;
+  }
+  return { delayed, failed };
+};
+
+const exactRatio = (value: string): number => {
+  const match = /^(\d+)\/(\d+)$/.exec(value);
+  if (match === null || Number(match[2]) <= 0) throw new Error(`Housing capacity prior ${value} is not an exact positive ratio.`);
+  return Number(match[1]) / Number(match[2]);
+};
+
+export const resolveEffectiveMaterialProgressRate = (
+  state: IntegratedMaterialHousingState,
+  project: MaterialHousingProject,
+): number => {
+  const region = state.regions.find((entry) => entry.id === project.housingRegionId);
+  if (region === undefined) throw new Error(`Material Housing project ${project.id} lacks its region.`);
+  if (region.annualPermittedUnits === 0 || project.stage === "FAILED" || project.complianceHold) return 0;
+  const milliUnits = Math.round(exactRatio(region.permitsPerThousandResidentsExact) * 1_000);
+  if (milliUnits === 0) return 0;
+  const prior = state.behavior.capacityPrior;
+  const factor = milliUnits <= prior.lowUpperPermitsPerThousandMilliUnits
+    ? [prior.lowRateNumerator, prior.lowRateDenominator]
+    : milliUnits >= prior.highLowerPermitsPerThousandMilliUnits
+      ? [prior.highRateNumerator, prior.highRateDenominator]
+      : [prior.normalRateNumerator, prior.normalRateDenominator];
+  const conditions = conditionState(state, project.id);
+  const delayedNumerator = conditions.delayed ? state.calibration.delayedRateNumerator : 1;
+  const delayedDenominator = conditions.delayed ? state.calibration.delayedRateDenominator : 1;
+  return project.baseProgressUnitsPerDay * factor[0] * delayedNumerator / factor[1] / delayedDenominator;
+};
+
+const effectiveHoldIds = (
+  inputs: readonly AcceptedMaterialInputReference[],
+): readonly string[] => {
+  const released = new Set(inputs.flatMap((input) => input.releaseOfInputId === null ? [] : [input.releaseOfInputId]));
+  return inputs.filter((input) => input.kind === "COMPLIANCE_HOLD" && !released.has(input.id)).map((input) => input.id).sort();
+};
+
+const resolveInputDrivenStage = (
+  state: IntegratedMaterialHousingState,
+  project: MaterialHousingProject,
+  relevant: readonly AcceptedMaterialInputReference[],
+): { stage: MaterialHousingProjectStage; held: boolean; availability: string } => {
+  if (["USABLE", "PRESERVATION_LOSS_AVOIDED"].includes(project.stage)) {
+    return { stage: project.stage, held: project.complianceHold, availability: project.inputAvailability };
+  }
+  const conditions = conditionState(state, project.id);
+  if (conditions.failed || project.stage === "FAILED") return { stage: "FAILED", held: false, availability: "MATERIAL_PROJECT_FAILED" };
+  const held = effectiveHoldIds(relevant).length > 0;
+  if (held) return { stage: "BLOCKED", held: true, availability: "COMPLIANCE_HOLD" };
+  if (project.physicalCompletionAt !== null) {
+    return { stage: "PHYSICALLY_COMPLETE", held: false, availability: "VALIDATED_INPUT_AVAILABLE" };
+  }
+  if (conditions.delayed) return { stage: "DELAYED", held: false, availability: "TEMPORARY_MATERIAL_DELAY" };
+  const generated = project.classification === "SIMULATION_GENERATED";
+  if (!generated) return { stage: "ACTIVE", held: false, availability: "VALIDATED_INPUT_AVAILABLE" };
+  const kinds = new Set(relevant.map((input) => input.kind));
+  if (!kinds.has("RECIPIENT_READINESS")) return { stage: "PROPOSED", held: false, availability: "PREREQUISITES_PENDING" };
+  if (state.behavior.requiredGeneratedProjectInputKinds.some((kind) => !kinds.has(kind))) {
+    return { stage: "READY_FOR_COMMITMENT", held: false, availability: "FISCAL_OR_COMMITMENT_INPUTS_PENDING" };
+  }
+  if (!kinds.has(state.behavior.activationInputKind)) {
+    return { stage: "FUNDED_NOT_STARTED", held: false, availability: "ACTIVATION_INPUT_PENDING" };
+  }
+  const candidate = { ...project, stage: "ACTIVE" as const, complianceHold: false };
+  if (resolveEffectiveMaterialProgressRate(state, candidate) <= 0) {
+    return { stage: "FUNDED_NOT_STARTED", held: false, availability: "MATERIAL_CAPACITY_UNAVAILABLE" };
+  }
+  return { stage: "ACTIVE", held: false, availability: "VALIDATED_INPUT_AVAILABLE" };
+};
+
+const validateMaterialInputRelation = (
+  input: AcceptedMaterialInputReference,
+  all: readonly AcceptedMaterialInputReference[],
+): void => {
+  const released = input.releaseOfInputId === null ? null : all.find((entry) => entry.id === input.releaseOfInputId) ?? null;
+  if (
+    !Number.isFinite(Date.parse(input.validatedAt)) || input.id.trim().length === 0 ||
+    (input.scopeKey !== null && input.scopeKey.trim().length === 0) ||
+    (input.kind === "COMPLIANCE_HOLD" && (input.scopeKey === null || input.releaseOfInputId !== null)) ||
+    (input.releaseOfInputId !== null && (
+      !["WAIVER_TERMS", "INPUT_AVAILABILITY"].includes(input.kind) ||
+      (released !== null && (
+        released.kind !== "COMPLIANCE_HOLD" || released.projectRef !== input.projectRef ||
+        released.scopeKey !== input.scopeKey || Date.parse(released.validatedAt) > Date.parse(input.validatedAt) ||
+        input.causalPredecessorInputIds.length !== 1 || input.causalPredecessorInputIds[0] !== released.id
+      ))
+    )) ||
+    input.causalPredecessorInputIds.some((id) => id !== input.releaseOfInputId && !all.some((entry) => entry.id === id))
+  ) throw new Error(`Material Housing input ${input.id} lacks scoped release authority.`);
+};
+
+export const resolveMaterialInputBatch = (
+  state: IntegratedMaterialHousingState,
+  inputsAtInstant: readonly AcceptedMaterialInputReference[],
+): IntegratedMaterialHousingState => {
+  if (inputsAtInstant.length === 0) return state;
+  const at = inputsAtInstant[0].validatedAt;
+  if (inputsAtInstant.some((input) => input.validatedAt !== at)) {
+    throw new Error("Material Housing batch requires one canonical validation instant.");
+  }
+  const byId = new Map(state.acceptedInputs.map((entry) => [entry.id, entry]));
+  for (const input of inputsAtInstant) {
+    const prior = byId.get(input.id);
+    if (prior !== undefined && JSON.stringify(prior) !== JSON.stringify(input)) {
+      throw new Error(`Material Housing input ${input.id} was redefined.`);
+    }
+    byId.set(input.id, exactCopy(input));
+  }
+  const acceptedInputs = [...byId.values()].sort((left, right) =>
+    instantValue(left.validatedAt, `${left.id} validation`) - instantValue(right.validatedAt, `${right.id} validation`) ||
+    left.id.localeCompare(right.id));
+  if (new Set(acceptedInputs.map((input) => input.id)).size !== acceptedInputs.length) {
+    throw new Error("Material Housing batch requires unique canonical input identities.");
+  }
+  for (const input of acceptedInputs) {
+    if (!state.projects.some((project) => project.id === input.projectRef)) {
+      throw new Error("Material Housing input references an unknown project.");
+    }
+    validateMaterialInputRelation(input, acceptedInputs);
+  }
+  const projects = state.projects.map((project): MaterialHousingProject => {
+    const relevant = acceptedInputs.filter((input) => input.projectRef === project.id);
+    const sameInstant = relevant.filter((input) => input.validatedAt === at);
+    if (sameInstant.length === 0) return project;
+    const priorBatchHistory = project.history.find((entry) =>
+      entry.occurredAt === at && entry.id.startsWith(`housing-history:${project.id}:input-batch:`));
+    const fromStage = priorBatchHistory?.fromStage ?? project.stage;
+    const withoutPriorBatch = project.history.filter((entry) =>
+      !(entry.occurredAt === at && entry.id.startsWith(`housing-history:${project.id}:input-batch:`)));
+    const resolved = resolveInputDrivenStage(state, { ...project, stage: fromStage }, relevant);
+    const causeInputIds = sameInstant.map((input) => input.id).sort();
+    const batchIdentity = sha256Hex(JSON.stringify({
+      semanticVersion: state.behavior.materialInputBatchSemanticVersion,
+      projectId: project.id,
+      at,
+      causeInputIds,
+    })).slice(0, 20);
+    const deferPending = resolved.held && project.pendingPhysicalCompletionAt === at;
+    const batchHistory: MaterialHousingProjectHistoryRecord = {
+      id: `housing-history:${project.id}:input-batch:${batchIdentity}`,
+      projectId: project.id,
+      fromStage,
+      toStage: resolved.stage,
+      occurredAt: at,
+      causeInputIds,
+      classification: "SIMULATION_GENERATED",
+    };
+    return {
+      ...project,
+      stage: resolved.stage,
+      complianceHold: resolved.held,
+      inputAvailability: resolved.availability,
+      acceptedGovernmentInputRefs: relevant.map((input) => input.id).sort(),
+      activeElapsedMilliseconds: deferPending
+        ? Math.max(0, project.activeElapsedMilliseconds - 1)
+        : project.activeElapsedMilliseconds,
+      physicalProgressUnits: deferPending
+        ? Math.min(project.physicalProgressUnits, Math.max(0, project.requiredProgressUnits - 1))
+        : project.physicalProgressUnits,
+      pendingPhysicalCompletionAt: deferPending ? null : project.pendingPhysicalCompletionAt,
+      history: [...withoutPriorBatch, batchHistory].sort((left, right) =>
+        instantValue(left.occurredAt, left.id) - instantValue(right.occurredAt, right.id) || left.id.localeCompare(right.id)),
+    };
+  });
+  const next = { ...state, acceptedInputs, projects };
+  assertIntegratedMaterialHousingState(next);
+  return next;
 };
 
 export const admitValidatedMaterialInputs = (
   state: IntegratedMaterialHousingState,
   inputs: readonly AcceptedMaterialInputReference[],
 ): IntegratedMaterialHousingState => {
-  const existing = new Set(state.acceptedInputs.map((entry) => entry.id));
+  const existing = new Map(state.acceptedInputs.map((entry) => [entry.id, entry]));
   const admitted = inputs.filter((input) => !existing.has(input.id));
-  if (admitted.some((input) => !state.projects.some((project) => project.id === input.projectRef))) {
-    throw new Error("Material Housing input references an unknown project.");
+  for (const input of inputs) {
+    const prior = existing.get(input.id);
+    if (prior !== undefined && JSON.stringify(prior) !== JSON.stringify(input)) {
+      throw new Error(`Material Housing input ${input.id} was redefined.`);
+    }
   }
-  const acceptedInputs = [...state.acceptedInputs, ...admitted.map(exactCopy)].sort((left, right) =>
-    instantValue(left.validatedAt, `${left.id} validation`) - instantValue(right.validatedAt, `${right.id} validation`) || left.id.localeCompare(right.id));
-  const projects = state.projects.map((project): MaterialHousingProject => {
-    const relevant = acceptedInputs.filter((input) => input.projectRef === project.id);
-    const latestHold = relevant.filter((input) => input.kind === "COMPLIANCE_HOLD").at(-1);
-    const latestRelease = relevant.filter((input) => input.kind === "WAIVER_TERMS" || input.kind === "INPUT_AVAILABILITY").at(-1);
-    const held = latestHold !== undefined && (latestRelease === undefined || instantValue(latestHold.validatedAt, latestHold.id) > instantValue(latestRelease.validatedAt, latestRelease.id));
-    if (held === project.complianceHold) return project;
-    const nextStage: MaterialHousingProjectStage = held ? "BLOCKED" : project.physicalProgressUnits > 0 ? "ACTIVE" : "FUNDED_NOT_STARTED";
+  let current = state;
+  const instants = [...new Set(admitted.map((input) => input.validatedAt))].sort((left, right) =>
+    instantValue(left, "material batch") - instantValue(right, "material batch") || left.localeCompare(right));
+  for (const at of instants) {
+    const completeBatch = [
+      ...current.acceptedInputs.filter((input) => input.validatedAt === at),
+      ...admitted.filter((input) => input.validatedAt === at),
+    ];
+    current = resolveMaterialInputBatch(current, completeBatch);
+  }
+  return current;
+};
+
+export interface GeneratedMaterialHousingProjectInput {
+  readonly housingRegionId: string;
+  readonly projectLocatorGeographyId: string;
+  readonly relationshipId: string;
+  readonly activityType: MaterialHousingProject["activityType"];
+  readonly expectedUnits: number;
+  readonly requiredProgressUnits: number;
+  readonly baseProgressUnitsPerDay: number;
+  readonly earliestTransitionAt: string;
+  readonly causeRef: string;
+}
+
+export const admitGeneratedMaterialHousingProject = (
+  state: IntegratedMaterialHousingState,
+  input: GeneratedMaterialHousingProjectInput,
+): IntegratedMaterialHousingState => {
+  const region = state.regions.find((entry) => entry.id === input.housingRegionId);
+  if (
+    region === undefined || input.projectLocatorGeographyId.trim().length === 0 || input.relationshipId.trim().length === 0 ||
+    input.causeRef.trim().length === 0 || !Number.isSafeInteger(input.expectedUnits) || input.expectedUnits <= 0 ||
+    !Number.isSafeInteger(input.requiredProgressUnits) || input.requiredProgressUnits <= 0 ||
+    !Number.isFinite(input.baseProgressUnitsPerDay) || input.baseProgressUnitsPerDay <= 0 ||
+    !Number.isFinite(Date.parse(input.earliestTransitionAt))
+  ) throw new Error("Generated Material Housing project lacks a bounded region, scale, rate, time, or cause.");
+  const identityPayload = { semanticVersion: state.behavior.stageReadinessSemanticVersion, ...input };
+  const id = `housing-project:generated:${sha256Hex(JSON.stringify(identityPayload)).slice(0, 24)}`;
+  if (state.projects.some((project) => project.id === id)) return state;
+  const project: MaterialHousingProject = {
+    id,
+    housingRegionId: region.id,
+    stateGeographyId: region.stateGeographyId,
+    projectLocatorGeographyId: input.projectLocatorGeographyId,
+    relationshipId: input.relationshipId,
+    admissionCauseRef: input.causeRef,
+    activityType: input.activityType,
+    expectedUnits: input.expectedUnits,
+    stage: "PROPOSED",
+    physicalProgressUnits: 0,
+    activeElapsedMilliseconds: 0,
+    pendingPhysicalCompletionAt: null,
+    requiredProgressUnits: input.requiredProgressUnits,
+    baseProgressUnitsPerDay: input.baseProgressUnitsPerDay,
+    earliestTransitionAt: input.earliestTransitionAt,
+    plannedOrAnticipatedCompletionAt: null,
+    completionEvidence: "SIMULATION_GENERATED_MATERIAL_ROUTE",
+    financingReadiness: "PREREQUISITES_PENDING",
+    inputAvailability: "PREREQUISITES_PENDING",
+    complianceHold: false,
+    acceptedGovernmentInputRefs: [],
+    physicalCompletionAt: null,
+    usableAt: null,
+    usableUnitContribution: 0,
+    history: [],
+    classification: "SIMULATION_GENERATED",
+  };
+  const next = {
+    ...state,
+    projects: [...state.projects, project],
+    regions: state.regions.map((entry) => entry.id === region.id
+      ? { ...entry, activeProjectIds: [...entry.activeProjectIds, id].sort() }
+      : entry),
+  };
+  assertIntegratedMaterialHousingState(next);
+  return next;
+};
+
+export const applyMaterialHousingCondition = (
+  state: IntegratedMaterialHousingState,
+  projectId: string,
+  kind: MaterialHousingConditionRecord["kind"],
+  occurredAt: string,
+  causeRef: string,
+): IntegratedMaterialHousingState => {
+  const project = state.projects.find((entry) => entry.id === projectId);
+  if (project === undefined || !Number.isFinite(Date.parse(occurredAt)) || causeRef.trim().length === 0) {
+    throw new Error("Material Housing condition requires a project, configured instant, and cause.");
+  }
+  const before = conditionState(state, projectId);
+  if (kind === "MATERIAL_DELAY_CLEARED" && !before.delayed) throw new Error("Material delay clear requires an active delay.");
+  if (kind === "MATERIAL_DELAY_STARTED" && (before.delayed || project.stage !== "ACTIVE")) {
+    throw new Error("Material delay requires a currently active project without an existing delay.");
+  }
+  if (before.failed) throw new Error("Failed Material Housing projects cannot receive new conditions.");
+  if (["PHYSICALLY_COMPLETE", "USABLE", "PRESERVATION_LOSS_AVOIDED"].includes(project.stage)) {
+    throw new Error("Completed Material Housing projects cannot enter delay or failure routes.");
+  }
+  const semanticVersion = kind === "MATERIAL_PROJECT_FAILED"
+    ? state.behavior.failureSemanticVersion
+    : state.behavior.delaySemanticVersion;
+  const id = `housing-condition:${sha256Hex(JSON.stringify({ semanticVersion, projectId, kind, occurredAt, causeRef })).slice(0, 24)}`;
+  if (state.materialConditions.some((entry) => entry.id === id)) return state;
+  const condition: MaterialHousingConditionRecord = {
+    id, projectId, kind, occurredAt, causeRef, semanticVersion,
+    classification: "APPROXIMATED_SIMULATION_SCAFFOLD",
+  };
+  const withCondition = {
+    ...state,
+    materialConditions: [...state.materialConditions, condition].sort(compareMaterialHousingConditions),
+  };
+  const projects = withCondition.projects.map((entry): MaterialHousingProject => {
+    if (entry.id !== projectId) return entry;
+    const relevant = withCondition.acceptedInputs.filter((input) => input.projectRef === entry.id);
+    const resolved = resolveInputDrivenStage(withCondition, entry, relevant);
+    const history: MaterialHousingProjectHistoryRecord = {
+      id: `housing-history:${entry.id}:condition:${sha256Hex(id).slice(0, 20)}`,
+      projectId: entry.id,
+      fromStage: entry.stage,
+      toStage: resolved.stage,
+      occurredAt,
+      causeInputIds: [id],
+      classification: "SIMULATION_GENERATED",
+    };
     return {
-      ...project,
-      complianceHold: held,
-      inputAvailability: held ? "COMPLIANCE_HOLD" : "VALIDATED_INPUT_AVAILABLE",
-      stage: nextStage,
-      acceptedGovernmentInputRefs: [...new Set([...project.acceptedGovernmentInputRefs, ...relevant.map((entry) => entry.id)])],
-      history: [...project.history, {
-        id: `housing-history:${project.id}:${relevant.at(-1)?.id ?? "input"}`,
-        projectId: project.id,
-        fromStage: project.stage,
-        toStage: nextStage,
-        occurredAt: relevant.at(-1)?.validatedAt ?? project.earliestTransitionAt,
-        causeInputIds: relevant.map((entry) => entry.id),
-        classification: "SIMULATION_GENERATED",
-      }],
+      ...entry,
+      stage: resolved.stage,
+      complianceHold: resolved.held,
+      inputAvailability: resolved.availability,
+      pendingPhysicalCompletionAt: kind === "MATERIAL_PROJECT_FAILED" ? null : entry.pendingPhysicalCompletionAt,
+      history: [...entry.history, history].sort((left, right) =>
+        instantValue(left.occurredAt, left.id) - instantValue(right.occurredAt, right.id) || left.id.localeCompare(right.id)),
     };
   });
-  const next = { ...state, acceptedInputs, projects };
+  const next = { ...withCondition, projects };
   assertIntegratedMaterialHousingState(next);
   return next;
 };
@@ -600,27 +1028,36 @@ export const deriveMaterialHousingBoundaries = (
 ): readonly MaterialHousingBoundary[] => {
   const currentValue = instantValue(current, "Material Housing scheduler instant");
   return state.projects.flatMap((project): readonly MaterialHousingBoundary[] => {
-    if (["USABLE", "FAILED", "PRESERVATION_LOSS_AVOIDED"].includes(project.stage) || project.complianceHold) {
+    if (["USABLE", "FAILED", "PRESERVATION_LOSS_AVOIDED", "PROPOSED", "READY_FOR_COMMITMENT", "FUNDED_NOT_STARTED", "BLOCKED"].includes(project.stage) || project.complianceHold) {
       return [];
     }
     let at: string;
     let kind: MaterialHousingBoundary["kind"];
     let order: number;
     if (project.physicalCompletionAt === null) {
-      const requiredActiveMilliseconds = Math.ceil(
-        project.requiredProgressUnits * 86_400_000 / project.baseProgressUnitsPerDay,
-      );
-      const remainingActiveMilliseconds = requiredActiveMilliseconds - project.activeElapsedMilliseconds;
-      if (remainingActiveMilliseconds <= 0) {
-        throw new Error(`Material Housing project ${project.id} has unprocessed completion progress.`);
+      if (project.pendingPhysicalCompletionAt !== null) {
+        at = project.pendingPhysicalCompletionAt;
+        kind = "HOUSING_PHYSICAL_COMPLETION";
+        order = 0;
+      } else {
+        const rate = resolveEffectiveMaterialProgressRate(state, project);
+        if (rate <= 0) return [];
+        const requiredActiveMilliseconds = project.requiredProgressUnits * 86_400_000 / project.baseProgressUnitsPerDay;
+        const remainingBaseEquivalentMilliseconds = requiredActiveMilliseconds - project.activeElapsedMilliseconds;
+        if (remainingBaseEquivalentMilliseconds <= 0) {
+          throw new Error(`Material Housing project ${project.id} has unprocessed completion progress.`);
+        }
+        const remainingWallMilliseconds = Math.ceil(
+          remainingBaseEquivalentMilliseconds * project.baseProgressUnitsPerDay / rate,
+        );
+        const effectiveFrom = Math.max(
+          currentValue,
+          instantValue(project.earliestTransitionAt, `${project.id} earliest transition`),
+        );
+        at = formatConfiguredEpochMilliseconds(effectiveFrom + remainingWallMilliseconds);
+        kind = "HOUSING_PHYSICAL_COMPLETION";
+        order = 0;
       }
-      const effectiveFrom = Math.max(
-        currentValue,
-        instantValue(project.earliestTransitionAt, `${project.id} earliest transition`),
-      );
-      at = formatConfiguredEpochMilliseconds(effectiveFrom + remainingActiveMilliseconds);
-      kind = "HOUSING_PHYSICAL_COMPLETION";
-      order = 0;
     } else {
       if (project.usableAt === null) {
         throw new Error(`Material Housing project ${project.id} lacks its usability boundary.`);
@@ -636,7 +1073,7 @@ export const deriveMaterialHousingBoundaries = (
       id: `housing-boundary:${project.id}:${kind}`,
       ownerId: project.id,
       at,
-      phase: -1_000,
+      phase: state.behavior.housingBoundaryPhase,
       order,
       stableKey: `${state.materialCalibrationVersion}|${project.id}|${kind}`,
       kind,
@@ -651,6 +1088,7 @@ export const advanceIntegratedMaterialHousing = (
   state: IntegratedMaterialHousingState,
   from: string,
   to: string,
+  options: { readonly deferCompletionsAtTarget?: boolean } = {},
 ): IntegratedMaterialHousingState => {
   const fromValue = instantValue(from, "Material advancement start");
   const toValue = instantValue(to, "Material advancement target");
@@ -658,7 +1096,10 @@ export const advanceIntegratedMaterialHousing = (
   if (toValue === fromValue) return state;
   const additions = new Map<string, { units: number; at: string; projectId: string; preservation: boolean }[]>();
   const projects = state.projects.map((project): MaterialHousingProject => {
-    if (["USABLE", "FAILED", "PRESERVATION_LOSS_AVOIDED"].includes(project.stage) || project.complianceHold) return project;
+    if (
+      ["USABLE", "FAILED", "PRESERVATION_LOSS_AVOIDED", "PROPOSED", "READY_FOR_COMMITMENT", "FUNDED_NOT_STARTED", "BLOCKED"].includes(project.stage) ||
+      project.complianceHold
+    ) return project;
     const effectiveFrom = Math.max(fromValue, instantValue(project.earliestTransitionAt, `${project.id} earliest transition`));
     if (toValue <= effectiveFrom) return project;
     let progress = project.physicalProgressUnits;
@@ -667,9 +1108,12 @@ export const advanceIntegratedMaterialHousing = (
     let usableAt = project.usableAt;
     const history = [...project.history];
     if (physicalCompletionAt === null) {
+      const rate = resolveEffectiveMaterialProgressRate(state, project);
+      if (rate <= 0) return project;
       const elapsedMilliseconds = toValue - effectiveFrom;
-      const requiredActiveMilliseconds = Math.ceil(project.requiredProgressUnits * 86_400_000 / project.baseProgressUnitsPerDay);
-      const possibleActiveMilliseconds = activeElapsedMilliseconds + elapsedMilliseconds;
+      const rateRatio = rate / project.baseProgressUnitsPerDay;
+      const requiredActiveMilliseconds = project.requiredProgressUnits * 86_400_000 / project.baseProgressUnitsPerDay;
+      const possibleActiveMilliseconds = activeElapsedMilliseconds + elapsedMilliseconds * rateRatio;
       if (possibleActiveMilliseconds < requiredActiveMilliseconds) {
         activeElapsedMilliseconds = possibleActiveMilliseconds;
         const possible = Math.floor(activeElapsedMilliseconds * project.baseProgressUnitsPerDay / 86_400_000);
@@ -677,10 +1121,20 @@ export const advanceIntegratedMaterialHousing = (
           ...project,
           physicalProgressUnits: possible,
           activeElapsedMilliseconds,
-          stage: possible > 0 ? "ACTIVE" : project.stage,
+          stage: project.stage === "DELAYED" ? "DELAYED" : possible > 0 ? "ACTIVE" : project.stage,
         };
       }
-      const completionValue = effectiveFrom + requiredActiveMilliseconds - activeElapsedMilliseconds;
+      const completionValue = effectiveFrom + Math.ceil(
+        (requiredActiveMilliseconds - activeElapsedMilliseconds) / rateRatio,
+      );
+      if (options.deferCompletionsAtTarget === true && completionValue === toValue) {
+        return {
+          ...project,
+          physicalProgressUnits: project.requiredProgressUnits,
+          activeElapsedMilliseconds: requiredActiveMilliseconds,
+          pendingPhysicalCompletionAt: to,
+        };
+      }
       physicalCompletionAt = formatConfiguredEpochMilliseconds(completionValue);
       usableAt = addDays(physicalCompletionAt, state.calibration.physicalToUsableLagDays);
       progress = project.requiredProgressUnits;
@@ -703,9 +1157,9 @@ export const advanceIntegratedMaterialHousing = (
         fromStage: "PHYSICALLY_COMPLETE", toStage: finalStage, occurredAt: usableAt,
         causeInputIds: [...project.acceptedGovernmentInputRefs], classification: "SIMULATION_GENERATED",
       });
-      return { ...project, physicalProgressUnits: progress, activeElapsedMilliseconds, physicalCompletionAt, usableAt, stage: finalStage, usableUnitContribution: contribution, history };
+      return { ...project, physicalProgressUnits: progress, activeElapsedMilliseconds, pendingPhysicalCompletionAt: null, physicalCompletionAt, usableAt, stage: finalStage, usableUnitContribution: contribution, history };
     }
-    return { ...project, physicalProgressUnits: progress, activeElapsedMilliseconds, physicalCompletionAt, usableAt, stage: "PHYSICALLY_COMPLETE", history };
+    return { ...project, physicalProgressUnits: progress, activeElapsedMilliseconds, pendingPhysicalCompletionAt: null, physicalCompletionAt, usableAt, stage: "PHYSICALLY_COMPLETE", history };
   });
   const controlsById = new Map(state.controls.map((control) => [control.id, control]));
   const materialExposureReferences = [...state.materialExposureReferences];
@@ -743,6 +1197,44 @@ export const advanceIntegratedMaterialHousing = (
     instantValue(left.occurredAt, `${left.id} occurrence`) - instantValue(right.occurredAt, `${right.id} occurrence`) ||
     left.id.localeCompare(right.id));
   const next = { ...state, projects, regions, materialExposureReferences };
+  assertIntegratedMaterialHousingState(next);
+  return next;
+};
+
+export const finalizePendingMaterialHousingCompletions = (
+  state: IntegratedMaterialHousingState,
+  at: string,
+): IntegratedMaterialHousingState => {
+  const projects = state.projects.map((project): MaterialHousingProject => {
+    if (project.pendingPhysicalCompletionAt !== at) return project;
+    if (project.complianceHold || !["ACTIVE", "DELAYED"].includes(project.stage) || resolveEffectiveMaterialProgressRate(state, project) <= 0) {
+      return {
+        ...project,
+        activeElapsedMilliseconds: Math.max(0, project.activeElapsedMilliseconds - 1),
+        physicalProgressUnits: Math.min(project.physicalProgressUnits, Math.max(0, project.requiredProgressUnits - 1)),
+        pendingPhysicalCompletionAt: null,
+      };
+    }
+    const usableAt = addDays(at, state.calibration.physicalToUsableLagDays);
+    return {
+      ...project,
+      pendingPhysicalCompletionAt: null,
+      physicalProgressUnits: project.requiredProgressUnits,
+      physicalCompletionAt: at,
+      usableAt,
+      stage: "PHYSICALLY_COMPLETE",
+      history: [...project.history, {
+        id: `housing-history:${project.id}:physical-completion`,
+        projectId: project.id,
+        fromStage: project.stage,
+        toStage: "PHYSICALLY_COMPLETE",
+        occurredAt: at,
+        causeInputIds: [...project.acceptedGovernmentInputRefs],
+        classification: "SIMULATION_GENERATED",
+      }],
+    };
+  });
+  const next = { ...state, projects };
   assertIntegratedMaterialHousingState(next);
   return next;
 };
