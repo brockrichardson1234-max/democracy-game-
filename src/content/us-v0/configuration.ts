@@ -245,10 +245,10 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.8.0-i8-reconciled",
+    configurationVersion: "0.8.1-i8-repair",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.8.0-i8-reconciled",
-    configurationHash: "a6c5fd9b44473740849252a29a37dab2e0583f6801046363a72e3136a607b203",
+    scenarioVersion: "0.8.1-i8-repair",
+    configurationHash: "c45d223df196df2f0987e6ab84ae679fdd6444e8b96ce6c9c6e3728327bfc6a8",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
