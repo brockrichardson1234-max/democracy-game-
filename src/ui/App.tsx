@@ -33,11 +33,12 @@ export const App = () => {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Commit 22 runtime candidate</p>
-        <h1>Headless simulation is alive.</h1>
+        <p className="eyebrow">Legacy runtime notice</p>
+        <h1>Legacy GL0 Development Harness</h1>
         <p>
-          The renderer is showing an application-layer projection. Canonical world
-          state stays inside the headless simulation/session boundary.
+          The current accepted U.S. simulation runtime is headless and is not yet the
+          default application runtime. This harness boots the frozen synthetic GL0
+          development fixture.
         </p>
 
         <dl>

@@ -1,10 +1,20 @@
 # democracy-game-
 
-Status: **Architecture V0 accepted at `54afd51c6ae894df5c3680cf15df472cdcb125b2` — READY FOR WALKING SKELETON. Commit 8 is the first runtime-code candidate.**
+Current accepted implementation authority: **I7 — U.S. Integrated Partial Runtime**
+
+Accepted SHA: `9cdf1881ddb30d5c70901d5be3bd77148ae4b07a`
 
 Exact commit SHAs remain the review/acceptance authority. Branch refs are convenience pointers.
 
-This repository is for a systemic political strategy simulation derived from **Governing Loop 0**. The accepted architecture lives in `docs/00` through `docs/16`; the Commit-6 audits are review evidence, while `docs/16_COMMIT_7_CONSOLIDATED_ARCHITECTURE_REPAIR_V0.md` contains the final narrow Architecture V0 repairs.
+## Current runtime state
+
+- The accepted U.S. runtime is integrated headlessly through Housing.
+- The default React/Electron application remains the legacy GL0 development harness.
+- GL0 is frozen for new simulation features and retained only as a regression/development fixture.
+- I8 and I9 extend only the accepted U.S. integrated runtime.
+- Runtime convergence is mandatory at I10.
+
+The project is not yet presented as an end-to-end playable U.S. simulation. The production/default application does not boot the accepted U.S. runtime yet.
 
 ## Architecture authority/read order
 
@@ -28,9 +38,7 @@ This repository is for a systemic political strategy simulation derived from **G
 18. `docs/DECISIONS.md` — navigation/index
 19. `docs/OPEN_QUESTIONS.md` — deferred questions
 
-## Runtime rule
-
-Commit 8 bootstraps only enough software structure to grow the accepted GL0 causal spine safely.
+## Runtime boundaries
 
 ```text
 headless TypeScript simulation
@@ -42,58 +50,10 @@ React UI
 Electron = outer desktop host only
 ```
 
-Current bootstrap folders are implementation scaffolding, **not** a one-module-per-architecture-concept freeze:
-
-```text
-src/sim/
-src/app/
-src/ui/
-electron/
-tests/
-scripts/
-```
-
-Detailed runtime organization should emerge from executable GL0 evidence. Do not pre-create packages for every architecture noun.
-
-### Boundary rules
-
 - `src/sim` is headless and cannot depend on React, Electron, DOM/browser APIs, Node APIs, UI state, or wall-clock/random globals.
 - `src/app` may depend on simulation but not on React/Electron/UI.
 - `src/ui` consumes the application/session layer rather than canonical simulation state directly.
 - Electron hosts the built web application and contains no political/game-domain logic.
 - Architecture V0 semantic ownership does not imply a matching source-code module layout.
 
-## Commit-8 bootstrap target
-
-The first executable proof is intentionally tiny:
-
-- create one deterministic canonical world fixture;
-- expose authoritative simulation time;
-- advance one canonical transition headlessly;
-- prove equivalent chunked/direct advancement for that transition;
-- provide a thin application/session projection;
-- render that projection through a minimal React shell;
-- enforce simulation dependency boundaries;
-- typecheck, lint, test, and build.
-
-Persistence, canonical history, and deterministic stochastic machinery are added when the immediate GL0 route first requires them. Uncontrolled `Math.random()` and wall-clock/browser dependencies are already forbidden in canonical sim code.
-
-## Non-goals for bootstrap
-
-No Housing breadth, Congress breadth, production UI, generic ECS, plugin architecture, universal event bus, government DSL, persistence framework, RNG framework, or speculative engine framework is part of the bootstrap.
-
-After the baseline is green, runtime work should extend vertically toward the accepted causal spine:
-
-```text
-administration intent
-→ proposal
-→ actor decisions
-→ enactment
-→ fiscal / administration / state response
-→ material housing
-→ information / belief
-→ election
-→ succession
-```
-
-rather than completing isolated subsystems first.
+The binding pre-I8 runtime rules are in `docs/PRE_I8_RUNTIME_GUARDRAILS.md`. I10 convergence acceptance is defined in `docs/I10_RUNTIME_CONVERGENCE_ACCEPTANCE.md`.
