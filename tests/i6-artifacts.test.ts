@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
+import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 
 describe("I6 authenticated fiscal and administrative seed", () => {
-  const seed = US_V0_I6_RUNTIME_ARTIFACTS.programInitialization!;
+  const seed = US_V0_I7_RUNTIME_ARTIFACTS.programInitialization!;
 
   it("parses the FY2024 authority and separate OMB control without calling either cash", () => {
     expect(seed.budgetAuthorities).toHaveLength(1);

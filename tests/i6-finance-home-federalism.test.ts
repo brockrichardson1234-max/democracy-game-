@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { US_V0_I6_IMPLEMENTATION_CONFIGURATION, US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
+import { US_V0_I6_IMPLEMENTATION_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 import {
   admitEnactedFiscalAuthority,
   advanceAdministrativeDeadlines,
@@ -24,7 +24,7 @@ import type { EnactedLegislativeSource } from "../src/sim/legislative-runtime";
 
 const at = "2026-08-22T00:00:00-04:00";
 const config = US_V0_I6_IMPLEMENTATION_CONFIGURATION;
-const seed = US_V0_I6_RUNTIME_ARTIFACTS.programInitialization!;
+const seed = US_V0_I7_RUNTIME_ARTIFACTS.programInitialization!;
 const administrationOrigin = { administrationId: "us.administration.test", actorId: "us.actor.test-president" };
 const localOrigin = { administrationId: "us.local-owner.test", actorId: "us.local.englewood" };
 const resolveLast = (state: ReturnType<typeof createProgramImplementationState>, instant = at) =>

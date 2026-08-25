@@ -18,6 +18,7 @@ import {
   US_V0_I6_ARTIFACT_BINDING,
   US_V0_I6_IMPLEMENTATION_CONFIGURATION,
 } from "./i6";
+import { US_V0_I7_ARTIFACT_BINDING, US_V0_I7_HOUSING_CONFIGURATION } from "./i7";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -239,14 +240,14 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
   },
 };
 
-/** Bounded integrated runtime through I6; physical, information, and judicial systems remain unavailable. */
+/** Bounded integrated runtime through I7; information and judicial systems remain unavailable. */
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.6.1-i6-repair",
+    configurationVersion: "0.7.0-i7-reconciled",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.6.1-i6-repair",
-    configurationHash: "a7c640471f69a6d4ef2535de257e8406e0c493c334b1d43e718d82af9cf31815",
+    scenarioVersion: "0.7.0-i7-reconciled",
+    configurationHash: "d71567db40f321f19b310c5f8ec20253c3455e95e9352d636f6a8b5833186d35",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
@@ -258,11 +259,13 @@ export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<Legislative
     artifactBindings: [
       ...i4Manifest.artifactBindings,
       US_V0_I6_ARTIFACT_BINDING,
+      US_V0_I7_ARTIFACT_BINDING,
     ] as readonly RuntimeArtifactBinding[],
     geography: i4Manifest.geography,
     population: i4Manifest.population,
     electoral: i4Manifest.electoral,
     temporal: US_V0_I5_TEMPORAL_CONFIGURATION,
     implementation: US_V0_I6_IMPLEMENTATION_CONFIGURATION,
+    housing: US_V0_I7_HOUSING_CONFIGURATION,
   },
 };

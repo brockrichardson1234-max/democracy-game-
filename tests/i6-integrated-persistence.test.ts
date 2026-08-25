@@ -12,7 +12,7 @@ import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configurati
 import { US_V0_LEGISLATIVE_SEED } from "../src/content/us-v0/configuration";
 import { canonicalConfigurationContent } from "../src/configuration/canonical";
 import type { GovernmentConfiguration, LegislativeRuntimeSeed } from "../src/configuration/types";
-import { US_V0_I6_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i6";
+import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
 import {
   US_V0_OPPOSITION_TICKET_ID,
   US_V0_PLAYER_TICKET_ID,
@@ -47,10 +47,10 @@ const supportiveConfiguration: GovernmentConfiguration<LegislativeRuntimeSeed> =
 
 const createSession = (configuration = US_V0_STRUCTURAL_CONFIGURATION) => createIntegratedPartialRuntimeSession(
   configuration,
-  US_V0_I6_RUNTIME_ARTIFACTS,
+  US_V0_I7_RUNTIME_ARTIFACTS,
 );
 
-const allResolutions = (ticketId: string) => US_V0_I6_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
+const allResolutions = (ticketId: string) => US_V0_I7_RUNTIME_ARTIFACTS.populationCohorts.cohorts.map((cohort) => ({
   cohortId: cohort.id,
   candidatePreference: ticketId,
   turnoutDisposition: "HIGH" as const,
@@ -149,7 +149,7 @@ const enactCurrentAgenda = (session: IntegratedPartialRuntimeSession): string =>
 describe("I6 integrated ownership, persistence, and succession", () => {
   it("admits only an actual enacted legal source, then advances authority and control separately", () => {
     const session = createIntegratedPartialRuntimeAuditSession(
-      supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS, [],
+      supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS, [],
     );
     expect(() => session.admitEnactedLawFiscalAuthority("not-enacted")).toThrow(/actually enacted/);
     const lawId = enactCurrentAgenda(session);
@@ -165,7 +165,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     expect(state.implementation!.publicFinance.generatedBudgetAuthorities[0].status).toBe("APPORTIONED");
     expect(state.implementation!.fiscalExecution.generatedControls).toHaveLength(1);
     expect(() => createIntegratedPartialRuntimeSessionFromSave(
-      session.save(), supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS,
+      session.save(), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
     )).not.toThrow();
     const tampered = JSON.parse(session.save()) as {
       implementation: {
@@ -176,13 +176,13 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     tampered.implementation.publicFinance.generatedBudgetAuthorities[0].amount.minorUnits += 1;
     tampered.implementation.fiscalExecution.generatedControls[0].amount.minorUnits += 1;
     expect(() => createIntegratedPartialRuntimeSessionFromSave(
-      JSON.stringify(tampered), supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS,
+      JSON.stringify(tampered), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
     )).toThrow(/enacted legal terms/);
   });
 
   it("round-trips generated state while rejecting edits to every immutable real-seed family", () => {
     const session = createIntegratedPartialRuntimeAuditSession(
-      US_V0_STRUCTURAL_CONFIGURATION, US_V0_I6_RUNTIME_ARTIFACTS, [],
+      US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS, [],
     );
     session.openFutureWaiver(waiverInput);
     session.injectLocalMemberDecision(
@@ -198,7 +198,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     const restored = createIntegratedPartialRuntimeSessionFromSave(
       saved,
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState().implementation).toEqual(session.getAuditState().implementation);
 
@@ -216,7 +216,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
       expect(() => createIntegratedPartialRuntimeSessionFromSave(
         JSON.stringify(envelope),
         US_V0_STRUCTURAL_CONFIGURATION,
-        US_V0_I6_RUNTIME_ARTIFACTS,
+        US_V0_I7_RUNTIME_ARTIFACTS,
       )).toThrow(/pinned artifact authority/);
     }
   });
@@ -224,7 +224,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
   it("preserves pending program state through succession and enforces the new binding owner", () => {
     const sessionFor = (ticketId: string) => createIntegratedPartialRuntimeAuditSession(
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
       allResolutions(ticketId),
     );
     const aligned = sessionFor(US_V0_PLAYER_TICKET_ID);
@@ -258,7 +258,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     const restored = createIntegratedPartialRuntimeSessionFromSave(
       direct.save(),
       US_V0_STRUCTURAL_CONFIGURATION,
-      US_V0_I6_RUNTIME_ARTIFACTS,
+      US_V0_I7_RUNTIME_ARTIFACTS,
     );
     const target = "2026-09-10T00:00:00-04:00";
     const directState = direct.advanceTo(target).implementation;
@@ -273,7 +273,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
 
   it("rejects behavior-driving generated-state tampering and exposes no direct outcome commands", () => {
     const session = createIntegratedPartialRuntimeAuditSession(
-      supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS, [],
+      supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS, [],
     );
     for (const forbidden of [
       "approveApportionment",
@@ -358,7 +358,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
 
     const saved = session.save();
     expect(() => createIntegratedPartialRuntimeSessionFromSave(
-      saved, supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS,
+      saved, supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
     )).not.toThrow();
     const attacks: readonly [string, (envelope: GeneratedMutableSaveEnvelope) => void][] = [
       ["EXCLUDE to INCLUDED", (value) => { value.implementation.intergovernmental.transitions[0].newParticipation = "INCLUDED"; }],
@@ -380,7 +380,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
       const envelope = JSON.parse(saved) as GeneratedMutableSaveEnvelope;
       attack(envelope);
       expect(() => createIntegratedPartialRuntimeSessionFromSave(
-        JSON.stringify(envelope), supportiveConfiguration, US_V0_I6_RUNTIME_ARTIFACTS,
+        JSON.stringify(envelope), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
       ), name).toThrow();
     }
   }, 30_000);
@@ -397,7 +397,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
 
     const savedBeforeA = session.save();
     const fine = createIntegratedPartialRuntimeSessionFromSave(
-      savedBeforeA, US_V0_STRUCTURAL_CONFIGURATION, US_V0_I6_RUNTIME_ARTIFACTS,
+      savedBeforeA, US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
     );
     fine.advanceToNextBoundary();
     expect(fine.getAuditState().institutional!.calendar.current).toBe(dynamic.at);
@@ -408,13 +408,13 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     fine.advanceTo(target);
 
     const coarse = createIntegratedPartialRuntimeSessionFromSave(
-      savedBeforeA, US_V0_STRUCTURAL_CONFIGURATION, US_V0_I6_RUNTIME_ARTIFACTS,
+      savedBeforeA, US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
     );
     coarse.advanceTo(target);
     expect(coarse.getAuditState()).toEqual(fine.getAuditState());
 
     const restored = createIntegratedPartialRuntimeSessionFromSave(
-      coarse.save(), US_V0_STRUCTURAL_CONFIGURATION, US_V0_I6_RUNTIME_ARTIFACTS,
+      coarse.save(), US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState()).toEqual(coarse.getAuditState());
   }, 20_000);

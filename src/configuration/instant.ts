@@ -6,3 +6,11 @@ export const addElapsedCalendarDays = (instant: string, days: number): string =>
   }
   return new Date(parsed + days * 86_400_000).toISOString();
 };
+
+/** Formats an already-derived deterministic epoch value; never reads wall time. */
+export const formatConfiguredEpochMilliseconds = (milliseconds: number): string => {
+  if (!Number.isFinite(milliseconds)) {
+    throw new Error("Configured instant formatting requires finite epoch milliseconds.");
+  }
+  return new Date(milliseconds).toISOString();
+};
