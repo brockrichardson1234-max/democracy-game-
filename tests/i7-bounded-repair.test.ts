@@ -283,4 +283,110 @@ describe("I7 bounded repair proofs", () => {
       JSON.stringify(tampered), US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
     )).toThrow(/condition|semantic|deterministic/i);
   });
+
+  it("rederives generated release relations from canonical I6 owner history during restore", () => {
+    const session = createIntegratedPartialRuntimeAuditSession(
+      US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS, [],
+    );
+    const waiver = {
+      relationshipId: "us.relationship.home.arapahoe-consortium.fy2025-2027",
+      projectRef: "us.project.future-i7-input",
+      inputComponent: "FUTURE_COMPONENT",
+      domesticPreferenceRequirement: "DOMESTIC_PREFERENCE_APPLIES",
+      assertedBasis: "NONAVAILABILITY_ASSERTED",
+      supportingRecords: ["NONAVAILABILITY_RECORD", "TECHNICAL_SPECIFICATION", "SCOPE_JUSTIFICATION"],
+      commentFrom: null,
+      commentUntil: null,
+    };
+    const determine = (causeKey: string, intention: "DENY" | "GRANT_SCOPED_WAIVER"): void => {
+      session.openFutureWaiver({ ...waiver, causeKey });
+      const requests = session.getAuditState().implementation!.administrativeProgram.waiverRequests;
+      session.directFutureWaiver(requests[requests.length - 1].id, intention);
+    };
+    determine("fixture:owner-hold-1", "DENY");
+    determine("fixture:owner-hold-2", "DENY");
+    determine("fixture:owner-release", "GRANT_SCOPED_WAIVER");
+
+    interface MutableReleaseInput {
+      readonly id: string;
+      readonly kind: string;
+      releaseOfInputId: string | null;
+      causalPredecessorInputIds: string[];
+    }
+    interface MutableReleaseSave {
+      implementation: {
+        materialInputs: MutableReleaseInput[];
+        administrativeProgram: {
+          determinations: Array<{ readonly id: string; readonly ownerSequence: number; readonly outcome: string }>;
+        };
+      };
+    }
+    const saved = JSON.parse(session.save()) as MutableReleaseSave;
+    const holds = saved.implementation.materialInputs.filter((entry) => entry.kind === "COMPLIANCE_HOLD");
+    const releases = saved.implementation.materialInputs.filter((entry) => entry.releaseOfInputId !== null);
+    expect(holds).toHaveLength(2);
+    expect(releases).toHaveLength(2);
+    const canonicalReleasedHoldId = releases[0].releaseOfInputId;
+    const olderHold = holds.find((entry) => entry.id !== canonicalReleasedHoldId)!;
+
+    const removed = structuredClone(saved);
+    for (const release of removed.implementation.materialInputs.filter((entry) => entry.releaseOfInputId !== null)) {
+      release.releaseOfInputId = null;
+      release.causalPredecessorInputIds = [];
+    }
+    expect(() => createIntegratedPartialRuntimeSessionFromSave(
+      JSON.stringify(removed), US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
+    )).toThrow(/owner determination/);
+
+    const redirected = structuredClone(saved);
+    for (const release of redirected.implementation.materialInputs.filter((entry) => entry.releaseOfInputId !== null)) {
+      release.releaseOfInputId = olderHold.id;
+      release.causalPredecessorInputIds = [olderHold.id];
+    }
+    expect(() => createIntegratedPartialRuntimeSessionFromSave(
+      JSON.stringify(redirected), US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
+    )).toThrow(/owner determination/);
+
+    const reordered = structuredClone(saved);
+    const determinations = reordered.implementation.administrativeProgram.determinations;
+    [determinations[0], determinations[1]] = [determinations[1], determinations[0]];
+    for (const release of reordered.implementation.materialInputs.filter((entry) => entry.releaseOfInputId !== null)) {
+      release.releaseOfInputId = olderHold.id;
+      release.causalPredecessorInputIds = [olderHold.id];
+    }
+    expect(() => createIntegratedPartialRuntimeSessionFromSave(
+      JSON.stringify(reordered), US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
+    )).toThrow(/determination/);
+  }, 15_000);
+
+  it("keeps adversarial project and scope strings distinct in canonical hold reconstruction", () => {
+    const session = createIntegratedPartialRuntimeAuditSession(
+      US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS, [],
+    );
+    const waiver = {
+      relationshipId: "us.relationship.home.arapahoe-consortium.fy2025-2027",
+      domesticPreferenceRequirement: "DOMESTIC_PREFERENCE_APPLIES",
+      assertedBasis: "NONAVAILABILITY_ASSERTED",
+      supportingRecords: ["NONAVAILABILITY_RECORD", "TECHNICAL_SPECIFICATION", "SCOPE_JUSTIFICATION"],
+      commentFrom: null,
+      commentUntil: null,
+    };
+    const determine = (
+      projectRef: string,
+      inputComponent: string,
+      causeKey: string,
+      intention: "DENY" | "GRANT_SCOPED_WAIVER",
+    ): void => {
+      session.openFutureWaiver({ ...waiver, projectRef, inputComponent, causeKey });
+      const requests = session.getAuditState().implementation!.administrativeProgram.waiverRequests;
+      session.directFutureWaiver(requests[requests.length - 1].id, intention);
+    };
+    determine("P", "X|BABA_COMPONENT:Y", "fixture:collision-hold-a", "DENY");
+    determine("P|BABA_COMPONENT:X", "Y", "fixture:collision-hold-b", "DENY");
+    determine("P", "X|BABA_COMPONENT:Y", "fixture:collision-release-a", "GRANT_SCOPED_WAIVER");
+    const saved = session.save();
+    expect(createIntegratedPartialRuntimeSessionFromSave(
+      saved, US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
+    ).save()).toBe(saved);
+  }, 15_000);
 });

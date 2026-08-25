@@ -284,15 +284,36 @@ export type WaiverIntention = "GRANT_SCOPED_WAIVER" | "DENY" | "RETURN_FOR_SUPPL
 
 export interface AdministrativeDeterminationRecord {
   readonly id: string;
+  readonly ownerSequence: number;
   readonly requestId: string;
   readonly institutionId: string;
   readonly intention: WaiverIntention;
   readonly outcome: "SCOPED_WAIVER_GRANTED" | "DENIED" | "RETURNED_FOR_RECORD";
   readonly scope: string;
+  readonly scopeKey: string;
+  readonly releaseOfInputId: string | null;
+  readonly causalPredecessorInputIds: readonly string[];
   readonly decidedAt: string;
   readonly classification: "SIMULATION_GENERATED";
   readonly physicalHousingEffect: null;
 }
+
+const administrativeDeterminationIdentity = (
+  determination: Omit<AdministrativeDeterminationRecord, "id">,
+): string => JSON.stringify({
+  ownerSequence: determination.ownerSequence,
+  requestId: determination.requestId,
+  institutionId: determination.institutionId,
+  intention: determination.intention,
+  outcome: determination.outcome,
+  scope: determination.scope,
+  scopeKey: determination.scopeKey,
+  releaseOfInputId: determination.releaseOfInputId,
+  causalPredecessorInputIds: determination.causalPredecessorInputIds,
+  decidedAt: determination.decidedAt,
+  classification: determination.classification,
+  physicalHousingEffect: determination.physicalHousingEffect,
+});
 
 export interface DynamicAdministrativeBoundary {
   readonly id: string;
@@ -881,17 +902,24 @@ export const assertProgramImplementationState = (
       throw new Error(`Future waiver request ${request.id} has invalid provenance or owner.`);
     }
   }
-  for (const determination of state.administrativeProgram.determinations) {
+  for (const [ownerSequence, determination] of state.administrativeProgram.determinations.entries()) {
     const request = state.administrativeProgram.waiverRequests.find((entry) => entry.id === determination.requestId);
     const expectedOutcome = determination.intention === "GRANT_SCOPED_WAIVER"
       ? "SCOPED_WAIVER_GRANTED"
       : determination.intention === "DENY" ? "DENIED" : "RETURNED_FOR_RECORD";
     if (
       request === undefined || determination.physicalHousingEffect !== null ||
+      determination.ownerSequence !== ownerSequence ||
       determination.institutionId !== configuration.futureWaiver.responsibleInstitutionId ||
       determination.outcome !== expectedOutcome || determination.scope !== request.inputComponent ||
+      determination.scopeKey !== `BABA_COMPONENT:${request.inputComponent}` ||
+      (determination.outcome === "RETURNED_FOR_RECORD" && (
+        determination.releaseOfInputId !== null || determination.causalPredecessorInputIds.length > 0
+      )) ||
       determination.classification !== "SIMULATION_GENERATED" ||
-      determination.id !== `${configuration.futureWaiver.determinationIdPrefix}${sha256Hex(`${request.id}|${determination.intention}|${determination.decidedAt}`).slice(0, 20)}`
+      determination.id !== `${configuration.futureWaiver.determinationIdPrefix}${sha256Hex(
+        administrativeDeterminationIdentity(determination),
+      ).slice(0, 20)}`
     ) {
       throw new Error(`Administrative determination ${determination.id} lacks its request or mutates Housing.`);
     }
@@ -1008,20 +1036,83 @@ export const assertProgramImplementationState = (
     }
   }
   const materialInputIds = new Set(state.materialInputs.map((entry) => entry.id));
+  if (materialInputIds.size !== state.materialInputs.length) {
+    throw new Error("I7-facing material inputs require unique deterministic identities.");
+  }
+  const expectedWaiverInputs = new Map<string, {
+    readonly determinationId: string;
+    readonly kind: MaterialInputKind;
+    readonly projectRef: string;
+    readonly scopeKey: string;
+    readonly validatedAt: string;
+    readonly releaseOfInputId: string | null;
+    readonly causalPredecessorInputIds: readonly string[];
+  }>();
+  const operativeHoldIdsByProjectAndScope = new Map<string, Map<string, string[]>>();
+  for (const determination of state.administrativeProgram.determinations) {
+    const waiverRequest = state.administrativeProgram.waiverRequests.find(
+      (entry) => entry.id === determination.requestId,
+    );
+    if (waiverRequest === undefined || determination.outcome === "RETURNED_FOR_RECORD") continue;
+    const scopeKey = `BABA_COMPONENT:${waiverRequest.inputComponent}`;
+    const holdsByScope = operativeHoldIdsByProjectAndScope.get(waiverRequest.projectRef) ?? new Map<string, string[]>();
+    operativeHoldIdsByProjectAndScope.set(waiverRequest.projectRef, holdsByScope);
+    if (determination.outcome === "DENIED") {
+      const id = `${configuration.futureWaiver.materialInputIdPrefix}${sha256Hex(
+        `${determination.id}|COMPLIANCE_HOLD|0`,
+      ).slice(0, 20)}`;
+      expectedWaiverInputs.set(id, {
+        determinationId: determination.id,
+        kind: "COMPLIANCE_HOLD",
+        projectRef: waiverRequest.projectRef,
+        scopeKey,
+        validatedAt: determination.decidedAt,
+        releaseOfInputId: null,
+        causalPredecessorInputIds: [],
+      });
+      if (determination.releaseOfInputId !== null || determination.causalPredecessorInputIds.length > 0) {
+        throw new Error(`Administrative determination ${determination.id} contradicts its canonical hold relation.`);
+      }
+      holdsByScope.set(scopeKey, [...(holdsByScope.get(scopeKey) ?? []), id]);
+      continue;
+    }
+    const operativeHoldIds = [...(holdsByScope.get(scopeKey) ?? [])];
+    const releasedHoldId = operativeHoldIds.pop() ?? null;
+    holdsByScope.set(scopeKey, operativeHoldIds);
+    const expectedCausalPredecessorInputIds = releasedHoldId === null ? [] : [releasedHoldId];
+    if (
+      determination.releaseOfInputId !== releasedHoldId ||
+      JSON.stringify(determination.causalPredecessorInputIds) !== JSON.stringify(expectedCausalPredecessorInputIds)
+    ) throw new Error(`Administrative determination ${determination.id} contradicts its canonical release relation.`);
+    for (const [kind, index] of [["WAIVER_TERMS", 0], ["INPUT_AVAILABILITY", 1]] as const) {
+      const id = `${configuration.futureWaiver.materialInputIdPrefix}${sha256Hex(
+        `${determination.id}|${kind}|${index}`,
+      ).slice(0, 20)}`;
+      expectedWaiverInputs.set(id, {
+        determinationId: determination.id,
+        kind,
+        projectRef: waiverRequest.projectRef,
+        scopeKey,
+        validatedAt: determination.decidedAt,
+        releaseOfInputId: releasedHoldId,
+        causalPredecessorInputIds: expectedCausalPredecessorInputIds,
+      });
+    }
+  }
+  for (const expectedId of expectedWaiverInputs.keys()) {
+    if (!materialInputIds.has(expectedId)) {
+      throw new Error(`Waiver owner result lacks deterministic material input ${expectedId}.`);
+    }
+  }
   for (const input of state.materialInputs) {
     const determination = state.administrativeProgram.determinations.find((entry) => entry.id === input.sourceRecordId);
     const waiverRequest = determination === undefined
       ? undefined
       : state.administrativeProgram.waiverRequests.find((entry) => entry.id === determination.requestId);
+    const expectedWaiverInput = expectedWaiverInputs.get(input.id);
     const released = input.releaseOfInputId === null
       ? null
       : state.materialInputs.find((entry) => entry.id === input.releaseOfInputId) ?? null;
-    const waiverKindIndex = determination?.outcome === "SCOPED_WAIVER_GRANTED"
-      ? input.kind === "WAIVER_TERMS" ? 0 : input.kind === "INPUT_AVAILABILITY" ? 1 : -1
-      : determination?.outcome === "DENIED" && input.kind === "COMPLIANCE_HOLD" ? 0 : -1;
-    const expectedWaiverInputId = determination === undefined || waiverKindIndex < 0
-      ? null
-      : `${configuration.futureWaiver.materialInputIdPrefix}${sha256Hex(`${determination.id}|${input.kind}|${waiverKindIndex}`).slice(0, 20)}`;
     if (
       input.physicalHousingMutation !== false || input.classification !== "SIMULATION_GENERATED" ||
       !Number.isFinite(Date.parse(input.validatedAt)) ||
@@ -1041,10 +1132,13 @@ export const assertProgramImplementationState = (
         throw new Error(`Non-waiver material input ${input.id} acquired waiver-release authority.`);
       }
     } else if (
-      waiverRequest === undefined || determination.outcome === "RETURNED_FOR_RECORD" || waiverKindIndex < 0 ||
-      input.id !== expectedWaiverInputId || input.sourceOwnerId !== configuration.futureWaiver.responsibleInstitutionId ||
-      input.projectRef !== waiverRequest.projectRef || input.validatedAt !== determination.decidedAt ||
-      input.scopeKey !== `BABA_COMPONENT:${waiverRequest.inputComponent}`
+      waiverRequest === undefined || expectedWaiverInput === undefined ||
+      expectedWaiverInput.determinationId !== determination.id || input.kind !== expectedWaiverInput.kind ||
+      input.sourceOwnerId !== configuration.futureWaiver.responsibleInstitutionId ||
+      input.projectRef !== expectedWaiverInput.projectRef || input.validatedAt !== expectedWaiverInput.validatedAt ||
+      input.scopeKey !== expectedWaiverInput.scopeKey ||
+      input.releaseOfInputId !== expectedWaiverInput.releaseOfInputId ||
+      JSON.stringify(input.causalPredecessorInputIds) !== JSON.stringify(expectedWaiverInput.causalPredecessorInputIds)
     ) {
       throw new Error(`Waiver material input ${input.id} contradicts its owner determination.`);
     }
@@ -1630,7 +1724,6 @@ export const directWaiverIntention = (
   if (intention !== "RETURN_FOR_SUPPLEMENTAL_RECORD" && missing.length > 0) {
     throw new Error("Administrative owner cannot grant or deny before the configured record is sufficient.");
   }
-  const determinationId = `${configuration.futureWaiver.determinationIdPrefix}${sha256Hex(`${request.id}|${intention}|${at}`).slice(0, 20)}`;
   if (intention === "RETURN_FOR_SUPPLEMENTAL_RECORD") {
     const reviewAt = addElapsedCalendarDays(at, configuration.futureWaiver.returnReviewDelayDays);
     const boundary: DynamicAdministrativeBoundary = {
@@ -1643,16 +1736,25 @@ export const directWaiverIntention = (
       kind: "SUPPLEMENTAL_RECORD_REVIEW_READY",
       processed: false,
     };
-    const determination: AdministrativeDeterminationRecord = {
-      id: determinationId,
+    const determinationWithoutId: Omit<AdministrativeDeterminationRecord, "id"> = {
+      ownerSequence: state.administrativeProgram.determinations.length,
       requestId: request.id,
       institutionId: configuration.futureWaiver.responsibleInstitutionId,
       intention,
       outcome: "RETURNED_FOR_RECORD",
       scope: request.inputComponent,
+      scopeKey: `BABA_COMPONENT:${request.inputComponent}`,
+      releaseOfInputId: null,
+      causalPredecessorInputIds: [],
       decidedAt: at,
       classification: "SIMULATION_GENERATED",
       physicalHousingEffect: null,
+    };
+    const determination: AdministrativeDeterminationRecord = {
+      ...determinationWithoutId,
+      id: `${configuration.futureWaiver.determinationIdPrefix}${sha256Hex(
+        administrativeDeterminationIdentity(determinationWithoutId),
+      ).slice(0, 20)}`,
     };
     return {
       ...state,
@@ -1670,17 +1772,6 @@ export const directWaiverIntention = (
     };
   }
   const granted = intention === "GRANT_SCOPED_WAIVER";
-  const determination: AdministrativeDeterminationRecord = {
-    id: determinationId,
-    requestId: request.id,
-    institutionId: configuration.futureWaiver.responsibleInstitutionId,
-    intention,
-    outcome: granted ? "SCOPED_WAIVER_GRANTED" : "DENIED",
-    scope: request.inputComponent,
-    decidedAt: at,
-    classification: "SIMULATION_GENERATED",
-    physicalHousingEffect: null,
-  };
   const kind: MaterialInputKind = granted ? "WAIVER_TERMS" : "COMPLIANCE_HOLD";
   const availabilityKind: MaterialInputKind = granted ? "INPUT_AVAILABILITY" : "COMPLIANCE_HOLD";
   const scopeKey = `BABA_COMPONENT:${request.inputComponent}`;
@@ -1689,6 +1780,26 @@ export const directWaiverIntention = (
         input.kind === "COMPLIANCE_HOLD" && input.projectRef === request.projectRef && input.scopeKey === scopeKey &&
         !state.materialInputs.some((release) => release.releaseOfInputId === input.id)) ?? null
     : null;
+  const determinationWithoutId: Omit<AdministrativeDeterminationRecord, "id"> = {
+    ownerSequence: state.administrativeProgram.determinations.length,
+    requestId: request.id,
+    institutionId: configuration.futureWaiver.responsibleInstitutionId,
+    intention,
+    outcome: granted ? "SCOPED_WAIVER_GRANTED" : "DENIED",
+    scope: request.inputComponent,
+    scopeKey,
+    releaseOfInputId: granted ? releasedHold?.id ?? null : null,
+    causalPredecessorInputIds: granted && releasedHold !== null ? [releasedHold.id] : [],
+    decidedAt: at,
+    classification: "SIMULATION_GENERATED",
+    physicalHousingEffect: null,
+  };
+  const determination: AdministrativeDeterminationRecord = {
+    ...determinationWithoutId,
+    id: `${configuration.futureWaiver.determinationIdPrefix}${sha256Hex(
+      administrativeDeterminationIdentity(determinationWithoutId),
+    ).slice(0, 20)}`,
+  };
   const inputs = [kind, ...(granted ? [availabilityKind] : [])].map((inputKind, index) => materialInput(
     `${configuration.futureWaiver.materialInputIdPrefix}${sha256Hex(`${determination.id}|${inputKind}|${index}`).slice(0, 20)}`,
     inputKind,
