@@ -7,8 +7,13 @@ import type {
 import { US_V0_I5_TEMPORAL_CONFIGURATION } from "./i5";
 import { US_V0_I7_RUNTIME_ARTIFACTS } from "./i7";
 
-export const US_V0_I8_INFORMATION_SEMANTICS_VERSION = "us-v0-information-public-response-2";
+export const US_V0_I8_INFORMATION_SEMANTICS_VERSION = "0.8.1-i8-repair";
+export const US_V0_I8_TIMING_SEMANTIC_VERSION = "dependency-ordered-zero-lag-information-chain-1";
 export const US_V0_I8_RESPONSE_RULE_VERSION = "us-v0-bounded-population-information-response-1";
+export const US_V0_I8_CLAIMANT_RESOLUTION_VERSION = "administration-effective-at-claim-boundary-1";
+export const US_V0_I8_TARGET_ALLOCATION_VERSION = "positive-proper-subset-or-indivisible-whole-1";
+export const US_V0_I8_OBSERVATION_SEMANTIC_VERSION = "endpoint-snapshot-declared-window-1";
+export const US_V0_I8_APPROXIMATION_SEMANTIC_VERSION = "bounded-local-affordability-offset-1";
 export const US_V0_I8_MATERIAL_USABILITY_INSTANT = "2027-10-03T00:00:00-04:00";
 
 const CLASSIFICATION = "APPROXIMATED_NON_HISTORICAL_SIMULATION_SCAFFOLD" as const;
@@ -24,6 +29,7 @@ export interface UsV0I8RouteOptions {
   readonly captureLagDays?: number;
   readonly releaseLagDays?: number;
   readonly claimPosition?: "PROGRAM_WORKING" | "PROGRAM_INADEQUATE";
+  readonly claimBoundaryPhase?: number;
   readonly reverseDeclarationOrder?: boolean;
 }
 
@@ -58,7 +64,7 @@ export const createUsV0I8RouteConfiguration = (
     { id: ids.observation, at: observationAt, phase: INFORMATION_PHASE, order: 0, stableKey: `${OWNER}:00`, kind: "OBSERVATION_CAPTURE", ownerId: OWNER },
     { id: ids.artifact, at: artifactAt, phase: INFORMATION_PHASE, order: 1, stableKey: `${OWNER}:01`, kind: "MEASUREMENT_CREATED", ownerId: OWNER },
     { id: ids.release, at: releaseAt, phase: INFORMATION_PHASE, order: 2, stableKey: `${OWNER}:02`, kind: "MEASUREMENT_RELEASED", ownerId: OWNER },
-    { id: ids.claim, at: claimAt, phase: INFORMATION_PHASE, order: 3, stableKey: `${OWNER}:03`, kind: "CLAIM_RELEASED", ownerId: OWNER },
+    { id: ids.claim, at: claimAt, phase: options.claimBoundaryPhase ?? INFORMATION_PHASE, order: 3, stableKey: `${OWNER}:03`, kind: "CLAIM_RELEASED", ownerId: OWNER },
     { id: ids.delivery, at: deliveryAt, phase: INFORMATION_PHASE, order: 4, stableKey: `${OWNER}:04`, kind: "INFORMATION_DELIVERED", ownerId: OWNER },
     { id: ids.exposure, at: exposureAt, phase: INFORMATION_PHASE, order: 5, stableKey: `${OWNER}:05`, kind: "POPULATION_EXPOSED", ownerId: OWNER },
     { id: ids.response, at: responseAt, phase: INFORMATION_PHASE, order: 6, stableKey: `${OWNER}:06`, kind: "POPULATION_RESPONSE", ownerId: OWNER },
@@ -70,6 +76,7 @@ export const createUsV0I8RouteConfiguration = (
     schemaVersion: 1,
     ownerId: OWNER,
     semanticsVersion: US_V0_I8_INFORMATION_SEMANTICS_VERSION,
+    timingSemanticVersion: US_V0_I8_TIMING_SEMANTIC_VERSION,
     responseRuleVersion: US_V0_I8_RESPONSE_RULE_VERSION,
     classification: CLASSIFICATION,
     measurements: [{
@@ -89,7 +96,10 @@ export const createUsV0I8RouteConfiguration = (
       observationLagDays,
       captureLagDays,
       releaseLagDays,
-      methodVersion: "bounded-housing-material-measurement-2",
+      observationMode: "SNAPSHOT_AS_OF_OBSERVATION_END_OVER_DECLARED_WINDOW" as const,
+      observationSemanticVersion: US_V0_I8_OBSERVATION_SEMANTIC_VERSION,
+      methodVersion: "bounded-housing-material-measurement-3",
+      approximationSemanticVersion: US_V0_I8_APPROXIMATION_SEMANTIC_VERSION,
       deterministicErrorBound: 25,
       classification: CLASSIFICATION,
     }],
@@ -98,6 +108,7 @@ export const createUsV0I8RouteConfiguration = (
       evidenceArtifactIds: ["us.information-artifact.housing-material-report-2027"],
       boundaryId: ids.claim,
       claimantPolicy: "CURRENT_ADMINISTRATION" as const,
+      claimantResolutionVersion: US_V0_I8_CLAIMANT_RESOLUTION_VERSION,
       subject: "BOUNDED_HOUSING_PROGRAM_PERFORMANCE",
       position: claimPosition,
       contentVersion: "us-v0-housing-claim-frame-1",
@@ -135,6 +146,7 @@ export const createUsV0I8RouteConfiguration = (
       ],
       targetNumerator: 1,
       targetDenominator: 2,
+      targetAllocationVersion: US_V0_I8_TARGET_ALLOCATION_VERSION,
       classification: CLASSIFICATION,
     },
     response: {

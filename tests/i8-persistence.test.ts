@@ -41,8 +41,8 @@ interface MutableEnvelope {
 }
 
 describe("I8 integrated persistence and tamper rejection", () => {
-  it("uses save format 8 and preserves direct/save-load continuation", () => {
-    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(8);
+  it("uses save format 9 and preserves direct/save-load continuation", () => {
+    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(9);
     const direct = createSession();
     direct.advanceTo(US_V0_I8_POPULATION_RESPONSE);
     const restored = restore(direct.save());

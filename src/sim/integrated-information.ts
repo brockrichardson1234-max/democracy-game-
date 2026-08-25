@@ -3,9 +3,12 @@ import { formatConfiguredEpochMilliseconds } from "../configuration/instant";
 import type {
   InformationMeasurementConfiguration,
   IntegratedInformationConfiguration,
+  IntegratedTemporalConfiguration,
   InstitutionalBoundaryConfiguration,
 } from "../configuration/types";
+import { compareConfiguredBoundaries } from "./calendar-time";
 import type { IntegratedMaterialHousingState } from "./housing";
+import type { InstitutionalRuntimeState } from "./institutional-runtime";
 
 export type InformationScalar = number | string | boolean | null;
 
@@ -24,6 +27,8 @@ export interface IntegratedHousingObservation {
   readonly observationEnd: string;
   readonly capturedAt: string;
   readonly captureOwnerInstitutionId: string;
+  readonly observationMode: InformationMeasurementConfiguration["observationMode"];
+  readonly observationSemanticVersion: string;
   readonly methodVersion: string;
   readonly variables: readonly IntegratedObservationVariable[];
   readonly sourceMaterialReferences: readonly string[];
@@ -45,7 +50,10 @@ export interface IntegratedMeasurementArtifact {
   readonly observationStart: string;
   readonly observationEnd: string;
   readonly createdAt: string;
+  readonly observationMode: InformationMeasurementConfiguration["observationMode"];
+  readonly observationSemanticVersion: string;
   readonly methodologyVersion: string;
+  readonly approximationSemanticVersion: string;
   readonly measuredValues: readonly IntegratedMeasuredValue[];
   readonly classification: string;
 }
@@ -261,6 +269,8 @@ export const captureIntegratedHousingObservation = (
       observationEnd: at,
       capturedAt: at,
       captureOwnerInstitutionId: measurement.producerInstitutionId,
+      observationMode: measurement.observationMode,
+      observationSemanticVersion: measurement.observationSemanticVersion,
       methodVersion: measurement.methodVersion,
       variables: observationVariablesForRegion(region),
       sourceMaterialReferences: [region.sourceControlId],
@@ -280,6 +290,8 @@ export const captureIntegratedHousingObservation = (
       observationEnd: at,
       capturedAt: at,
       captureOwnerInstitutionId: measurement.producerInstitutionId,
+      observationMode: measurement.observationMode,
+      observationSemanticVersion: measurement.observationSemanticVersion,
       methodVersion: measurement.methodVersion,
       variables: observationVariablesForProject(project),
       sourceMaterialReferences: [
@@ -301,6 +313,26 @@ export const captureIntegratedHousingObservation = (
   };
 };
 
+export const approximateAffordabilityPressureBasisPoints = (
+  measurement: Pick<InformationMeasurementConfiguration,
+    "id" | "methodVersion" | "approximationSemanticVersion" | "deterministicErrorBound">,
+  subjectRef: string,
+  canonicalValue: number,
+): number => {
+  if (
+    !Number.isSafeInteger(canonicalValue) || canonicalValue < 0 || canonicalValue > 10_000 ||
+    !Number.isSafeInteger(measurement.deterministicErrorBound) || measurement.deterministicErrorBound < 0
+  ) throw new Error("Affordability approximation requires canonical basis points and a nonnegative integer bound.");
+  const minimumOffset = Math.max(-measurement.deterministicErrorBound, -canonicalValue);
+  const maximumOffset = Math.min(measurement.deterministicErrorBound, 10_000 - canonicalValue);
+  const width = maximumOffset - minimumOffset + 1;
+  const offset = Number.parseInt(sha256Hex(
+    `${measurement.id}|${subjectRef}|AFFORDABILITY_PRESSURE_BASIS_POINTS|${measurement.methodVersion}|` +
+    measurement.approximationSemanticVersion,
+  ).slice(0, 8), 16) % width + minimumOffset;
+  return canonicalValue + offset;
+};
+
 const measuredValue = (
   measurement: InformationMeasurementConfiguration,
   observation: IntegratedHousingObservation,
@@ -311,14 +343,9 @@ const measuredValue = (
   if (!approximate) {
     return { ...variable, sourceObservationId: observation.id, approximation: "EXACT_CAPTURE" };
   }
-  const width = measurement.deterministicErrorBound * 2 + 1;
-  const offset = Number.parseInt(
-    sha256Hex(`${measurement.id}|${observation.subjectRef}|${variable.name}|${measurement.methodVersion}`).slice(0, 8),
-    16,
-  ) % width - measurement.deterministicErrorBound;
   return {
     name: variable.name,
-    value: variable.value + offset,
+    value: approximateAffordabilityPressureBasisPoints(measurement, observation.subjectRef, variable.value),
     sourceObservationId: observation.id,
     approximation: "DETERMINISTIC_BOUNDED_APPROXIMATION",
   };
@@ -344,7 +371,10 @@ export const createIntegratedMeasurementArtifact = (
     observationStart: observations[0].observationStart,
     observationEnd: observations[0].observationEnd,
     createdAt: at,
+    observationMode: measurement.observationMode,
+    observationSemanticVersion: measurement.observationSemanticVersion,
     methodologyVersion: measurement.methodVersion,
+    approximationSemanticVersion: measurement.approximationSemanticVersion,
     measuredValues: observations.flatMap((observation) =>
       observation.variables.map((variable) => measuredValue(measurement, observation, variable))),
     classification: measurement.classification,
@@ -412,6 +442,39 @@ export const releaseIntegratedClaim = (
       classification: configuration.claim.classification,
     }],
   };
+};
+
+export const resolveInformationClaimantAt = (
+  institutional: InstitutionalRuntimeState,
+  temporal: IntegratedTemporalConfiguration,
+  claimBoundary: InstitutionalBoundaryConfiguration,
+  claimantPolicy: IntegratedInformationConfiguration["claim"]["claimantPolicy"],
+): string => {
+  if (claimantPolicy !== "CURRENT_ADMINISTRATION") {
+    throw new Error(`Unsupported Information claimant policy ${String(claimantPolicy)}.`);
+  }
+  const claimTime = instant(claimBoundary.at, "Information claim boundary");
+  const transferBoundary = temporal.boundaries.find((boundary) =>
+    boundary.kind === "AUTHORITY_TRANSFER" && Date.parse(boundary.at) === claimTime);
+  if (transferBoundary !== undefined && compareConfiguredBoundaries(claimBoundary, transferBoundary) < 0) {
+    const outgoing = institutional.administrationHistory.find((administration) =>
+      Date.parse(administration.effectiveUntil ?? "") === claimTime);
+    if (outgoing === undefined) {
+      if (Date.parse(institutional.currentAdministration.effectiveFrom) < claimTime) {
+        return institutional.currentAdministration.id;
+      }
+      throw new Error("Information claimant resolution lacks the outgoing administration at transfer.");
+    }
+    return outgoing.id;
+  }
+  const administrations = [...institutional.administrationHistory, institutional.currentAdministration];
+  const effective = administrations.filter((administration) =>
+    Date.parse(administration.effectiveFrom) <= claimTime &&
+    (administration.effectiveUntil === null || claimTime < Date.parse(administration.effectiveUntil)));
+  if (effective.length !== 1) {
+    throw new Error("Information claimant resolution requires one administration effective at the claim boundary.");
+  }
+  return effective[0].id;
 };
 
 export const deliverIntegratedInformation = (
@@ -525,7 +588,10 @@ export const assertIntegratedInformationRuntimeState = (
     for (const observation of observations) {
       if (
         observation.captureOwnerInstitutionId !== measurement.producerInstitutionId ||
-        observation.methodVersion !== measurement.methodVersion || observation.capturedAt !== boundaryFor(state, measurement.observationBoundaryId).at ||
+        observation.methodVersion !== measurement.methodVersion ||
+        observation.observationMode !== measurement.observationMode ||
+        observation.observationSemanticVersion !== measurement.observationSemanticVersion ||
+        observation.capturedAt !== boundaryFor(state, measurement.observationBoundaryId).at ||
         observation.observationEnd !== observation.capturedAt ||
         observation.observationStart !== addDays(observation.capturedAt, -measurement.observationIntervalDays) ||
         ![...measurement.housingRegionIds, ...measurement.housingProjectIds].includes(observation.subjectRef)
@@ -533,7 +599,11 @@ export const assertIntegratedInformationRuntimeState = (
     }
     if (artifact !== undefined && (
       artifact.sourceMeasurementId !== measurement.id || artifact.sourceInstitutionId !== measurement.producerInstitutionId ||
-      artifact.methodologyVersion !== measurement.methodVersion || artifact.createdAt !== boundaryFor(state, measurement.artifactBoundaryId).at ||
+      artifact.methodologyVersion !== measurement.methodVersion ||
+      artifact.observationMode !== measurement.observationMode ||
+      artifact.observationSemanticVersion !== measurement.observationSemanticVersion ||
+      artifact.approximationSemanticVersion !== measurement.approximationSemanticVersion ||
+      artifact.createdAt !== boundaryFor(state, measurement.artifactBoundaryId).at ||
       JSON.stringify(artifact.sourceObservationIds) !== JSON.stringify(observations.map((entry) => entry.id))
     )) throw new Error(`Measurement artifact ${artifact.id} contradicts its observations.`);
     if (artifact !== undefined) {

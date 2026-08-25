@@ -254,6 +254,28 @@ export interface PopulationRefinementRequest {
   readonly association?: PopulationAssociation;
 }
 
+export interface PopulationInformationExposureTarget {
+  readonly stateGeographyId: string;
+  readonly parentCohortId: string;
+  readonly projectLocatorGeographyId: string | null;
+  readonly materialExposureClass: string;
+  readonly catchmentClass: string;
+}
+
+export const allocatePopulationExposureTargetWeight = (
+  representedWeight: number,
+  numerator: number,
+  denominator: number,
+): number => {
+  if (
+    !Number.isSafeInteger(representedWeight) || representedWeight <= 0 ||
+    !Number.isSafeInteger(numerator) || !Number.isSafeInteger(denominator) ||
+    numerator <= 0 || numerator >= denominator
+  ) throw new Error("Population exposure allocation requires a positive cohort and a proper integer ratio.");
+  if (representedWeight === 1) return 1;
+  return Math.min(representedWeight - 1, Math.max(1, Math.floor(representedWeight * numerator / denominator)));
+};
+
 const uniqueAppend = (values: readonly string[], value: string): readonly string[] =>
   values.includes(value) ? [...values] : [...values, value];
 
@@ -321,6 +343,66 @@ export const refineWeightedPopulationCohort = (
   };
   assertWeightedPopulationConservation(next);
   return next;
+};
+
+/** Canonical configured targeting shared by live execution and save reconstruction. */
+export const applyConfiguredPopulationInformationExposure = (
+  state: WeightedPopulationState,
+  input: {
+    readonly exposureId: string;
+    readonly targets: readonly PopulationInformationExposureTarget[];
+    readonly targetNumerator: number;
+    readonly targetDenominator: number;
+  },
+): {
+  readonly population: WeightedPopulationState;
+  readonly cohortWeights: readonly { readonly id: string; readonly representedWeight: number }[];
+} => {
+  if (input.exposureId.trim().length === 0) throw new Error("Population exposure requires a stable identity.");
+  let population = state;
+  for (const target of input.targets) {
+    const exactParent = population.cohorts.find((cohort) => cohort.id === target.parentCohortId);
+    const candidates = (exactParent === undefined
+      ? population.cohorts.filter((cohort) =>
+          cohort.residenceGeographyId === target.stateGeographyId &&
+          cohort.projectLocatorGeographyId === target.projectLocatorGeographyId &&
+          cohort.materialExposureClass === target.materialExposureClass &&
+          cohort.catchmentClass === target.catchmentClass &&
+          !cohort.receivedInformationReferences.includes(input.exposureId))
+      : [exactParent]).sort((left, right) => left.id.localeCompare(right.id));
+    if (candidates.length === 0) {
+      throw new Error(`Information exposure lacks configured Population scope ${target.parentCohortId}.`);
+    }
+    for (const candidate of candidates) {
+      const targetedWeight = allocatePopulationExposureTargetWeight(
+        candidate.representedWeight, input.targetNumerator, input.targetDenominator,
+      );
+      if (targetedWeight === candidate.representedWeight) {
+        population = {
+          ...population,
+          cohorts: population.cohorts.map((cohort) => cohort.id === candidate.id
+            ? {
+                ...cohort,
+                receivedInformationReferences: uniqueAppend(cohort.receivedInformationReferences, input.exposureId),
+              }
+            : cohort),
+        };
+        assertWeightedPopulationConservation(population);
+      } else {
+        population = refineWeightedPopulationCohort(population, {
+          parentCohortId: candidate.id,
+          targetedWeight,
+          causeKey: input.exposureId,
+          association: { kind: "INFORMATION", referenceId: input.exposureId },
+        });
+      }
+    }
+  }
+  const cohortWeights = population.cohorts
+    .filter((cohort) => cohort.receivedInformationReferences.includes(input.exposureId))
+    .map((cohort) => ({ id: cohort.id, representedWeight: cohort.representedWeight }));
+  if (cohortWeights.length === 0) throw new Error("Information exposure produced no canonical target cohorts.");
+  return { population, cohortWeights };
 };
 
 const jointMergeSignature = (cohort: WeightedPopulationCohort): string => JSON.stringify({

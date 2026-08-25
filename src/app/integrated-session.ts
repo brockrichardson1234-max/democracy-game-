@@ -12,6 +12,7 @@ import {
 } from "../sim/integrated-runtime";
 import {
   assertWeightedPopulationConservation,
+  applyConfiguredPopulationInformationExposure,
   applyPopulationInformationResponse,
   mergeWeightedPopulationCohorts,
   recordPopulationMaterialExperience,
@@ -81,6 +82,7 @@ import {
   recordIntegratedPopulationResponses,
   releaseIntegratedClaim,
   releaseIntegratedMeasurement,
+  resolveInformationClaimantAt,
   type IntegratedPopulationResponseRecord,
 } from "../sim/integrated-information";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
@@ -92,7 +94,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 8 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 9 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -403,6 +405,89 @@ const assertPopulationArtifactAuthority = (
         : cohort.lineage.version !== baseline.refinementSemanticVersion)
     ) throw new Error(`Integrated partial save cohort ${cohort.id} has invalid refinement authority.`);
   }
+};
+
+const reconstructPopulationBeforeInformationExposure = (
+  saved: IntegratedPartialRuntimeState["population"],
+  baseline: IntegratedPartialRuntimeState["population"],
+  configuration: IntegratedInformationConfiguration,
+): IntegratedPartialRuntimeState["population"] => {
+  const exposureId = configuration.exposure.id;
+  let cohorts = saved.cohorts.map((cohort) => deepCopy(cohort));
+  const groups = new Map<string, typeof cohorts>();
+  for (const cohort of cohorts.filter((entry) => entry.lineage.causeKey === exposureId)) {
+    if (cohort.lineage.parentCohortId === null) {
+      throw new Error("Canonical Information exposure refinement lacks its parent identity.");
+    }
+    groups.set(cohort.lineage.parentCohortId, [
+      ...(groups.get(cohort.lineage.parentCohortId) ?? []), cohort,
+    ]);
+  }
+  for (const [parentId, children] of [...groups.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+    if (children.length !== 2) throw new Error(`Information exposure refinement ${parentId} lacks two siblings.`);
+    const key = sha256Hex(`${saved.refinementSemanticVersion}|${parentId}|${exposureId}`).slice(0, 20);
+    const targetedId = `${parentId}.refinement.${key}.targeted`;
+    const untargetedId = `${parentId}.refinement.${key}.untargeted`;
+    const targeted = children.find((cohort) => cohort.id === targetedId);
+    const untargeted = children.find((cohort) => cohort.id === untargetedId);
+    if (targeted === undefined || untargeted === undefined) {
+      throw new Error(`Information exposure refinement ${parentId} has noncanonical child identities.`);
+    }
+    const authoritativeParent = baseline.cohorts.find((cohort) => cohort.id === parentId);
+    const expectedGeneration = (authoritativeParent?.lineage.generation ?? untargeted.lineage.generation - 1) + 1;
+    if (
+      targeted.lineage.version !== saved.refinementSemanticVersion ||
+      untargeted.lineage.version !== saved.refinementSemanticVersion ||
+      targeted.lineage.generation !== expectedGeneration ||
+      untargeted.lineage.generation !== expectedGeneration ||
+      targeted.lineage.parentCohortId !== parentId || untargeted.lineage.parentCohortId !== parentId ||
+      targeted.lineage.causeKey !== exposureId || untargeted.lineage.causeKey !== exposureId ||
+      cohortAuthoritySignature(targeted) !== cohortAuthoritySignature(untargeted) ||
+      JSON.stringify(targeted.materialExposureReferences) !== JSON.stringify(untargeted.materialExposureReferences) ||
+      JSON.stringify(targeted.receivedInformationReferences) !==
+        JSON.stringify([...untargeted.receivedInformationReferences, exposureId])
+    ) throw new Error(`Information exposure refinement ${parentId} contradicts canonical sibling semantics.`);
+    const firstIndex = Math.min(cohorts.indexOf(targeted), cohorts.indexOf(untargeted));
+    const parent = {
+      ...untargeted,
+      id: parentId,
+      representedWeight: targeted.representedWeight + untargeted.representedWeight,
+      eligibilityProjection: {
+        ...untargeted.eligibilityProjection,
+        allocatedWeight: targeted.eligibilityProjection.allocatedWeight +
+          untargeted.eligibilityProjection.allocatedWeight,
+      },
+      lineage: authoritativeParent?.lineage ?? {
+        version: expectedGeneration - 1 === 0 ? baseline.scaffoldVersion : baseline.refinementSemanticVersion,
+        generation: expectedGeneration - 1,
+        parentCohortId: null,
+        causeKey: `canonical-pre-exposure:${parentId}`,
+      },
+    };
+    cohorts = cohorts.filter((cohort) => cohort !== targeted && cohort !== untargeted);
+    cohorts.splice(firstIndex, 0, parent);
+  }
+  cohorts = cohorts.map((cohort) => {
+    if (!cohort.receivedInformationReferences.includes(exposureId)) return cohort;
+    const matchesTarget = configuration.exposure.targets.some((target) =>
+      cohort.id === target.parentCohortId ||
+      (cohort.residenceGeographyId === target.stateGeographyId &&
+        cohort.projectLocatorGeographyId === target.projectLocatorGeographyId &&
+        cohort.materialExposureClass === target.materialExposureClass &&
+        cohort.catchmentClass === target.catchmentClass));
+    if (!matchesTarget || cohort.representedWeight !== 1) {
+      throw new Error(`Population cohort ${cohort.id} has a noncanonical Information exposure association.`);
+    }
+    const authoritative = baseline.cohorts.find((entry) => entry.id === cohort.id);
+    return {
+      ...cohort,
+      receivedInformationReferences: cohort.receivedInformationReferences.filter((id) => id !== exposureId),
+      politicalState: authoritative?.politicalState ?? cohort.politicalState,
+    };
+  });
+  const reconstructed = { ...saved, cohorts };
+  assertWeightedPopulationConservation(reconstructed);
+  return reconstructed;
 };
 
 const createPopulationResponseRecord = (
@@ -729,6 +814,7 @@ const parse = (
   const information = parsed.information as unknown as NonNullable<IntegratedPartialRuntimeState["information"]>;
   assertIntegratedInformationRuntimeState(information, informationConfiguration, temporal.boundaries);
   let expectedInformation = baseline.information;
+  let expectedPopulation = population;
   const informationBoundaries = temporal.boundaries
     .filter((boundary) => boundary.ownerId === informationConfiguration.ownerId)
     .filter((boundary) => Date.parse(boundary.at) <= currentTime)
@@ -752,29 +838,29 @@ const parse = (
     } else if (boundary.kind === "MEASUREMENT_RELEASED" && measurement !== undefined) {
       expectedInformation = releaseIntegratedMeasurement(expectedInformation, measurement, boundary.at);
     } else if (boundary.kind === "CLAIM_RELEASED") {
+      const claimantId = resolveInformationClaimantAt(
+        institutional, temporal, boundary, informationConfiguration.claim.claimantPolicy,
+      );
       expectedInformation = releaseIntegratedClaim(
-        expectedInformation, informationConfiguration, temporal.initialAdministration.id, boundary.at,
+        expectedInformation, informationConfiguration, claimantId, boundary.at,
       );
     } else if (boundary.kind === "INFORMATION_DELIVERED") {
       expectedInformation = deliverIntegratedInformation(expectedInformation, informationConfiguration, boundary.at);
     } else if (boundary.kind === "POPULATION_EXPOSED") {
-      const targeted = population.cohorts.filter((cohort) =>
-        cohort.receivedInformationReferences.includes(informationConfiguration.exposure.id));
-      if (
-        targeted.length === 0 ||
-        population.cohorts.some((cohort) =>
-          cohort.receivedInformationReferences.includes(informationConfiguration.exposure.id) &&
-          !targeted.some((entry) => entry.id === cohort.id)) ||
-        targeted.some((cohort) => !informationConfiguration.exposure.targets.some((target) =>
-          cohort.residenceGeographyId === target.stateGeographyId &&
-          cohort.projectLocatorGeographyId === target.projectLocatorGeographyId &&
-          cohort.materialExposureClass === target.materialExposureClass &&
-          cohort.catchmentClass === target.catchmentClass))
-      ) throw new Error("Integrated partial save Population exposure contradicts configured targeting.");
+      expectedPopulation = reconstructPopulationBeforeInformationExposure(
+        population, baseline.population, informationConfiguration,
+      );
+      const canonicalExposure = applyConfiguredPopulationInformationExposure(expectedPopulation, {
+        exposureId: informationConfiguration.exposure.id,
+        targets: informationConfiguration.exposure.targets,
+        targetNumerator: informationConfiguration.exposure.targetNumerator,
+        targetDenominator: informationConfiguration.exposure.targetDenominator,
+      });
+      expectedPopulation = canonicalExposure.population;
       expectedInformation = recordIntegratedPopulationExposure(
         expectedInformation,
         informationConfiguration,
-        targeted.map((cohort) => ({ id: cohort.id, representedWeight: cohort.representedWeight })),
+        canonicalExposure.cohortWeights,
         boundary.at,
       );
     } else if (boundary.kind === "POPULATION_RESPONSE") {
@@ -785,7 +871,7 @@ const parse = (
         throw new Error("Integrated partial save Population response lacks exposure or claim authority.");
       }
       const responses = exposure.cohortIds.map((cohortId) => {
-        const cohort = population.cohorts.find((entry) => entry.id === cohortId);
+        const cohort = expectedPopulation.cohorts.find((entry) => entry.id === cohortId);
         if (cohort === undefined) throw new Error(`Population response cohort ${cohortId} is unavailable.`);
         return createPopulationResponseRecord(informationConfiguration, claim, exposure, cohort, boundary.at);
       });
@@ -793,19 +879,23 @@ const parse = (
         expectedInformation, informationConfiguration, responses, boundary.at,
       );
       for (const response of responses) {
-        const cohort = population.cohorts.find((entry) => entry.id === response.cohortId);
-        if (
-          cohort === undefined || cohort.politicalState.belief !== response.belief.value ||
-          cohort.politicalState.attribution !== response.attribution.value ||
-          cohort.politicalState.salience !== response.salience.value ||
-          cohort.politicalState.candidatePreference !== response.preference.value ||
-          cohort.politicalState.turnoutDisposition !== response.turnout.value ||
-          cohort.politicalState.classification !== response.classification
-        ) throw new Error("Integrated partial save Population response contradicts Population-owned state.");
+        expectedPopulation = applyPopulationInformationResponse(expectedPopulation, {
+          cohortId: response.cohortId,
+          exposureId: response.exposureId,
+          belief: response.belief.value,
+          attribution: response.attribution.value,
+          salience: response.salience.value,
+          candidatePreference: response.preference.value,
+          turnoutDisposition: response.turnout.value,
+          classification: response.classification,
+        });
       }
     }
   }
   requireExactArtifactState(information, expectedInformation, "Information deterministic causal state");
+  if (expectedInformation.exposures.length > 0) {
+    requireExactArtifactState(population, expectedPopulation, "Population canonical Information exposure state");
+  }
   return {
     state: {
       ...baseline,
@@ -1034,12 +1124,15 @@ const createSession = (
             information: releaseIntegratedMeasurement(state.information!, measurement, staticBoundary.at),
           };
         } else if (staticBoundary.kind === "CLAIM_RELEASED") {
+          const claimantId = resolveInformationClaimantAt(
+            result.institutional, temporal, staticBoundary, informationConfiguration.claim.claimantPolicy,
+          );
           state = {
             ...state,
             information: releaseIntegratedClaim(
               state.information!,
               informationConfiguration,
-              result.institutional.currentAdministration.id,
+              claimantId,
               staticBoundary.at,
             ),
           };
@@ -1051,48 +1144,19 @@ const createSession = (
             ),
           };
         } else if (staticBoundary.kind === "POPULATION_EXPOSED") {
-          for (const targetConfiguration of informationConfiguration.exposure.targets) {
-            const exactParent = state.population.cohorts.find((cohort) =>
-              cohort.id === targetConfiguration.parentCohortId);
-            const candidates = exactParent === undefined
-              ? state.population.cohorts.filter((cohort) =>
-                  cohort.residenceGeographyId === targetConfiguration.stateGeographyId &&
-                  cohort.projectLocatorGeographyId === targetConfiguration.projectLocatorGeographyId &&
-                  cohort.materialExposureClass === targetConfiguration.materialExposureClass &&
-                  cohort.catchmentClass === targetConfiguration.catchmentClass &&
-                  !cohort.receivedInformationReferences.includes(informationConfiguration.exposure.id))
-              : [exactParent];
-            if (candidates.length === 0) {
-              throw new Error(`Information exposure lacks configured Population scope ${targetConfiguration.parentCohortId}.`);
-            }
-            for (const candidate of candidates) {
-              const targetedWeight = Math.floor(
-                candidate.representedWeight * informationConfiguration.exposure.targetNumerator /
-                informationConfiguration.exposure.targetDenominator,
-              );
-              if (targetedWeight <= 0 || targetedWeight >= candidate.representedWeight) continue;
-              state = {
-                ...state,
-                population: refineWeightedPopulationCohort(state.population, {
-                  parentCohortId: candidate.id,
-                  targetedWeight,
-                  causeKey: informationConfiguration.exposure.id,
-                  association: {
-                    kind: "INFORMATION",
-                    referenceId: informationConfiguration.exposure.id,
-                  },
-                }),
-              };
-            }
-          }
-          const targeted = state.population.cohorts.filter((cohort) =>
-            cohort.receivedInformationReferences.includes(informationConfiguration.exposure.id));
+          const canonicalExposure = applyConfiguredPopulationInformationExposure(state.population, {
+            exposureId: informationConfiguration.exposure.id,
+            targets: informationConfiguration.exposure.targets,
+            targetNumerator: informationConfiguration.exposure.targetNumerator,
+            targetDenominator: informationConfiguration.exposure.targetDenominator,
+          });
           state = {
             ...state,
+            population: canonicalExposure.population,
             information: recordIntegratedPopulationExposure(
               state.information!,
               informationConfiguration,
-              targeted.map((cohort) => ({ id: cohort.id, representedWeight: cohort.representedWeight })),
+              canonicalExposure.cohortWeights,
               staticBoundary.at,
             ),
           };
@@ -1139,6 +1203,14 @@ const createSession = (
         ...state,
         institutional: {
           ...state.institutional!,
+          occurrences: [...state.institutional!.occurrences].sort((left, right) => {
+            const leftBoundary = temporal.boundaries.find((boundary) => boundary.id === left.boundaryId);
+            const rightBoundary = temporal.boundaries.find((boundary) => boundary.id === right.boundaryId);
+            if (leftBoundary === undefined || rightBoundary === undefined) {
+              throw new Error("Institutional occurrence lacks its configured boundary.");
+            }
+            return compareConfiguredBoundaries(leftBoundary, rightBoundary);
+          }),
           calendar: {
             current: next.at,
             processedBoundaryIds: temporal.boundaries

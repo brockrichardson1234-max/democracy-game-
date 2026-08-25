@@ -599,7 +599,10 @@ export interface InformationMeasurementConfiguration {
   readonly observationLagDays: number;
   readonly captureLagDays: number;
   readonly releaseLagDays: number;
+  readonly observationMode: "SNAPSHOT_AS_OF_OBSERVATION_END_OVER_DECLARED_WINDOW";
+  readonly observationSemanticVersion: string;
   readonly methodVersion: string;
+  readonly approximationSemanticVersion: string;
   readonly deterministicErrorBound: number;
   readonly classification: ScaffoldClassification;
 }
@@ -617,6 +620,7 @@ export interface IntegratedInformationConfiguration {
   readonly ownerId: string;
   readonly parameterHash: string;
   readonly semanticsVersion: string;
+  readonly timingSemanticVersion: string;
   readonly responseRuleVersion: string;
   readonly classification: ScaffoldClassification;
   readonly measurements: readonly InformationMeasurementConfiguration[];
@@ -625,6 +629,7 @@ export interface IntegratedInformationConfiguration {
     readonly evidenceArtifactIds: readonly string[];
     readonly boundaryId: string;
     readonly claimantPolicy: "CURRENT_ADMINISTRATION";
+    readonly claimantResolutionVersion: string;
     readonly subject: string;
     readonly position: string;
     readonly contentVersion: string;
@@ -652,6 +657,7 @@ export interface IntegratedInformationConfiguration {
     }[];
     readonly targetNumerator: number;
     readonly targetDenominator: number;
+    readonly targetAllocationVersion: string;
     readonly classification: ScaffoldClassification;
   };
   readonly response: {

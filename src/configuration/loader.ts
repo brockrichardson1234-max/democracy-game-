@@ -1,5 +1,6 @@
 import { canonicalConfigurationContent } from "./canonical";
 import { sha256Hex } from "./sha256";
+import { compareConfiguredBoundaries } from "../sim/calendar-time";
 import { validateGovernmentStructure } from "./topology-validation";
 import type {
   GovernmentConfiguration,
@@ -576,7 +577,8 @@ const validateIntegratedRuntimeConfiguration = (
     if (
       information.schemaVersion !== 1 || information.ownerId.trim().length === 0 ||
       !SHA_256_PATTERN.test(parameterHash) || parameterHash !== sha256Hex(JSON.stringify(informationWithoutHash)) ||
-      information.semanticsVersion.trim().length === 0 || information.responseRuleVersion.trim().length === 0 ||
+      information.semanticsVersion.trim().length === 0 || information.timingSemanticVersion.trim().length === 0 ||
+      information.responseRuleVersion.trim().length === 0 ||
       information.measurements.length === 0 || new Set(measurementIds).size !== measurementIds.length ||
       new Set(observationIds).size !== observationIds.length || new Set(artifactIds).size !== artifactIds.length ||
       information.measurements.some((measurement) => {
@@ -589,20 +591,27 @@ const validateIntegratedRuntimeConfiguration = (
           new Set(measurement.housingProjectIds).size !== measurement.housingProjectIds.length ||
           !Number.isSafeInteger(measurement.observationIntervalDays) || measurement.observationIntervalDays <= 0 ||
           !Number.isSafeInteger(measurement.observationLagDays) || measurement.observationLagDays < 0 ||
-          !Number.isSafeInteger(measurement.captureLagDays) || measurement.captureLagDays <= 0 ||
-          !Number.isSafeInteger(measurement.releaseLagDays) || measurement.releaseLagDays <= 0 ||
+          !Number.isSafeInteger(measurement.captureLagDays) || measurement.captureLagDays < 0 ||
+          !Number.isSafeInteger(measurement.releaseLagDays) || measurement.releaseLagDays < 0 ||
           !Number.isSafeInteger(measurement.deterministicErrorBound) || measurement.deterministicErrorBound < 0 ||
-          measurement.methodVersion.trim().length === 0 || observation?.kind !== "OBSERVATION_CAPTURE" ||
+          measurement.deterministicErrorBound > 10_000 ||
+          measurement.observationMode !== "SNAPSHOT_AS_OF_OBSERVATION_END_OVER_DECLARED_WINDOW" ||
+          measurement.observationSemanticVersion.trim().length === 0 ||
+          measurement.methodVersion.trim().length === 0 || measurement.approximationSemanticVersion.trim().length === 0 ||
+          observation?.kind !== "OBSERVATION_CAPTURE" ||
           artifact?.kind !== "MEASUREMENT_CREATED" || release?.kind !== "MEASUREMENT_RELEASED" ||
           observation.ownerId !== information.ownerId || artifact.ownerId !== information.ownerId ||
           release.ownerId !== information.ownerId ||
           Date.parse(artifact.at) - Date.parse(observation.at) !== measurement.captureLagDays * 86_400_000 ||
           Date.parse(release.at) - Date.parse(artifact.at) !== measurement.releaseLagDays * 86_400_000 ||
+          compareConfiguredBoundaries(observation, artifact) >= 0 ||
+          compareConfiguredBoundaries(artifact, release) >= 0 ||
           (housing !== undefined && observation.phase <= housing.housingBoundaryPhase);
       }) ||
       information.claim.evidenceArtifactIds.length === 0 ||
       information.claim.evidenceArtifactIds.some((id) => !artifactIds.includes(id)) ||
       boundaryById.get(information.claim.boundaryId)?.kind !== "CLAIM_RELEASED" ||
+      information.claim.claimantResolutionVersion.trim().length === 0 ||
       !Object.hasOwn(information.response.outcomesByClaimPosition, information.claim.position) ||
       boundaryById.get(information.delivery.boundaryId)?.kind !== "INFORMATION_DELIVERED" ||
       information.delivery.informationItemId !== information.claim.id ||
@@ -615,6 +624,7 @@ const validateIntegratedRuntimeConfiguration = (
       !Number.isSafeInteger(information.exposure.targetNumerator) ||
       !Number.isSafeInteger(information.exposure.targetDenominator) || information.exposure.targetNumerator <= 0 ||
       information.exposure.targetNumerator >= information.exposure.targetDenominator ||
+      information.exposure.targetAllocationVersion.trim().length === 0 ||
       boundaryById.get(information.response.boundaryId)?.kind !== "POPULATION_RESPONSE" ||
       information.response.exposureId !== information.exposure.id || allOutcomes.length === 0 ||
       allOutcomes.some((outcome) => Object.values(outcome).some((value) => value.trim().length === 0))

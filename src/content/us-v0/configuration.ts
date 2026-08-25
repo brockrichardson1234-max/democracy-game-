@@ -248,7 +248,7 @@ export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<Legislative
     configurationVersion: "0.8.0-i8-reconciled",
     scenarioId: "us-v0-2026-08-22",
     scenarioVersion: "0.8.0-i8-reconciled",
-    configurationHash: "215230ab26fa4fa1fc80d2778cfe7ada2f9fc8582894cc917d1ab8b8ec51cf54",
+    configurationHash: "a6c5fd9b44473740849252a29a37dab2e0583f6801046363a72e3136a607b203",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
