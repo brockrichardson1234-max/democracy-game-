@@ -44,7 +44,6 @@ import {
   directWaiverIntention,
   openFutureWaiverRequest,
   resolveImplementationOwnerIntention,
-  issueFinalRelationshipQualificationDetermination,
   recordAdministrativeLegalConstraint,
   resolveRelationshipFormulaDisposition,
   setAdministrativeLegalConstraintEnforceability,
@@ -53,6 +52,7 @@ import {
   submitFiscalControlIntention,
   submitLocalMemberDecision,
   submitLocalRelationshipStatusDecision,
+  submitRelationshipQualificationDetermination,
   submitRecipientActivityIntention,
   submitRecipientCommitmentIntention,
   submitRecipientDrawIntention,
@@ -106,7 +106,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 10 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 11 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -171,7 +171,9 @@ export interface IntegratedPartialRuntimeSession {
   readonly getHousingAuditState: () => NonNullable<IntegratedPartialRuntimeState["housing"]>;
   readonly getInformationAuditState: () => NonNullable<IntegratedPartialRuntimeState["information"]>;
   readonly getPublicInformationStatus: () => IntegratedInformationPublicStatus;
-  readonly issueBoundedRelationshipRejection: () => IntegratedPartialRuntimeState;
+  readonly issueBoundedRelationshipRejection: (
+    procedureRecordIds?: readonly string[],
+  ) => IntegratedPartialRuntimeState;
   readonly respondToJudicialOrder: (
     action: "COMPLY" | "DELAY" | "CONTEST" | "NONCOMPLY",
   ) => IntegratedPartialRuntimeState;
@@ -961,9 +963,21 @@ const parse = (
     },
   };
   let commandIndex = 0;
+  const stayResolutionBoundary = temporal.boundaries.find(
+    (boundary) => boundary.id === legalConfiguration.appeal.stayBoundaryId,
+  );
+  if (stayResolutionBoundary === undefined) {
+    throw new Error("Configured stay resolution boundary is unavailable.");
+  }
   const replayCommand = (command: LegalActionCommandRecord): void => {
     expectedLegal = command.action === "REQUEST_STAY"
-      ? requestSeparateStay(expectedLegal, legalConfiguration, command.administrationId, command.issuedAt)
+      ? requestSeparateStay(
+          expectedLegal,
+          legalConfiguration,
+          command.administrationId,
+          command.issuedAt,
+          stayResolutionBoundary.at,
+        )
       : recordAdministrativeComplianceResponse(
           expectedLegal, legalConfiguration, command.administrationId, command.action, command.issuedAt,
         );
@@ -1652,22 +1666,51 @@ const createSession = (
         publicExposureCount: state.information.exposures.length,
       });
     },
-    issueBoundedRelationshipRejection: () => {
+    issueBoundedRelationshipRejection: (procedureRecordIds = []) => {
       requireAdministrationAuthority();
       if (state.implementation === null || state.institutional === null) {
         throw new Error("Integrated implementation state unavailable.");
       }
-      state = { ...state, implementation: issueFinalRelationshipQualificationDetermination(
+      if (
+        !Array.isArray(procedureRecordIds) ||
+        procedureRecordIds.some((id) => typeof id !== "string" || id.trim().length === 0) ||
+        new Set(procedureRecordIds).size !== procedureRecordIds.length ||
+        procedureRecordIds.some((id) => id !== legalConfiguration.trigger.requiredProcedureRecord)
+      ) {
+        throw new Error("Relationship determination procedure evidence is invalid, duplicate, or unconfigured.");
+      }
+      const determinationInput = {
+        id: legalConfiguration.trigger.determinationId,
+        relationshipId: legalConfiguration.relationshipId,
+        claimantId: legalConfiguration.claimantId,
+        writtenReasons: ["CONFIGURED_REQUALIFICATION_STANDARD_ASSERTED"],
+        procedureRecordIds: [...procedureRecordIds],
+      };
+      const submitted = submitRelationshipQualificationDetermination(
         state.implementation,
+        determinationInput,
         {
-          id: legalConfiguration.trigger.determinationId,
-          relationshipId: legalConfiguration.relationshipId,
-          claimantId: legalConfiguration.claimantId,
-          writtenReasons: ["CONFIGURED_REQUALIFICATION_STANDARD_ASSERTED"],
-          procedureRecordIds: [],
+          administrationId: state.institutional.currentAdministration.id,
+          actorId: state.institutional.currentAdministration.headActorId,
         },
+        implementationConfiguration,
         state.institutional.calendar.current,
-      ) };
+      );
+      const intention = submitted.ownerResolution.intentions.at(-1);
+      if (
+        intention?.kind !== "ISSUE_RELATIONSHIP_QUALIFICATION_DETERMINATION" ||
+        intention.matterId !== legalConfiguration.trigger.determinationId
+      ) throw new Error("Relationship determination owner intention was not recorded canonically.");
+      const resolved = resolveImplementationOwnerIntention(
+        submitted,
+        intention.id,
+        implementationConfiguration,
+        state.institutional.calendar.current,
+      );
+      if (!resolved.administrativeProgram.relationshipQualificationDeterminations.some(
+        (entry) => entry.id === legalConfiguration.trigger.determinationId,
+      )) throw new Error("Relationship determination owner refused the bounded canonical request.");
+      state = { ...state, implementation: resolved };
       return deepCopy(state);
     },
     respondToJudicialOrder: (action) => {
@@ -1689,11 +1732,18 @@ const createSession = (
       if (state.legalContest === null || state.institutional === null) {
         throw new Error("Integrated legal-contest state unavailable.");
       }
+      const stayResolutionBoundary = temporal.boundaries.find(
+        (boundary) => boundary.id === legalConfiguration.appeal.stayBoundaryId,
+      );
+      if (stayResolutionBoundary === undefined) {
+        throw new Error("Configured stay resolution boundary is unavailable.");
+      }
       state = { ...state, legalContest: requestSeparateStay(
         state.legalContest,
         legalConfiguration,
         state.institutional.currentAdministration.id,
         state.institutional.calendar.current,
+        stayResolutionBoundary.at,
       ) };
       return deepCopy(state);
     },

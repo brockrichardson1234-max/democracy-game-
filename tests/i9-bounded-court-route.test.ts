@@ -60,7 +60,7 @@ describe("I9 reconciled bounded legal-contest route", () => {
   it("pins generic deterministic legal machinery without contemporary judicial or political preference content", () => {
     expect(() => loadGovernmentConfiguration(US_V0_STRUCTURAL_CONFIGURATION)).not.toThrow();
     expect(US_V0_I9_LEGAL_CONTEST_CONFIGURATION).toMatchObject({
-      semanticsVersion: "us-v0-bounded-legal-contest-2",
+      semanticsVersion: "0.9.1-i9-repair",
       standingRuleVersion: "configured-recipient-final-act-eligibility-1",
       outcomeRuleVersion: "required-procedure-deterministic-merits-1",
       legalValidityRuleVersion: "procedure-record-authority-validity-1",

@@ -683,6 +683,70 @@ const validateIntegratedRuntimeConfiguration = (
       legalContest.compliance.allowedResponses.length !== 4 ||
       new Set(legalContest.compliance.allowedResponses).size !== legalContest.compliance.allowedResponses.length
     ) throw new Error("Integrated legal-contest configuration has invalid ownership, deterministic rules, exact scope, or boundaries.");
+
+    const requireCausalOrder = (beforeId: string, afterId: string, label: string): void => {
+      const before = boundaries.get(beforeId);
+      const after = boundaries.get(afterId);
+      if (before === undefined || after === undefined || compareConfiguredBoundaries(before, after) >= 0) {
+        throw new Error(`Integrated legal-contest configuration has impossible ${label} chronology.`);
+      }
+    };
+    requireCausalOrder(
+      legalContest.claim.filingBoundaryId,
+      legalContest.claim.docketBoundaryId,
+      "claim filing to proceeding docket",
+    );
+    requireCausalOrder(
+      legalContest.claim.docketBoundaryId,
+      legalContest.interimRelief.requestBoundaryId,
+      "proceeding docket to interim-relief request",
+    );
+    requireCausalOrder(
+      legalContest.interimRelief.requestBoundaryId,
+      legalContest.ruling.boundaryId,
+      "interim-relief request to ruling",
+    );
+    requireCausalOrder(
+      legalContest.ruling.boundaryId,
+      legalContest.order.issueBoundaryId,
+      "ruling to order issue",
+    );
+    requireCausalOrder(
+      legalContest.order.issueBoundaryId,
+      legalContest.order.effectiveBoundaryId,
+      "order issue to effectiveness",
+    );
+    requireCausalOrder(
+      legalContest.order.effectiveBoundaryId,
+      legalContest.order.noticeBoundaryId,
+      "order effectiveness to notice",
+    );
+    requireCausalOrder(
+      legalContest.order.noticeBoundaryId,
+      legalContest.compliance.deadlineBoundaryId,
+      "notice to compliance deadline",
+    );
+    requireCausalOrder(
+      legalContest.order.noticeBoundaryId,
+      legalContest.appeal.stayBoundaryId,
+      "earliest appeal opportunity to fixed stay resolution",
+    );
+    requireCausalOrder(
+      legalContest.order.noticeBoundaryId,
+      legalContest.appeal.rulingBoundaryId,
+      "earliest appeal opportunity to appellate resolution",
+    );
+    const noticeBoundary = boundaries.get(legalContest.order.noticeBoundaryId)!;
+    const stayBoundary = boundaries.get(legalContest.appeal.stayBoundaryId)!;
+    const appealBoundary = boundaries.get(legalContest.appeal.rulingBoundaryId)!;
+    if (
+      Date.parse(stayBoundary.at) <= Date.parse(noticeBoundary.at) ||
+      Date.parse(appealBoundary.at) <= Date.parse(noticeBoundary.at)
+    ) {
+      throw new Error(
+        "Integrated legal-contest configuration lacks a future player-command opportunity before stay or appellate resolution.",
+      );
+    }
   }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {

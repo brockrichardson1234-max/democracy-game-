@@ -11,7 +11,7 @@ import {
 } from "./topology";
 import { US_V0_I8_RUNTIME_ARTIFACTS, US_V0_I8_TEMPORAL_CONFIGURATION } from "./i8";
 
-export const US_V0_I9_LEGAL_CONTEST_SEMANTICS_VERSION = "us-v0-bounded-legal-contest-2";
+export const US_V0_I9_LEGAL_CONTEST_SEMANTICS_VERSION = "0.9.1-i9-repair";
 export const US_V0_I9_STANDING_RULE_VERSION = "configured-recipient-final-act-eligibility-1";
 export const US_V0_I9_OUTCOME_RULE_VERSION = "required-procedure-deterministic-merits-1";
 export const US_V0_I9_LEGAL_VALIDITY_RULE_VERSION = "procedure-record-authority-validity-1";

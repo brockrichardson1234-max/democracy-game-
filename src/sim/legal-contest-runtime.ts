@@ -114,7 +114,7 @@ export interface StayRecord {
   readonly appealId: string;
   readonly sourceCourtInstitutionId: string;
   readonly issuedAt: string;
-  readonly status: "OPERATIVE" | "DENIED";
+  readonly status: "OPERATIVE" | "DENIED" | "SUPERSEDED";
   readonly classification: ScaffoldClassification;
 }
 
@@ -301,14 +301,22 @@ export const applyLegalContestBoundary = (
     return { ...state, stays: [{
       id: configuration.appeal.stayId, targetOrderId: appeal.sourceOrderId, appealId: appeal.id,
       sourceCourtInstitutionId: configuration.forumInstitutionId, issuedAt: boundary.at,
-      status: configuration.appeal.stayOutcome === "GRANTED" ? "OPERATIVE" : "DENIED",
+      status: appeal.status === "RESOLVED" || configuration.appeal.stayOutcome === "DENIED"
+        ? "DENIED"
+        : "OPERATIVE",
       classification: configuration.classification,
     }] };
   }
   if (boundary.id === configuration.appeal.rulingBoundaryId) {
     if (state.appeals.length === 0 || state.appeals[0].status === "RESOLVED") return state;
-    return { ...state, appeals: [{ ...state.appeals[0], status: "RESOLVED", resolvedAt: boundary.at,
-      disposition: configuration.appeal.rulingOutcome }] };
+    return {
+      ...state,
+      appeals: [{ ...state.appeals[0], status: "RESOLVED", resolvedAt: boundary.at,
+        disposition: configuration.appeal.rulingOutcome }],
+      stays: state.stays.map((stay) => stay.status === "OPERATIVE"
+        ? { ...stay, status: "SUPERSEDED" as const }
+        : stay),
+    };
   }
   if (boundary.id === configuration.compliance.deadlineBoundaryId && state.notices.length > 0 &&
     state.complianceStates.at(-1)?.status === "PENDING") {
@@ -362,9 +370,16 @@ export const requestSeparateStay = (
   configuration: IntegratedLegalContestConfiguration,
   administrationId: string,
   at: string,
+  stayResolutionAt: string,
 ): IntegratedLegalContestRuntimeState => {
   if (state.appeals[0]?.status !== "FILED" || state.actionCommands.some((entry) => entry.action === "REQUEST_STAY")) {
     throw new Error("A stay request requires one pending appeal and may occur only once.");
+  }
+  if (
+    !Number.isFinite(Date.parse(stayResolutionAt)) ||
+    Date.parse(at) >= Date.parse(stayResolutionAt)
+  ) {
+    throw new Error("A stay request is unavailable after its fixed canonical resolution opportunity.");
   }
   return { ...state, actionCommands: [...state.actionCommands, {
     id: `${configuration.ownerId}.command.${state.actionCommands.length + 1}`,

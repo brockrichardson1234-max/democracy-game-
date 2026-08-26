@@ -198,6 +198,7 @@ export interface RelationshipQualificationDeterminationRecord {
   readonly procedureRecordIds: readonly string[];
   readonly issuedAt: string;
   readonly classification: "SIMULATION_GENERATED";
+  readonly sourceIntentionId: string;
 }
 
 export interface AdministrativeLegalConstraintRecord {
@@ -469,6 +470,16 @@ export type ImplementationOwnerIntention =
         readonly relationshipId: string;
         readonly status: RelationshipStatus;
         readonly causeKey: string;
+      };
+    }
+  | {
+      readonly kind: "ISSUE_RELATIONSHIP_QUALIFICATION_DETERMINATION";
+      readonly payload: {
+        readonly id: string;
+        readonly relationshipId: string;
+        readonly claimantId: string;
+        readonly writtenReasons: readonly string[];
+        readonly procedureRecordIds: readonly string[];
       };
     };
 
@@ -823,6 +834,7 @@ export const assertProgramImplementationState = (
       ...state.recipientAdministration.activities,
       ...state.recipientAdministration.drawRequests,
       ...state.intergovernmental.transitions,
+      ...state.administrativeProgram.relationshipQualificationDeterminations,
     ].filter((entry) => entry.sourceIntentionId === intention.id).map((entry) => entry.id).sort();
     if (
       intention.id !== expectedId || intention.semanticVersion !== configuration.ownerResolution.semanticVersion ||
@@ -1159,6 +1171,16 @@ export const assertProgramImplementationState = (
     const relationship = state.intergovernmental.historicalRelationships.find(
       (entry) => entry.id === determination.relationshipId,
     );
+    const sourceIntention = state.ownerResolution.intentions.find(
+      (entry) => entry.id === determination.sourceIntentionId,
+    );
+    const expectedPayload = {
+      id: determination.id,
+      relationshipId: determination.relationshipId,
+      claimantId: determination.claimantId,
+      writtenReasons: determination.writtenReasons,
+      procedureRecordIds: determination.procedureRecordIds,
+    };
     if (
       relationship === undefined || relationship.recipientId !== determination.claimantId ||
       determination.institutionId !== relationship.federalInstitutionId ||
@@ -1168,7 +1190,13 @@ export const assertProgramImplementationState = (
       determination.moneyDamagesGranted !== false || determination.writtenReasons.length === 0 ||
       determination.writtenReasons.some((reason) => reason.trim().length === 0) ||
       new Set(determination.procedureRecordIds).size !== determination.procedureRecordIds.length ||
-      !Number.isFinite(Date.parse(determination.issuedAt)) || determination.classification !== "SIMULATION_GENERATED"
+      determination.procedureRecordIds.some((id) => typeof id !== "string" || id.trim().length === 0) ||
+      !Number.isFinite(Date.parse(determination.issuedAt)) || determination.classification !== "SIMULATION_GENERATED" ||
+      sourceIntention?.kind !== "ISSUE_RELATIONSHIP_QUALIFICATION_DETERMINATION" ||
+      sourceIntention.status !== "RESOLVED" || sourceIntention.targetOwnerId !== determination.institutionId ||
+      sourceIntention.matterId !== determination.id || sourceIntention.resolvedAt !== determination.issuedAt ||
+      !sourceIntention.resultRecordIds.includes(determination.id) ||
+      JSON.stringify(sourceIntention.payload) !== JSON.stringify(expectedPayload)
     ) throw new Error(`Relationship qualification determination ${determination.id} exceeds its administrative owner.`);
   }
   for (const constraint of state.administrativeProgram.legalConstraints) {
@@ -2227,6 +2255,36 @@ export const submitLocalRelationshipStatusDecision = (
   at,
 );
 
+export const submitRelationshipQualificationDetermination = (
+  state: ProgramImplementationState,
+  input: {
+    readonly id: string;
+    readonly relationshipId: string;
+    readonly claimantId: string;
+    readonly writtenReasons: readonly string[];
+    readonly procedureRecordIds: readonly string[];
+  },
+  origin: OwnerIntentionOrigin,
+  configuration: IntegratedImplementationConfiguration,
+  at: string,
+): ProgramImplementationState => {
+  const relationship = state.intergovernmental.historicalRelationships.find(
+    (entry) => entry.id === input.relationshipId,
+  );
+  if (relationship === undefined || relationship.recipientId !== input.claimantId) {
+    throw new Error("Relationship qualification determination requires its bounded canonical relationship.");
+  }
+  return submitImplementationOwnerIntention(
+    state,
+    { kind: "ISSUE_RELATIONSHIP_QUALIFICATION_DETERMINATION", payload: copy(input) },
+    origin,
+    relationship.federalInstitutionId,
+    input.id,
+    configuration,
+    at,
+  );
+};
+
 const generatedResultIds = (state: ProgramImplementationState): readonly string[] => [
   ...state.fiscalExecution.generatedControls.map((entry) => entry.id),
   ...state.fiscalExecution.generatedProgramAllocations.map((entry) => entry.id),
@@ -2237,6 +2295,7 @@ const generatedResultIds = (state: ProgramImplementationState): readonly string[
   ...state.recipientAdministration.activities.map((entry) => entry.id),
   ...state.recipientAdministration.drawRequests.map((entry) => entry.id),
   ...state.intergovernmental.transitions.map((entry) => entry.id),
+  ...state.administrativeProgram.relationshipQualificationDeterminations.map((entry) => entry.id),
 ];
 
 export const resolveImplementationOwnerIntention = (
@@ -2295,6 +2354,14 @@ export const resolveImplementationOwnerIntention = (
           at,
         );
         break;
+      case "ISSUE_RELATIONSHIP_QUALIFICATION_DETERMINATION":
+        resolved = issueFinalRelationshipQualificationDetermination(
+          state,
+          intention.payload,
+          intention.id,
+          at,
+        );
+        break;
     }
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Owner resolver refused the intention.";
@@ -2328,15 +2395,21 @@ export const issueFinalRelationshipQualificationDetermination = (
     readonly writtenReasons: readonly string[];
     readonly procedureRecordIds: readonly string[];
   },
+  sourceIntentionId: string,
   at: string,
 ): ProgramImplementationState => {
   const relationship = state.intergovernmental.historicalRelationships.find(
     (entry) => entry.id === input.relationshipId,
   );
+  const sourceIntention = state.ownerResolution.intentions.find((entry) => entry.id === sourceIntentionId);
   if (
     relationship === undefined || relationship.recipientId !== input.claimantId || input.id.trim().length === 0 ||
     input.writtenReasons.length === 0 || input.writtenReasons.some((reason) => reason.trim().length === 0) ||
-    new Set(input.procedureRecordIds).size !== input.procedureRecordIds.length || !Number.isFinite(Date.parse(at))
+    input.procedureRecordIds.some((id) => typeof id !== "string" || id.trim().length === 0) ||
+    new Set(input.procedureRecordIds).size !== input.procedureRecordIds.length || !Number.isFinite(Date.parse(at)) ||
+    sourceIntention?.kind !== "ISSUE_RELATIONSHIP_QUALIFICATION_DETERMINATION" ||
+    sourceIntention.status !== "PENDING" || sourceIntention.targetOwnerId !== relationship.federalInstitutionId ||
+    sourceIntention.matterId !== input.id || JSON.stringify(sourceIntention.payload) !== JSON.stringify(input)
   ) throw new Error("Final relationship qualification determination lacks its bounded relationship or written record.");
   if (state.administrativeProgram.relationshipQualificationDeterminations.length > 0) {
     throw new Error("The bounded relationship qualification determination already exists.");
@@ -2358,6 +2431,7 @@ export const issueFinalRelationshipQualificationDetermination = (
     procedureRecordIds: [...input.procedureRecordIds],
     issuedAt: at,
     classification: "SIMULATION_GENERATED",
+    sourceIntentionId,
   };
   return {
     ...state,

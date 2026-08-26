@@ -57,7 +57,7 @@ interface MutableI9Save {
 
 describe("I9 integrated persistence", () => {
   it("increments the accepted I8 save format and roundtrips deterministic continuation", () => {
-    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(10);
+    expect(INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION).toBe(11);
     const direct = createSession();
     direct.issueBoundedRelationshipRejection();
     direct.advanceTo(US_V0_I9_NOTICE);
