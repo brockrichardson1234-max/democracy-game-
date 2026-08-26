@@ -31,6 +31,10 @@ import {
   createIntegratedInformationRuntimeState,
   type IntegratedInformationRuntimeState,
 } from "./integrated-information";
+import {
+  createIntegratedLegalContestRuntimeState,
+  type IntegratedLegalContestRuntimeState,
+} from "./legal-contest-runtime";
 
 export interface RuntimeArtifactMetadata {
   readonly artifactId: string;
@@ -179,6 +183,7 @@ export interface IntegratedPartialRuntimeState {
   readonly implementation: ProgramImplementationState | null;
   readonly housing: IntegratedMaterialHousingState | null;
   readonly information: IntegratedInformationRuntimeState | null;
+  readonly legalContest: IntegratedLegalContestRuntimeState | null;
 }
 
 const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { readonly metadata: RuntimeArtifactMetadata }[] => [
@@ -410,5 +415,8 @@ export const createIntegratedPartialRuntimeState = (
           configuration.integratedRuntime.information,
           configuration.integratedRuntime.temporal.boundaries,
         ),
+    legalContest: configuration.integratedRuntime.legalContest === undefined
+      ? null
+      : createIntegratedLegalContestRuntimeState(configuration.integratedRuntime.legalContest),
   };
 };

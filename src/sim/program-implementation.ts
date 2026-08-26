@@ -184,6 +184,47 @@ export interface RelationshipTransitionRecord {
   readonly sourceIntentionId: string;
 }
 
+export interface RelationshipQualificationDeterminationRecord {
+  readonly id: string;
+  readonly relationshipId: string;
+  readonly claimantId: string;
+  readonly institutionId: string;
+  readonly outcome: "REQUALIFICATION_REJECTED";
+  readonly formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION";
+  readonly finalAgencyAction: true;
+  readonly prospectiveOnly: true;
+  readonly moneyDamagesGranted: false;
+  readonly writtenReasons: readonly string[];
+  readonly procedureRecordIds: readonly string[];
+  readonly issuedAt: string;
+  readonly classification: "SIMULATION_GENERATED";
+}
+
+export interface AdministrativeLegalConstraintRecord {
+  readonly id: string;
+  readonly sourceOrderId: string;
+  readonly targetInstitutionId: string;
+  readonly programId: string;
+  readonly relationshipId: string;
+  readonly determinationId: string;
+  readonly requiredAct: string;
+  readonly prohibitedAct: string;
+  readonly effectiveAt: string;
+  readonly enforceability: "OPERATIVE" | "STAYED" | "SUPERSEDED";
+  readonly enforceabilityCauseId: string;
+  readonly classification: "SIMULATION_GENERATED";
+}
+
+export interface RelationshipFormulaDispositionResolutionRecord {
+  readonly id: string;
+  readonly determinationId: string;
+  readonly legalConstraintId: string | null;
+  readonly complianceStateId: string | null;
+  readonly outcome: "WITHHELD_BY_COMPLIANCE" | "EXECUTED_WHILE_CONTESTED" | "EXECUTED_WITHOUT_CONSTRAINT";
+  readonly resolvedAt: string;
+  readonly classification: "SIMULATION_GENERATED";
+}
+
 export interface EffectiveIntergovernmentalRelationship {
   readonly id: string;
   readonly recipientId: string;
@@ -480,6 +521,9 @@ export interface ProgramImplementationState {
     readonly historicalWaivers: readonly HistoricalWaiverRecord[];
     readonly waiverRequests: readonly WaiverRequestRecord[];
     readonly determinations: readonly AdministrativeDeterminationRecord[];
+    readonly relationshipQualificationDeterminations: readonly RelationshipQualificationDeterminationRecord[];
+    readonly legalConstraints: readonly AdministrativeLegalConstraintRecord[];
+    readonly formulaDispositionResolutions: readonly RelationshipFormulaDispositionResolutionRecord[];
     readonly dynamicBoundaries: readonly DynamicAdministrativeBoundary[];
     readonly administrativeCapacityCommitted: number;
   };
@@ -552,6 +596,9 @@ export const createProgramImplementationState = (
     historicalWaivers: copy(seed.waivers),
     waiverRequests: [],
     determinations: [],
+    relationshipQualificationDeterminations: [],
+    legalConstraints: [],
+    formulaDispositionResolutions: [],
     dynamicBoundaries: [],
     administrativeCapacityCommitted: 0,
   },
@@ -741,6 +788,15 @@ export const assertProgramImplementationState = (
   unique(obligations.map((entry) => entry.id), "Obligations");
   unique(state.administrativeProgram.waiverRequests.map((entry) => entry.id), "Waiver requests");
   unique(state.administrativeProgram.determinations.map((entry) => entry.id), "Administrative determinations");
+  unique(
+    state.administrativeProgram.relationshipQualificationDeterminations.map((entry) => entry.id),
+    "Relationship qualification determinations",
+  );
+  unique(state.administrativeProgram.legalConstraints.map((entry) => entry.id), "Administrative legal constraints");
+  unique(
+    state.administrativeProgram.formulaDispositionResolutions.map((entry) => entry.id),
+    "Relationship formula disposition resolutions",
+  );
   unique(state.intergovernmental.transitions.map((entry) => entry.id), "Relationship transitions");
   unique(state.recipientAdministration.commitments.map((entry) => entry.id), "Recipient commitments");
   unique(state.recipientAdministration.activities.map((entry) => entry.id), "Recipient activities");
@@ -1098,6 +1154,47 @@ export const assertProgramImplementationState = (
         causalPredecessorInputIds: expectedCausalPredecessorInputIds,
       });
     }
+  }
+  for (const determination of state.administrativeProgram.relationshipQualificationDeterminations) {
+    const relationship = state.intergovernmental.historicalRelationships.find(
+      (entry) => entry.id === determination.relationshipId,
+    );
+    if (
+      relationship === undefined || relationship.recipientId !== determination.claimantId ||
+      determination.institutionId !== relationship.federalInstitutionId ||
+      determination.outcome !== "REQUALIFICATION_REJECTED" ||
+      determination.formulaDisposition !== "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION" ||
+      determination.finalAgencyAction !== true || determination.prospectiveOnly !== true ||
+      determination.moneyDamagesGranted !== false || determination.writtenReasons.length === 0 ||
+      determination.writtenReasons.some((reason) => reason.trim().length === 0) ||
+      new Set(determination.procedureRecordIds).size !== determination.procedureRecordIds.length ||
+      !Number.isFinite(Date.parse(determination.issuedAt)) || determination.classification !== "SIMULATION_GENERATED"
+    ) throw new Error(`Relationship qualification determination ${determination.id} exceeds its administrative owner.`);
+  }
+  for (const constraint of state.administrativeProgram.legalConstraints) {
+    const determination = state.administrativeProgram.relationshipQualificationDeterminations.find(
+      (entry) => entry.id === constraint.determinationId,
+    );
+    if (
+      determination === undefined || constraint.targetInstitutionId !== determination.institutionId ||
+      constraint.relationshipId !== determination.relationshipId || constraint.programId !== configuration.programId ||
+      constraint.sourceOrderId.trim().length === 0 || constraint.requiredAct.trim().length === 0 ||
+      constraint.prohibitedAct.trim().length === 0 || !Number.isFinite(Date.parse(constraint.effectiveAt)) ||
+      constraint.enforceabilityCauseId.trim().length === 0 || constraint.classification !== "SIMULATION_GENERATED"
+    ) throw new Error(`Administrative legal constraint ${constraint.id} exceeds its exact owner scope.`);
+  }
+  for (const resolution of state.administrativeProgram.formulaDispositionResolutions) {
+    const determination = state.administrativeProgram.relationshipQualificationDeterminations.find(
+      (entry) => entry.id === resolution.determinationId,
+    );
+    const constraint = resolution.legalConstraintId === null ? null : state.administrativeProgram.legalConstraints.find(
+      (entry) => entry.id === resolution.legalConstraintId,
+    );
+    if (
+      determination === undefined || (resolution.legalConstraintId !== null && constraint === undefined) ||
+      (resolution.outcome === "WITHHELD_BY_COMPLIANCE" && constraint?.enforceability !== "OPERATIVE") ||
+      !Number.isFinite(Date.parse(resolution.resolvedAt)) || resolution.classification !== "SIMULATION_GENERATED"
+    ) throw new Error(`Relationship formula disposition ${resolution.id} lacks its canonical owner chain.`);
   }
   for (const expectedId of expectedWaiverInputs.keys()) {
     if (!materialInputIds.has(expectedId)) {
@@ -2217,6 +2314,143 @@ export const resolveImplementationOwnerIntention = (
       intentions: resolved.ownerResolution.intentions.map((entry) => entry.id === intention.id
         ? { ...entry, status: "RESOLVED", resolvedAt: at, resultRecordIds, resolutionReason: null }
         : entry),
+    },
+  };
+};
+
+/** Administrative owner of the bounded final written qualification determination challenged by I9. */
+export const issueFinalRelationshipQualificationDetermination = (
+  state: ProgramImplementationState,
+  input: {
+    readonly id: string;
+    readonly relationshipId: string;
+    readonly claimantId: string;
+    readonly writtenReasons: readonly string[];
+    readonly procedureRecordIds: readonly string[];
+  },
+  at: string,
+): ProgramImplementationState => {
+  const relationship = state.intergovernmental.historicalRelationships.find(
+    (entry) => entry.id === input.relationshipId,
+  );
+  if (
+    relationship === undefined || relationship.recipientId !== input.claimantId || input.id.trim().length === 0 ||
+    input.writtenReasons.length === 0 || input.writtenReasons.some((reason) => reason.trim().length === 0) ||
+    new Set(input.procedureRecordIds).size !== input.procedureRecordIds.length || !Number.isFinite(Date.parse(at))
+  ) throw new Error("Final relationship qualification determination lacks its bounded relationship or written record.");
+  if (state.administrativeProgram.relationshipQualificationDeterminations.length > 0) {
+    throw new Error("The bounded relationship qualification determination already exists.");
+  }
+  if (state.fiscalExecution.generatedAwards.some((award) => award.recipientId === relationship.recipientId)) {
+    throw new Error("The bounded prospective requalification route must occur before a generated recipient award.");
+  }
+  const determination: RelationshipQualificationDeterminationRecord = {
+    id: input.id,
+    relationshipId: input.relationshipId,
+    claimantId: input.claimantId,
+    institutionId: relationship.federalInstitutionId,
+    outcome: "REQUALIFICATION_REJECTED",
+    formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION",
+    finalAgencyAction: true,
+    prospectiveOnly: true,
+    moneyDamagesGranted: false,
+    writtenReasons: [...input.writtenReasons],
+    procedureRecordIds: [...input.procedureRecordIds],
+    issuedAt: at,
+    classification: "SIMULATION_GENERATED",
+  };
+  return {
+    ...state,
+    administrativeProgram: {
+      ...state.administrativeProgram,
+      relationshipQualificationDeterminations: [determination],
+    },
+  };
+};
+
+/** Implementation-owner intake of an effective, exactly scoped judicial obligation. */
+export const recordAdministrativeLegalConstraint = (
+  state: ProgramImplementationState,
+  input: Omit<AdministrativeLegalConstraintRecord, "classification">,
+): ProgramImplementationState => {
+  if (state.administrativeProgram.legalConstraints.some((entry) => entry.id === input.id)) return state;
+  const determination = state.administrativeProgram.relationshipQualificationDeterminations.find(
+    (entry) => entry.id === input.determinationId,
+  );
+  if (
+    determination === undefined || determination.relationshipId !== input.relationshipId ||
+    determination.institutionId !== input.targetInstitutionId || input.programId.trim().length === 0 ||
+    input.requiredAct.trim().length === 0 || input.prohibitedAct.trim().length === 0
+  ) throw new Error("Judicial constraint intake exceeds the challenged administrative act.");
+  return {
+    ...state,
+    administrativeProgram: {
+      ...state.administrativeProgram,
+      legalConstraints: [...state.administrativeProgram.legalConstraints, {
+        ...input,
+        classification: "SIMULATION_GENERATED",
+      }],
+    },
+  };
+};
+
+export const setAdministrativeLegalConstraintEnforceability = (
+  state: ProgramImplementationState,
+  sourceOrderId: string,
+  enforceability: AdministrativeLegalConstraintRecord["enforceability"],
+  causeId: string,
+): ProgramImplementationState => {
+  if (!state.administrativeProgram.legalConstraints.some((entry) => entry.sourceOrderId === sourceOrderId)) return state;
+  return {
+    ...state,
+    administrativeProgram: {
+      ...state.administrativeProgram,
+      legalConstraints: state.administrativeProgram.legalConstraints.map((entry) =>
+        entry.sourceOrderId === sourceOrderId
+          ? { ...entry, enforceability, enforceabilityCauseId: causeId }
+          : entry),
+    },
+  };
+};
+
+/** Resolves the challenged future owner action without altering any past or present Housing occurrence. */
+export const resolveRelationshipFormulaDisposition = (
+  state: ProgramImplementationState,
+  input: {
+    readonly id: string;
+    readonly determinationId: string;
+    readonly complianceStateId: string | null;
+    readonly complied: boolean;
+  },
+  at: string,
+): ProgramImplementationState => {
+  if (state.administrativeProgram.formulaDispositionResolutions.some((entry) => entry.id === input.id)) return state;
+  const determination = state.administrativeProgram.relationshipQualificationDeterminations.find(
+    (entry) => entry.id === input.determinationId,
+  );
+  if (determination === undefined) return state;
+  const constraint = state.administrativeProgram.legalConstraints.find(
+    (entry) => entry.determinationId === determination.id,
+  ) ?? null;
+  const outcome: RelationshipFormulaDispositionResolutionRecord["outcome"] = constraint === null ||
+    constraint.enforceability !== "OPERATIVE"
+    ? "EXECUTED_WITHOUT_CONSTRAINT"
+    : input.complied
+      ? "WITHHELD_BY_COMPLIANCE"
+      : "EXECUTED_WHILE_CONTESTED";
+  return {
+    ...state,
+    administrativeProgram: {
+      ...state.administrativeProgram,
+      formulaDispositionResolutions: [{
+        id: input.id,
+        determinationId: determination.id,
+        legalConstraintId: constraint?.id ?? null,
+        complianceStateId: input.complianceStateId,
+        outcome,
+        resolvedAt: at,
+        classification: "SIMULATION_GENERATED",
+      }],
     },
   };
 };

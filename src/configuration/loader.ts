@@ -630,6 +630,60 @@ const validateIntegratedRuntimeConfiguration = (
       allOutcomes.some((outcome) => Object.values(outcome).some((value) => value.trim().length === 0))
     ) throw new Error("Integrated Information configuration has invalid causal ownership or boundary semantics.");
   }
+  const legalContest = integrated.legalContest;
+  if (legalContest !== undefined) {
+    const { parameterHash, ...withoutHash } = legalContest;
+    const boundaries = new Map(integrated.temporal?.boundaries.map((entry) => [entry.id, entry]) ?? []);
+    const institutions = new Map(configuration.structure.institutions.map((entry) => [entry.id, entry]));
+    const appellateRelation = configuration.structure.relations.some((relation) =>
+      relation.kind === "APPEALS_TO" && relation.from.id === legalContest.forumInstitutionId &&
+      relation.to.id === legalContest.appellateInstitutionId);
+    const references = [legalContest.claim.filingBoundaryId, legalContest.claim.docketBoundaryId,
+      legalContest.interimRelief.requestBoundaryId, legalContest.ruling.boundaryId,
+      legalContest.order.issueBoundaryId, legalContest.order.effectiveBoundaryId,
+      legalContest.order.noticeBoundaryId, legalContest.appeal.stayBoundaryId,
+      legalContest.compliance.deadlineBoundaryId, legalContest.administrativeAction.boundaryId,
+      legalContest.appeal.rulingBoundaryId];
+    const expectedKinds = ["LEGAL_CLAIM_FILED", "LEGAL_PROCEEDING_DOCKETED", "INTERIM_RELIEF_REQUESTED",
+      "JUDICIAL_RULING_ISSUED", "JUDICIAL_ORDER_ISSUED", "JUDICIAL_ORDER_EFFECTIVE",
+      "JUDICIAL_NOTICE_RECEIVED", "STAY_RESOLVED", "COMPLIANCE_DEADLINE",
+      "ADMINISTRATIVE_REDIRECTION_ATTEMPT", "APPEAL_RESOLVED"];
+    if (
+      legalContest.schemaVersion !== 1 || legalContest.ownerId.trim().length === 0 ||
+      !SHA_256_PATTERN.test(parameterHash) || parameterHash !== sha256Hex(JSON.stringify(withoutHash)) ||
+      [legalContest.semanticsVersion, legalContest.standingRuleVersion, legalContest.outcomeRuleVersion,
+        legalContest.legalValidityRuleVersion].some((entry) => entry.trim().length === 0) ||
+      institutions.get(legalContest.forumInstitutionId)?.kind !== "COURT" ||
+      institutions.get(legalContest.appellateInstitutionId)?.kind !== "COURT" ||
+      !institutions.has(legalContest.targetInstitutionId) || !institutions.has(legalContest.legalServiceInstitutionId) ||
+      !appellateRelation || legalContest.judicialOffices.length !== 2 || legalContest.judicialActors.length !== 2 ||
+      legalContest.judicialAssignments.length !== 2 ||
+      new Set(legalContest.judicialOffices.map((entry) => entry.id)).size !== legalContest.judicialOffices.length ||
+      new Set(legalContest.judicialActors.map((entry) => entry.id)).size !== legalContest.judicialActors.length ||
+      new Set(legalContest.judicialAssignments.map((entry) => entry.id)).size !== legalContest.judicialAssignments.length ||
+      legalContest.judicialOffices.some((entry) => institutions.get(entry.institutionId)?.kind !== "COURT") ||
+      legalContest.judicialAssignments.some((entry) =>
+        !legalContest.judicialOffices.some((office) => office.id === entry.officeId) ||
+        !legalContest.judicialActors.some((actor) => actor.id === entry.actorId) ||
+        !Number.isFinite(Date.parse(entry.effectiveFrom)) ||
+        (entry.effectiveUntil !== null && Date.parse(entry.effectiveUntil) <= Date.parse(entry.effectiveFrom))) ||
+      new Set(references).size !== references.length ||
+      references.some((id, index) => boundaries.get(id)?.kind !== expectedKinds[index]) ||
+      references.some((id) => boundaries.get(id)?.ownerId !== legalContest.ownerId) ||
+      legalContest.trigger.moneyDamagesRequested !== false || legalContest.trigger.prospectiveOnly !== true ||
+      legalContest.trigger.requiredProcedureRecord.trim().length === 0 ||
+      legalContest.interpretation.id.trim().length === 0 ||
+      legalContest.interpretation.missingProcedureProposition.trim().length === 0 ||
+      legalContest.interpretation.authorityValidProposition.trim().length === 0 ||
+      legalContest.order.requiredAct.trim().length === 0 || legalContest.order.prohibitedAct.trim().length === 0 ||
+      legalContest.order.scope.programId !== integrated.implementation?.programId ||
+      legalContest.order.scope.relationshipId !== legalContest.relationshipId ||
+      legalContest.order.scope.determinationId !== legalContest.trigger.determinationId ||
+      legalContest.order.scope.targetInstitutionId !== legalContest.targetInstitutionId ||
+      legalContest.compliance.allowedResponses.length !== 4 ||
+      new Set(legalContest.compliance.allowedResponses).size !== legalContest.compliance.allowedResponses.length
+    ) throw new Error("Integrated legal-contest configuration has invalid ownership, deterministic rules, exact scope, or boundaries.");
+  }
   const temporal = integrated.temporal;
   if (temporal !== undefined) {
     if (
@@ -655,7 +709,7 @@ const validateIntegratedRuntimeConfiguration = (
         !Number.isSafeInteger(boundary.order) ||
         boundary.stableKey.trim().length === 0 ||
         (boundary.ownerId !== temporal.selection.id && !cycleIds.has(boundary.ownerId) &&
-          boundary.ownerId !== information?.ownerId)
+          boundary.ownerId !== information?.ownerId && boundary.ownerId !== legalContest?.ownerId)
       ) throw new Error(`Integrated temporal boundary ${boundary.id} is invalid.`);
     }
     for (const cycle of temporal.assignmentCycles) {

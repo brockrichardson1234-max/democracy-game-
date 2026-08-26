@@ -19,7 +19,8 @@ import {
   US_V0_I6_IMPLEMENTATION_CONFIGURATION,
 } from "./i6";
 import { US_V0_I7_ARTIFACT_BINDING, US_V0_I7_HOUSING_CONFIGURATION } from "./i7";
-import { US_V0_I8_INFORMATION_CONFIGURATION, US_V0_I8_TEMPORAL_CONFIGURATION } from "./i8";
+import { US_V0_I8_INFORMATION_CONFIGURATION } from "./i8";
+import { US_V0_I9_LEGAL_CONTEST_CONFIGURATION, US_V0_I9_TEMPORAL_CONFIGURATION } from "./i9";
 
 export const US_V0_PROFILE_SCAFFOLD_VERSION = "us-v0-actor-profile-scaffold-1";
 export const US_V0_PROFILE_SEED = "us-v0-political-content-seed-1";
@@ -241,14 +242,14 @@ export const US_V0_LEGISLATIVE_SEED: LegislativeRuntimeSeed = {
   },
 };
 
-/** Bounded integrated runtime through I8; judicial systems remain unavailable. */
+/** Bounded integrated runtime through the reconciled I9 legal-contest route. */
 export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<LegislativeRuntimeSeed> = {
   identity: {
     configurationId: "us-v0",
-    configurationVersion: "0.8.1-i8-repair",
+    configurationVersion: "0.9.0-i9-reconciled",
     scenarioId: "us-v0-2026-08-22",
-    scenarioVersion: "0.8.1-i8-repair",
-    configurationHash: "c45d223df196df2f0987e6ab84ae679fdd6444e8b96ce6c9c6e3728327bfc6a8",
+    scenarioVersion: "0.9.0-i9-reconciled",
+    configurationHash: "a07afda8c82ce1b7a507edcaa52b42c47f97e642a71006d19afc86496b2015d6",
   },
   capability: "INTEGRATED_PARTIAL_RUNTIME",
   calendar: { kind: "REAL_CALENDAR", epoch: "2026-08-22T00:00:00-04:00" },
@@ -265,9 +266,10 @@ export const US_V0_STRUCTURAL_CONFIGURATION: GovernmentConfiguration<Legislative
     geography: i4Manifest.geography,
     population: i4Manifest.population,
     electoral: i4Manifest.electoral,
-    temporal: US_V0_I8_TEMPORAL_CONFIGURATION,
+    temporal: US_V0_I9_TEMPORAL_CONFIGURATION,
     implementation: US_V0_I6_IMPLEMENTATION_CONFIGURATION,
     housing: US_V0_I7_HOUSING_CONFIGURATION,
     information: US_V0_I8_INFORMATION_CONFIGURATION,
+    legalContest: US_V0_I9_LEGAL_CONTEST_CONFIGURATION,
   },
 };

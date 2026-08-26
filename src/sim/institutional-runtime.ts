@@ -1046,6 +1046,17 @@ export const applyInstitutionalBoundary = (
     case "INFORMATION_DELIVERED":
     case "POPULATION_EXPOSED":
     case "POPULATION_RESPONSE":
+    case "LEGAL_CLAIM_FILED":
+    case "LEGAL_PROCEEDING_DOCKETED":
+    case "INTERIM_RELIEF_REQUESTED":
+    case "JUDICIAL_RULING_ISSUED":
+    case "JUDICIAL_ORDER_ISSUED":
+    case "JUDICIAL_ORDER_EFFECTIVE":
+    case "JUDICIAL_NOTICE_RECEIVED":
+    case "STAY_RESOLVED":
+    case "APPEAL_RESOLVED":
+    case "COMPLIANCE_DEADLINE":
+    case "ADMINISTRATIVE_REDIRECTION_ATTEMPT":
       return {
         institutional: appendOccurrence(institutional, boundary, []),
         legislative,

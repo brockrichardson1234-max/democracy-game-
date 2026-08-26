@@ -10,6 +10,7 @@ import { canonicalConfigurationContent } from "../src/configuration/canonical";
 import { sha256Hex } from "../src/configuration/sha256";
 import type { GovernmentConfiguration, LegislativeRuntimeSeed } from "../src/configuration/types";
 import { US_V0_I7_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i7";
+import { US_V0_I9_APPELLATE_RULING } from "../src/content/us-v0/i9";
 import {
   US_V0_2027_TERM_BOUNDARY,
   US_V0_2028_ATTESTATION,
@@ -62,17 +63,17 @@ describe("I5 deterministic temporal persistence", () => {
 
   it("makes one large jump identical to fine-grained advancement through every boundary", () => {
     const coarse = createSession();
-    coarse.advanceTo(US_V0_2029_TRANSFER);
+    coarse.advanceTo(US_V0_I9_APPELLATE_RULING);
     const fine = createSession();
     while (fine.getPublicInstitutionalStatus().nextBoundary !== null) fine.advanceToNextBoundary();
     expect(comparable(fine)).toEqual(comparable(coarse));
     expect(fine.getAuditState().institutional!.occurrences.map((occurrence) => occurrence.boundaryId))
       .toEqual(US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.temporal!.boundaries.map((boundary) => boundary.id));
-  }, 20_000);
+  }, 45_000);
 
   it("is exact-once after every fixed transition has completed", () => {
     const session = createSession();
-    session.advanceTo(US_V0_2029_TRANSFER);
+    session.advanceTo(US_V0_I9_APPELLATE_RULING);
     const completed = comparable(session);
     session.advanceTo("2029-12-31T23:59:59-05:00");
     const later = comparable(session);
@@ -129,9 +130,9 @@ describe("I5 deterministic temporal persistence", () => {
     expect(temporal.assignmentCycleContentHash).toBe(US_V0_I5_ASSIGNMENT_CYCLE_HASH);
     expect(temporal.selectionContentHash).toBe(US_V0_I5_SELECTION_HASH);
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.8.1-i8-repair",
-      scenarioVersion: "0.8.1-i8-repair",
-      configurationHash: "c45d223df196df2f0987e6ab84ae679fdd6444e8b96ce6c9c6e3728327bfc6a8",
+      configurationVersion: "0.9.0-i9-reconciled",
+      scenarioVersion: "0.9.0-i9-reconciled",
+      configurationHash: "a07afda8c82ce1b7a507edcaa52b42c47f97e642a71006d19afc86496b2015d6",
     });
   });
 

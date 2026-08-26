@@ -371,7 +371,18 @@ export type InstitutionalBoundaryKind =
   | "CLAIM_RELEASED"
   | "INFORMATION_DELIVERED"
   | "POPULATION_EXPOSED"
-  | "POPULATION_RESPONSE";
+  | "POPULATION_RESPONSE"
+  | "LEGAL_CLAIM_FILED"
+  | "LEGAL_PROCEEDING_DOCKETED"
+  | "INTERIM_RELIEF_REQUESTED"
+  | "JUDICIAL_RULING_ISSUED"
+  | "JUDICIAL_ORDER_ISSUED"
+  | "JUDICIAL_ORDER_EFFECTIVE"
+  | "JUDICIAL_NOTICE_RECEIVED"
+  | "STAY_RESOLVED"
+  | "APPEAL_RESOLVED"
+  | "COMPLIANCE_DEADLINE"
+  | "ADMINISTRATIVE_REDIRECTION_ATTEMPT";
 
 export interface InstitutionalBoundaryConfiguration {
   readonly id: string;
@@ -672,6 +683,109 @@ export interface IntegratedInformationConfiguration {
   };
 }
 
+export interface IntegratedLegalContestConfiguration {
+  readonly schemaVersion: 1;
+  readonly ownerId: string;
+  readonly parameterHash: string;
+  readonly semanticsVersion: string;
+  readonly standingRuleVersion: string;
+  readonly outcomeRuleVersion: string;
+  readonly legalValidityRuleVersion: string;
+  readonly classification: ScaffoldClassification;
+  readonly forumInstitutionId: string;
+  readonly appellateInstitutionId: string;
+  readonly targetInstitutionId: string;
+  readonly legalServiceInstitutionId: string;
+  readonly claimantId: string;
+  readonly relationshipId: string;
+  readonly judicialOffices: readonly {
+    readonly id: string;
+    readonly institutionId: string;
+  }[];
+  readonly judicialActors: readonly {
+    readonly id: string;
+    readonly classification: ScaffoldClassification;
+  }[];
+  readonly judicialAssignments: readonly {
+    readonly id: string;
+    readonly officeId: string;
+    readonly actorId: string;
+    readonly effectiveFrom: string;
+    readonly effectiveUntil: string | null;
+  }[];
+  readonly trigger: {
+    readonly determinationId: string;
+    readonly outcome: "REQUALIFICATION_REJECTED";
+    readonly formulaDisposition: "DIRECTED_OUT_OF_RELATIONSHIP_PENDING_EXECUTION";
+    readonly requiredProcedureRecord: string;
+    readonly prospectiveOnly: true;
+    readonly moneyDamagesRequested: false;
+  };
+  readonly claim: {
+    readonly id: string;
+    readonly proceedingId: string;
+    readonly filingBoundaryId: string;
+    readonly docketBoundaryId: string;
+    readonly claimType: string;
+    readonly theoryIdentifier: string;
+    readonly requestedRelief: string;
+  };
+  readonly interimRelief: {
+    readonly requestId: string;
+    readonly requestBoundaryId: string;
+  };
+  readonly ruling: {
+    readonly id: string;
+    readonly boundaryId: string;
+    readonly claimantDisposition: "CLAIMANT_PREVAILS";
+    readonly respondentDisposition: "RESPONDENT_PREVAILS";
+  };
+  readonly interpretation: {
+    readonly id: string;
+    readonly missingProcedureProposition: string;
+    readonly authorityValidProposition: string;
+  };
+  readonly order: {
+    readonly id: string;
+    readonly issueBoundaryId: string;
+    readonly effectiveBoundaryId: string;
+    readonly noticeId: string;
+    readonly noticeBoundaryId: string;
+    readonly requiredAct: string;
+    readonly prohibitedAct: string;
+    readonly scope: {
+      readonly programId: string;
+      readonly relationshipId: string;
+      readonly determinationId: string;
+      readonly targetInstitutionId: string;
+    };
+  };
+  readonly appeal: {
+    readonly requestId: string;
+    readonly stayRequestId: string;
+    readonly stayId: string;
+    readonly stayBoundaryId: string;
+    readonly stayOutcome: "GRANTED" | "DENIED";
+    readonly rulingId: string;
+    readonly rulingBoundaryId: string;
+    readonly rulingOutcome: "AFFIRMED" | "REVERSED" | "VACATED" | "REMANDED";
+  };
+  readonly compliance: {
+    readonly deadlineBoundaryId: string;
+    readonly allowedResponses: readonly ("COMPLY" | "DELAY" | "CONTEST" | "NONCOMPLY")[];
+  };
+  readonly administrativeAction: {
+    readonly id: string;
+    readonly boundaryId: string;
+  };
+  readonly admissionRequirements: {
+    readonly finalAgencyAction: true;
+    readonly concreteClaimantInjury: true;
+    readonly prospectiveNonmoneyRelief: true;
+    readonly reviewableClaim: true;
+  };
+}
+
 /** Plain data describing the versioned artifacts required by a composed partial runtime. */
 export interface IntegratedRuntimeConfiguration {
   readonly schemaVersion: number;
@@ -698,6 +812,7 @@ export interface IntegratedRuntimeConfiguration {
   readonly implementation?: IntegratedImplementationConfiguration;
   readonly housing?: IntegratedHousingConfiguration;
   readonly information?: IntegratedInformationConfiguration;
+  readonly legalContest?: IntegratedLegalContestConfiguration;
 }
 
 interface ScheduledTransitionBase {

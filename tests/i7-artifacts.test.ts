@@ -14,9 +14,9 @@ const sha256 = (value: string): string => createHash("sha256").update(value).dig
 describe("I7 authenticated Housing initialization", () => {
   it("pins the selected Housing controls and all behavior-driving material semantics", () => {
     expect(US_V0_STRUCTURAL_CONFIGURATION.identity).toMatchObject({
-      configurationVersion: "0.8.1-i8-repair",
-      scenarioVersion: "0.8.1-i8-repair",
-      configurationHash: "c45d223df196df2f0987e6ab84ae679fdd6444e8b96ce6c9c6e3728327bfc6a8",
+      configurationVersion: "0.9.0-i9-reconciled",
+      scenarioVersion: "0.9.0-i9-reconciled",
+      configurationHash: "a07afda8c82ce1b7a507edcaa52b42c47f97e642a71006d19afc86496b2015d6",
     });
     expect(sha256(canonicalConfigurationContent(US_V0_STRUCTURAL_CONFIGURATION))).toBe(
       US_V0_STRUCTURAL_CONFIGURATION.identity.configurationHash,

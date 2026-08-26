@@ -44,6 +44,10 @@ import {
   directWaiverIntention,
   openFutureWaiverRequest,
   resolveImplementationOwnerIntention,
+  issueFinalRelationshipQualificationDetermination,
+  recordAdministrativeLegalConstraint,
+  resolveRelationshipFormulaDisposition,
+  setAdministrativeLegalConstraintEnforceability,
   submitBoundedAwardIntention,
   submitFederalPaymentIntention,
   submitFiscalControlIntention,
@@ -85,6 +89,14 @@ import {
   resolveInformationClaimantAt,
   type IntegratedPopulationResponseRecord,
 } from "../sim/integrated-information";
+import {
+  applyLegalContestBoundary,
+  assertIntegratedLegalContestRuntimeState,
+  deriveOrderEnforceability,
+  recordAdministrativeComplianceResponse,
+  requestSeparateStay,
+  type LegalActionCommandRecord,
+} from "../sim/legal-contest-runtime";
 import { parseLegislativeRuntime, serializeLegislativeRuntime } from "./legislative-persistence";
 import {
   createInitialLegislativeControlBinding,
@@ -94,7 +106,7 @@ import {
   type LegislativeControlBinding,
 } from "./legislative-session";
 
-export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 9 as const;
+export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 10 as const;
 
 interface IntegratedPartialSaveEnvelope {
   readonly formatVersion: typeof INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION;
@@ -110,6 +122,7 @@ interface IntegratedPartialSaveEnvelope {
   readonly implementation: IntegratedPartialRuntimeState["implementation"];
   readonly housing: IntegratedPartialRuntimeState["housing"];
   readonly information: IntegratedPartialRuntimeState["information"];
+  readonly legalContest: IntegratedPartialRuntimeState["legalContest"];
 }
 
 const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -158,6 +171,13 @@ export interface IntegratedPartialRuntimeSession {
   readonly getHousingAuditState: () => NonNullable<IntegratedPartialRuntimeState["housing"]>;
   readonly getInformationAuditState: () => NonNullable<IntegratedPartialRuntimeState["information"]>;
   readonly getPublicInformationStatus: () => IntegratedInformationPublicStatus;
+  readonly issueBoundedRelationshipRejection: () => IntegratedPartialRuntimeState;
+  readonly respondToJudicialOrder: (
+    action: "COMPLY" | "DELAY" | "CONTEST" | "NONCOMPLY",
+  ) => IntegratedPartialRuntimeState;
+  readonly requestJudicialStay: () => IntegratedPartialRuntimeState;
+  readonly getLegalContestAuditState: () => NonNullable<IntegratedPartialRuntimeState["legalContest"]>;
+  readonly getPublicLegalStatus: () => IntegratedLegalPublicStatus;
   readonly save: () => string;
 }
 
@@ -218,6 +238,16 @@ export interface IntegratedInformationPublicStatus {
   readonly publicExposureCount: number;
 }
 
+export interface IntegratedLegalPublicStatus {
+  readonly filedClaims: readonly { readonly id: string; readonly claimantId: string; readonly filedAt: string; readonly status: string }[];
+  readonly proceedings: readonly { readonly id: string; readonly courtInstitutionId: string; readonly status: string }[];
+  readonly publicRulings: readonly { readonly id: string; readonly disposition: string; readonly decidedAt: string }[];
+  readonly operativeOrders: readonly { readonly id: string; readonly targetInstitutionId: string; readonly status: string; readonly enforceability: string }[];
+  readonly stays: readonly { readonly id: string; readonly status: string; readonly issuedAt: string }[];
+  readonly appeals: readonly { readonly id: string; readonly status: string; readonly disposition: string | null }[];
+  readonly compliance: readonly { readonly status: string; readonly recordedAt: string }[];
+}
+
 export interface IntegratedInstitutionalPublicStatus {
   readonly currentInstant: string;
   readonly currentTermLabel: string;
@@ -260,6 +290,7 @@ const serialize = (
   implementation: state.implementation,
   housing: state.housing,
   information: state.information,
+  legalContest: state.legalContest,
 } satisfies IntegratedPartialSaveEnvelope);
 
 const materialInputReferences = (
@@ -570,7 +601,8 @@ const parse = (
     !isRecord(parsed.institutional) ||
     !isRecord(parsed.implementation) ||
     !isRecord(parsed.housing) ||
-    !isRecord(parsed.information)
+    !isRecord(parsed.information) ||
+    !isRecord(parsed.legalContest)
   ) throw new Error("Invalid integrated partial save envelope.");
   const baseline = createIntegratedPartialRuntimeState(configuration, artifacts);
   assertConfigurationIdentityCompatible(
@@ -896,6 +928,109 @@ const parse = (
   if (expectedInformation.exposures.length > 0) {
     requireExactArtifactState(population, expectedPopulation, "Population canonical Information exposure state");
   }
+  const legalConfiguration = configuration.integratedRuntime?.legalContest;
+  if (legalConfiguration === undefined || baseline.legalContest === null) {
+    throw new Error("Integrated partial save supplies unsupported legal-contest state.");
+  }
+  const legalContest = parsed.legalContest as unknown as NonNullable<IntegratedPartialRuntimeState["legalContest"]>;
+  assertIntegratedLegalContestRuntimeState(
+    legalContest,
+    legalConfiguration,
+    implementation.administrativeProgram.relationshipQualificationDeterminations,
+  );
+  const administrationAt = (at: string): string => {
+    const terms = [...institutional.administrationHistory, institutional.currentAdministration];
+    const term = terms.find((entry) => Date.parse(entry.effectiveFrom) <= Date.parse(at) &&
+      (entry.effectiveUntil === null || Date.parse(at) < Date.parse(entry.effectiveUntil)));
+    if (term === undefined) throw new Error(`Legal action at ${at} lacks a canonical administration owner.`);
+    return term.id;
+  };
+  const commands = [...legalContest.actionCommands].sort((left, right) =>
+    Date.parse(left.issuedAt) - Date.parse(right.issuedAt) || left.id.localeCompare(right.id));
+  if (commands.some((entry) => Date.parse(entry.issuedAt) < Date.parse(configuration.calendar.epoch) ||
+    Date.parse(entry.issuedAt) > currentTime || entry.administrationId !== administrationAt(entry.issuedAt))) {
+    throw new Error("Saved legal action history contradicts canonical time or administration ownership.");
+  }
+  let expectedLegal = baseline.legalContest;
+  let expectedLegalImplementation: NonNullable<IntegratedPartialRuntimeState["implementation"]> = {
+    ...implementation,
+    administrativeProgram: {
+      ...implementation.administrativeProgram,
+      legalConstraints: [],
+      formulaDispositionResolutions: [],
+    },
+  };
+  let commandIndex = 0;
+  const replayCommand = (command: LegalActionCommandRecord): void => {
+    expectedLegal = command.action === "REQUEST_STAY"
+      ? requestSeparateStay(expectedLegal, legalConfiguration, command.administrationId, command.issuedAt)
+      : recordAdministrativeComplianceResponse(
+          expectedLegal, legalConfiguration, command.administrationId, command.action, command.issuedAt,
+        );
+  };
+  const legalBoundaries = temporal.boundaries
+    .filter((boundary) => boundary.ownerId === legalConfiguration.ownerId && Date.parse(boundary.at) <= currentTime)
+    .sort(compareConfiguredBoundaries);
+  for (const boundary of legalBoundaries) {
+    while (commands[commandIndex] !== undefined && Date.parse(commands[commandIndex].issuedAt) < Date.parse(boundary.at)) {
+      replayCommand(commands[commandIndex++]);
+    }
+    expectedLegal = applyLegalContestBoundary(
+      expectedLegal,
+      legalConfiguration,
+      boundary,
+      implementation.administrativeProgram.relationshipQualificationDeterminations,
+      administrationAt(boundary.at),
+    );
+    const order = expectedLegal.orders[0];
+    if (boundary.id === legalConfiguration.order.effectiveBoundaryId && order !== undefined && order.effectiveAt !== null) {
+      expectedLegalImplementation = recordAdministrativeLegalConstraint(expectedLegalImplementation, {
+        id: `${legalConfiguration.ownerId}.implementation-constraint`,
+        sourceOrderId: order.id,
+        targetInstitutionId: order.targetInstitutionId,
+        programId: order.scope.programId,
+        relationshipId: order.scope.relationshipId,
+        determinationId: order.scope.determinationId,
+        requiredAct: order.requiredAct,
+        prohibitedAct: order.prohibitedAct,
+        effectiveAt: order.effectiveAt,
+        enforceability: deriveOrderEnforceability(expectedLegal, order.id),
+        enforceabilityCauseId: order.id,
+      });
+    }
+    if (order !== undefined && [legalConfiguration.appeal.stayBoundaryId, legalConfiguration.appeal.rulingBoundaryId].includes(boundary.id)) {
+      const causeId = boundary.id === legalConfiguration.appeal.stayBoundaryId
+        ? expectedLegal.stays[0]?.id ?? boundary.id
+        : expectedLegal.appeals[0]?.id ?? boundary.id;
+      expectedLegalImplementation = setAdministrativeLegalConstraintEnforceability(
+        expectedLegalImplementation, order.id, deriveOrderEnforceability(expectedLegal, order.id), causeId,
+      );
+    }
+    if (boundary.id === legalConfiguration.administrativeAction.boundaryId) {
+      const compliance = expectedLegal.complianceStates.at(-1) ?? null;
+      expectedLegalImplementation = resolveRelationshipFormulaDisposition(expectedLegalImplementation, {
+        id: legalConfiguration.administrativeAction.id,
+        determinationId: legalConfiguration.trigger.determinationId,
+        complianceStateId: compliance?.id ?? null,
+        complied: compliance?.status === "COMPLIED",
+      }, boundary.at);
+    }
+    while (commands[commandIndex] !== undefined && Date.parse(commands[commandIndex].issuedAt) === Date.parse(boundary.at)) {
+      replayCommand(commands[commandIndex++]);
+    }
+  }
+  while (commands[commandIndex] !== undefined) replayCommand(commands[commandIndex++]);
+  requireExactArtifactState(legalContest, expectedLegal, "deterministic legal-contest state");
+  requireExactArtifactState(
+    implementation.administrativeProgram.legalConstraints,
+    expectedLegalImplementation.administrativeProgram.legalConstraints,
+    "cross-owner legal constraints",
+  );
+  requireExactArtifactState(
+    implementation.administrativeProgram.formulaDispositionResolutions,
+    expectedLegalImplementation.administrativeProgram.formulaDispositionResolutions,
+    "legal-constrained administrative action resolutions",
+  );
   return {
     state: {
       ...baseline,
@@ -906,6 +1041,7 @@ const parse = (
       implementation,
       housing,
       information,
+      legalContest,
     },
     controlBinding: validatedLegislative.controlBinding,
     controlBindingHistory,
@@ -925,11 +1061,13 @@ const createSession = (
   const temporal = configuration.integratedRuntime?.temporal;
   const implementationConfiguration = configuration.integratedRuntime?.implementation;
   const informationConfiguration = configuration.integratedRuntime?.information;
+  const legalConfiguration = configuration.integratedRuntime?.legalContest;
   if (
     temporal === undefined || implementationConfiguration === undefined || informationConfiguration === undefined ||
-    state.institutional === null || state.implementation === null || state.housing === null || state.information === null
+    legalConfiguration === undefined || state.institutional === null || state.implementation === null ||
+    state.housing === null || state.information === null || state.legalContest === null
   ) {
-    throw new Error("Integrated session requires institutional, implementation, Housing, and Information state.");
+    throw new Error("Integrated session requires institutional, implementation, Housing, Information, and legal-contest state.");
   }
   const synchronizeHousingInputs = (): void => {
     if (state.housing !== null && state.implementation !== null) {
@@ -1081,6 +1219,49 @@ const createSession = (
           }
           processedStatic.add(staticBoundary.id);
           state = { ...state, legislative: result.legislative, institutional: result.institutional };
+          if (staticBoundary.ownerId === legalConfiguration.ownerId) {
+            state = { ...state, legalContest: applyLegalContestBoundary(
+              state.legalContest!,
+              legalConfiguration,
+              staticBoundary,
+              state.implementation!.administrativeProgram.relationshipQualificationDeterminations,
+              state.institutional!.currentAdministration.id,
+            ) };
+            const order = state.legalContest!.orders[0];
+            if (staticBoundary.id === legalConfiguration.order.effectiveBoundaryId && order !== undefined && order.effectiveAt !== null) {
+              state = { ...state, implementation: recordAdministrativeLegalConstraint(state.implementation!, {
+                id: `${legalConfiguration.ownerId}.implementation-constraint`,
+                sourceOrderId: order.id,
+                targetInstitutionId: order.targetInstitutionId,
+                programId: order.scope.programId,
+                relationshipId: order.scope.relationshipId,
+                determinationId: order.scope.determinationId,
+                requiredAct: order.requiredAct,
+                prohibitedAct: order.prohibitedAct,
+                effectiveAt: order.effectiveAt,
+                enforceability: deriveOrderEnforceability(state.legalContest!, order.id),
+                enforceabilityCauseId: order.id,
+              }) };
+            }
+            if (order !== undefined && [legalConfiguration.appeal.stayBoundaryId,
+              legalConfiguration.appeal.rulingBoundaryId].includes(staticBoundary.id)) {
+              const causeId = staticBoundary.id === legalConfiguration.appeal.stayBoundaryId
+                ? state.legalContest!.stays[0]?.id ?? staticBoundary.id
+                : state.legalContest!.appeals[0]?.id ?? staticBoundary.id;
+              state = { ...state, implementation: setAdministrativeLegalConstraintEnforceability(
+                state.implementation!, order.id, deriveOrderEnforceability(state.legalContest!, order.id), causeId,
+              ) };
+            }
+            if (staticBoundary.id === legalConfiguration.administrativeAction.boundaryId) {
+              const compliance = state.legalContest!.complianceStates.at(-1) ?? null;
+              state = { ...state, implementation: resolveRelationshipFormulaDisposition(state.implementation!, {
+                id: legalConfiguration.administrativeAction.id,
+                determinationId: legalConfiguration.trigger.determinationId,
+                complianceStateId: compliance?.id ?? null,
+                complied: compliance?.status === "COMPLIED",
+              }, staticBoundary.at) };
+            }
+          }
         } else {
           throw new Error(`Unknown canonical composite boundary ${boundary.id}.`);
         }
@@ -1469,6 +1650,82 @@ const createSession = (
         })),
         completedDeliveryIds: state.information.deliveries.map((delivery) => delivery.id),
         publicExposureCount: state.information.exposures.length,
+      });
+    },
+    issueBoundedRelationshipRejection: () => {
+      requireAdministrationAuthority();
+      if (state.implementation === null || state.institutional === null) {
+        throw new Error("Integrated implementation state unavailable.");
+      }
+      state = { ...state, implementation: issueFinalRelationshipQualificationDetermination(
+        state.implementation,
+        {
+          id: legalConfiguration.trigger.determinationId,
+          relationshipId: legalConfiguration.relationshipId,
+          claimantId: legalConfiguration.claimantId,
+          writtenReasons: ["CONFIGURED_REQUALIFICATION_STANDARD_ASSERTED"],
+          procedureRecordIds: [],
+        },
+        state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    respondToJudicialOrder: (action) => {
+      requireAdministrationAuthority();
+      if (state.legalContest === null || state.institutional === null) {
+        throw new Error("Integrated legal-contest state unavailable.");
+      }
+      state = { ...state, legalContest: recordAdministrativeComplianceResponse(
+        state.legalContest,
+        legalConfiguration,
+        state.institutional.currentAdministration.id,
+        action,
+        state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    requestJudicialStay: () => {
+      requireAdministrationAuthority();
+      if (state.legalContest === null || state.institutional === null) {
+        throw new Error("Integrated legal-contest state unavailable.");
+      }
+      state = { ...state, legalContest: requestSeparateStay(
+        state.legalContest,
+        legalConfiguration,
+        state.institutional.currentAdministration.id,
+        state.institutional.calendar.current,
+      ) };
+      return deepCopy(state);
+    },
+    getLegalContestAuditState: () => {
+      if (state.legalContest === null) throw new Error("Integrated legal-contest state unavailable.");
+      return deepCopy(state.legalContest);
+    },
+    getPublicLegalStatus: () => {
+      if (state.legalContest === null) throw new Error("Integrated legal-contest state unavailable.");
+      return deepCopy({
+        filedClaims: state.legalContest.claims.map((entry) => ({
+          id: entry.id, claimantId: entry.claimantId, filedAt: entry.filedAt, status: entry.status,
+        })),
+        proceedings: state.legalContest.proceedings.map((entry) => ({
+          id: entry.id, courtInstitutionId: entry.courtInstitutionId, status: entry.status,
+        })),
+        publicRulings: state.legalContest.rulings.map((entry) => ({
+          id: entry.id, disposition: entry.disposition, decidedAt: entry.decidedAt,
+        })),
+        operativeOrders: state.legalContest.orders.map((entry) => ({
+          id: entry.id,
+          targetInstitutionId: entry.targetInstitutionId,
+          status: entry.status,
+          enforceability: deriveOrderEnforceability(state.legalContest!, entry.id),
+        })),
+        stays: state.legalContest.stays.map((entry) => ({ id: entry.id, status: entry.status, issuedAt: entry.issuedAt })),
+        appeals: state.legalContest.appeals.map((entry) => ({
+          id: entry.id, status: entry.status, disposition: entry.disposition,
+        })),
+        compliance: state.legalContest.complianceStates.map((entry) => ({
+          status: entry.status, recordedAt: entry.recordedAt,
+        })),
       });
     },
     save: () => {

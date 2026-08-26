@@ -22,18 +22,21 @@ import {
   US_V0_I8_POPULATION_RESPONSE,
   US_V0_I8_RUNTIME_ARTIFACTS,
 } from "../src/content/us-v0/i8";
+import { createUsV0I9RouteConfiguration } from "../src/content/us-v0/i9";
 
 const configurationVariant = (
   options: UsV0I8RouteOptions,
 ): GovernmentConfiguration<LegislativeRuntimeSeed> => {
   const route = createUsV0I8RouteConfiguration(options);
+  const i9Route = createUsV0I9RouteConfiguration({}, route.temporal);
   const unhashed: GovernmentConfiguration<LegislativeRuntimeSeed> = {
     ...US_V0_STRUCTURAL_CONFIGURATION,
     identity: { ...US_V0_STRUCTURAL_CONFIGURATION.identity, configurationHash: "0".repeat(64) },
     integratedRuntime: {
       ...US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!,
-      temporal: route.temporal,
+      temporal: i9Route.temporal,
       information: route.information,
+      legalContest: i9Route.legalContest,
     },
   };
   return {
