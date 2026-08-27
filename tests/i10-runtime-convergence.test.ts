@@ -121,8 +121,8 @@ describe("I10 simulation composition and production runtime convergence", () => 
     const view = session.getProductionGameView();
     expect(view.identity).toMatchObject({
       configurationId: "us-v0",
-      configurationVersion: "0.10.0-i10-convergence",
-      scenarioVersion: "0.10.0-i10-convergence",
+      configurationVersion: "0.10.1-i10-repair",
+      scenarioVersion: "0.10.1-i10-repair",
       configurationHash: US_V0_STRUCTURAL_CONFIGURATION.identity.configurationHash,
     });
     expect(view.projectionVersion).toBe(US_V0_I10_COMPOSITION_CONFIGURATION.productionProjectionVersion);
@@ -220,7 +220,7 @@ describe("I10 simulation composition and production runtime convergence", () => 
 
   it("preserves accepted Information and legal-contest owner identities", () => {
     expect(US_V0_I10_COMPOSITION_CONFIGURATION.parameterHash)
-      .toBe("73530d1fba2def93d12a69a63cdd5b2a5e441d0b3963ba3e06b28df2cd6ab299");
+      .toBe("09521fe6f39b56486ff606428fb86dfce1876e894481b4ef8da1047675f83868");
     expect(US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.information!.parameterHash)
       .toBe(US_V0_I8_INFORMATION_CONFIGURATION.parameterHash);
     expect(US_V0_STRUCTURAL_CONFIGURATION.integratedRuntime!.legalContest!.parameterHash)

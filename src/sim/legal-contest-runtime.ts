@@ -365,13 +365,11 @@ export const recordAdministrativeComplianceResponse = (
   }] };
 };
 
-export const requestSeparateStay = (
+export const assertSeparateStayRequestAvailable = (
   state: IntegratedLegalContestRuntimeState,
-  configuration: IntegratedLegalContestConfiguration,
-  administrationId: string,
   at: string,
   stayResolutionAt: string,
-): IntegratedLegalContestRuntimeState => {
+): void => {
   if (state.appeals[0]?.status !== "FILED" || state.actionCommands.some((entry) => entry.action === "REQUEST_STAY")) {
     throw new Error("A stay request requires one pending appeal and may occur only once.");
   }
@@ -381,6 +379,29 @@ export const requestSeparateStay = (
   ) {
     throw new Error("A stay request is unavailable after its fixed canonical resolution opportunity.");
   }
+};
+
+export const canRequestSeparateStay = (
+  state: IntegratedLegalContestRuntimeState,
+  at: string,
+  stayResolutionAt: string,
+): boolean => {
+  try {
+    assertSeparateStayRequestAvailable(state, at, stayResolutionAt);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const requestSeparateStay = (
+  state: IntegratedLegalContestRuntimeState,
+  configuration: IntegratedLegalContestConfiguration,
+  administrationId: string,
+  at: string,
+  stayResolutionAt: string,
+): IntegratedLegalContestRuntimeState => {
+  assertSeparateStayRequestAvailable(state, at, stayResolutionAt);
   return { ...state, actionCommands: [...state.actionCommands, {
     id: `${configuration.ownerId}.command.${state.actionCommands.length + 1}`,
     administrationId, action: "REQUEST_STAY", targetOrderId: exactlyOne(state.orders, "Stay order").id, issuedAt: at,

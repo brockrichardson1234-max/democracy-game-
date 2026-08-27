@@ -909,7 +909,11 @@ export const loadGovernmentConfiguration = <TRuntimeSeed>(
   }
 
   // This traversal also rejects functions, undefined, symbols, bigint, and non-finite data.
-  canonicalConfigurationContent(configuration);
+  // Authenticate the content itself; a caller-supplied identity is never evidence of its payload.
+  assertDeclaredConfigurationHash(
+    configuration,
+    sha256Hex(canonicalConfigurationContent(configuration)),
+  );
   return { ...configuration, loaded: true };
 };
 

@@ -510,6 +510,54 @@ export const coordinateOrganization = (
   );
 };
 
+/**
+ * Resolves a previously recorded administration outreach through the PoliticalOrganization owner.
+ * The configured posture and reservation distance determine the recommendation; the caller does
+ * not supply or select the result.
+ */
+export const resolveOrganizationCoordinationRequest = (
+  political: PoliticalState,
+  seed: LegislativeRuntimeSeed,
+  organizationId: string,
+  chamberId: string,
+  proposal: EvaluatedProposalVersion,
+): PoliticalState => {
+  const organization = political.organizations.find((candidate) => candidate.id === organizationId);
+  if (organization === undefined) throw new Error(`Unknown political organization ${organizationId}.`);
+  if (organization.negotiationPosture === "UNCONTACTED") {
+    throw new Error("PoliticalOrganization coordination requires a prior administration outreach request.");
+  }
+  const configuredDimensions = seed.dimensions.map((dimension) => dimension.id);
+  const totalDistance = configuredDimensions.reduce((sum, dimensionId) => {
+    const organizationValue = organization.postureByDimension[dimensionId];
+    const proposalValue = proposal.dimensions[dimensionId];
+    if (organizationValue === undefined || proposalValue === undefined) {
+      throw new Error(`PoliticalOrganization coordination lacks configured dimension ${dimensionId}.`);
+    }
+    return sum + Math.abs(organizationValue - proposalValue);
+  }, 0);
+  const averageDistance = totalDistance / configuredDimensions.length;
+  const recommendation = organization.negotiationPosture === "REJECTING" ||
+    averageDistance > seed.decision.reservationDistance
+    ? "OPPOSE" as const
+    : "SUPPORT" as const;
+  const coordinated = coordinateOrganization(
+    political,
+    seed,
+    organizationId,
+    chamberId,
+    proposal,
+    recommendation,
+  );
+  return {
+    ...coordinated,
+    organizations: coordinated.organizations.map((candidate) =>
+      candidate.id === organizationId
+        ? { ...candidate, negotiationPosture: "UNCONTACTED" }
+        : candidate),
+  };
+};
+
 export interface NegotiationOffer {
   readonly objective: CommitmentObjective;
   readonly terms: Readonly<Record<string, number | string>>;

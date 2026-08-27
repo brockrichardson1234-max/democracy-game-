@@ -62,7 +62,7 @@ describe("I2 U.S. government topology retained by I3", () => {
     expect(bootstrap.configuration.loaded).toBe(true);
     expect(bootstrap.configuration.identity).toMatchObject({
       configurationId: "us-v0",
-      configurationVersion: "0.10.0-i10-convergence",
+      configurationVersion: "0.10.1-i10-repair",
       scenarioId: "us-v0-2026-08-22",
     });
     expect(usStructure.jurisdictions).toHaveLength(52);
@@ -327,7 +327,14 @@ describe("I2 U.S. government topology retained by I3", () => {
       transitions: [],
       runtimeSeed: null,
     };
-    const loaded = loadGovernmentConfiguration(oneOfficeConfiguration);
+    const authenticatedOneOfficeConfiguration: GovernmentConfiguration<never> = {
+      ...oneOfficeConfiguration,
+      identity: {
+        ...oneOfficeConfiguration.identity,
+        configurationHash: configurationHash(oneOfficeConfiguration),
+      },
+    };
+    const loaded = loadGovernmentConfiguration(authenticatedOneOfficeConfiguration);
     expect(loaded.structure.jurisdictions).toHaveLength(1);
     expect(loaded.structure.chambers).toHaveLength(1);
     expect(loaded.structure.offices).toHaveLength(1);

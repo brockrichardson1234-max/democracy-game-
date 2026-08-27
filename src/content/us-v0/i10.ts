@@ -9,9 +9,9 @@ import {
   US_V0_I9_TEMPORAL_CONFIGURATION,
 } from "./i9";
 
-export const US_V0_I10_COMPOSITION_SEMANTICS_VERSION = "us-v0-production-runtime-convergence-1";
-export const US_V0_I10_PRODUCTION_PROJECTION_VERSION = "us-v0-production-game-projection-1";
-export const US_V0_I10_AUTONOMOUS_OWNER_RESOLUTION_VERSION = "us-v0-normal-owner-resolution-1";
+export const US_V0_I10_COMPOSITION_SEMANTICS_VERSION = "us-v0-production-runtime-convergence-2";
+export const US_V0_I10_PRODUCTION_PROJECTION_VERSION = "us-v0-production-game-projection-2";
+export const US_V0_I10_AUTONOMOUS_OWNER_RESOLUTION_VERSION = "us-v0-normal-owner-resolution-2";
 
 const compositionWithoutHash = {
   schemaVersion: 1 as const,

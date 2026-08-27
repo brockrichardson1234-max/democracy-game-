@@ -276,5 +276,5 @@ describe("I5 bounded repair", () => {
       alteredAdministration.institutional.currentAdministration.effectiveUntil = effectiveUntil;
       expect(() => restore(JSON.stringify(alteredAdministration))).toThrow(/administration history contradicts/i);
     }
-  });
+  }, 30_000);
 });

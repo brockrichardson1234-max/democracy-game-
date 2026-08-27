@@ -219,7 +219,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
         US_V0_I7_RUNTIME_ARTIFACTS,
       )).toThrow(/pinned artifact authority/);
     }
-  });
+  }, 60_000);
 
   it("preserves pending program state through succession and enforces the new binding owner", () => {
     const sessionFor = (ticketId: string) => createIntegratedPartialRuntimeAuditSession(

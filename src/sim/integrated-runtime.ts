@@ -5,6 +5,7 @@ import type {
   LegislativeRuntimeSeed,
   RuntimeArtifactBinding,
 } from "../configuration/types";
+import { sha256Hex } from "../configuration/sha256";
 import { createLegislativeRuntimeState, type LegislativeRuntimeState } from "./legislative-runtime";
 import {
   assertWeightedPopulationConservation,
@@ -197,10 +198,92 @@ const allArtifacts = (bundle: IntegratedRuntimeArtifactBundle): readonly { reado
   ...(bundle.housingInitialization === undefined ? [] : [bundle.housingInitialization]),
 ];
 
+const assertArtifactPayloadHash = (
+  artifact: { readonly metadata: RuntimeArtifactMetadata },
+  payload: unknown,
+): void => {
+  const computed = sha256Hex(JSON.stringify(payload));
+  if (computed !== artifact.metadata.contentSha256) {
+    throw new Error(
+      `Integrated runtime artifact payload hash mismatch for ${artifact.metadata.artifactId}: declared ${artifact.metadata.contentSha256}, computed ${computed}.`,
+    );
+  }
+};
+
+const payloadWithoutMetadata = (
+  artifact: { readonly metadata: RuntimeArtifactMetadata } & Readonly<Record<string, unknown>>,
+): Readonly<Record<string, unknown>> => Object.fromEntries(
+  Object.entries(artifact).filter(([key]) => key !== "metadata"),
+);
+
+const authenticateArtifactPayloads = (
+  integrated: IntegratedRuntimeConfiguration,
+  bundle: IntegratedRuntimeArtifactBundle,
+): void => {
+  for (const artifact of bundle.geography) {
+    if (artifact.metadata.artifactId !== integrated.geography.projectLocatorArtifactId) {
+      assertArtifactPayloadHash(artifact, artifact.features);
+      continue;
+    }
+    const sourceRecords = artifact.features.map((feature) => {
+      const runtimeFeature = feature as GeographyFeatureState & {
+        readonly stateFips?: string;
+        readonly sourceId?: string;
+      };
+      if (
+        runtimeFeature.kind !== "PROJECT_LOCATOR" ||
+        runtimeFeature.sourceArtifactId !== artifact.metadata.artifactId ||
+        runtimeFeature.stateFips === undefined ||
+        runtimeFeature.sourceId === undefined ||
+        runtimeFeature.jurisdictionId !== (
+          runtimeFeature.stateFips === "08" ? "us.jurisdiction.state.08" : "us.jurisdiction.state.48"
+        )
+      ) throw new Error(`Integrated project-locator derivation mismatch for ${runtimeFeature.id}.`);
+      const record = { ...runtimeFeature } as Record<string, unknown>;
+      delete record.kind;
+      delete record.jurisdictionId;
+      delete record.sourceArtifactId;
+      return record;
+    });
+    assertArtifactPayloadHash(artifact, sourceRecords);
+  }
+
+  const populationControls = bundle.populationControls as PopulationControlArtifact & {
+    readonly publishedNationalTotal?: number;
+  };
+  assertArtifactPayloadHash(populationControls, {
+    controls: populationControls.controls,
+    publishedNationalTotal: populationControls.publishedNationalTotal,
+  });
+  for (const artifact of bundle.populationMeasurements) {
+    assertArtifactPayloadHash(artifact, artifact.records);
+  }
+  assertArtifactPayloadHash(bundle.eligibilityProxies, bundle.eligibilityProxies.records);
+  assertArtifactPayloadHash(bundle.populationCohorts, bundle.populationCohorts.cohorts);
+  assertArtifactPayloadHash(bundle.electoralTopology, {
+    allocations: bundle.electoralTopology.allocations,
+    totalElectors: bundle.electoralTopology.totalElectors,
+    ordinaryMajority: bundle.electoralTopology.ordinaryMajority,
+  });
+  if (bundle.programInitialization !== undefined) {
+    assertArtifactPayloadHash(
+      bundle.programInitialization,
+      payloadWithoutMetadata(bundle.programInitialization as ProgramInitializationArtifact & Readonly<Record<string, unknown>>),
+    );
+  }
+  if (bundle.housingInitialization !== undefined) {
+    assertArtifactPayloadHash(
+      bundle.housingInitialization,
+      payloadWithoutMetadata(bundle.housingInitialization as HousingInitializationArtifact & Readonly<Record<string, unknown>>),
+    );
+  }
+};
+
 const assertArtifactBindings = (
   integrated: IntegratedRuntimeConfiguration,
   bundle: IntegratedRuntimeArtifactBundle,
 ): void => {
+  authenticateArtifactPayloads(integrated, bundle);
   const artifacts = allArtifacts(bundle);
   if (new Set(artifacts.map((artifact) => artifact.metadata.artifactId)).size !== artifacts.length) {
     throw new Error("Integrated runtime artifact bundle contains duplicate artifact identities.");

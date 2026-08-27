@@ -33,10 +33,14 @@ import {
 } from "../sim/institutional-runtime";
 import {
   currentEvaluatedProposal,
+  introduceSponsoredProposal,
   resolveConfiguredTieBreakerDecision,
   startNewLegislativeProcedure,
 } from "../sim/legislative-runtime";
-import { rebuildPoliticalStateForAssignments } from "../sim/political";
+import {
+  rebuildPoliticalStateForAssignments,
+  resolveOrganizationCoordinationRequest,
+} from "../sim/political";
 import {
   admitEnactedFiscalAuthority,
   applyAdministrativeBoundary,
@@ -93,6 +97,7 @@ import {
 import {
   applyLegalContestBoundary,
   assertIntegratedLegalContestRuntimeState,
+  canRequestSeparateStay,
   deriveOrderEnforceability,
   recordAdministrativeComplianceResponse,
   requestSeparateStay,
@@ -1486,19 +1491,17 @@ const createSession = (
           category: "LEGISLATURE", label: `Seek sponsorship from ${actor.actorId}`,
           description: "Request sponsorship; the legislator independently accepts or declines." });
       }
-    } else if (view.procedure.stage === "SPONSOR_SOUGHT" && view.procedure.sponsorship.status === "ACCEPTED") {
-      const sponsor = view.procedure.sponsorship;
-      add({ id: `legislature:introduce:${sponsor.actorId!}:${sponsor.assignmentId!}`, category: "LEGISLATURE",
-        label: "Request formal introduction", description: "Have the accepting sponsor introduce the agreed proposal text." });
     }
     if (["ORIGIN_CONSIDERATION_GATE", "OTHER_CHAMBER_CONSIDERATION_GATE"].includes(view.procedure.stage)) {
       const chamberId = view.procedure.currentChamberId;
       if (chamberId !== null) for (const organization of state.legislative.political.organizations) {
         const alreadyCoordinated = organization.coordinationActions.some((entry) =>
           entry.chamberId === chamberId && entry.proposalVersion === view.proposal.currentVersion);
-        if (!alreadyCoordinated) add({ id: `legislature:coordinate:${organization.id}:${chamberId}`,
-          category: "LEGISLATURE", label: `Coordinate with ${organization.label}`,
-          description: "Urge support; members retain independent authority over their votes." });
+        if (!alreadyCoordinated && organization.negotiationPosture === "UNCONTACTED") {
+          add({ id: `legislature:request-coordination:${organization.id}:${chamberId}`,
+            category: "LEGISLATURE", label: `Request support from ${organization.label}`,
+            description: "Ask for support; the PoliticalOrganization independently chooses its coordination result." });
+        }
       }
     }
     if (["ORIGIN_AMENDMENT", "OTHER_CHAMBER_AMENDMENT"].includes(view.procedure.stage) &&
@@ -1518,10 +1521,6 @@ const createSession = (
         .some((entry) => entry.id === legalConfiguration.trigger.determinationId);
       if (!hasLegalDetermination) add({ id: "legal:issue-relationship-rejection", category: "LEGAL",
         label: "Issue bounded relationship rejection", description: "Issue the configured administrative determination that may be challenged." });
-      if (state.implementation.publicFinance.generatedBudgetAuthorities.length === 0) {
-        add({ id: `implementation:admit-law:${law.id}`, category: "IMPLEMENTATION", label: "Begin lawful implementation",
-          description: "Admit the enacted legal authority into the public-finance owner boundary." });
-      }
     }
     const pendingOwner = state.implementation.ownerResolution.intentions.some((entry) => entry.status === "PENDING");
     const authority = state.implementation.publicFinance.generatedBudgetAuthorities[0];
@@ -1558,8 +1557,14 @@ const createSession = (
         category: "LEGAL", label: `${response.toLowerCase()} with judicial order`,
         description: "Choose the administration response; the court and appellate owners retain their own outcomes." });
     }
-    if (state.legalContest?.appeals[0]?.status === "FILED" &&
-      !state.legalContest.actionCommands.some((entry) => entry.action === "REQUEST_STAY")) {
+    const stayResolutionBoundary = temporal.boundaries.find(
+      (boundary) => boundary.id === legalConfiguration.appeal.stayBoundaryId,
+    );
+    if (state.legalContest !== null && stayResolutionBoundary !== undefined && canRequestSeparateStay(
+      state.legalContest,
+      state.institutional.calendar.current,
+      stayResolutionBoundary.at,
+    )) {
       add({ id: "legal:request-stay", category: "LEGAL", label: "Request a separate stay",
         description: "Request interim relief; the court independently resolves the request." });
     }
@@ -1994,12 +1999,12 @@ const createSession = (
         legislativeSession.beginSponsorSearch();
       } else if (actionId.startsWith("legislature:seek-sponsor:")) {
         legislativeSession.seekSponsorship(actionId.split(":")[2]);
-      } else if (actionId.startsWith("legislature:introduce:")) {
-        const [, , actorId, assignmentId] = actionId.split(":");
-        legislativeSession.introduceBySponsor(actorId, assignmentId);
-      } else if (actionId.startsWith("legislature:coordinate:")) {
+      } else if (actionId.startsWith("legislature:request-coordination:")) {
         const [, , organizationId, chamberId] = actionId.split(":");
-        legislativeSession.coordinateOrganization(organizationId, chamberId, "SUPPORT");
+        if (chamberId !== legislativeSession.getAdministrationView().procedure.currentChamberId) {
+          throw new Error("Organization outreach request targets a stale chamber gate.");
+        }
+        legislativeSession.negotiateWithOrganization(organizationId);
       } else if (actionId === "legislature:close-amendments") {
         legislativeSession.closeAmendmentRound();
       } else if (actionId === "executive:sign" || actionId === "executive:veto") {
@@ -2011,8 +2016,6 @@ const createSession = (
           actionId === "executive:sign" ? "SIGN" : "VETO");
       } else if (actionId === "legal:issue-relationship-rejection") {
         session.issueBoundedRelationshipRejection();
-      } else if (actionId.startsWith("implementation:admit-law:")) {
-        session.admitEnactedLawFiscalAuthority(actionId.slice("implementation:admit-law:".length));
       } else if (actionId.startsWith("implementation:request-apportionment:")) {
         session.requestApportionment(actionId.slice("implementation:request-apportionment:".length));
       } else if (actionId.startsWith("implementation:request-award:")) {
@@ -2054,10 +2057,44 @@ const createSession = (
         return productionView();
       }
       const stage = legislativeSession.getAdministrationView().procedure.stage;
-      if (stage === "INTRODUCED_IN_ORIGIN") legislativeSession.advanceIntroducedProposal();
-      else if (["ORIGIN_CONSIDERATION_GATE", "OTHER_CHAMBER_CONSIDERATION_GATE"].includes(stage) &&
-        availableProductionActions().filter((entry) => entry.id.startsWith("legislature:coordinate:")).length === 0) {
-        legislativeSession.resolveConsiderationGate();
+      if (stage === "SPONSOR_SOUGHT" && state.legislative.procedure.sponsorship.status === "ACCEPTED") {
+        const sponsorship = state.legislative.procedure.sponsorship;
+        if (sponsorship.actorId === null || sponsorship.assignmentId === null) {
+          throw new Error("Accepted sponsorship lacks its canonical Member or assignment owner.");
+        }
+        state = { ...state, legislative: introduceSponsoredProposal(
+          state.legislative,
+          { structure: configuration.structure, seed: configuration.runtimeSeed as LegislativeRuntimeSeed },
+          sponsorship.actorId,
+          sponsorship.assignmentId,
+        ) };
+      } else if (stage === "INTRODUCED_IN_ORIGIN") legislativeSession.advanceIntroducedProposal();
+      else if (["ORIGIN_CONSIDERATION_GATE", "OTHER_CHAMBER_CONSIDERATION_GATE"].includes(stage)) {
+        const chamberId = state.legislative.procedure.currentChamberId;
+        if (chamberId === null) throw new Error("Consideration gate lacks its chamber owner.");
+        const proposal = currentEvaluatedProposal(state.legislative);
+        const requestedOrganizationIds = state.legislative.political.organizations
+          .filter((organization) => organization.negotiationPosture !== "UNCONTACTED")
+          .filter((organization) => !organization.coordinationActions.some((entry) =>
+            entry.chamberId === chamberId && entry.proposalVersion === proposal.version))
+          .map((organization) => organization.id);
+        if (requestedOrganizationIds.length > 0) {
+          let political = state.legislative.political;
+          for (const organizationId of requestedOrganizationIds) {
+            political = resolveOrganizationCoordinationRequest(
+              political,
+              configuration.runtimeSeed as LegislativeRuntimeSeed,
+              organizationId,
+              chamberId,
+              proposal,
+            );
+          }
+          state = { ...state, legislative: { ...state.legislative, political } };
+        } else if (availableProductionActions().filter(
+          (entry) => entry.id.startsWith("legislature:request-coordination:"),
+        ).length === 0) {
+          legislativeSession.resolveConsiderationGate();
+        }
       } else if (["ORIGIN_FINAL_ROLL_CALL", "OTHER_CHAMBER_FINAL_ROLL_CALL"].includes(stage)) {
         const tiePending = state.legislative.procedure.voteOpportunities.at(-1)?.result === "TIE_BREAK_PENDING";
         if (tiePending) state = { ...state, legislative: resolveConfiguredTieBreakerDecision(
@@ -2066,8 +2103,35 @@ const createSession = (
         ) };
         else legislativeSession.resolveFinalRollCall();
       } else if (stage === "IDENTICAL_TEXT") legislativeSession.present();
-      else {
+      else if (state.implementation !== null && state.institutional !== null) {
+        const unrecognizedLaw = state.legislative.enactedLegalSources.find((law) =>
+          !state.implementation!.publicFinance.generatedBudgetAuthorities.some(
+            (authority) => authority.sourceLegalId === law.id,
+          ));
+        if (unrecognizedLaw !== undefined) {
+          state = { ...state, implementation: admitEnactedFiscalAuthority(
+            state.implementation,
+            unrecognizedLaw,
+            implementationConfiguration,
+            state.institutional.calendar.current,
+          ) };
+          return productionView();
+        }
         const boundary = nextCompositeBoundary();
+        const stayBoundary = temporal.boundaries.find(
+          (candidate) => candidate.id === legalConfiguration.appeal.stayBoundaryId,
+        );
+        const current = state.institutional.calendar.current;
+        const responseCanCreateStayEligibleAppeal = state.legalContest?.complianceStates.at(-1)?.status === "PENDING" &&
+          legalConfiguration.compliance.allowedResponses.includes("CONTEST") &&
+          stayBoundary !== undefined && Date.parse(current) < Date.parse(stayBoundary.at);
+        const pendingTimelyStayRequest = state.legalContest !== null && stayBoundary !== undefined &&
+          canRequestSeparateStay(state.legalContest, current, stayBoundary.at);
+        if (boundary !== null && stayBoundary !== undefined &&
+          Date.parse(boundary.at) >= Date.parse(stayBoundary.at) &&
+          (responseCanCreateStayEligibleAppeal || pendingTimelyStayRequest)) {
+          return productionView();
+        }
         if (boundary !== null) advanceTo(boundary.at);
       }
       return productionView();
