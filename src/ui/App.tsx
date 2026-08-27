@@ -1,707 +1,107 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { createGameSession } from "../app/session";
-import type { ProposalTerms } from "../app/session";
+import { createProductionGameSession, type ProductionGameSession } from "../app/production-session";
+import type { ProductionGameView } from "../app/production-contract";
 
-const INITIAL_PROPOSAL_TERMS: ProposalTerms = {
-  federalMatchRatePercent: 35,
-  participationCondition: "strict",
-  reportingRequirement: "standard",
-};
-
-const COMPROMISE_PROPOSAL_TERMS: ProposalTerms = {
-  federalMatchRatePercent: 55,
-  participationCondition: "lenient",
-  reportingRequirement: "strengthened",
-};
+const SAVE_KEY = "democracy-game.us-v0.production-save";
 
 export const App = () => {
-  const [session] = useState(() => createGameSession());
-  const [view, setView] = useState(() => session.getView());
-
-  const advance = () => {
-    const target = view.nextKnownBootstrapBoundary ?? view.currentTime + 1;
-    setView(session.advanceTo(target));
+  const sessionRef = useRef<ProductionGameSession | null>(null);
+  const getSession = (): ProductionGameSession => {
+    sessionRef.current ??= createProductionGameSession();
+    return sessionRef.current;
+  };
+  const [view, setView] = useState<ProductionGameView>(() => getSession().getProductionGameView());
+  const [notice, setNotice] = useState("Accepted U.S. simulation started.");
+  const run = (operation: () => ProductionGameView, success: string): void => {
+    try { setView(operation()); setNotice(success); }
+    catch (error) { setNotice(error instanceof Error ? error.message : "The game command failed."); }
+  };
+  const newGame = (): void => {
+    sessionRef.current = createProductionGameSession();
+    setView(sessionRef.current.getProductionGameView());
+    setNotice("New accepted U.S. simulation started.");
+  };
+  const saveGame = (): void => {
+    localStorage.setItem(SAVE_KEY, getSession().save());
+    setNotice("Game saved in this browser.");
+  };
+  const loadGame = (): void => {
+    const saved = localStorage.getItem(SAVE_KEY);
+    if (saved === null) { setNotice("No saved production game exists in this browser."); return; }
+    try {
+      sessionRef.current = createProductionGameSession(saved);
+      setView(sessionRef.current.getProductionGameView());
+      setNotice("Saved production game restored.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "The saved game could not be restored."); }
   };
 
-  const { proposal, enactedLaw } = view.legislative;
-  const { fiscal, housingGrantProgram, statePrograms } = view;
-  const hasStrategicControl = view.controlBindingAudit.status === "ACTIVE";
-  const stateAProgram = statePrograms.find((state) => state.id === "state-a");
-  const stateCProgram = statePrograms.find((state) => state.id === "state-c");
-
   return (
-    <main className="shell">
-      <section className="card">
-        <p className="eyebrow">Legacy runtime notice</p>
-        <h1>Legacy GL0 Development Harness</h1>
-        <p>
-          The current accepted U.S. simulation runtime is headless and is not yet the
-          default application runtime. This harness boots the frozen synthetic GL0
-          development fixture.
-        </p>
-
-        <dl>
-          <div>
-            <dt>Simulation time</dt>
-            <dd>{view.currentTime}</dd>
-          </div>
-          <div>
-            <dt>Bootstrap boundary</dt>
-            <dd>{view.bootstrapBoundaryResolved ? "resolved" : "pending"}</dd>
-          </div>
-        </dl>
-
-        <button type="button" onClick={advance}>
-          {view.nextKnownBootstrapBoundary === null
-            ? "Advance one simulation unit"
-            : "Advance to first canonical boundary"}
-        </button>
+    <main className="game-shell">
+      <header className="game-header">
+        <div><p className="eyebrow">U.S. Governing Simulation</p><h1>{view.agenda.title}</h1>
+          <p className="identity">{view.identity.scenarioVersion} · {view.projectionVersion}</p></div>
+        <div className="save-controls" aria-label="Game persistence">
+          <button type="button" className="secondary" onClick={newGame}>New game</button>
+          <button type="button" className="secondary" onClick={saveGame}>Save</button>
+          <button type="button" className="secondary" onClick={loadGame}>Load</button>
+        </div>
+      </header>
+      <p className="notice" role="status">{notice}</p>
+      <section className="status-strip" aria-label="Current game status">
+        <div><span>Date</span><strong>{new Date(view.currentInstant).toLocaleDateString()}</strong></div>
+        <div><span>Administration</span><strong>{view.administration.id}</strong></div>
+        <div><span>Officeholder</span><strong>{view.administration.headActorId}</strong></div>
+        <div><span>Control</span><strong>{view.administration.controlActive ? "Active" : "Ended"}</strong></div>
       </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 9 developer inspection</p>
-        <h1>Housing grant proposal / legislature</h1>
-
-        <dl>
-          <div>
-            <dt>Proposal status</dt>
-            <dd>{proposal === null ? "none submitted" : proposal.status}</dd>
+      <div className="game-grid">
+        <section className="panel actions-panel">
+          <p className="eyebrow">Controlled decisions</p><h2>Available actions</h2>
+          {!view.administration.controlActive && <p>{view.administration.controlMessage}</p>}
+          {view.availablePlayerActions.length === 0 && view.administration.controlActive &&
+            <p>No administration decision is pending. Advance to the next owner or institutional event.</p>}
+          <div className="action-list">
+            {view.availablePlayerActions.map((action) => <button key={action.id} type="button" onClick={() => run(
+              () => getSession().dispatchPlayerCommand(action.id), `${action.label} submitted.`,
+            )}><strong>{action.label}</strong><span>{action.description}</span></button>)}
           </div>
-          <div>
-            <dt>Proposal terms</dt>
-            <dd>
-              {proposal === null
-                ? "—"
-                : `match ${proposal.terms.federalMatchRatePercent}%, ${proposal.terms.participationCondition} participation, ${proposal.terms.reportingRequirement} reporting`}
-            </dd>
-          </div>
-          <div>
-            <dt>Amendments</dt>
-            <dd>{proposal?.amendmentsAdopted ?? "—"}</dd>
-          </div>
-          <div>
-            <dt>Votes</dt>
-            <dd>
-              {proposal?.votes === null || proposal?.votes === undefined
-                ? "not yet resolved"
-                : `${proposal.votes.filter((vote) => vote.choice === "YEA").length} YEA / ${
-                    proposal.votes.filter((vote) => vote.choice === "NAY").length
-                  } NAY`}
-            </dd>
-          </div>
-          <div>
-            <dt>Enacted law</dt>
-            <dd>
-              {enactedLaw === null
-                ? "none"
-                : `${enactedLaw.id} (appropriation: ${enactedLaw.appropriation.amount})`}
-            </dd>
-          </div>
-        </dl>
-
-        <button
-          type="button"
-          disabled={!hasStrategicControl}
-          onClick={() => setView(session.submitHousingGrantProposal(INITIAL_PROPOSAL_TERMS))}
-        >
-          Submit initial proposal
-        </button>
-        <button
-          type="button"
-          disabled={!hasStrategicControl}
-          onClick={() => setView(session.amendHousingGrantProposal(COMPROMISE_PROPOSAL_TERMS))}
-        >
-          Offer compromise amendment
-        </button>
-        <button type="button" onClick={() => setView(session.resolveHousingGrantProposalVote())}>
-          Resolve legislative vote
-        </button>
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 10 developer inspection</p>
-        <h1>Fiscal authority / federal program</h1>
-
-        <dl>
-          <div>
-            <dt>Public finance / fiscal execution</dt>
-            <dd>
-              {fiscal === null
-                ? "not yet recognized"
-                : `available ${fiscal.available} / obligated ${fiscal.obligated} / disbursed ${fiscal.disbursed}`}
-            </dd>
-          </div>
-          <div>
-            <dt>Housing grant program</dt>
-            <dd>
-              {housingGrantProgram === null
-                ? "not established"
-                : `${housingGrantProgram.status} — operator ${housingGrantProgram.operatorInstitutionId}; match ${housingGrantProgram.federalMatchRatePercent}%, ${housingGrantProgram.participationCondition} participation, ${housingGrantProgram.reportingRequirement} reporting`}
-            </dd>
-          </div>
-        </dl>
-
-        <button
-          type="button"
-          onClick={() => setView(session.recognizeHousingGrantFiscalAuthority())}
-        >
-          Recognize fiscal authority
-        </button>
-        <button type="button" onClick={() => setView(session.establishHousingGrantProgram())}>
-          Establish housing grant program
-        </button>
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 13 developer inspection</p>
-        <h1>State response / Housing material delivery</h1>
-
-        {statePrograms.map((state) => (
-          <div key={state.id}>
-            <h2>{state.id}</h2>
-            <dl>
-              <div>
-                <dt>Decision</dt>
-                <dd>{state.decision ?? "not resolved"}</dd>
-              </div>
-              <div>
-                <dt>Application</dt>
-                <dd>{state.applicationId === null ? "none" : "submitted"}</dd>
-              </div>
-              <div>
-                <dt>Federal determination</dt>
-                <dd>{state.federalDetermination ?? "none"}</dd>
-              </div>
-              <div>
-                <dt>Participation</dt>
-                <dd>{state.participation ?? "none"}</dd>
-              </div>
-              <div>
-                <dt>Administrative capacity</dt>
-                <dd>{state.capacity}</dd>
-              </div>
-              <div>
-                <dt>Housing region</dt>
-                <dd>
-                  {state.housingRegion.id} ({state.housingRegion.geographyRegionId})
-                </dd>
-              </div>
-              <div>
-                <dt>Material capacity</dt>
-                <dd>{state.housingRegion.constructionCapacityWorkUnitsPerDay} work/day</dd>
-              </div>
-              <div>
-                <dt>Award</dt>
-                <dd>{state.award === null ? "none" : `$${state.award.awardedAmount}`}</dd>
-              </div>
-              <div>
-                <dt>Obligated</dt>
-                <dd>{state.obligation === null ? "$0" : `$${state.obligation.amount}`}</dd>
-              </div>
-              <div>
-                <dt>Disbursed</dt>
-                <dd>{state.disbursement === null ? "$0" : `$${state.disbursement.amount}`}</dd>
-              </div>
-              <div>
-                <dt>Housing project</dt>
-                <dd>{state.housingProject === null ? "none" : state.housingProject.status}</dd>
-              </div>
-              <div>
-                <dt>Physical progress</dt>
-                <dd>
-                  {state.housingProject === null
-                    ? "none"
-                    : `${state.housingProject.completedWorkUnits} / ${state.housingProject.requiredWorkUnits} work`}
-                </dd>
-              </div>
-              <div>
-                <dt>Housing stock</dt>
-                <dd>
-                  {state.housingProject?.status === "COMPLETED"
-                    ? `${state.housingRegion.housingStockUnits - state.housingProject.plannedHousingUnits} → ${state.housingRegion.housingStockUnits}`
-                    : `${state.housingRegion.housingStockUnits} (unchanged)`}
-                </dd>
-              </div>
-              <div>
-                <dt>Synthetic material demand</dt>
-                <dd>{state.housingRegion.housingDemandUnits}</dd>
-              </div>
-              <div>
-                <dt>Affordability pressure</dt>
-                <dd>{state.housingRegion.affordabilityPressure}</dd>
-              </div>
-            </dl>
-
-            <button
-              type="button"
-              disabled={housingGrantProgram === null || state.decision !== null}
-              onClick={() => setView(session.resolveStateHousingGrantDecision(state.id))}
-            >
-              Resolve state decision
-            </button>
-            <button
-              type="button"
-              disabled={
-                housingGrantProgram === null ||
-                state.decision !== "APPLY" ||
-                state.applicationId !== null
-              }
-              onClick={() => setView(session.submitStateHousingGrantApplication(state.id))}
-            >
-              Submit state application
-            </button>
-            <button
-              type="button"
-              disabled={state.applicationId === null || state.federalDetermination !== null}
-              onClick={() => setView(session.resolveFederalHousingGrantApplication(state.id))}
-            >
-              Resolve federal determination
-            </button>
-            <button
-              type="button"
-              disabled={
-                state.federalDetermination !== "ACCEPTED" || state.participation !== null
-              }
-              onClick={() =>
-                setView(session.activateIntergovernmentalHousingGrantParticipation(state.id))
-              }
-            >
-              Activate participation
-            </button>
-            <button
-              type="button"
-              disabled={state.participation !== "ACTIVE" || state.award !== null}
-              onClick={() => setView(session.createHousingGrantAward(state.id))}
-            >
-              Create administrative award
-            </button>
-            <button
-              type="button"
-              disabled={state.award === null || state.obligation !== null}
-              onClick={() => setView(session.obligateHousingGrantAward(state.id))}
-            >
-              Obligate award
-            </button>
-            <button
-              type="button"
-              disabled={state.obligation === null || state.disbursement !== null}
-              onClick={() => setView(session.disburseHousingGrantObligation(state.id))}
-            >
-              Disburse obligation
-            </button>
-            <button
-              type="button"
-              disabled={state.disbursement === null || state.housingProject !== null}
-              onClick={() => setView(session.materializeHousingProjectFromDisbursement(state.id))}
-            >
-              Materialize Housing project
-            </button>
-          </div>
-        ))}
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 15 developer inspection</p>
-        <h1>Implementation response → Housing delivery</h1>
-
-        <dl>
-          <div>
-            <dt>State A project progress</dt>
-            <dd>
-              {stateAProgram?.housingProject == null
-                ? "none"
-                : `${stateAProgram.housingProject.completedWorkUnits} / ${stateAProgram.housingProject.requiredWorkUnits}`}
-            </dd>
-          </div>
-          <div>
-            <dt>State C project progress</dt>
-            <dd>
-              {stateCProgram?.housingProject == null
-                ? "none"
-                : `${stateCProgram.housingProject.completedWorkUnits} / ${stateCProgram.housingProject.requiredWorkUnits}`}
-            </dd>
-          </div>
-          <div>
-            <dt>State C intrinsic material capacity</dt>
-            <dd>
-              {stateCProgram === undefined
-                ? "none"
-                : `${stateCProgram.housingRegion.constructionCapacityWorkUnitsPerDay} work/day`}
-            </dd>
-          </div>
-          <div>
-            <dt>State C accepted Housing support</dt>
-            <dd>
-              {stateCProgram?.acceptedImplementationSupport == null
-                ? "none"
-                : `+${stateCProgram.acceptedImplementationSupport.supplementalWorkUnitsPerDay} work/day from ${stateCProgram.acceptedImplementationSupport.sourceDeploymentId}`}
-            </dd>
-          </div>
-          <div>
-            <dt>State C effective project rate</dt>
-            <dd>
-              {stateCProgram?.effectiveProjectWorkUnitsPerDay == null
-                ? "none"
-                : `${stateCProgram.effectiveProjectWorkUnitsPerDay} work/day`}
-            </dd>
-          </div>
-          <div>
-            <dt>State C completion / stock</dt>
-            <dd>
-              {stateCProgram?.housingProject == null
-                ? "none"
-                : `${stateCProgram.housingProject.completedAtSimulationTime ?? "pending"} / ${stateCProgram.housingRegion.housingStockUnits}`}
-            </dd>
-          </div>
-          <div>
-            <dt>Federal implementation support</dt>
-            <dd>
-              {view.implementationResponse.availableSupportUnits} available /{" "}
-              {view.implementationResponse.committedSupportUnits} committed
-            </dd>
-          </div>
-          <div>
-            <dt>Response</dt>
-            <dd>{view.implementationResponse.resolvedAction ?? "awaiting response opportunity"}</dd>
-          </div>
-          <div>
-            <dt>Target</dt>
-            <dd>{view.implementationResponse.targetStateJurisdictionId ?? "none"}</dd>
-          </div>
-        </dl>
-
-        <button
-          type="button"
-          disabled={!hasStrategicControl || !view.implementationResponse.responseOpportunityReady}
-          onClick={() => setView(session.deployHousingImplementationSupportToStateC())}
-        >
-          Deploy support to State C
-        </button>
-        <button
-          type="button"
-          disabled={!hasStrategicControl || !view.implementationResponse.responseOpportunityReady}
-          onClick={() => setView(session.preserveHousingImplementationSupportReserve())}
-        >
-          Preserve support reserve
-        </button>
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 17 developer inspection</p>
-        <h1>Official Housing Measurement</h1>
-
-        <dl>
-          <div>
-            <dt>Status</dt>
-            <dd>{view.officialHousingMeasurement.status}</dd>
-          </div>
-          <div>
-            <dt>Observation window</dt>
-            <dd>
-              {view.officialHousingMeasurement.observationStart}–
-              {view.officialHousingMeasurement.observationEnd}
-            </dd>
-          </div>
-          <div>
-            <dt>Captured at</dt>
-            <dd>{view.officialHousingMeasurement.capturedAtSimulationTime ?? "pending"}</dd>
-          </div>
-          <div>
-            <dt>Scheduled report release</dt>
-            <dd>{view.officialHousingMeasurement.scheduledReleaseAtSimulationTime}</dd>
-          </div>
-          <div>
-            <dt>Released report</dt>
-            <dd>{view.officialHousingMeasurement.releasedReport === null ? "no" : "yes"}</dd>
-          </div>
-        </dl>
-
-        <h2>Captured regional material values</h2>
-        <dl>
-          {view.officialHousingMeasurement.capturedRegionalResults.map((result) => {
-            const state = statePrograms.find(
-              (candidate) => candidate.housingRegion.id === result.housingRegionId,
-            );
-            return (
-              <div key={result.housingRegionId}>
-                <dt>{state?.id ?? result.housingRegionId}</dt>
-                <dd>
-                  stock {result.housingStockUnits} / pressure {result.affordabilityPressure}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 18 developer/audit inspection</p>
-        <h1>Competing claims and public exposure</h1>
-        <p>Raw Information truth below is not population belief or player knowledge.</p>
-
-        <h2>Political claim artifacts</h2>
-        <dl>
-          {view.publicInformationAudit.claims.map((claim) => (
-            <div key={claim.id}>
-              <dt>{claim.claimPosition}</dt>
-              <dd>
-                day {claim.releasedAtSimulationTime}; source {claim.sourceArtifactIds.join(", ")};{" "}
-                {claim.origin.originType === "ADMINISTRATION"
-                  ? `administration ${claim.origin.administrationId}`
-                  : `actor ${claim.origin.actorId}`}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        <h2>Temporary GL0 distribution audiences</h2>
-        <dl>
-          {view.publicInformationAudit.audiences.map((audience) => (
-            <div key={audience.id}>
-              <dt>{audience.id}</dt>
-              <dd>
-                {audience.exposedArtifactIds.length === 0
-                  ? "no received artifacts"
-                  : audience.exposedArtifactIds.join(", ")}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 19 developer/audit inspection</p>
-        <h1>Population belief, attribution, and salience</h1>
-        <p>
-          Raw canonical Population state for development only; this is not player-facing
-          knowledge.
-        </p>
-        <p>Total represented population weight: {view.populationAudit.totalWeight}</p>
-
-        {view.populationAudit.units.map((unit) => (
-          <div key={unit.id}>
-            <h2>{unit.id}</h2>
-            <dl>
-              <div>
-                <dt>Weight / baseline</dt>
-                <dd>
-                  {unit.weight} / {unit.baselinePoliticalDisposition}
-                </dd>
-              </div>
-              <div>
-                <dt>Residence / Housing reference</dt>
-                <dd>
-                  {unit.residenceGeographyId} / {unit.housingRegionId}
-                </dd>
-              </div>
-              <div>
-                <dt>Information audience</dt>
-                <dd>{unit.informationAudienceId}</dd>
-              </div>
-              <div>
-                <dt>Housing pressure belief</dt>
-                <dd>{unit.housingPressureBelief}</dd>
-              </div>
-              <div>
-                <dt>Program-performance belief</dt>
-                <dd>{unit.programPerformanceBelief}</dd>
-              </div>
-              <div>
-                <dt>Attribution</dt>
-                <dd>
-                  {unit.housingAttribution.target} / {unit.housingAttribution.evaluation}
-                </dd>
-              </div>
-              <div>
-                <dt>Housing salience</dt>
-                <dd>{unit.housingSalience}</dd>
-              </div>
-              <div>
-                <dt>Electoral preference</dt>
-                <dd>{unit.electoralPreference}</dd>
-              </div>
-              <div>
-                <dt>Turnout disposition</dt>
-                <dd>{unit.turnoutDisposition}</dd>
-              </div>
-              <div>
-                <dt>Processed information</dt>
-                <dd>
-                  {unit.incorporatedArtifactIds.length === 0
-                    ? "none"
-                    : unit.incorporatedArtifactIds.join(", ")}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        ))}
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 20 developer/audit inspection</p>
-        <h1>Derived synthetic electorate</h1>
-        <p>
-          Exact development projection only; this is neither a poll nor actual election
-          participation.
-        </p>
-        <dl>
-          <div>
-            <dt>Contest / scheduled election</dt>
-            <dd>
-              {view.electoralAudit.contest.id} / day {view.electoralAudit.contest.scheduledElectionAt}
-            </dd>
-          </div>
-          <div>
-            <dt>Boundary Geography references</dt>
-            <dd>{view.electoralAudit.contest.geographyRegionIds.join(", ")}</dd>
-          </div>
-          <div>
-            <dt>Contest eligibility-rule reference</dt>
-            <dd>{view.electoralAudit.contest.eligibilityRuleId}</dd>
-          </div>
-          <div>
-            <dt>Legal-order eligibility requirement</dt>
-            <dd>{view.electoralAudit.contest.eligibilityRequirement}</dd>
-          </div>
-          <div>
-            <dt>Contest procedure-rule reference</dt>
-            <dd>{view.electoralAudit.contest.procedureRuleId}</dd>
-          </div>
-          <div>
-            <dt>Legal-order procedure requirement</dt>
-            <dd>{view.electoralAudit.contest.procedureRequirement}</dd>
-          </div>
-          <div>
-            <dt>Election-process status</dt>
-            <dd>
-              {view.electoralAudit.electionProcess.status}; certification boundary day{" "}
-              {view.electoralAudit.electionProcess.scheduledCertificationAt}
-            </dd>
-          </div>
-          <div>
-            <dt>Eligible represented weight</dt>
-            <dd>{view.electoralAudit.derivedElectorate.eligiblePopulationWeight}</dd>
-          </div>
-          <div>
-            <dt>Preference weight</dt>
-            <dd>
-              administration {view.electoralAudit.derivedElectorate.preferenceWeight.ADMINISTRATION};{" "}
-              opposition {view.electoralAudit.derivedElectorate.preferenceWeight.OPPOSITION}; undecided{" "}
-              {view.electoralAudit.derivedElectorate.preferenceWeight.UNDECIDED}; unresolved{" "}
-              {view.electoralAudit.derivedElectorate.preferenceWeight.UNRESOLVED}
-            </dd>
-          </div>
-          <div>
-            <dt>Turnout-disposition weight</dt>
-            <dd>
-              high {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.HIGH}; medium{" "}
-              {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.MEDIUM}; low{" "}
-              {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.LOW}; unresolved{" "}
-              {view.electoralAudit.derivedElectorate.turnoutDispositionWeight.UNRESOLVED}
-            </dd>
-          </div>
-          <div>
-            <dt>Actual participating weight</dt>
-            <dd>
-              {view.electoralAudit.electionProcess.result?.totalParticipatingWeight ??
-                "not resolved"}
-            </dd>
-          </div>
-          <div>
-            <dt>Ballot count</dt>
-            <dd>
-              {view.electoralAudit.electionProcess.result === null
-                ? "not resolved"
-                : `administration ${
-                    view.electoralAudit.electionProcess.result.candidateVoteWeights.find(
-                      (entry) =>
-                        entry.candidateId ===
-                        view.electoralAudit.contest.candidateIds[0],
-                    )?.voteWeight ?? 0
-                  }; opposition ${
-                    view.electoralAudit.electionProcess.result.candidateVoteWeights.find(
-                      (entry) =>
-                        entry.candidateId ===
-                        view.electoralAudit.contest.candidateIds[1],
-                    )?.voteWeight ?? 0
-                  }; blank ${view.electoralAudit.electionProcess.result.blankBallotWeight}`}
-            </dd>
-          </div>
-          <div>
-            <dt>Outcome / winner</dt>
-            <dd>
-              {view.electoralAudit.electionProcess.result === null
-                ? "not resolved"
-                : `${view.electoralAudit.electionProcess.result.outcome} / ${
-                    view.electoralAudit.electionProcess.result.winningCandidateId ?? "none"
-                  }`}
-            </dd>
-          </div>
-          <div>
-            <dt>Certification</dt>
-            <dd>
-              {view.electoralAudit.electionProcess.certification === null
-                ? "not yet"
-                : `${view.electoralAudit.electionProcess.certification.status}; source ${view.electoralAudit.electionProcess.certification.sourceResultId}`}
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Commit 22 developer/audit inspection</p>
-        <h1>Executive succession and session control</h1>
-        <p>Raw canonical assignment plus non-canonical session permission state.</p>
-        <dl>
-          <div>
-            <dt>Executive institution / office</dt>
-            <dd>
-              {view.executiveSuccessionAudit.institutionId} /{" "}
-              {view.executiveSuccessionAudit.office.id}
-            </dd>
-          </div>
-          <div>
-            <dt>Current officeholder actor</dt>
-            <dd>{view.executiveSuccessionAudit.currentOfficeAssignment.actorId}</dd>
-          </div>
-          <div>
-            <dt>Candidate → actor references</dt>
-            <dd>
-              {view.electoralAudit.candidates
-                .map((candidate) => `${candidate.id} → ${candidate.actorId} (${candidate.alignment})`)
-                .join("; ")}
-            </dd>
-          </div>
-          <div>
-            <dt>Succession rule</dt>
-            <dd>
-              {view.executiveSuccessionAudit.office.successionRuleId}: {" "}
-              {view.executiveSuccessionAudit.office.successionRequirement}
-            </dd>
-          </div>
-          <div>
-            <dt>Successor entitlement</dt>
-            <dd>
-              {view.executiveSuccessionAudit.successorEntitlement === null
-                ? "none"
-                : `${view.executiveSuccessionAudit.successorEntitlement.entitledActorId}; established day ${view.executiveSuccessionAudit.successorEntitlement.establishedAtSimulationTime}; transfer day ${view.executiveSuccessionAudit.successorEntitlement.scheduledTransferAtSimulationTime}`}
-            </dd>
-          </div>
-          <div>
-            <dt>Control binding</dt>
-            <dd>
-              {view.controlBindingAudit.status}; actor {view.controlBindingAudit.boundOfficeholderActorId};{" "}
-              office {view.controlBindingAudit.executiveOfficeId}; surface {" "}
-              {view.controlBindingAudit.decisionSurface}
-            </dd>
-          </div>
-          <div>
-            <dt>Control ended</dt>
-            <dd>{view.controlBindingAudit.endedAtSimulationTime ?? "not ended"}</dd>
-          </div>
-        </dl>
-      </section>
+          <button type="button" className="advance" disabled={!view.worldAdvance.available} onClick={() => run(
+            () => getSession().advanceProductionWorld(), "The persistent world advanced canonically.",
+          )}>{view.worldAdvance.label}</button>
+          <p className="muted">{view.worldAdvance.description}</p>
+        </section>
+        <section className="panel"><p className="eyebrow">Agenda and legislature</p>
+          <h2>{view.agenda.stage.replaceAll("_", " ")}</h2><dl>
+            <div><dt>Proposal</dt><dd>{view.agenda.proposalId}</dd></div><div><dt>Version</dt><dd>{view.agenda.version}</dd></div>
+            <div><dt>Current chamber</dt><dd>{view.agenda.currentChamberId ?? "—"}</dd></div>
+            <div><dt>Likely support</dt><dd>{view.agenda.staffOutlook.likelyYea ?? 0}</dd></div>
+            <div><dt>Enacted laws</dt><dd>{view.agenda.enactedLegalSources.length}</dd></div></dl></section>
+        <section className="panel"><p className="eyebrow">Implementation and material delivery</p><h2>Known program status</h2><dl>
+          <div><dt>Budget authorities</dt><dd>{view.implementation.generatedBudgetAuthorities.length}</dd></div>
+          <div><dt>Pending owner decisions</dt><dd>{view.implementation.pendingOwnerDecisionCount}</dd></div>
+          <div><dt>Fiscal controls / awards</dt><dd>{view.implementation.fiscalControlCount} / {view.implementation.awardCount}</dd></div>
+          <div><dt>Obligations / payments</dt><dd>{view.implementation.obligationCount} / {view.implementation.paymentCount}</dd></div>
+          <div><dt>Recipient commitments</dt><dd>{view.implementation.recipientCommitmentCount}</dd></div>
+          <div><dt>Accepted material inputs</dt><dd>{view.implementation.materialInputKinds.length}</dd></div></dl></section>
+        <section className="panel"><p className="eyebrow">Official and public information</p><h2>Released information</h2><dl>
+          <div><dt>Official measurements</dt><dd>{view.officialInformation.releasedMeasurements.length}</dd></div>
+          <div><dt>Public claims</dt><dd>{view.officialInformation.releasedClaims.length}</dd></div>
+          <div><dt>Completed deliveries</dt><dd>{view.officialInformation.completedDeliveryCount}</dd></div></dl></section>
+        <section className="panel"><p className="eyebrow">Public legal status</p><h2>Contest and orders</h2><dl>
+          <div><dt>Filed claims</dt><dd>{view.legal.filedClaimCount}</dd></div>
+          <div><dt>Proceedings</dt><dd>{view.legal.proceedingStatuses.join(", ") || "None"}</dd></div>
+          <div><dt>Public rulings</dt><dd>{view.legal.publicRulings.length}</dd></div>
+          <div><dt>Orders</dt><dd>{view.legal.operativeOrders.map((order) => order.status).join(", ") || "None"}</dd></div>
+          <div><dt>Appeals / stays</dt><dd>{view.legal.appealStatuses.length} / {view.legal.stayStatuses.length}</dd></div>
+          <div><dt>Administration response</dt><dd>{view.legal.complianceStatuses.at(-1) ?? "None"}</dd></div></dl></section>
+        <section className="panel"><p className="eyebrow">Election and succession</p>
+          <h2>{view.election.stage.replaceAll("_", " ")}</h2><dl>
+            <div><dt>Public results</dt><dd>{view.election.publicResultIds.length}</dd></div>
+            <div><dt>Declaration</dt><dd>{view.election.declarationId ?? "Not issued"}</dd></div>
+            <div><dt>Next known event</dt><dd>{view.election.nextKnownBoundary?.kind.replaceAll("_", " ") ?? "None"}</dd></div>
+            <div><dt>Scheduled</dt><dd>{view.election.nextKnownBoundary === null ? "—" : new Date(view.election.nextKnownBoundary.at).toLocaleDateString()}</dd></div>
+          </dl></section>
+      </div>
     </main>
   );
 };

@@ -33,6 +33,7 @@ import {
 } from "../sim/institutional-runtime";
 import {
   currentEvaluatedProposal,
+  resolveConfiguredTieBreakerDecision,
   startNewLegislativeProcedure,
 } from "../sim/legislative-runtime";
 import { rebuildPoliticalStateForAssignments } from "../sim/political";
@@ -105,6 +106,7 @@ import {
   type LegislativeSession,
   type LegislativeControlBinding,
 } from "./legislative-session";
+import type { ProductionGameView, ProductionPlayerAction } from "./production-contract";
 
 export const INTEGRATED_PARTIAL_SAVE_FORMAT_VERSION = 11 as const;
 
@@ -180,6 +182,9 @@ export interface IntegratedPartialRuntimeSession {
   readonly requestJudicialStay: () => IntegratedPartialRuntimeState;
   readonly getLegalContestAuditState: () => NonNullable<IntegratedPartialRuntimeState["legalContest"]>;
   readonly getPublicLegalStatus: () => IntegratedLegalPublicStatus;
+  readonly getProductionGameView: () => ProductionGameView;
+  readonly dispatchPlayerCommand: (actionId: string) => ProductionGameView;
+  readonly advanceProductionWorld: () => ProductionGameView;
   readonly save: () => string;
 }
 
@@ -219,6 +224,12 @@ export interface IntegratedImplementationPublicStatus {
   readonly publicDeterminationIds: readonly string[];
   readonly relationshipStatuses: readonly { readonly id: string; readonly status: string }[];
   readonly materialInputKinds: readonly string[];
+  readonly pendingOwnerDecisionCount: number;
+  readonly fiscalControlCount: number;
+  readonly awardCount: number;
+  readonly obligationCount: number;
+  readonly paymentCount: number;
+  readonly recipientCommitmentCount: number;
   readonly physicalHousingStatePresent: false;
 }
 
@@ -226,6 +237,12 @@ export interface IntegratedInformationPublicStatus {
   readonly releasedMeasurements: readonly {
     readonly id: string;
     readonly releasedAt: string;
+    readonly observationStart: string;
+    readonly observationEnd: string;
+    readonly measuredValues: readonly {
+      readonly name: string;
+      readonly value: number | string | boolean | null;
+    }[];
     readonly classification: string;
   }[];
   readonly releasedClaims: readonly {
@@ -1428,6 +1445,177 @@ const createSession = (
     assertCalendarTimeState(state.institutional!.calendar, configuration.calendar.epoch, temporal.boundaries);
     return deepCopy(state);
   };
+  const resolvePendingOwnerIntentions = (): void => {
+    if (state.implementation === null || state.institutional === null) return;
+    const pendingIds = state.implementation.ownerResolution.intentions
+      .filter((entry) => entry.status === "PENDING")
+      .map((entry) => entry.id);
+    for (const intentionId of pendingIds) {
+      state = {
+        ...state,
+        implementation: resolveImplementationOwnerIntention(
+          state.implementation!,
+          intentionId,
+          implementationConfiguration,
+          state.institutional!.calendar.current,
+        ),
+      };
+      synchronizeHousingInputs();
+    }
+  };
+  const availableProductionActions = (): readonly ProductionPlayerAction[] => {
+    if (controlBinding.status !== "ACTIVE" || state.institutional === null || state.implementation === null) return [];
+    const actions: ProductionPlayerAction[] = [];
+    const view = legislativeSession.getAdministrationView();
+    const add = (action: ProductionPlayerAction): void => { actions.push(action); };
+    if (view.procedure.stage === "DRAFT_AGENDA" && view.proposal.currentVersion === 1) {
+      add({ id: "agenda:balanced-delivery", category: "AGENDA", label: "Set a balanced delivery agenda",
+        description: "Revise the administration proposal toward bounded funding, delivery, and capacity." });
+    } else if (view.procedure.stage === "DRAFT_AGENDA") {
+      add({ id: "legislature:begin-sponsor-search", category: "LEGISLATURE", label: "Begin sponsor search",
+        description: "Ask the administration's legislative team to seek an eligible origin-chamber sponsor." });
+    } else if (view.procedure.stage === "SPONSOR_SOUGHT" && view.procedure.sponsorship.status !== "ACCEPTED") {
+      const originChamberId = (configuration.runtimeSeed as LegislativeRuntimeSeed).procedure.originChamberId;
+      const originActors = new Set(state.legislative.political.organizations.flatMap((organization) =>
+        organization.memberships.filter((membership) => membership.chamberId === originChamberId)
+          .map((membership) => membership.actorId)));
+      for (const actor of state.legislative.political.actors.filter((entry) =>
+        originActors.has(entry.actorId) && ["LEAN_YEA", "CONDITIONAL_YEA"].includes(entry.supportPosture)).slice(0, 3)) {
+        const assignment = state.legislative.activeAssignments.find((entry) => entry.actorId === actor.actorId);
+        if (assignment !== undefined) add({ id: `legislature:seek-sponsor:${actor.actorId}:${assignment.id}`,
+          category: "LEGISLATURE", label: `Seek sponsorship from ${actor.actorId}`,
+          description: "Request sponsorship; the legislator independently accepts or declines." });
+      }
+    } else if (view.procedure.stage === "SPONSOR_SOUGHT" && view.procedure.sponsorship.status === "ACCEPTED") {
+      const sponsor = view.procedure.sponsorship;
+      add({ id: `legislature:introduce:${sponsor.actorId!}:${sponsor.assignmentId!}`, category: "LEGISLATURE",
+        label: "Request formal introduction", description: "Have the accepting sponsor introduce the agreed proposal text." });
+    }
+    if (["ORIGIN_CONSIDERATION_GATE", "OTHER_CHAMBER_CONSIDERATION_GATE"].includes(view.procedure.stage)) {
+      const chamberId = view.procedure.currentChamberId;
+      if (chamberId !== null) for (const organization of state.legislative.political.organizations) {
+        const alreadyCoordinated = organization.coordinationActions.some((entry) =>
+          entry.chamberId === chamberId && entry.proposalVersion === view.proposal.currentVersion);
+        if (!alreadyCoordinated) add({ id: `legislature:coordinate:${organization.id}:${chamberId}`,
+          category: "LEGISLATURE", label: `Coordinate with ${organization.label}`,
+          description: "Urge support; members retain independent authority over their votes." });
+      }
+    }
+    if (["ORIGIN_AMENDMENT", "OTHER_CHAMBER_AMENDMENT"].includes(view.procedure.stage) &&
+      !view.procedure.amendments.some((entry) => entry.status === "PROPOSED")) {
+      add({ id: "legislature:close-amendments", category: "LEGISLATURE", label: "Close amendment negotiations",
+        description: "Proceed on the current text without requesting another administration amendment." });
+    }
+    if (view.procedure.stage === "PRESENTED") {
+      add({ id: "executive:sign", category: "EXECUTIVE", label: "Sign the enacted measure",
+        description: "Exercise the controlled executive presentment decision." });
+      add({ id: "executive:veto", category: "EXECUTIVE", label: "Veto the measure",
+        description: "Return the measure without approval; any override remains legislative." });
+    }
+    const law = view.enactedLegalSources[0];
+    if (law !== undefined) {
+      const hasLegalDetermination = state.implementation.administrativeProgram.relationshipQualificationDeterminations
+        .some((entry) => entry.id === legalConfiguration.trigger.determinationId);
+      if (!hasLegalDetermination) add({ id: "legal:issue-relationship-rejection", category: "LEGAL",
+        label: "Issue bounded relationship rejection", description: "Issue the configured administrative determination that may be challenged." });
+      if (state.implementation.publicFinance.generatedBudgetAuthorities.length === 0) {
+        add({ id: `implementation:admit-law:${law.id}`, category: "IMPLEMENTATION", label: "Begin lawful implementation",
+          description: "Admit the enacted legal authority into the public-finance owner boundary." });
+      }
+    }
+    const pendingOwner = state.implementation.ownerResolution.intentions.some((entry) => entry.status === "PENDING");
+    const authority = state.implementation.publicFinance.generatedBudgetAuthorities[0];
+    if (!pendingOwner && authority !== undefined && state.implementation.fiscalExecution.generatedControls.length === 0) {
+      add({ id: `implementation:request-apportionment:${authority.id}`, category: "IMPLEMENTATION",
+        label: "Request apportionment", description: "Submit an administrative intention for independent fiscal-owner resolution." });
+    }
+    const control = state.implementation.fiscalExecution.generatedControls[0];
+    if (!pendingOwner && control !== undefined && state.implementation.fiscalExecution.generatedAwards.length === 0) {
+      add({ id: `implementation:request-award:${control.id}`, category: "IMPLEMENTATION", label: "Request bounded Corpus Christi award",
+        description: "Submit a bounded award intention; finance and program owners create any resulting records." });
+    }
+    const obligation = state.implementation.fiscalExecution.generatedObligations[0];
+    if (!pendingOwner && control?.ruleProfile !== null && control?.ruleProfile !== undefined && obligation !== undefined &&
+      state.implementation.recipientAdministration.commitments.length === 0) {
+      add({ id: `implementation:request-commitment:${obligation.id}`, category: "IMPLEMENTATION",
+        label: "Request Palms at Morris commitment", description: "Ask the recipient owner to commit an eligible project under the operative rules." });
+    }
+    const commitment = state.implementation.recipientAdministration.commitments[0];
+    if (!pendingOwner && commitment !== undefined && state.implementation.recipientAdministration.activities.length === 0) {
+      add({ id: `implementation:request-activity:${commitment.id}`, category: "IMPLEMENTATION", label: "Request activity setup",
+        description: "Ask the recipient owner to establish the committed project activity." });
+    }
+    const activity = state.implementation.recipientAdministration.activities[0];
+    if (!pendingOwner && activity !== undefined && state.implementation.recipientAdministration.drawRequests.length === 0) {
+      add({ id: `implementation:request-draw:${activity.id}`, category: "IMPLEMENTATION", label: "Request eligible draw",
+        description: "Submit a bounded recipient draw for owner eligibility resolution." });
+    }
+    const draw = state.implementation.recipientAdministration.drawRequests.find((entry) => entry.status === "ELIGIBLE_PENDING_PAYMENT");
+    if (!pendingOwner && draw !== undefined) add({ id: `implementation:request-payment:${draw.id}`, category: "IMPLEMENTATION",
+      label: "Request federal payment", description: "Ask the federal fiscal owner to resolve the eligible draw." });
+    if (state.legalContest?.complianceStates.at(-1)?.status === "PENDING") {
+      for (const response of legalConfiguration.compliance.allowedResponses) add({ id: `legal:respond:${response}`,
+        category: "LEGAL", label: `${response.toLowerCase()} with judicial order`,
+        description: "Choose the administration response; the court and appellate owners retain their own outcomes." });
+    }
+    if (state.legalContest?.appeals[0]?.status === "FILED" &&
+      !state.legalContest.actionCommands.some((entry) => entry.action === "REQUEST_STAY")) {
+      add({ id: "legal:request-stay", category: "LEGAL", label: "Request a separate stay",
+        description: "Request interim relief; the court independently resolves the request." });
+    }
+    return actions;
+  };
+  const productionView = (): ProductionGameView => {
+    const institutional = session.getPublicInstitutionalStatus();
+    const legislative = legislativeSession.getAdministrationView();
+    const implementation = session.getPublicImplementationStatus();
+    const information = session.getPublicInformationStatus();
+    const legal = session.getPublicLegalStatus();
+    const composition = configuration.integratedRuntime?.composition;
+    if (composition === undefined) throw new Error("Production projection requires the I10 composition contract.");
+    const actions = availableProductionActions();
+    return deepCopy({
+      projectionVersion: composition.productionProjectionVersion,
+      identity: { configurationId: state.configuration.configurationId,
+        configurationVersion: state.configuration.configurationVersion, scenarioId: state.configuration.scenarioId,
+        scenarioVersion: state.configuration.scenarioVersion, configurationHash: state.configuration.configurationHash },
+      currentInstant: institutional.currentInstant,
+      administration: { id: institutional.currentAdministrationId, headActorId: institutional.currentHeadActorId,
+        deputyActorId: institutional.currentDeputyActorId, termLabel: institutional.currentTermLabel,
+        controlActive: institutional.controlBindingActive,
+        controlMessage: institutional.controlBindingActive ? "Administration control is active." : "Administration control ended; the persistent world can continue." },
+      agenda: { proposalId: legislative.proposal.id, title: legislative.proposal.title,
+        version: legislative.proposal.currentVersion, dimensions: legislative.proposal.dimensions,
+        stage: legislative.procedure.stage, currentChamberId: legislative.procedure.currentChamberId,
+        staffOutlook: legislative.staffOutlook, enactedLegalSources: legislative.enactedLegalSources.map((entry) => ({
+          id: entry.id, sourceProposalId: entry.sourceProposalId, enactmentRoute: entry.enactmentRoute,
+        })) },
+      implementation: { generatedBudgetAuthorities: implementation.generatedBudgetAuthorities,
+        relationshipStatuses: implementation.relationshipStatuses, materialInputKinds: implementation.materialInputKinds,
+        pendingOwnerDecisionCount: implementation.pendingOwnerDecisionCount, fiscalControlCount: implementation.fiscalControlCount,
+        awardCount: implementation.awardCount, obligationCount: implementation.obligationCount,
+        paymentCount: implementation.paymentCount, recipientCommitmentCount: implementation.recipientCommitmentCount },
+      officialInformation: { releasedMeasurements: information.releasedMeasurements.map((entry) => ({
+        id: entry.id, releasedAt: entry.releasedAt, observationStart: entry.observationStart,
+        observationEnd: entry.observationEnd, measuredValues: entry.measuredValues,
+      })),
+        releasedClaims: information.releasedClaims.map((entry) => ({ id: entry.id, claimantId: entry.claimantId,
+          subject: entry.subject, position: entry.position, releasedAt: entry.releasedAt })),
+        completedDeliveryCount: information.completedDeliveryIds.length },
+      legal: { filedClaimCount: legal.filedClaims.length, proceedingStatuses: legal.proceedings.map((entry) => entry.status),
+        publicRulings: legal.publicRulings, operativeOrders: legal.operativeOrders.map((entry) => ({
+          id: entry.id, status: entry.status, enforceability: entry.enforceability,
+        })),
+        stayStatuses: legal.stays.map((entry) => entry.status), appealStatuses: legal.appeals.map((entry) => entry.status),
+        complianceStatuses: legal.compliance.map((entry) => entry.status) },
+      election: { stage: institutional.selectionStage, publicResultIds: institutional.popularResults.map((entry) => entry.id),
+        declarationId: institutional.declaration?.id ?? null, nextKnownBoundary: institutional.nextBoundary },
+      availablePlayerActions: actions,
+      worldAdvance: { available: true, label: "Advance world", description: actions.length > 0
+        ? "Advance autonomous owners or the next canonical boundary; player decisions remain available until chosen."
+        : "Advance autonomous owners or the next canonical institutional boundary." },
+    });
+  };
   const session: IntegratedPartialRuntimeSession = {
     getAuditState: () => {
       synchronizeHousingInputs();
@@ -1534,6 +1722,14 @@ const createSession = (
         publicDeterminationIds: state.implementation.administrativeProgram.determinations.map((entry) => entry.id),
         relationshipStatuses: relationships,
         materialInputKinds: state.implementation.materialInputs.map((entry) => entry.kind),
+        pendingOwnerDecisionCount: state.implementation.ownerResolution.intentions.filter(
+          (entry) => entry.status === "PENDING",
+        ).length,
+        fiscalControlCount: state.implementation.fiscalExecution.generatedControls.length,
+        awardCount: state.implementation.fiscalExecution.generatedAwards.length,
+        obligationCount: state.implementation.fiscalExecution.generatedObligations.length,
+        paymentCount: state.implementation.fiscalExecution.generatedPayments.length,
+        recipientCommitmentCount: state.implementation.recipientAdministration.commitments.length,
         physicalHousingStatePresent: false as const,
       });
     },
@@ -1652,7 +1848,14 @@ const createSession = (
         releasedMeasurements: state.information.releases.map((release) => {
           const artifact = state.information!.measurementArtifacts.find((entry) => entry.id === release.artifactId);
           if (artifact === undefined) throw new Error(`Released measurement ${release.artifactId} is unavailable.`);
-          return { id: artifact.id, releasedAt: release.releasedAt, classification: artifact.classification };
+          return {
+            id: artifact.id,
+            releasedAt: release.releasedAt,
+            observationStart: artifact.observationStart,
+            observationEnd: artifact.observationEnd,
+            measuredValues: artifact.measuredValues.map(({ name, value }) => ({ name, value })),
+            classification: artifact.classification,
+          };
         }),
         releasedClaims: state.information.claims.map((claim) => ({
           id: claim.id,
@@ -1777,6 +1980,97 @@ const createSession = (
           status: entry.status, recordedAt: entry.recordedAt,
         })),
       });
+    },
+    getProductionGameView: productionView,
+    dispatchPlayerCommand: (actionId) => {
+      const available = availableProductionActions();
+      if (!available.some((entry) => entry.id === actionId)) {
+        throw new Error(`Player command ${actionId} is unavailable on the current controlled decision surface.`);
+      }
+      if (actionId === "agenda:balanced-delivery") {
+        legislativeSession.reviseAgenda({ appropriation_magnitude: 7, recipient_flexibility: 7,
+          compliance_burden: 6, geographic_distribution: 7, administrative_capacity_support: 8 });
+      } else if (actionId === "legislature:begin-sponsor-search") {
+        legislativeSession.beginSponsorSearch();
+      } else if (actionId.startsWith("legislature:seek-sponsor:")) {
+        legislativeSession.seekSponsorship(actionId.split(":")[2]);
+      } else if (actionId.startsWith("legislature:introduce:")) {
+        const [, , actorId, assignmentId] = actionId.split(":");
+        legislativeSession.introduceBySponsor(actorId, assignmentId);
+      } else if (actionId.startsWith("legislature:coordinate:")) {
+        const [, , organizationId, chamberId] = actionId.split(":");
+        legislativeSession.coordinateOrganization(organizationId, chamberId, "SUPPORT");
+      } else if (actionId === "legislature:close-amendments") {
+        legislativeSession.closeAmendmentRound();
+      } else if (actionId === "executive:sign" || actionId === "executive:veto") {
+        const assignment = state.legislative.activeAssignments.find(
+          (entry) => entry.officeId === controlBinding.executiveOfficeId,
+        );
+        if (assignment === undefined) throw new Error("Controlled executive assignment is unavailable.");
+        legislativeSession.executiveAction(controlBinding.boundOfficeholderActorId, assignment.id,
+          actionId === "executive:sign" ? "SIGN" : "VETO");
+      } else if (actionId === "legal:issue-relationship-rejection") {
+        session.issueBoundedRelationshipRejection();
+      } else if (actionId.startsWith("implementation:admit-law:")) {
+        session.admitEnactedLawFiscalAuthority(actionId.slice("implementation:admit-law:".length));
+      } else if (actionId.startsWith("implementation:request-apportionment:")) {
+        session.requestApportionment(actionId.slice("implementation:request-apportionment:".length));
+      } else if (actionId.startsWith("implementation:request-award:")) {
+        session.requestBoundedAward({
+          sourceFiscalControlId: actionId.slice("implementation:request-award:".length),
+          relationshipId: "us.relationship.home.corpus-christi-pj.fy2024", formulaScopeMemberId: null,
+          recipientId: "us.recipient.corpus-christi", amountMinorUnits: 1_000_000,
+          agreementRef: "us.i10.production-award-agreement", causeKey: "us.i10.production-award",
+        });
+      } else if (actionId.startsWith("implementation:request-commitment:")) {
+        const control = state.implementation!.fiscalExecution.generatedControls[0];
+        if (control?.ruleProfile === null || control?.ruleProfile === undefined) throw new Error("Operative implementation rules unavailable.");
+        session.requestRecipientCommitment({ recipientId: "us.recipient.corpus-christi",
+          relationshipId: "us.relationship.home.corpus-christi-pj.fy2024", projectRef: "us.project.palms-at-morris",
+          sourceObligationId: actionId.slice("implementation:request-commitment:".length), amountMinorUnits: 900_000,
+          planRef: "us.plan.corpus-christi.py2024", projectSelectionRef: "us.i10.palms-selection",
+          writtenAgreementRef: "us.i10.palms-written-agreement", environmentalClearanceRef: "us.i10.palms-environmental-clearance",
+          selectedRecipientOption: 1, complianceRecordRefs: [...control.ruleProfile.requiredRecordTypes],
+          geographicPriorityAcknowledgement: control.ruleProfile.geographicPriorityRule, causeKey: "us.i10.production-commitment" });
+      } else if (actionId.startsWith("implementation:request-activity:")) {
+        session.requestRecipientActivitySetup(actionId.slice("implementation:request-activity:".length));
+      } else if (actionId.startsWith("implementation:request-draw:")) {
+        session.requestRecipientDraw(actionId.slice("implementation:request-draw:".length), 500_000);
+      } else if (actionId.startsWith("implementation:request-payment:")) {
+        session.requestFederalPayment(actionId.slice("implementation:request-payment:".length));
+      } else if (actionId.startsWith("legal:respond:")) {
+        session.respondToJudicialOrder(actionId.slice("legal:respond:".length) as "COMPLY" | "DELAY" | "CONTEST" | "NONCOMPLY");
+      } else if (actionId === "legal:request-stay") {
+        session.requestJudicialStay();
+      } else {
+        throw new Error(`Player command ${actionId} has no production dispatcher.`);
+      }
+      return productionView();
+    },
+    advanceProductionWorld: () => {
+      const pendingBefore = state.implementation?.ownerResolution.intentions.filter((entry) => entry.status === "PENDING").length ?? 0;
+      if (pendingBefore > 0) {
+        resolvePendingOwnerIntentions();
+        return productionView();
+      }
+      const stage = legislativeSession.getAdministrationView().procedure.stage;
+      if (stage === "INTRODUCED_IN_ORIGIN") legislativeSession.advanceIntroducedProposal();
+      else if (["ORIGIN_CONSIDERATION_GATE", "OTHER_CHAMBER_CONSIDERATION_GATE"].includes(stage) &&
+        availableProductionActions().filter((entry) => entry.id.startsWith("legislature:coordinate:")).length === 0) {
+        legislativeSession.resolveConsiderationGate();
+      } else if (["ORIGIN_FINAL_ROLL_CALL", "OTHER_CHAMBER_FINAL_ROLL_CALL"].includes(stage)) {
+        const tiePending = state.legislative.procedure.voteOpportunities.at(-1)?.result === "TIE_BREAK_PENDING";
+        if (tiePending) state = { ...state, legislative: resolveConfiguredTieBreakerDecision(
+          state.legislative,
+          { structure: configuration.structure, seed: configuration.runtimeSeed as LegislativeRuntimeSeed },
+        ) };
+        else legislativeSession.resolveFinalRollCall();
+      } else if (stage === "IDENTICAL_TEXT") legislativeSession.present();
+      else {
+        const boundary = nextCompositeBoundary();
+        if (boundary !== null) advanceTo(boundary.at);
+      }
+      return productionView();
     },
     save: () => {
       synchronizeHousingInputs();

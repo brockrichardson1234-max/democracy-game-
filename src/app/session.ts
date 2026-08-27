@@ -1,3 +1,4 @@
+/** Explicit legacy GL0 regression/development fixture. Production code uses production-session.ts. */
 import {
   advanceWorldTo,
   type SimulationInstant,

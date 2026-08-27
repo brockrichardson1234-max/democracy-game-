@@ -1,20 +1,25 @@
 # democracy-game-
 
-Current accepted implementation authority: **I7 — U.S. Integrated Partial Runtime**
+Current accepted implementation authority: **I9 — U.S. Legal Contest Repair**
 
-Accepted SHA: `9cdf1881ddb30d5c70901d5be3bd77148ae4b07a`
+Accepted I9 SHA / exact I10 base: `e5a08e7330db73991c59600970906c57f1e275d7`
+
+Current branch status: **I10 runtime-convergence candidate; external acceptance pending**
 
 Exact commit SHAs remain the review/acceptance authority. Branch refs are convenience pointers.
 
 ## Current runtime state
 
-- The accepted U.S. runtime is integrated headlessly through Housing.
-- The default React/Electron application remains the legacy GL0 development harness.
-- GL0 is frozen for new simulation features and retained only as a regression/development fixture.
-- I8 and I9 extend only the accepted U.S. integrated runtime.
-- Runtime convergence is mandatory at I10.
+- `IntegratedPartialRuntimeState` is the canonical simulation state.
+- `IntegratedPartialRuntimeSession` is the production application/session authority.
+- `createProductionGameSession()` boots the accepted U.S. configuration and I3–I9 artifact lineage for new games and restores save format 11.
+- The default React application consumes the production player-safe projection and controlled command surface. Electron hosts that same built application.
+- Autonomous legislature, fiscal/program, Housing, Information, Population, election, and legal owners resolve through canonical runtime rules and scheduler boundaries; React does not choose their outcomes.
+- GL0 is quarantined in `src/content/gl0-synthetic` and `src/app/session.ts` for explicit regression/development fixtures. Neither is reachable from the default production entry graph.
 
-The project is not yet presented as an end-to-end playable U.S. simulation. The production/default application does not boot the accepted U.S. runtime yet.
+I10 intentionally supplies a utilitarian functional interface, not final visual design. The convergence suite demonstrates an audit-free administration journey from agenda formation and enactment through implementation, Housing material causality, public Information, legal contest, election, and succession in one persistent world.
+
+The opposition-succession capability proof uses the normal production factory with an explicit deterministic test configuration. At Day 0 that configuration maps every configured preference alias and unresolved fallback to the opposition ticket, recomputes selection/temporal/configuration hashes, and then makes no runtime mutation. The ordinary election, certification, declaration, and transfer owners end the outgoing ControlBinding while preserving and continuing the world. It is not substituted for the default U.S. configuration.
 
 ## Architecture authority/read order
 
@@ -41,7 +46,7 @@ The project is not yet presented as an end-to-end playable U.S. simulation. The 
 ## Runtime boundaries
 
 ```text
-headless TypeScript simulation
+TypeScript simulation
         ↑
 application / session
         ↑
@@ -52,7 +57,7 @@ Electron = outer desktop host only
 
 - `src/sim` is headless and cannot depend on React, Electron, DOM/browser APIs, Node APIs, UI state, or wall-clock/random globals.
 - `src/app` may depend on simulation but not on React/Electron/UI.
-- `src/ui` consumes the application/session layer rather than canonical simulation state directly.
+- `src/ui` consumes `ProductionGameView` and production session commands rather than canonical simulation state directly; it uses no audit projection.
 - Electron hosts the built web application and contains no political/game-domain logic.
 - Architecture V0 semantic ownership does not imply a matching source-code module layout.
 

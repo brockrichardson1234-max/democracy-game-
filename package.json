@@ -15,13 +15,15 @@
     "typecheck": "tsc -p tsconfig.sim.json --pretty false && tsc -p tsconfig.json --pretty false",
     "lint": "eslint .",
     "check:boundaries": "node scripts/check-boundaries.mjs",
+    "check:production-runtime": "node scripts/check-production-runtime-imports.mjs",
+    "check:built-production-runtime": "node scripts/check-built-production-runtime.mjs",
     "verify:us-topology-artifacts": "node scripts/verify-us-topology-artifacts.mjs",
     "verify:us-i4-artifacts": "node scripts/verify-us-i4-artifacts.mjs",
     "build:us-i6-artifacts": "node scripts/build-us-i6-artifacts.mjs",
     "verify:us-i6-artifacts": "node scripts/verify-us-i6-artifacts.mjs",
     "build:us-i7-artifacts": "node scripts/build-us-i7-artifacts.mjs",
     "verify:us-i7-artifacts": "node scripts/verify-us-i7-artifacts.mjs",
-    "verify": "npm run typecheck && npm run check:boundaries && npm run verify:us-topology-artifacts && npm run verify:us-i4-artifacts && npm run verify:us-i6-artifacts && npm run verify:us-i7-artifacts && npm run lint && npm test && npm run build"
+    "verify": "npm run typecheck && npm run check:boundaries && npm run check:production-runtime && npm run verify:us-topology-artifacts && npm run verify:us-i4-artifacts && npm run verify:us-i6-artifacts && npm run verify:us-i7-artifacts && npm run lint && npm test && npm run build && npm run check:built-production-runtime"
   },
   "dependencies": {
     "react": "^19.2.4",
