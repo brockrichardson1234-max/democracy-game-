@@ -1473,6 +1473,20 @@ const createSession = (
     const actions: ProductionPlayerAction[] = [];
     const view = legislativeSession.getAdministrationView();
     const add = (action: ProductionPlayerAction): void => { actions.push(action); };
+    const officeholderLabel = (officeId: string): string => {
+      const office = configuration.structure.offices.find((entry) => entry.id === officeId);
+      if (office === undefined) return "Member of Congress";
+      if (office.label.startsWith("Representative office for ")) {
+        return office.label
+          .replace("Representative office for ", "Representative for ")
+          .replace(/ District 0(\d)$/, " District $1");
+      }
+      if (office.label.startsWith("Senator office ")) {
+        const match = /^Senator office Class [^ ]+ for (.+)$/.exec(office.label);
+        return match === null ? "United States Senator" : `Senator for ${match[1]}`;
+      }
+      return office.label;
+    };
     if (view.procedure.stage === "DRAFT_AGENDA" && view.proposal.currentVersion === 1) {
       add({ id: "agenda:balanced-delivery", category: "AGENDA", label: "Set a balanced delivery agenda",
         description: "Revise the administration proposal toward bounded funding, delivery, and capacity." });
@@ -1487,9 +1501,13 @@ const createSession = (
       for (const actor of state.legislative.political.actors.filter((entry) =>
         originActors.has(entry.actorId) && ["LEAN_YEA", "CONDITIONAL_YEA"].includes(entry.supportPosture)).slice(0, 3)) {
         const assignment = state.legislative.activeAssignments.find((entry) => entry.actorId === actor.actorId);
-        if (assignment !== undefined) add({ id: `legislature:seek-sponsor:${actor.actorId}:${assignment.id}`,
-          category: "LEGISLATURE", label: `Seek sponsorship from ${actor.actorId}`,
-          description: "Request sponsorship; the legislator independently accepts or declines." });
+        if (assignment !== undefined) {
+          const candidate = officeholderLabel(assignment.officeId);
+          const staffAssessment = actor.supportPosture === "LEAN_YEA" ? "leans supportive" : "may support the proposal with conditions";
+          add({ id: `legislature:seek-sponsor:${actor.actorId}:${assignment.id}`,
+            category: "LEGISLATURE", label: `Approach the ${candidate}`,
+            description: `Staff believes this member ${staffAssessment}. The member independently accepts or declines.` });
+        }
       }
     }
     if (["ORIGIN_CONSIDERATION_GATE", "OTHER_CHAMBER_CONSIDERATION_GATE"].includes(view.procedure.stage)) {
@@ -1579,12 +1597,44 @@ const createSession = (
     const composition = configuration.integratedRuntime?.composition;
     if (composition === undefined) throw new Error("Production projection requires the I10 composition contract.");
     const actions = availableProductionActions();
+    const sponsorAssignment = legislative.procedure.sponsorship.assignmentId === null
+      ? undefined
+      : state.legislative.activeAssignments.find(
+        (entry) => entry.id === legislative.procedure.sponsorship.assignmentId,
+      );
+    const sponsorOffice = sponsorAssignment === undefined
+      ? undefined
+      : configuration.structure.offices.find((entry) => entry.id === sponsorAssignment.officeId);
+    const sponsorLabel = sponsorOffice === undefined
+      ? null
+      : sponsorOffice.label
+        .replace("Representative office for ", "Representative for ")
+        .replace(/ District 0(\d)$/, " District $1");
+    const currentStatus = legislative.procedure.stage === "DRAFT_AGENDA"
+      ? "The administration has prepared a housing proposal. Routine staff work can finish the opening agenda and begin looking for a sponsor in Congress."
+      : legislative.procedure.stage === "SPONSOR_SOUGHT" && legislative.procedure.sponsorship.status !== "ACCEPTED"
+        ? "The proposal needs a member of the House willing to sponsor it before Congress can consider it."
+        : legislative.procedure.stage === "SPONSOR_SOUGHT"
+          ? "A House member has agreed to sponsor the proposal. Formal introduction remains the legislator's action."
+          : "The housing proposal is moving through institutions the administration influences but does not command.";
     return deepCopy({
       projectionVersion: composition.productionProjectionVersion,
       identity: { configurationId: state.configuration.configurationId,
         configurationVersion: state.configuration.configurationVersion, scenarioId: state.configuration.scenarioId,
         scenarioVersion: state.configuration.scenarioVersion, configurationHash: state.configuration.configurationHash },
       currentInstant: institutional.currentInstant,
+      briefing: {
+        role: "Federal executive administration",
+        term: `${institutional.currentTermLabel} Congress`,
+        situation: "Housing pressures differ sharply across the country, while many places lack the administrative capacity to turn federal support into completed housing.",
+        objective: "Advance a bounded federal housing delivery and recipient-capacity initiative through Congress and, if enacted, into implementation.",
+        institutionalBoundary: "You direct the executive administration. Congress, states, courts, organizations, and the public make their own decisions and produce their own outcomes.",
+        currentStatus,
+        horizon: institutional.nextBoundary === null ? null : {
+          label: "The next known scheduled event",
+          at: institutional.nextBoundary.at,
+        },
+      },
       administration: { id: institutional.currentAdministrationId, headActorId: institutional.currentHeadActorId,
         deputyActorId: institutional.currentDeputyActorId, termLabel: institutional.currentTermLabel,
         controlActive: institutional.controlBindingActive,
@@ -1592,6 +1642,7 @@ const createSession = (
       agenda: { proposalId: legislative.proposal.id, title: legislative.proposal.title,
         version: legislative.proposal.currentVersion, dimensions: legislative.proposal.dimensions,
         stage: legislative.procedure.stage, currentChamberId: legislative.procedure.currentChamberId,
+        sponsorship: { status: legislative.procedure.sponsorship.status, sponsorLabel },
         staffOutlook: legislative.staffOutlook, enactedLegalSources: legislative.enactedLegalSources.map((entry) => ({
           id: entry.id, sourceProposalId: entry.sourceProposalId, enactmentRoute: entry.enactmentRoute,
         })) },

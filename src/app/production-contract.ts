@@ -15,6 +15,15 @@ export interface ProductionGameView {
     readonly configurationHash: string;
   };
   readonly currentInstant: string;
+  readonly briefing: {
+    readonly role: string;
+    readonly term: string;
+    readonly situation: string;
+    readonly objective: string;
+    readonly institutionalBoundary: string;
+    readonly currentStatus: string;
+    readonly horizon: { readonly label: string; readonly at: string } | null;
+  };
   readonly administration: {
     readonly id: string;
     readonly headActorId: string;
@@ -30,6 +39,10 @@ export interface ProductionGameView {
     readonly dimensions: Readonly<Record<string, number>>;
     readonly stage: string;
     readonly currentChamberId: string | null;
+    readonly sponsorship: {
+      readonly status: string;
+      readonly sponsorLabel: string | null;
+    };
     readonly staffOutlook: Readonly<Record<string, number>>;
     readonly enactedLegalSources: readonly {
       readonly id: string;

@@ -1,9 +1,35 @@
 import { useRef, useState } from "react";
 
+import {
+  advanceUntilAttention,
+  classifyOpeningAttention,
+  type AdvanceUntilAttentionResult,
+} from "../app/opening-usability";
 import { createProductionGameSession, type ProductionGameSession } from "../app/production-session";
-import type { ProductionGameView } from "../app/production-contract";
+import type { ProductionGameView, ProductionPlayerAction } from "../app/production-contract";
 
 const SAVE_KEY = "democracy-game.us-v0.production-save";
+
+interface DecisionReceipt {
+  readonly title: string;
+  readonly choice: string;
+  readonly canonicalResult: string;
+  readonly remainsUnresolved: string;
+}
+
+const formatDate = (instant: string): string => new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "America/New_York",
+}).format(new Date(instant));
+
+const attentionLabel = (classification: ReturnType<typeof classifyOpeningAttention>["classification"]): string => {
+  if (classification === "DECISION_REQUIRED") return "Decision required";
+  if (classification === "STRATEGIC_OPPORTUNITY") return "Strategic opportunity";
+  if (classification === "IMPORTANT_DEVELOPMENT") return "Important development";
+  return "Informational / background";
+};
 
 export const App = () => {
   const sessionRef = useRef<ProductionGameSession | null>(null);
@@ -12,15 +38,17 @@ export const App = () => {
     return sessionRef.current;
   };
   const [view, setView] = useState<ProductionGameView>(() => getSession().getProductionGameView());
-  const [notice, setNotice] = useState("Accepted U.S. simulation started.");
-  const run = (operation: () => ProductionGameView, success: string): void => {
-    try { setView(operation()); setNotice(success); }
-    catch (error) { setNotice(error instanceof Error ? error.message : "The game command failed."); }
-  };
+  const [notice, setNotice] = useState("A new administration term has begun.");
+  const [receipt, setReceipt] = useState<DecisionReceipt | null>(null);
+  const [lastAdvance, setLastAdvance] = useState<AdvanceUntilAttentionResult | null>(null);
+  const attention = classifyOpeningAttention(view);
+
   const newGame = (): void => {
     sessionRef.current = createProductionGameSession();
     setView(sessionRef.current.getProductionGameView());
-    setNotice("New accepted U.S. simulation started.");
+    setReceipt(null);
+    setLastAdvance(null);
+    setNotice("A new administration term has begun.");
   };
   const saveGame = (): void => {
     localStorage.setItem(SAVE_KEY, getSession().save());
@@ -28,80 +56,177 @@ export const App = () => {
   };
   const loadGame = (): void => {
     const saved = localStorage.getItem(SAVE_KEY);
-    if (saved === null) { setNotice("No saved production game exists in this browser."); return; }
+    if (saved === null) {
+      setNotice("No saved game exists in this browser.");
+      return;
+    }
     try {
       sessionRef.current = createProductionGameSession(saved);
       setView(sessionRef.current.getProductionGameView());
-      setNotice("Saved production game restored.");
-    } catch (error) { setNotice(error instanceof Error ? error.message : "The saved game could not be restored."); }
+      setReceipt(null);
+      setLastAdvance(null);
+      setNotice("Saved game restored.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "The saved game could not be restored.");
+    }
+  };
+
+  const advance = (): void => {
+    try {
+      const result = advanceUntilAttention(getSession());
+      setView(result.view);
+      setLastAdvance(result);
+      setNotice(result.summary);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "The world could not advance.");
+    }
+  };
+
+  const chooseSponsor = (action: ProductionPlayerAction): void => {
+    try {
+      const next = getSession().dispatchPlayerCommand(action.id);
+      const accepted = next.agenda.sponsorship.status === "ACCEPTED";
+      setView(next);
+      setLastAdvance(null);
+      setReceipt({
+        title: accepted ? "Sponsorship request accepted" : "Sponsorship request declined",
+        choice: `The administration approached the ${action.label.replace("Approach the ", "")}.`,
+        canonicalResult: accepted
+          ? `${next.agenda.sponsorship.sponsorLabel ?? "The member"} agreed to sponsor the proposal.`
+          : "The member declined the sponsorship request; the search remains open.",
+        remainsUnresolved: accepted
+          ? "The sponsor still controls formal introduction, and Congress independently controls consideration, amendment, and voting."
+          : "The administration may approach another available member. No legislator can be compelled to sponsor the proposal.",
+      });
+      setNotice(accepted
+        ? "The sponsorship request was accepted. Congressional action remains independent."
+        : "The sponsorship request was declined. The administration still needs a sponsor.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "The decision could not be submitted.");
+    }
   };
 
   return (
     <main className="game-shell">
-      <header className="game-header">
-        <div><p className="eyebrow">U.S. Governing Simulation</p><h1>{view.agenda.title}</h1>
-          <p className="identity">{view.identity.scenarioVersion} · {view.projectionVersion}</p></div>
-        <div className="save-controls" aria-label="Game persistence">
-          <button type="button" className="secondary" onClick={newGame}>New game</button>
-          <button type="button" className="secondary" onClick={saveGame}>Save</button>
-          <button type="button" className="secondary" onClick={loadGame}>Load</button>
+      <header className="role-shell">
+        <div>
+          <p className="eyebrow">U.S. Governing Simulation · You lead the</p>
+          <h1>{view.briefing.role}</h1>
+          <p className="role-boundary">{view.briefing.institutionalBoundary}</p>
         </div>
-      </header>
-      <p className="notice" role="status">{notice}</p>
-      <section className="status-strip" aria-label="Current game status">
-        <div><span>Date</span><strong>{new Date(view.currentInstant).toLocaleDateString()}</strong></div>
-        <div><span>Administration</span><strong>{view.administration.id}</strong></div>
-        <div><span>Officeholder</span><strong>{view.administration.headActorId}</strong></div>
-        <div><span>Control</span><strong>{view.administration.controlActive ? "Active" : "Ended"}</strong></div>
-      </section>
-      <div className="game-grid">
-        <section className="panel actions-panel">
-          <p className="eyebrow">Controlled decisions</p><h2>Available actions</h2>
-          {!view.administration.controlActive && <p>{view.administration.controlMessage}</p>}
-          {view.availablePlayerActions.length === 0 && view.administration.controlActive &&
-            <p>No administration decision is pending. Advance to the next owner or institutional event.</p>}
-          <div className="action-list">
-            {view.availablePlayerActions.map((action) => <button key={action.id} type="button" onClick={() => run(
-              () => getSession().dispatchPlayerCommand(action.id), `${action.label} submitted.`,
-            )}><strong>{action.label}</strong><span>{action.description}</span></button>)}
+        <div className="term-status" aria-label="Current term and control">
+          <div><span>Date</span><strong>{formatDate(view.currentInstant)}</strong></div>
+          <div><span>Term</span><strong>{view.briefing.term}</strong></div>
+          <div><span>Control</span><strong>{view.administration.controlActive ? "Administration active" : "Term ended"}</strong></div>
+          {attention.count > 0 && <div className="attention-count"><span>Attention</span><strong>{attention.count}</strong></div>}
+        </div>
+        <details className="session-menu">
+          <summary>Session</summary>
+          <div className="session-actions" aria-label="Game persistence">
+            <button type="button" className="secondary" onClick={saveGame}>Save</button>
+            <button type="button" className="secondary" onClick={loadGame}>Load</button>
+            <button type="button" className="secondary" onClick={newGame}>New game</button>
           </div>
-          <button type="button" className="advance" disabled={!view.worldAdvance.available} onClick={() => run(
-            () => getSession().advanceProductionWorld(), "The persistent world advanced canonically.",
-          )}>{view.worldAdvance.label}</button>
-          <p className="muted">{view.worldAdvance.description}</p>
+        </details>
+      </header>
+
+      <p className="notice" role="status">{notice}</p>
+
+      <article className="briefing" aria-labelledby="briefing-title">
+        <header className="briefing-header">
+          <p className="eyebrow">Briefing</p>
+          <h2 id="briefing-title">The housing agenda needs a path through Congress</h2>
+        </header>
+
+        <section className="briefing-section situation">
+          <p className="section-label">Current governing situation</p>
+          <p className="lead">{view.briefing.situation}</p>
+          <p>{view.briefing.currentStatus}</p>
         </section>
-        <section className="panel"><p className="eyebrow">Agenda and legislature</p>
-          <h2>{view.agenda.stage.replaceAll("_", " ")}</h2><dl>
-            <div><dt>Proposal</dt><dd>{view.agenda.proposalId}</dd></div><div><dt>Version</dt><dd>{view.agenda.version}</dd></div>
-            <div><dt>Current chamber</dt><dd>{view.agenda.currentChamberId ?? "—"}</dd></div>
-            <div><dt>Likely support</dt><dd>{view.agenda.staffOutlook.likelyYea ?? 0}</dd></div>
-            <div><dt>Enacted laws</dt><dd>{view.agenda.enactedLegalSources.length}</dd></div></dl></section>
-        <section className="panel"><p className="eyebrow">Implementation and material delivery</p><h2>Known program status</h2><dl>
-          <div><dt>Budget authorities</dt><dd>{view.implementation.generatedBudgetAuthorities.length}</dd></div>
-          <div><dt>Pending owner decisions</dt><dd>{view.implementation.pendingOwnerDecisionCount}</dd></div>
-          <div><dt>Fiscal controls / awards</dt><dd>{view.implementation.fiscalControlCount} / {view.implementation.awardCount}</dd></div>
-          <div><dt>Obligations / payments</dt><dd>{view.implementation.obligationCount} / {view.implementation.paymentCount}</dd></div>
-          <div><dt>Recipient commitments</dt><dd>{view.implementation.recipientCommitmentCount}</dd></div>
-          <div><dt>Accepted material inputs</dt><dd>{view.implementation.materialInputKinds.length}</dd></div></dl></section>
-        <section className="panel"><p className="eyebrow">Official and public information</p><h2>Released information</h2><dl>
-          <div><dt>Official measurements</dt><dd>{view.officialInformation.releasedMeasurements.length}</dd></div>
-          <div><dt>Public claims</dt><dd>{view.officialInformation.releasedClaims.length}</dd></div>
-          <div><dt>Completed deliveries</dt><dd>{view.officialInformation.completedDeliveryCount}</dd></div></dl></section>
-        <section className="panel"><p className="eyebrow">Public legal status</p><h2>Contest and orders</h2><dl>
-          <div><dt>Filed claims</dt><dd>{view.legal.filedClaimCount}</dd></div>
-          <div><dt>Proceedings</dt><dd>{view.legal.proceedingStatuses.join(", ") || "None"}</dd></div>
-          <div><dt>Public rulings</dt><dd>{view.legal.publicRulings.length}</dd></div>
-          <div><dt>Orders</dt><dd>{view.legal.operativeOrders.map((order) => order.status).join(", ") || "None"}</dd></div>
-          <div><dt>Appeals / stays</dt><dd>{view.legal.appealStatuses.length} / {view.legal.stayStatuses.length}</dd></div>
-          <div><dt>Administration response</dt><dd>{view.legal.complianceStatuses.at(-1) ?? "None"}</dd></div></dl></section>
-        <section className="panel"><p className="eyebrow">Election and succession</p>
-          <h2>{view.election.stage.replaceAll("_", " ")}</h2><dl>
-            <div><dt>Public results</dt><dd>{view.election.publicResultIds.length}</dd></div>
-            <div><dt>Declaration</dt><dd>{view.election.declarationId ?? "Not issued"}</dd></div>
-            <div><dt>Next known event</dt><dd>{view.election.nextKnownBoundary?.kind.replaceAll("_", " ") ?? "None"}</dd></div>
-            <div><dt>Scheduled</dt><dd>{view.election.nextKnownBoundary === null ? "—" : new Date(view.election.nextKnownBoundary.at).toLocaleDateString()}</dd></div>
-          </dl></section>
-      </div>
+
+        <section className={`briefing-section attention ${attention.classification.toLowerCase()}`}>
+          <div className="section-heading">
+            <div>
+              <p className="section-label">Requires your attention</p>
+              <h3>{attention.title}</h3>
+            </div>
+            <span className="attention-tag">{attentionLabel(attention.classification)}</span>
+          </div>
+
+          {attention.classification === "DECISION_REQUIRED" && attention.actions.some((action) =>
+            action.id.startsWith("legislature:seek-sponsor:"),
+          ) ? (
+            <div className="decision-detail">
+              <div className="decision-context">
+                <div><h4>What happened</h4><p>Staff completed the routine opening work. The housing proposal now needs a member of the House to sponsor it.</p></div>
+                <div><h4>Why it matters</h4><p>The administration cannot introduce or pass legislation by commanding Congress. Without a sponsor, the proposal cannot enter congressional proceedings.</p></div>
+                <div><h4>What you control</h4><p>You may choose which available member the administration approaches.</p></div>
+                <div><h4>What remains independent</h4><p>The member accepts or declines. Congress later controls consideration, amendments, and votes.</p></div>
+              </div>
+              <div className="decision-options">
+                <h4>Available approaches</h4>
+                {attention.actions.map((action) => (
+                  <button key={action.id} type="button" onClick={() => chooseSponsor(action)}>
+                    <strong>{action.label}</strong>
+                    <span>{action.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p>{attention.count === 0
+              ? "Nothing requires an administration decision right now. Routine staff work and independent institutional activity can continue."
+              : "Review the available administration choices before allowing events to continue."}</p>
+          )}
+        </section>
+
+        {receipt !== null && (
+          <section className="briefing-section receipt" aria-labelledby="receipt-title">
+            <p className="section-label">Since your last meaningful decision</p>
+            <h3 id="receipt-title">{receipt.title}</h3>
+            <dl>
+              <div><dt>Your choice</dt><dd>{receipt.choice}</dd></div>
+              <div><dt>Immediate result</dt><dd>{receipt.canonicalResult}</dd></div>
+              <div><dt>Still unresolved</dt><dd>{receipt.remainsUnresolved}</dd></div>
+            </dl>
+          </section>
+        )}
+
+        <section className="briefing-section effort">
+          <p className="section-label">Current governing effort</p>
+          <h3>{view.agenda.title}</h3>
+          <p>{view.briefing.objective}</p>
+          <details>
+            <summary>Details</summary>
+            <dl className="technical-details">
+              <div><dt>Proposal stage</dt><dd>{view.agenda.stage.replaceAll("_", " ").toLowerCase()}</dd></div>
+              <div><dt>Proposal version</dt><dd>{view.agenda.version}</dd></div>
+              <div><dt>Sponsorship status</dt><dd>{view.agenda.sponsorship.status.toLowerCase()}</dd></div>
+              <div><dt>Canonical proposal record</dt><dd>{view.agenda.proposalId}</dd></div>
+            </dl>
+          </details>
+        </section>
+
+        <section className="briefing-section horizon">
+          <p className="section-label">On the horizon</p>
+          {view.briefing.horizon === null
+            ? <p>No later institutional milestone is currently known to the administration.</p>
+            : <p><strong>{view.briefing.horizon.label}</strong> is scheduled for {formatDate(view.briefing.horizon.at)}. Other meaningful developments may arise first.</p>}
+        </section>
+
+        {attention.count === 0 && view.administration.controlActive && (
+          <footer className="advance-area">
+            <button type="button" className="advance" onClick={advance}>Advance until attention</button>
+            <p>Routine administration and autonomous institutions continue until a decision, opportunity, or important development needs review.</p>
+            {lastAdvance !== null && lastAdvance.routineActionsProcessed.length > 0 && (
+              <details>
+                <summary>Routine work completed</summary>
+                <ul>{lastAdvance.routineActionsProcessed.map((item) => <li key={item}>{item}</li>)}</ul>
+              </details>
+            )}
+          </footer>
+        )}
+      </article>
     </main>
   );
 };
