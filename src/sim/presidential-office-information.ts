@@ -289,6 +289,7 @@ export interface InformationRetrievalRecord {
   readonly evaluatedEntitlementId: string | null;
   readonly result: InformationRetrievalResult;
   readonly failureReason: string | null;
+  readonly outcomeProvenanceReference: string | null;
 }
 
 export type OfficeReceiptSource =
@@ -414,6 +415,10 @@ const requireNonemptyUnique = (values: readonly string[], field: string): void =
   requireUnique(values, field);
 };
 
+const requireNonemptyValues = (values: readonly string[], field: string): void => {
+  if (values.some((value) => value.trim().length === 0)) throw new Error(`${field} cannot be empty.`);
+};
+
 const sameValues = (left: readonly string[], right: readonly string[]): boolean =>
   JSON.stringify([...left].sort()) === JSON.stringify([...right].sort());
 
@@ -430,6 +435,15 @@ export const isEffectiveAt = (
 export const artifactSectionIds = (
   artifact: PresidentialInformationArtifact,
 ): readonly string[] => artifact.sectionIds;
+
+// POP0-I2 deliberately uses an all-semantic-sections rule: preserving an
+// assessment's judgments and limitations requires receipt of every section of
+// that assessment. Partial receipts remain valid for storage and forwarding,
+// but they do not grant the omitted semantic content to a synthesizing office.
+export const assessmentSemanticContentIsReceived = (
+  assessment: AssessmentArtifact,
+  receivedSectionIds: readonly string[],
+): boolean => assessment.sectionIds.every((sectionId) => receivedSectionIds.includes(sectionId));
 
 export const findArtifact = (
   state: PresidentialAdministrationOwnerStates,
@@ -702,7 +716,12 @@ const assertArtifactCommon = (
   requireNonempty(artifact.version, `${artifact.id} version`);
   requireNonemptyUnique(artifact.sectionIds, `${artifact.id} sections`);
   requireNonempty(artifact.provenanceReference, `${artifact.id} provenance`);
-  if (instant(artifact.createdAt, `${artifact.id} creation`) > instant(current, "Current operating time")) {
+  const asOf = instant(artifact.asOf, `${artifact.id} as-of`);
+  const created = instant(artifact.createdAt, `${artifact.id} creation`);
+  if (asOf > created) {
+    throw new Error(`Information artifact ${artifact.id} is dated before its as-of instant.`);
+  }
+  if (created > instant(current, "Current operating time")) {
     throw new Error(`Information artifact ${artifact.id} is dated after current operating time.`);
   }
   if (artifact.revisionOfArtifactId !== null && artifact.revisionOfArtifactId === artifact.id) {
@@ -794,27 +813,48 @@ const assertAssessmentArtifact = (
   requireUnique(artifact.sourceRetrievalIds, `${artifact.id} source retrievals`);
   requireUnique(artifact.sourceMetadataNoticeIds, `${artifact.id} source notices`);
   requireUnique(artifact.sourceLineage.map((entry) => entry.artifactId), `${artifact.id} source lineage`);
+  requireNonemptyValues(artifact.limitations, `${artifact.id} limitations`);
+  if (artifact.recommendation !== null) requireNonempty(artifact.recommendation, `${artifact.id} recommendation`);
+  const created = instant(artifact.createdAt, `${artifact.id} creation`);
   for (const receiptId of artifact.sourceReceiptIds) {
     const receipt = state.informationRoutes.state.receipts.find((entry) => entry.id === receiptId);
-    if (receipt === undefined || receipt.recipientOfficeId !== artifact.producingOfficeId) {
+    if (
+      receipt === undefined ||
+      receipt.recipientOfficeId !== artifact.producingOfficeId ||
+      instant(receipt.receivedAt, `${receiptId} receipt`) > created
+    ) {
       throw new Error(`Assessment ${artifact.id} lacks office-owned receipt ${receiptId}.`);
     }
   }
   for (const retrievalId of artifact.sourceRetrievalIds) {
     const retrieval = state.informationRoutes.state.retrievals.find((entry) => entry.id === retrievalId);
-    if (retrieval === undefined || retrieval.requestingOfficeId !== artifact.producingOfficeId) {
+    if (
+      retrieval === undefined ||
+      retrieval.requestingOfficeId !== artifact.producingOfficeId ||
+      instant(retrieval.completedAt, `${retrievalId} completion`) > created
+    ) {
       throw new Error(`Assessment ${artifact.id} lacks office-owned retrieval ${retrievalId}.`);
     }
   }
   for (const noticeId of artifact.sourceMetadataNoticeIds) {
     const notice = state.informationRoutes.state.metadataNotices.find((entry) => entry.id === noticeId);
-    if (notice === undefined || notice.recipientOfficeId !== artifact.producingOfficeId) {
+    if (
+      notice === undefined ||
+      notice.recipientOfficeId !== artifact.producingOfficeId ||
+      instant(notice.noticedAt, `${noticeId} notice`) > created
+    ) {
       throw new Error(`Assessment ${artifact.id} lacks office-owned metadata notice ${noticeId}.`);
     }
   }
   for (const lineage of artifact.sourceLineage) {
+    requireNonempty(lineage.artifactId, `${artifact.id} lineage artifact`);
+    requireNonemptyUnique(lineage.sectionIds, `${artifact.id} lineage sections`);
     const source = findArtifact(state, lineage.artifactId);
-    if (source === undefined || lineage.sectionIds.some((id) => !artifactSectionIds(source).includes(id))) {
+    if (
+      source === undefined ||
+      instant(source.createdAt, `${source.id} creation`) > created ||
+      lineage.sectionIds.some((id) => !artifactSectionIds(source).includes(id))
+    ) {
       throw new Error(`Assessment ${artifact.id} has invalid source lineage.`);
     }
     const receivedSections = artifact.sourceReceiptIds
@@ -847,9 +887,15 @@ const assertSynthesisArtifact = (
   requireNonempty(artifact.synthesisJudgment, `${artifact.id} synthesis judgment`);
   requireNonemptyUnique(artifact.sourceAssessmentArtifactIds, `${artifact.id} source assessments`);
   requireNonemptyUnique(artifact.sourceAssessmentReceiptIds, `${artifact.id} source receipts`);
+  requireNonemptyUnique(
+    artifact.preservedAssessments.map((entry) => entry.assessmentArtifactId),
+    `${artifact.id} preserved assessments`,
+  );
+  requireNonemptyValues(artifact.limitations, `${artifact.id} limitations`);
   if (artifact.preservedAssessments.length !== artifact.sourceAssessmentArtifactIds.length) {
     throw new Error(`Synthesis ${artifact.id} must preserve every source assessment.`);
   }
+  const created = instant(artifact.createdAt, `${artifact.id} creation`);
   for (const assessmentId of artifact.sourceAssessmentArtifactIds) {
     const source = findArtifact(state, assessmentId);
     const receipt = state.informationRoutes.state.receipts.find(
@@ -860,6 +906,17 @@ const assertSynthesisArtifact = (
     const preserved = artifact.preservedAssessments.find((entry) => entry.assessmentArtifactId === assessmentId);
     if (source?.kind !== "ASSESSMENT" || receipt === undefined || preserved === undefined) {
       throw new Error(`Synthesis ${artifact.id} cites an unreceived assessment ${assessmentId}.`);
+    }
+    if (
+      instant(source.createdAt, `${source.id} creation`) > created ||
+      instant(receipt.receivedAt, `${receipt.id} receipt`) > created
+    ) {
+      throw new Error(`Synthesis ${artifact.id} predates assessment receipt ${receipt.id}.`);
+    }
+    if (!assessmentSemanticContentIsReceived(source, receipt.receivedSectionIds)) {
+      throw new Error(
+        `Synthesis ${artifact.id} cannot preserve assessment ${assessmentId} without every semantic section.`,
+      );
     }
     if (
       JSON.stringify(preserved.judgments) !== JSON.stringify(source.judgments) ||
@@ -894,14 +951,96 @@ const presenterCanShowArtifact = (
   officeId: string,
   artifactId: string,
   sectionId: string,
+  at: string,
 ): boolean => {
   const artifact = findArtifact(state, artifactId);
-  if (artifact === undefined || !artifact.sectionIds.includes(sectionId)) return false;
+  if (
+    artifact === undefined ||
+    !artifact.sectionIds.includes(sectionId) ||
+    instant(artifact.createdAt, `${artifact.id} creation`) > instant(at, "Presentation time")
+  ) return false;
   if (artifact.kind !== "SOURCE_EVIDENCE" && artifact.producingOfficeId === officeId) return true;
   return state.informationRoutes.state.receipts.some((receipt) =>
     receipt.recipientOfficeId === officeId &&
     receipt.artifactId === artifactId &&
-    receipt.receivedSectionIds.includes(sectionId));
+    receipt.receivedSectionIds.includes(sectionId) &&
+    instant(receipt.receivedAt, `${receipt.id} receipt`) <= instant(at, "Presentation time"));
+};
+
+const artifactHistoryReferences = (
+  artifact: PresidentialInformationArtifact,
+): readonly string[] => [artifact.revisionOfArtifactId, artifact.supersedesArtifactId]
+  .filter((value): value is string => value !== null);
+
+const assertArtifactHistory = (state: PresidentialAdministrationOwnerStates): void => {
+  const artifacts = state.informationRoutes.state.artifacts;
+  for (const artifact of artifacts) {
+    for (const reference of artifactHistoryReferences(artifact)) {
+      const referenced = findArtifact(state, reference);
+      if (referenced?.kind !== artifact.kind) {
+        throw new Error(`Artifact ${artifact.id} has a broken revision/supersession reference.`);
+      }
+    }
+  }
+  const visit = (artifact: PresidentialInformationArtifact, path: Set<string>): void => {
+    if (path.has(artifact.id)) throw new Error(`Artifact ${artifact.id} has a cyclic revision/supersession history.`);
+    const nextPath = new Set(path).add(artifact.id);
+    for (const reference of artifactHistoryReferences(artifact)) {
+      const referenced = findArtifact(state, reference);
+      if (referenced !== undefined) visit(referenced, nextPath);
+    }
+  };
+  for (const artifact of artifacts) visit(artifact, new Set());
+  for (const artifact of artifacts) {
+    for (const reference of artifactHistoryReferences(artifact)) {
+      const referenced = findArtifact(state, reference);
+      if (
+        referenced === undefined ||
+        instant(referenced.createdAt, `${referenced.id} creation`) >=
+          instant(artifact.createdAt, `${artifact.id} creation`)
+      ) {
+        throw new Error(`Artifact ${artifact.id} revision/supersession history is not strictly forward.`);
+      }
+    }
+  }
+};
+
+const presentationHistoryReferences = (
+  presentation: PresidentialPresentationRecord,
+): readonly string[] => [presentation.revisionOfPresentationId, presentation.supersedesPresentationId]
+  .filter((value): value is string => value !== null);
+
+const assertPresentationHistory = (presentations: readonly PresidentialPresentationRecord[]): void => {
+  for (const presentation of presentations) {
+    for (const reference of presentationHistoryReferences(presentation)) {
+      if (!presentations.some((entry) => entry.id === reference)) {
+        throw new Error(`Presidential presentation ${presentation.id} has a broken revision reference.`);
+      }
+    }
+  }
+  const visit = (presentation: PresidentialPresentationRecord, path: Set<string>): void => {
+    if (path.has(presentation.id)) {
+      throw new Error(`Presidential presentation ${presentation.id} has a cyclic revision/supersession history.`);
+    }
+    const nextPath = new Set(path).add(presentation.id);
+    for (const reference of presentationHistoryReferences(presentation)) {
+      const referenced = presentations.find((entry) => entry.id === reference);
+      if (referenced !== undefined) visit(referenced, nextPath);
+    }
+  };
+  for (const presentation of presentations) visit(presentation, new Set());
+  for (const presentation of presentations) {
+    for (const reference of presentationHistoryReferences(presentation)) {
+      const referenced = presentations.find((entry) => entry.id === reference);
+      if (
+        referenced === undefined ||
+        instant(referenced.presentedAt, `${referenced.id} presentation`) >=
+          instant(presentation.presentedAt, `${presentation.id} presentation`)
+      ) {
+        throw new Error(`Presidential presentation ${presentation.id} revision history is not strictly forward.`);
+      }
+    }
+  }
 };
 
 export const assertPresidentialAdministrationOwnerStates = (
@@ -934,11 +1073,14 @@ export const assertPresidentialAdministrationOwnerStates = (
     throw new Error("Office-operation state does not contain the configured office set.");
   }
   const assignmentIds = officeStates.flatMap((entry) => entry.assignments.map((assignment) => assignment.id));
-  requireUnique(assignmentIds, "Office work-assignment identities");
+  requireNonemptyUnique(assignmentIds, "Office work-assignment identities");
   const references = allReferenceIds(state);
   for (const office of officeStates) {
-    requireUnique(office.activeQueueAssignmentIds, `${office.officeId} queue references`);
-    requireUnique(office.deadlineDefaultRecords.map((entry) => entry.id), `${office.officeId} deadline/default identities`);
+    requireNonemptyUnique(office.activeQueueAssignmentIds, `${office.officeId} queue references`);
+    requireNonemptyUnique(
+      office.deadlineDefaultRecords.map((entry) => entry.id),
+      `${office.officeId} deadline/default identities`,
+    );
     for (const assignment of office.assignments) {
       if (assignment.leadOfficeId !== office.officeId) {
         throw new Error(`Assignment ${assignment.id} is stored under the wrong office.`);
@@ -951,8 +1093,8 @@ export const assertPresidentialAdministrationOwnerStates = (
       requireNonempty(assignment.objective, `${assignment.id} objective`);
       requireNonempty(assignment.authorityReference, `${assignment.id} authority`);
       requireNonempty(assignment.expectedProductKind, `${assignment.id} product kind`);
-      requireUnique(assignment.sourceReferenceIds, `${assignment.id} source references`);
-      requireUnique(assignment.requiredConsultationOfficeIds, `${assignment.id} consultation offices`);
+      requireNonemptyUnique(assignment.sourceReferenceIds, `${assignment.id} source references`);
+      requireNonemptyUnique(assignment.requiredConsultationOfficeIds, `${assignment.id} consultation offices`);
       if (assignment.requiredConsultationOfficeIds.some((id) => !configuration.offices.some((entry) => entry.id === id))) {
         throw new Error(`Assignment ${assignment.id} references an unknown consultation office.`);
       }
@@ -993,10 +1135,15 @@ export const assertPresidentialAdministrationOwnerStates = (
       if (["BLOCKED", "DELAYED", "REFUSED", "CANCELLED"].includes(assignment.status) && assignment.failureReason === null) {
         throw new Error(`Assignment ${assignment.id} requires an explicit status reason.`);
       }
+      if (assignment.failureReason !== null) requireNonempty(assignment.failureReason, `${assignment.id} status reason`);
+      requireNonemptyValues(assignment.resultArtifactIds, `${assignment.id} result artifacts`);
       if (
         assignment.statusProvenanceReferenceId !== null &&
         !references.has(assignment.statusProvenanceReferenceId)
       ) throw new Error(`Assignment ${assignment.id} has invalid status provenance.`);
+      if (assignment.statusProvenanceReferenceId !== null) {
+        requireNonempty(assignment.statusProvenanceReferenceId, `${assignment.id} status provenance`);
+      }
       if (
         assignment.supersededByAssignmentId !== null &&
         (!office.assignments.some((entry) => entry.id === assignment.supersededByAssignmentId) ||
@@ -1009,6 +1156,7 @@ export const assertPresidentialAdministrationOwnerStates = (
       }
     }
     for (const record of office.deadlineDefaultRecords) {
+      requireNonempty(record.assignmentId, `${record.id} assignment`);
       const assignment = office.assignments.find((entry) => entry.id === record.assignmentId);
       if (
         assignment === undefined ||
@@ -1021,15 +1169,21 @@ export const assertPresidentialAdministrationOwnerStates = (
   }
 
   const ledger = state.informationRoutes.state;
-  requireUnique(ledger.artifacts.map((entry) => entry.id), "Information artifact identities");
-  requireUnique(ledger.institutionPossessions.map((entry) => entry.id), "Institution-possession identities");
-  requireUnique(ledger.indexEntries.map((entry) => entry.id), "Information-index identities");
-  requireUnique(ledger.metadataNotices.map((entry) => entry.id), "Metadata-notice identities");
-  requireUnique(ledger.accessEntitlements.map((entry) => entry.id), "Access-entitlement identities");
-  requireUnique(ledger.retrievals.map((entry) => entry.id), "Retrieval identities");
-  requireUnique(ledger.receipts.map((entry) => entry.id), "Office-receipt identities");
-  requireUnique(ledger.metadataNotices.map((entry) => entry.deduplicationIdentity), "Metadata-notice deduplication identities");
-  requireUnique(ledger.receipts.map((entry) => entry.deduplicationIdentity), "Office-receipt deduplication identities");
+  requireNonemptyUnique(ledger.artifacts.map((entry) => entry.id), "Information artifact identities");
+  requireNonemptyUnique(ledger.institutionPossessions.map((entry) => entry.id), "Institution-possession identities");
+  requireNonemptyUnique(ledger.indexEntries.map((entry) => entry.id), "Information-index identities");
+  requireNonemptyUnique(ledger.metadataNotices.map((entry) => entry.id), "Metadata-notice identities");
+  requireNonemptyUnique(ledger.accessEntitlements.map((entry) => entry.id), "Access-entitlement identities");
+  requireNonemptyUnique(ledger.retrievals.map((entry) => entry.id), "Retrieval identities");
+  requireNonemptyUnique(ledger.receipts.map((entry) => entry.id), "Office-receipt identities");
+  requireNonemptyUnique(
+    ledger.metadataNotices.map((entry) => entry.deduplicationIdentity),
+    "Metadata-notice deduplication identities",
+  );
+  requireNonemptyUnique(
+    ledger.receipts.map((entry) => entry.deduplicationIdentity),
+    "Office-receipt deduplication identities",
+  );
   requireUnique(
     ledger.institutionPossessions.map((entry) => `${entry.possessingInstitutionId}#${entry.artifactId}`),
     "Institution artifact possessions",
@@ -1048,24 +1202,7 @@ export const assertPresidentialAdministrationOwnerStates = (
     if (artifact.kind === "ASSESSMENT") assertAssessmentArtifact(artifact, state, configuration);
     if (artifact.kind === "SYNTHESIS") assertSynthesisArtifact(artifact, state);
   }
-  for (const artifact of ledger.artifacts) {
-    for (const reference of [artifact.revisionOfArtifactId, artifact.supersedesArtifactId]) {
-      if (reference !== null) {
-        const referenced = findArtifact(state, reference);
-        if (
-          referenced?.kind !== artifact.kind ||
-          instant(referenced.createdAt, `${referenced.id} creation`) > instant(artifact.createdAt, `${artifact.id} creation`)
-        ) throw new Error(`Artifact ${artifact.id} has a broken revision/supersession reference.`);
-      }
-    }
-    const visited = new Set<string>();
-    let cursor: PresidentialInformationArtifact | undefined = artifact;
-    while (cursor?.revisionOfArtifactId !== null && cursor !== undefined) {
-      if (visited.has(cursor.id)) throw new Error(`Artifact ${artifact.id} has a cyclic revision chain.`);
-      visited.add(cursor.id);
-      cursor = findArtifact(state, cursor.revisionOfArtifactId);
-    }
-  }
+  assertArtifactHistory(state);
   for (const possession of ledger.institutionPossessions) {
     const artifact = findArtifact(state, possession.artifactId);
     if (
@@ -1090,6 +1227,7 @@ export const assertPresidentialAdministrationOwnerStates = (
       instant(entry.createdAt, `${entry.id} creation`) < instant(possession.possessedAt, `${possession.id} possession`) ||
       instant(entry.createdAt, `${entry.id} creation`) > currentValue
     ) throw new Error(`Information index entry ${entry.id} is invalid.`);
+    requireNonempty(entry.provenanceReference, `${entry.id} provenance`);
   }
   for (const notice of ledger.metadataNotices) {
     const index = ledger.indexEntries.find((entry) => entry.id === notice.indexEntryId);
@@ -1100,6 +1238,7 @@ export const assertPresidentialAdministrationOwnerStates = (
       instant(notice.noticedAt, `${notice.id} notice`) > currentValue
     ) throw new Error(`Metadata notice ${notice.id} is invalid.`);
     requireNonempty(notice.deliveryPath, `${notice.id} delivery path`);
+    requireNonempty(notice.deduplicationIdentity, `${notice.id} deduplication identity`);
   }
   for (const retrieval of ledger.retrievals) {
     const notice = ledger.metadataNotices.find((entry) => entry.id === retrieval.metadataNoticeId);
@@ -1114,19 +1253,34 @@ export const assertPresidentialAdministrationOwnerStates = (
       instant(retrieval.completedAt, `${retrieval.id} completion`) < instant(retrieval.requestedAt, `${retrieval.id} request`) ||
       instant(retrieval.completedAt, `${retrieval.id} completion`) > currentValue
     ) throw new Error(`Information retrieval ${retrieval.id} is invalid.`);
+    requireNonemptyUnique(retrieval.requestedSectionIds, `${retrieval.id} requested sections`);
     const entitled = ledger.accessEntitlements.find((entry) =>
       entry.officeId === retrieval.requestingOfficeId &&
       entry.artifactId === retrieval.artifactId &&
       isEffectiveAt(entry.effectiveFrom, entry.effectiveUntil, retrieval.requestedAt) &&
       retrieval.requestedSectionIds.every((id) => entry.sectionIds.includes(id)));
-    const expectedResult: InformationRetrievalResult = entitled === undefined
-      ? "ACCESS_DENIED"
-      : "AVAILABLE_AT_OFFICE_BOUNDARY";
-    if (
-      retrieval.result !== expectedResult ||
-      retrieval.evaluatedEntitlementId !== (entitled?.id ?? null) ||
-      (expectedResult === "ACCESS_DENIED") !== (retrieval.failureReason !== null)
-    ) throw new Error(`Information retrieval ${retrieval.id} contradicts configured access.`);
+    if (retrieval.evaluatedEntitlementId !== (entitled?.id ?? null)) {
+      throw new Error(`Information retrieval ${retrieval.id} contradicts configured access.`);
+    }
+    if (entitled === undefined) {
+      if (
+        retrieval.result !== "ACCESS_DENIED" ||
+        retrieval.failureReason !== "NO_ACTIVE_ENTITLEMENT_FOR_REQUESTED_SCOPE" ||
+        retrieval.outcomeProvenanceReference !== null
+      ) throw new Error(`Information retrieval ${retrieval.id} contradicts configured access denial.`);
+    } else if (retrieval.result === "AVAILABLE_AT_OFFICE_BOUNDARY") {
+      if (retrieval.failureReason !== null || retrieval.outcomeProvenanceReference !== null) {
+        throw new Error(`Successful information retrieval ${retrieval.id} carries failure state.`);
+      }
+    } else if (retrieval.result === "NOT_FOUND" || retrieval.result === "FAILED") {
+      if (retrieval.failureReason === null || retrieval.outcomeProvenanceReference === null) {
+        throw new Error(`Technical retrieval ${retrieval.id} lacks failure reason or provenance.`);
+      }
+      requireNonempty(retrieval.failureReason, `${retrieval.id} failure reason`);
+      requireNonempty(retrieval.outcomeProvenanceReference, `${retrieval.id} outcome provenance`);
+    } else {
+      throw new Error(`Entitled information retrieval ${retrieval.id} cannot resolve as access denied.`);
+    }
   }
   for (const receipt of ledger.receipts) {
     const artifact = findArtifact(state, receipt.artifactId);
@@ -1136,6 +1290,8 @@ export const assertPresidentialAdministrationOwnerStates = (
       receipt.receivedSectionIds.some((id) => !artifact.sectionIds.includes(id)) ||
       instant(receipt.receivedAt, `${receipt.id} receipt`) > currentValue
     ) throw new Error(`Office receipt ${receipt.id} is invalid.`);
+    requireNonemptyUnique(receipt.receivedSectionIds, `${receipt.id} received sections`);
+    requireNonempty(receipt.deduplicationIdentity, `${receipt.id} deduplication identity`);
     const receiptSource = receipt.source;
     if (receiptSource.kind === "TECHNICAL_RETRIEVAL") {
       const retrieval = ledger.retrievals.find((entry) => entry.id === receiptSource.retrievalId);
@@ -1158,13 +1314,20 @@ export const assertPresidentialAdministrationOwnerStates = (
       if (source !== receiptSource.sourceOfficeId) {
         throw new Error(`Office receipt ${receipt.id} lacks a valid producing office.`);
       }
+      if (instant(artifact.createdAt, `${artifact.id} creation`) > instant(receipt.receivedAt, `${receipt.id} receipt`)) {
+        throw new Error(`Office transfer ${receipt.id} predates artifact ${artifact.id}.`);
+      }
     }
     requireNonempty(receipt.receivingAuthorityReference, `${receipt.id} receiving authority`);
   }
 
   const presentations = state.presidentialPresentations.state.presentations;
-  requireUnique(presentations.map((entry) => entry.id), "Presidential presentation identities");
-  requireUnique(presentations.map((entry) => entry.deduplicationIdentity), "Presidential presentation deduplication identities");
+  requireNonemptyUnique(presentations.map((entry) => entry.id), "Presidential presentation identities");
+  requireNonemptyUnique(
+    presentations.map((entry) => entry.deduplicationIdentity),
+    "Presidential presentation deduplication identities",
+  );
+  assertPresentationHistory(presentations);
   for (const presentation of presentations) {
     const binding = state.administrationDirectory.state.presidentialRecipientBinding;
     if (
@@ -1193,14 +1356,26 @@ export const assertPresidentialAdministrationOwnerStates = (
       throw new Error(`Presidential presentation ${presentation.id} overlaps shown and unseen portions.`);
     }
     for (const portion of presentation.shownPortions) {
-      if (!presenterCanShowArtifact(state, presentation.presentingOfficeId, portion.artifactId, portion.sectionId)) {
+      requireNonempty(portion.artifactId, `${presentation.id} shown artifact`);
+      requireNonempty(portion.sectionId, `${presentation.id} shown section`);
+      if (!presenterCanShowArtifact(
+        state,
+        presentation.presentingOfficeId,
+        portion.artifactId,
+        portion.sectionId,
+        presentation.presentedAt,
+      )) {
         throw new Error(`Presidential presentation ${presentation.id} shows an unavailable artifact portion.`);
       }
     }
     for (const portion of presentation.referencedButNotShownPortions) {
+      requireNonempty(portion.artifactId, `${presentation.id} referenced artifact`);
+      requireNonempty(portion.sectionId, `${presentation.id} referenced section`);
       const artifact = findArtifact(state, portion.artifactId);
       if (
         artifact === undefined ||
+        instant(artifact.createdAt, `${artifact.id} creation`) >
+          instant(presentation.presentedAt, `${presentation.id} presentation`) ||
         !artifact.sectionIds.includes(portion.sectionId) ||
         !presentation.shownPortions.some((shown) =>
           artifactReachableFrom(state, portion.artifactId, shown.artifactId))
@@ -1208,25 +1383,6 @@ export const assertPresidentialAdministrationOwnerStates = (
     }
     requireNonempty(presentation.purpose, `${presentation.id} purpose`);
     requireNonempty(presentation.provenanceReference, `${presentation.id} provenance`);
-    for (const reference of [presentation.revisionOfPresentationId, presentation.supersedesPresentationId]) {
-      if (reference !== null) {
-        const referenced = presentations.find((entry) => entry.id === reference);
-        if (
-          referenced === undefined ||
-          instant(referenced.presentedAt, `${referenced.id} presentation`) >
-            instant(presentation.presentedAt, `${presentation.id} presentation`)
-        ) throw new Error(`Presidential presentation ${presentation.id} has a broken revision reference.`);
-      }
-    }
-    const visited = new Set<string>();
-    let cursor: PresidentialPresentationRecord | undefined = presentation;
-    while (cursor?.revisionOfPresentationId !== null && cursor !== undefined) {
-      if (visited.has(cursor.id)) {
-        throw new Error(`Presidential presentation ${presentation.id} has a cyclic revision chain.`);
-      }
-      visited.add(cursor.id);
-      cursor = presentations.find((entry) => entry.id === cursor?.revisionOfPresentationId);
-    }
   }
 };
 

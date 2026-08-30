@@ -1,5 +1,6 @@
 import {
   artifactSectionIds,
+  assessmentSemanticContentIsReceived,
   assertEffectiveOfficeholder,
   assertPresidentialAdministrationOwnerStates,
   findArtifact,
@@ -369,6 +370,9 @@ export interface AttemptOfficeRetrievalInput {
   readonly artifactId: string;
   readonly requestedSectionIds: readonly string[];
   readonly metadataNoticeId: string;
+  readonly technicalOutcome?: "AVAILABLE_AT_OFFICE_BOUNDARY" | "NOT_FOUND" | "FAILED";
+  readonly failureReason?: string;
+  readonly outcomeProvenanceReference?: string;
 }
 
 export const attemptOfficeRetrieval = (
@@ -399,14 +403,42 @@ export const attemptOfficeRetrieval = (
     entry.artifactId === input.artifactId &&
     isEffectiveAt(entry.effectiveFrom, entry.effectiveUntil, current) &&
     input.requestedSectionIds.every((id) => entry.sectionIds.includes(id)));
+  if (
+    entitlement === undefined &&
+    (input.technicalOutcome !== undefined ||
+      input.failureReason !== undefined ||
+      input.outcomeProvenanceReference !== undefined)
+  ) {
+    throw new Error(`Information retrieval ${input.id} cannot replace access denial with a technical outcome.`);
+  }
+  const entitledOutcome = input.technicalOutcome ?? "AVAILABLE_AT_OFFICE_BOUNDARY";
+  if (entitledOutcome === "AVAILABLE_AT_OFFICE_BOUNDARY") {
+    if (input.failureReason !== undefined || input.outcomeProvenanceReference !== undefined) {
+      throw new Error(`Successful information retrieval ${input.id} cannot carry failure provenance.`);
+    }
+  } else {
+    if (input.failureReason === undefined || input.outcomeProvenanceReference === undefined) {
+      throw new Error(`Technical retrieval outcome ${input.id} requires a reason and provenance.`);
+    }
+    requireNonempty(input.failureReason, `${input.id} failure reason`);
+    requireNonempty(input.outcomeProvenanceReference, `${input.id} outcome provenance`);
+  }
+  const result = entitlement === undefined ? "ACCESS_DENIED" : entitledOutcome;
+  const technicalFailure = result === "NOT_FOUND" || result === "FAILED";
   const record: InformationRetrievalRecord = {
-    ...input,
+    id: input.id,
+    requestingOfficeId: input.requestingOfficeId,
+    artifactId: input.artifactId,
     requestedSectionIds: [...input.requestedSectionIds],
+    metadataNoticeId: input.metadataNoticeId,
     requestedAt: current,
     completedAt: current,
     evaluatedEntitlementId: entitlement?.id ?? null,
-    result: entitlement === undefined ? "ACCESS_DENIED" : "AVAILABLE_AT_OFFICE_BOUNDARY",
-    failureReason: entitlement === undefined ? "NO_ACTIVE_ENTITLEMENT_FOR_REQUESTED_SCOPE" : null,
+    result,
+    failureReason: entitlement === undefined
+      ? "NO_ACTIVE_ENTITLEMENT_FOR_REQUESTED_SCOPE"
+      : technicalFailure ? input.failureReason ?? null : null,
+    outcomeProvenanceReference: technicalFailure ? input.outcomeProvenanceReference ?? null : null,
   };
   const next: PresidentialAdministrationOwnerStates = {
     ...state,
@@ -698,6 +730,11 @@ export const authorOfficeSynthesis = (
       receipt.recipientOfficeId !== input.producingOfficeId ||
       artifact?.kind !== "ASSESSMENT"
     ) throw new Error(`Synthesis ${input.id} lacks received assessment ${receiptId}.`);
+    if (!assessmentSemanticContentIsReceived(artifact, receipt.receivedSectionIds)) {
+      throw new Error(
+        `Synthesis ${input.id} cannot preserve assessment ${artifact.id} without every semantic section.`,
+      );
+    }
     return artifact;
   });
   requireUnique(assessments.map((entry) => entry.id), `${input.id} assessment artifacts`);

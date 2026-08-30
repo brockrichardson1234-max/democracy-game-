@@ -480,6 +480,7 @@ const validateRetrieval = (value: unknown, field: string): void => {
     "evaluatedEntitlementId",
     "result",
     "failureReason",
+    "outcomeProvenanceReference",
   ]);
   for (const key of ["id", "requestingOfficeId", "artifactId", "metadataNoticeId", "requestedAt", "completedAt", "result"] as const) {
     requireString(record[key], `${field}.${key}`);
@@ -487,6 +488,10 @@ const validateRetrieval = (value: unknown, field: string): void => {
   requireStringArray(record.requestedSectionIds, `${field}.requestedSectionIds`);
   requireNullableString(record.evaluatedEntitlementId, `${field}.evaluatedEntitlementId`);
   requireNullableString(record.failureReason, `${field}.failureReason`);
+  requireNullableString(record.outcomeProvenanceReference, `${field}.outcomeProvenanceReference`);
+  if (!["AVAILABLE_AT_OFFICE_BOUNDARY", "ACCESS_DENIED", "NOT_FOUND", "FAILED"].includes(record.result as string)) {
+    throw new Error(`Invalid presidential operating save: ${field}.result is unsupported.`);
+  }
 };
 
 const validateReceiptSource = (value: unknown, field: string): void => {
