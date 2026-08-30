@@ -19,8 +19,8 @@ describe("POP0-I1 clean operating composition", () => {
   it("boots one production-shaped proof state from its own authenticated identity", () => {
     const session = createPresidentialOperatingProofSession();
     const state = session.getOperatingState();
-    expect(state).toEqual({
-      schemaVersion: 1,
+    expect(state).toMatchObject({
+      schemaVersion: 2,
       operatingStateId: "pop0.operating-world.primary",
       configuration: POP0_V0_OPERATING_CONFIGURATION.identity,
       ownerStates: {
@@ -31,8 +31,13 @@ describe("POP0-I1 clean operating composition", () => {
             processedBoundaryIds: [],
           },
         },
+        administrationDirectory: { ownerId: "pop0.owner.administration-directory" },
+        officeOperations: { ownerId: "pop0.owner.office-operations" },
+        informationRoutes: { ownerId: "pop0.owner.information-routes" },
+        presidentialPresentations: { ownerId: "pop0.owner.presidential-presentations" },
       },
     });
+    expect(state.ownerStates.officeOperations.state).toHaveLength(6);
     expect(state.configuration.scenarioId).toBe(POP0_V0_SCENARIO_ID);
     expect(JSON.stringify(state)).not.toMatch(forbiddenLegacyShape);
   });
@@ -54,6 +59,7 @@ describe("POP0-I1 clean operating composition", () => {
     const laterShellState = {
       ...initialState,
       ownerStates: {
+        ...initialState.ownerStates,
         calendar: {
           ...initialState.ownerStates.calendar,
           state: {

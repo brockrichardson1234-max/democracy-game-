@@ -6,8 +6,16 @@ import {
   type CalendarTimeState,
   type ConfiguredCalendarBoundary,
 } from "./calendar-time";
+import {
+  assertPresidentialAdministrationConfiguration,
+  assertPresidentialAdministrationOwnerStates,
+  copyPresidentialAdministrationOwnerStates,
+  createPresidentialAdministrationOwnerStates,
+  type PresidentialAdministrationConfiguration,
+  type PresidentialAdministrationOwnerStates,
+} from "./presidential-office-information";
 
-export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 1 as const;
+export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 2 as const;
 
 export interface PresidentialOperatingRuntimeConfiguration {
   readonly schemaVersion: typeof PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION;
@@ -19,6 +27,7 @@ export interface PresidentialOperatingRuntimeConfiguration {
     readonly epoch: string;
     readonly boundaries: readonly ConfiguredCalendarBoundary[];
   };
+  readonly administration: PresidentialAdministrationConfiguration;
 }
 
 export interface PresidentialOperatingRuntimeState {
@@ -30,7 +39,7 @@ export interface PresidentialOperatingRuntimeState {
       readonly ownerId: string;
       readonly state: CalendarTimeState;
     };
-  };
+  } & PresidentialAdministrationOwnerStates;
 }
 
 const requireNonempty = (value: string, field: string): void => {
@@ -75,6 +84,7 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     classification: configuration.classification,
     operatingStateId: configuration.operatingStateId,
     calendar: configuration.calendar,
+    administration: configuration.administration,
   });
   if (configuration.identity.configurationHash !== expectedHash) {
     throw new Error(
@@ -86,12 +96,20 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     configuration.calendar.epoch,
     configuration.calendar.boundaries,
   );
+  assertPresidentialAdministrationConfiguration(
+    configuration.administration,
+    configuration.calendar.epoch,
+  );
 }
 
 export const createPresidentialOperatingRuntimeState = (
   configuration: PresidentialOperatingRuntimeConfiguration,
 ): PresidentialOperatingRuntimeState => {
   assertPresidentialOperatingRuntimeConfiguration(configuration);
+  const administration = createPresidentialAdministrationOwnerStates(
+    configuration.administration,
+    configuration.calendar.epoch,
+  );
   return {
     schemaVersion: PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION,
     operatingStateId: configuration.operatingStateId,
@@ -104,26 +122,31 @@ export const createPresidentialOperatingRuntimeState = (
           configuration.calendar.boundaries,
         ),
       },
+      ...administration,
     },
   };
 };
 
 export const copyPresidentialOperatingRuntimeState = (
   state: PresidentialOperatingRuntimeState,
-): PresidentialOperatingRuntimeState => ({
-  schemaVersion: state.schemaVersion,
-  operatingStateId: state.operatingStateId,
-  configuration: { ...state.configuration },
-  ownerStates: {
-    calendar: {
-      ownerId: state.ownerStates.calendar.ownerId,
-      state: {
-        current: state.ownerStates.calendar.state.current,
-        processedBoundaryIds: [...state.ownerStates.calendar.state.processedBoundaryIds],
+): PresidentialOperatingRuntimeState => {
+  const administration = copyPresidentialAdministrationOwnerStates(state.ownerStates);
+  return {
+    schemaVersion: state.schemaVersion,
+    operatingStateId: state.operatingStateId,
+    configuration: { ...state.configuration },
+    ownerStates: {
+      calendar: {
+        ownerId: state.ownerStates.calendar.ownerId,
+        state: {
+          current: state.ownerStates.calendar.state.current,
+          processedBoundaryIds: [...state.ownerStates.calendar.state.processedBoundaryIds],
+        },
       },
+      ...administration,
     },
-  },
-});
+  };
+};
 
 export const assertPresidentialOperatingRuntimeState = (
   state: PresidentialOperatingRuntimeState,
@@ -151,4 +174,38 @@ export const assertPresidentialOperatingRuntimeState = (
     configuration.calendar.epoch,
     configuration.calendar.boundaries,
   );
+  assertPresidentialAdministrationOwnerStates(
+    state.ownerStates,
+    configuration.administration,
+    configuration.calendar.epoch,
+    state.ownerStates.calendar.state.current,
+  );
+};
+
+export const advancePresidentialOperatingRuntimeTime = (
+  state: PresidentialOperatingRuntimeState,
+  configuration: PresidentialOperatingRuntimeConfiguration,
+  target: string,
+): PresidentialOperatingRuntimeState => {
+  assertPresidentialOperatingRuntimeState(state, configuration);
+  const currentValue = Date.parse(state.ownerStates.calendar.state.current);
+  const targetValue = Date.parse(target);
+  if (!Number.isFinite(targetValue) || targetValue < currentValue) {
+    throw new Error("Presidential operating time requires a valid nondecreasing target.");
+  }
+  const next: PresidentialOperatingRuntimeState = {
+    ...state,
+    ownerStates: {
+      ...state.ownerStates,
+      calendar: {
+        ...state.ownerStates.calendar,
+        state: {
+          current: target,
+          processedBoundaryIds: [],
+        },
+      },
+    },
+  };
+  assertPresidentialOperatingRuntimeState(next, configuration);
+  return next;
 };
