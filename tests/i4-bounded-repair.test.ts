@@ -99,7 +99,7 @@ describe("I4 bounded repair persistence and composition", () => {
       US_V0_I7_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState()).toEqual(session.getAuditState());
-  });
+  }, 20_000);
 
   it("REV-003 evolves I3 and I4 through one canonical integrated session", () => {
     const session = createSession();

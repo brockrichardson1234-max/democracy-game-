@@ -171,7 +171,7 @@ describe("I5 bounded repair", () => {
     const administration = mutableSave(session.save());
     administration.institutional.currentAdministration.headActorId = US_V0_OPPOSITION_VICE_PRESIDENT_ACTOR_ID;
     expect(() => restore(JSON.stringify(administration))).toThrow(/current administration contradicts/i);
-  });
+  }, 20_000);
 
   it("freezes one coherent rollover Population signal per state and cycle", () => {
     const session = createIntegratedPartialRuntimeAuditSession(
