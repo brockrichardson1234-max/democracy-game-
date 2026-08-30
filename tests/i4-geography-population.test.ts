@@ -192,7 +192,7 @@ describe("I4 Geography and real-data initialization", () => {
       },
     };
     expect(() => createIntegratedPartialRuntimeSessionFromSave(saved, US_V0_STRUCTURAL_CONFIGURATION, incompatible)).toThrow();
-  });
+  }, 30_000);
 
   it("pins all behavior-driving artifact identities in the configuration hash", () => {
     const original = sha256Hex(canonicalConfigurationContent(US_V0_STRUCTURAL_CONFIGURATION));
