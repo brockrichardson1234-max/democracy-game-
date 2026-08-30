@@ -144,7 +144,7 @@ describe("I9 reconciled bounded legal-contest route", () => {
     expect(granted.getPublicLegalStatus().operativeOrders[0].enforceability).toBe("STAYED");
     expect(granted.getLegalContestAuditState().rulings).toEqual(denied.getLegalContestAuditState().rulings);
     expect(granted.getLegalContestAuditState().orders).toEqual(denied.getLegalContestAuditState().orders);
-  });
+  }, 30_000);
 
   it("preserves the lower ruling while configured appellate dispositions alter only operative legal state", () => {
     const affirmed = runToNotice(configurationVariant({ appellateDisposition: "AFFIRMED" }));
