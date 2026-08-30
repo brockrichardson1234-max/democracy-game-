@@ -5,6 +5,7 @@ import {
 } from "../src/app/presidential-operating-proof-session";
 import {
   PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION,
+  serializePresidentialOperatingSave,
 } from "../src/app/presidential-operating-persistence";
 import {
   POP0_V0_EPOCH,
@@ -49,16 +50,31 @@ describe("POP0-I1 clean operating composition", () => {
   });
 
   it("restores idempotently without sharing mutable shell state", () => {
-    const original = createPresidentialOperatingProofSession();
-    const saved = original.save();
+    const initialState = createPresidentialOperatingProofSession().getOperatingState();
+    const laterShellState = {
+      ...initialState,
+      ownerStates: {
+        calendar: {
+          ...initialState.ownerStates.calendar,
+          state: {
+            current: "2029-02-06T08:00:00-05:00",
+            processedBoundaryIds: [],
+          },
+        },
+      },
+    };
+    const saved = serializePresidentialOperatingSave(
+      laterShellState,
+      POP0_V0_OPERATING_CONFIGURATION,
+    );
     const firstRestore = createPresidentialOperatingProofSession(saved);
     const secondRestore = createPresidentialOperatingProofSession(firstRestore.save());
     expect(firstRestore.save()).toBe(saved);
     expect(secondRestore.save()).toBe(saved);
-    expect(secondRestore.getOperatingState()).toEqual(original.getOperatingState());
-    expect(secondRestore.getOperatingState()).not.toBe(original.getOperatingState());
+    expect(secondRestore.getOperatingState()).toEqual(laterShellState);
+    expect(secondRestore.getOperatingState()).not.toBe(firstRestore.getOperatingState());
     expect(secondRestore.getOperatingState().ownerStates.calendar.state.processedBoundaryIds)
-      .not.toBe(original.getOperatingState().ownerStates.calendar.state.processedBoundaryIds);
+      .not.toBe(firstRestore.getOperatingState().ownerStates.calendar.state.processedBoundaryIds);
   });
 
   it("rejects incompatible identities and unsupported save shapes", () => {
