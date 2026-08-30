@@ -1,6 +1,6 @@
 # POP0-I3 — Presidential Attention, Workstreams, Typed Acts, and Dispatch Executable Contract
 
-Status: **IMPLEMENTATION-DESIGN CANDIDATE — DOCUMENTATION ONLY.** This document does not authorize POP0-I3 coding. Implementation requires detached design review, any required bounded repair, an unchanged-gate PASS, and a separate implementation-authority action.
+Status: **REPAIRED IMPLEMENTATION-DESIGN CANDIDATE — DOCUMENTATION ONLY.** This document does not authorize POP0-I3 coding. Implementation requires unchanged-gate detached re-audit, a PASS, and a separate implementation-authority action.
 
 Accepted parent authority:
 
@@ -8,6 +8,11 @@ Accepted parent authority:
 - accepted POP0-I2 implementation/evidence: `f4d1e8d765e707a2ab79d4fc4dc29414f0d2d7e8`;
 - accepted production merge base: `44c1724962830225e6fc34f41d0df0cfdb7dfec0`;
 - controlling POP-0 contract: `00_PRESIDENTIAL_OPERATING_PROOF_EXECUTABLE_CONTRACT.md`, as repaired and accepted by documents 02 and 04.
+
+Detached design audit repaired here:
+
+- `16_POP0_I3_DETACHED_DESIGN_AUDIT.md` at `a12cda250fadace8e201a2ec2fe3d027447f3424` — **REVISE**;
+- audited I3 design candidate: `ab229cd4df4e60f33ab2799af7b67fb73d6a17b9`.
 
 This document narrows only the authorized I3 design increment. Accepted parent contracts control any conflict.
 
@@ -132,6 +137,7 @@ The proof fixture may configure, with `CONFIGURED_SYNTHETIC_PROOF_ROOT` provenan
 - three locally bound presidential options;
 - one no-instrument expiration/default rule;
 - one workstream review deadline;
+- two typed recipient-capability authority records;
 - technical dispatch availability inputs for deterministic proof tests.
 
 The fixture may configure causes, authority, options, deadlines, and technical opportunities. It may not configure:
@@ -142,6 +148,54 @@ The fixture may configure causes, authority, options, deadlines, and technical o
 - how Chief of Staff or OMB will disposition a received instrument;
 - that an office assignment will be created or completed;
 - a replacement event if any step does not occur.
+
+## 2.5 Typed recipient-capability authority
+
+The authenticated I3 configuration contains a discriminated `RecipientCapabilityAuthority` union. Human-readable I2 office `mandate` text is display/context only and is never parsed for executable jurisdiction.
+
+Every capability record contains:
+
+- capability identity;
+- recipient office identity;
+- one supported instrument kind;
+- effective start-inclusive/end-exclusive interval;
+- standing/office authority reference;
+- provenance;
+- whether narrowing is permitted.
+
+`REQUEST_OFFICE_ANALYSIS` capability additionally contains:
+
+- permitted requested-product kinds;
+- permitted typed subject-scope families;
+- maximum jurisdictional product/scope bounds;
+- permitted less-claiming product kinds for narrowing.
+
+`REQUEST_WORKSTREAM_COORDINATION` capability additionally contains:
+
+- permitted workstream IDs;
+- permitted coordination-action kinds;
+- maximum participating-office and review bounds.
+
+The exact fixture configures:
+
+```text
+pop0.recipient-capability.omb.bounded-analysis
+  office: pop0.office.omb
+  instrument: REQUEST_OFFICE_ANALYSIS
+  scope family: PRELIMINARY_LABOR_EVIDENCE_REVIEW
+  products: FISCAL_SUPPORTABILITY_SCOPING, METADATA_ACCESS_GAP_SCOPING
+  may narrow: true
+
+pop0.recipient-capability.chief-of-staff.workstream-coordination
+  office: pop0.office.chief-of-staff
+  instrument: REQUEST_WORKSTREAM_COORDINATION
+  workstream: pop0.workstream.preliminary-labor-evidence-review
+  may narrow: true
+```
+
+Both records use explicit effective intervals and `CONFIGURED_SYNTHETIC_PROOF_ROOT` provenance/authority references. These are bounded proof-office authorities, not general Cabinet capability, competence, personality, workload, or AI.
+
+General instrument/disposition validation resolves capability by exact recipient, instrument kind, typed scope, and authoritative time. It may not branch on office ID, parse labels/mandates, or infer jurisdiction merely because an office was named as recipient.
 
 ---
 
@@ -182,7 +236,28 @@ At every presidential decision:
 
 A missing, ended, mismatched, or stale binding leaves canonical escalations and time intact but blocks the presidential decision surface.
 
-I3 does not implement elections, succession, incapacity, Vice-Presidential control, or officeholder turnover. It must nevertheless reconcile an existing binding safely if the configured presidential actor no longer matches.
+Parsing/loading restores the serialized binding exactly and performs no reconciliation, rebinding, status transition, or timestamp insertion.
+
+Load validation requires:
+
+- exact binding shape and decision surface;
+- binding identity authenticated by configuration;
+- `ACTIVE` binding actor/constitutional office equal the effective authenticated presidential binding at the saved authoritative instant;
+- `ENDED` binding has nonempty ended time/reason consistent with its immutable active identity and cannot authorize a decision.
+
+A serialized `ACTIVE` binding inconsistent with authenticated saved presidential identity is rejected as invalid/tampered. Load does not silently convert it to `ENDED`. A valid serialized `ENDED` binding restores byte-for-byte and leaves every world owner unchanged.
+
+Any later legitimate change of presidential identity must first enter canonical role state through separately authorized owner behavior. Only then may an explicit deterministic session operation reconcile the existing binding at authoritative POP time:
+
+```text
+ACTIVE old binding
+→ explicit reconcile at authenticated role-change instant
+→ ENDED old binding
+```
+
+That operation changes session permission only, is idempotent, serializes its ended time/reason, and creates no canonical escalation, decision, instrument, or historical occurrence. It is never invoked implicitly by parsing, load, save, projection, or decision validation.
+
+I3 does not implement elections, succession, incapacity, Vice-Presidential control, officeholder turnover, or creation/rebinding of a successor control binding. In the exact fixed I3 fixture, no legitimate presidential identity change occurs. If later state leaves the serialized binding stale before explicit reconciliation, decision validation blocks authority without mutating either binding or world.
 
 ## 3.3 No global player command surface
 
@@ -275,10 +350,9 @@ A valid escalation minimally binds:
 - locally bound option definitions and full instrument previews;
 - expiration/deadline;
 - explicit no-instrument default for this I3 fixture;
-- downstream resolver office identities;
-- status and resolution/default/supersession references.
+- downstream resolver office identities.
 
-An escalation's authored summary does not become economic truth. Its factual support remains in the referenced I2 artifacts and presentations.
+The base escalation record is immutable. It contains no mutable current-status, resolution, default, withdrawal, or supersession field. Its authored summary does not become economic truth; factual support remains in the referenced I2 artifacts and presentations.
 
 ## 5.2 Valid I3 escalation path
 
@@ -314,19 +388,52 @@ That escalation presentation binds:
 
 It cannot expose an I2 artifact section that the presenting office did not validly receive or imply that a referenced attachment was shown.
 
-## 5.3 Status and lifecycle
+## 5.3 Immutable escalation and append-only lifecycle
 
-I3 escalation status is limited to:
+The escalation owner uses exactly one lifecycle model:
 
 ```text
-ACTIVE
-RESOLVED_BY_DECISION
-WITHDRAWN
-EXPIRED_TO_DEFAULT
-SUPERSEDED
+immutable EscalationRecord
++ append-only EscalationLifecycleOccurrence[]
+→ derived current escalation status
 ```
 
-Status changes are append-only occurrences or immutable superseding records. They cannot rewrite the original basis, options, knowledge, or deadline.
+Each lifecycle occurrence binds:
+
+- occurrence ID and deduplication identity;
+- escalation ID;
+- typed lifecycle kind;
+- authoritative occurrence time;
+- acting office/officeholder or deadline-processing authority;
+- exact decision, default, successor-escalation, or other cause reference required by its kind;
+- provenance and historical-index identity.
+
+Lifecycle kinds are limited to:
+
+```text
+ESCALATION_WITHDRAWN
+ESCALATION_RESOLVED_BY_DECISION
+ESCALATION_EXPIRED_TO_DEFAULT
+ESCALATION_SUPERSEDED
+```
+
+Derived current status is:
+
+```text
+no terminal lifecycle occurrence       → ACTIVE
+ESCALATION_WITHDRAWN                    → WITHDRAWN
+ESCALATION_RESOLVED_BY_DECISION         → RESOLVED_BY_DECISION
+ESCALATION_EXPIRED_TO_DEFAULT           → EXPIRED_TO_DEFAULT
+ESCALATION_SUPERSEDED                   → SUPERSEDED
+```
+
+Every I3 lifecycle kind is terminal. One escalation admits at most one terminal controlling lifecycle occurrence. A second terminal occurrence, conflicting idempotent retry, occurrence before escalation creation, or occurrence with an invalid kind-specific cause fails validation without mutation.
+
+`ESCALATION_RESOLVED_BY_DECISION` must cite the one controlling decision. `ESCALATION_EXPIRED_TO_DEFAULT` must cite the one immutable default occurrence. `ESCALATION_SUPERSEDED` must cite a distinct later-created escalation whose semantic basis authorizes supersession. No lifecycle occurrence rewrites the original basis, options, knowledge, or deadline.
+
+Escalation supersession references are strictly creation-time-forward and acyclic. A superseding escalation cannot directly or transitively cite the escalation it supersedes.
+
+Attention derives the current status from base plus lifecycle occurrences. No mutable/cached current status serializes. The Historical Record indexes the lifecycle occurrence itself exactly once.
 
 One active escalation may have at most one controlling presidential decision. A later presidential choice requires a separately valid new or superseding escalation.
 
@@ -339,30 +446,62 @@ NO_NEW_PRESIDENTIAL_INSTRUMENT
 CONTINUE_EXISTING_OFFICE_MONITORING
 ```
 
-Crossing the deadline with no decision may create one idempotent default occurrence and close the escalation. It does not dispatch, create a workstream, change a queue, invent an assessment, or manufacture replacement drama.
+Crossing the deadline with no earlier controlling decision must create exactly one deterministic default occurrence followed by exactly one `ESCALATION_EXPIRED_TO_DEFAULT` lifecycle occurrence. It does not dispatch, create a workstream, change a queue, invent an assessment, or manufacture replacement drama.
 
 An explicit presidential `ALLOW_MONITORING_DEFAULT` choice records deliberate inaction and closes the escalation without waiting for expiration. It authorizes no outgoing instrument.
 
 ## 5.5 Reserved review
 
-A locally bound `RESERVE_PRESIDENTIAL_REVIEW` option may create one review reservation with:
+A locally bound `RESERVE_PRESIDENTIAL_REVIEW` option may create one immutable review reservation with:
 
 - reservation identity;
 - source escalation and decision;
 - reserved instant;
 - bounded review question;
 - presentation/source references expected at review;
-- provenance and deduplication identity;
-- completion, cancellation, or supersession reference.
+- provenance and deduplication identity.
 
-Before its reserved instant it does not appear in Attention. When due and still active it may appear even if no new domain event occurred. It creates no evidence, assignment, workstream transition, or recipient response.
+The reservation contains no mutable current-status, completion, cancellation, or supersession field. Its append-only lifecycle kinds are limited to:
+
+```text
+RESERVED_REVIEW_COMPLETED
+RESERVED_REVIEW_CANCELLED
+RESERVED_REVIEW_SUPERSEDED
+```
+
+Each reservation lifecycle occurrence carries its own identity, deduplication identity, reservation ID, authoritative time, actor/authority, kind-specific completion/cancellation/successor reference, provenance, and historical-index identity. One reservation admits at most one terminal controlling lifecycle occurrence.
+
+A superseding reservation must be distinct, created strictly later, preserve an authorized review lineage, and form an acyclic supersession graph.
+
+Derived reservation state is:
+
+```text
+no terminal occurrence and current < reservedAt  → SCHEDULED
+no terminal occurrence and current >= reservedAt → DUE
+matching terminal occurrence                     → COMPLETED/CANCELLED/SUPERSEDED
+```
+
+`DUE` is time-derived eligibility, not a serialized activation/status field or lifecycle occurrence. Attention derives it from the immutable reservation, append-only lifecycle, and authoritative calendar.
+
+Before its reserved instant it does not appear in Attention. When due and still active it may appear even if no new domain event occurred. Due eligibility creates no evidence, knowledge, presentation, assignment, workstream transition, or recipient response.
+
+A due reserved-review Attention item may expose only:
+
+- reservation identity, bounded question, and due time;
+- the President's own prior decision and reservation basis;
+- source identities/portions already legitimately presented to the President before or at the due instant;
+- the fact that an expected product was or was not separately presented, because presidential presentation history itself establishes that fact.
+
+Due processing does not dereference expected source IDs into substantive content. It may not expose a new assessment, revised source section, recipient disposition, assignment result, staff-only record, or the content of an expected product unless a separately valid presidential presentation exists.
+
+If a new staff artifact exists by `reservedAt` but remains unpresented, the due item may state only that no expected product has been presented; it cannot reveal the artifact's existence, identity, conclusions, sections, or limitations from global owner/index state.
 
 ## 5.6 Attention projection
 
 `Presidential Attention` is a pure projection over:
 
 - `ACTIVE` escalations with a valid bounded escalation presentation to the effective President; and
-- due, active reserved reviews.
+- due reserved reviews with no terminal lifecycle occurrence, filtered through the reservation knowledge rule above.
 
 For an escalation, the projection contains only fields in the valid escalation presentation plus identities/deadlines needed to answer:
 
@@ -495,6 +634,41 @@ The first option's complete bundle is visible before confirmation:
 1. one `REQUEST_OFFICE_ANALYSIS` instrument addressed only to OMB;
 2. one `REQUEST_WORKSTREAM_COORDINATION` instrument addressed only to Chief of Staff / Presidential Operations.
 
+Each preview is an immutable proposed payload, not an instrument occurrence. It stores:
+
+- preview identity;
+- typed proposed payload;
+- deterministic canonical-payload hash;
+- bundle position;
+- provenance.
+
+The behavior-driving proposed payload contains exactly:
+
+- instrument kind and payload version;
+- one recipient office;
+- subject scope and requested act;
+- source/presentation references and attachment metadata;
+- presidential authority basis;
+- requested response deadline;
+- every kind-specific analysis or workstream-coordination field in Sections 7.4–7.5.
+
+The selected option binds the ordered preview identities and hashes. At authorization, each canonical instrument occurrence must preserve the proposed payload with structural deep equality and the same canonical hash.
+
+Canonical hashing uses the repository's accepted SHA-256 utility over UTF-8 JSON of an exact-schema payload object constructed in declared field order; array order is semantic and preserved. Exact-shape validation rejects unknown/missing fields before hashing.
+
+Only these occurrence/authentication fields may be added at authorization time:
+
+- instrument occurrence ID and deduplication identity;
+- authorizing decision ID;
+- selected option and preview IDs;
+- issuing President actor/constitutional office IDs already authenticated by the decision;
+- issued-at instant;
+- occurrence provenance and later revision/supersession lineage.
+
+Those added fields cannot override or reinterpret any proposed payload field. Recipient, kind, scope, requested act, authority, deadline, references/attachments, kind-specific content, bundle membership, and bundle order must remain byte-canonical/structurally identical to what was presented.
+
+Hash equality alone is insufficient if structural equality fails. Any missing, extra, reordered, or altered behavior-driving field rejects the entire decision/instrument transaction before mutation. The preview remains evidence of what was proposed; the instrument occurrence remains the one canonical authorized act. Neither is a shadow owner of the other's semantic role.
+
 The player cannot add a hidden third act, wildcard recipient, agency instruction, public communication, legislative position, expenditure, promise, or material result.
 
 These are local escalation options, not a global action catalogue. Another escalation must carry its own valid typed options and previews.
@@ -507,6 +681,7 @@ An immutable presidential decision records:
 - active control-binding ID;
 - President actor and constitutional office IDs;
 - source escalation and selected local option;
+- exact ordered preview identities and canonical hashes;
 - decision time;
 - exact presidential presentation portions forming the decision basis;
 - explicit acknowledged uncertainties;
@@ -521,10 +696,10 @@ Decision creation closes the active escalation through a separate resolution occ
 
 ## 7.3 Common instrument fields
 
-Every instrument records:
+Every instrument occurrence records:
 
 - instrument ID, kind, version, and deduplication identity;
-- authorizing decision and selected option IDs;
+- authorizing decision, selected option, and source preview IDs/hash;
 - issuing President actor and constitutional office IDs;
 - exactly one recipient office ID;
 - subject scope and explicit requested act;
@@ -533,7 +708,7 @@ Every instrument records:
 - issued time, requested response deadline, and provenance;
 - revision/supersession lineage where applicable.
 
-An instrument payload cannot include recipient disposition, future assignment result, compliance status, or workstream result.
+Its immutable behavior-driving payload is structurally identical to the selected preview under Section 7.1. It cannot include recipient disposition, future assignment result, compliance status, or workstream result.
 
 ## 7.4 `REQUEST_OFFICE_ANALYSIS`
 
@@ -623,35 +798,51 @@ Delivery does not create this receipt automatically. Receipt by one office does 
 
 ## 8.4 Recipient disposition
 
-An effective holder of the recipient office may author exactly one controlling disposition for a received instrument:
+An effective holder of the recipient office may author exactly one controlling pre-deadline disposition for a received instrument:
 
 ```text
 ACCEPTED_AS_REQUESTED
 NARROWED
 DELAYED
 REFUSED
-NO_ACTION_BY_DEADLINE
 ```
+
+`NO_ACTION_BY_DEADLINE` is the fifth controlling disposition kind but is appended only by deterministic recipient-office deadline processing, not authored by an officeholder.
 
 The record binds:
 
 - disposition ID and deduplication identity;
-- recipient office and effective officeholder assignment;
+- recipient office and effective authoring officeholder assignment for authored kinds, or `null` author for deadline-derived no-action;
 - instrument receipt;
+- typed recipient-capability authority ID where one exists;
 - disposition time;
 - accepted scope or narrowed subset;
-- reason, limitations, next-review/deadline where applicable;
+- typed recipient-constraint IDs, reason, limitations, and next-review/deadline where applicable;
 - provenance;
 
 The presidential decision and instrument payload cannot supply this disposition.
 
-`ACCEPTED_AS_REQUESTED` requires recipient jurisdiction and authority. It does not imply that required evidence is already available, that work began, or that the requested product can be completed. A recipient may accept a request whose later office assignment remains `BLOCKED` pending access.
+`ACCEPTED_AS_REQUESTED` requires the complete requested kind/product/scope to fit one effective recipient capability exactly. It does not imply that required evidence is already available, that work began, or that the requested product can be completed. A recipient may accept a request whose later office assignment remains `BLOCKED` pending access.
 
-`NARROWED` must carry a strict, explicit subset or less-claiming product scope and a reason rooted in recipient state.
+`NARROWED` requires an effective capability that permits narrowing and must carry a strict explicit subset or configured less-claiming product within that capability.
 
-`DELAYED` requires a future review/deadline and a live recipient-owned constraint.
+`DELAYED` requires a future review/deadline and a live typed recipient-owned constraint.
 
-`REFUSED` requires a recipient-owned jurisdiction, authority, evidentiary, or queue reason.
+`REFUSED` requires a typed recipient constraint. An office with no matching effective capability cannot accept or narrow; it may refuse with `NO_EFFECTIVE_RECIPIENT_CAPABILITY`, or delay only when a configured capability is known to become effective within the requested response window.
+
+The capability reference must be effective for `ACCEPTED_AS_REQUESTED` and `NARROWED`. `DELAYED` may cite a configured future-effective capability only with `EFFECTIVE_AUTHORITY_NOT_YET_AVAILABLE`. It may be `null` for `REFUSED` with `NO_EFFECTIVE_RECIPIENT_CAPABILITY`, or for deadline-derived `NO_ACTION_BY_DEADLINE` when no matching capability exists. Receipt and officeholder authority remain required for every authored disposition.
+
+I3 recipient constraints are limited to:
+
+```text
+NO_EFFECTIVE_RECIPIENT_CAPABILITY
+REQUEST_OUTSIDE_CAPABILITY
+MISSING_REQUIRED_EVIDENCE
+OFFICE_QUEUE_OR_DEADLINE_CONSTRAINT
+EFFECTIVE_AUTHORITY_NOT_YET_AVAILABLE
+```
+
+The constraint must reconcile to typed capability, I2 receipt/access, office queue/deadline, or effective-interval state. Free-form reason text may explain but cannot establish validity.
 
 `NO_ACTION_BY_DEADLINE` is created only by deterministic deadline resolution after valid office receipt and no earlier disposition. It is not selected by the President or prewritten into dispatch.
 
@@ -667,9 +858,11 @@ OMB may independently:
 - refuse the unsupported scope;
 - take no action through its response deadline.
 
-The exact worked path uses `NARROWED`, but general logic may not branch on the OMB office ID. Whether a requested product can proceed, remain blocked, or support a later result derives from the instrument's evidence scope and the recipient office's actual I2 receipt/access state.
+The exact worked path uses `NARROWED`, but general logic may not branch on the OMB office ID. Jurisdiction derives from the effective configured capability. Whether a requested product can proceed, remain blocked, or support a later result separately derives from the instrument's evidence scope and the recipient office's actual I2 receipt/access state.
 
 A counterfactual that gives the same recipient valid substantive receipt may permit a full-scope accepted assignment to proceed rather than remain blocked; it does not force acceptance or any result.
+
+A counterfactual recipient without a matching capability cannot emit the same accepted/narrowed disposition merely because it received the instrument. Adding evidence/access alone never creates jurisdiction or rewrites capability.
 
 ## 8.6 Assignment and workstream follow-through
 
@@ -719,14 +912,16 @@ The pair `(ownerId, ownerRecordId)` and the occurrence ID are unique. Missing, d
 
 I3 indexes:
 
-- workstream creation and transitions;
-- escalation creation, withdrawal, resolution, supersession, and default;
-- reserved-review creation and disposition;
+- workstream immutable creation and transition occurrences;
+- immutable escalation creation, default occurrence, and each actual escalation lifecycle occurrence;
+- immutable reserved-review creation and each actual reservation lifecycle occurrence;
 - presidential decisions;
 - presidential instruments;
 - dispatch attempts;
 - office instrument receipts and recipient dispositions;
 - instrument-authorized office assignments created during I3.
+
+Derived current statuses and reserved-review `DUE` eligibility receive no index entry because they are projections, not occurrences.
 
 Accepted I2 records retain their existing identities. I3 may index references to them when they become a source for an I3 occurrence, but it may not copy or rewrite their history.
 
@@ -751,10 +946,10 @@ No playable history UI is authorized in I3.
 
 I3 may design typed operations only for:
 
-- creating/reconciling the session-owned presidential `ControlBinding`;
-- creating, withdrawing, superseding, resolving, or defaulting a valid escalation;
+- creating the configured initial presidential `ControlBinding` and explicitly ending/reconciling it only after a separately authorized authenticated role change, never during load;
+- creating an immutable escalation and appending one validated terminal withdrawal/supersession/resolution/default lifecycle occurrence;
 - recording one bounded escalation presentation separately from escalation creation;
-- creating, canceling, superseding, or completing a reserved review;
+- creating an immutable reserved review and appending one validated terminal cancellation/supersession/completion lifecycle occurrence;
 - deriving the bounded Attention projection;
 - creating a workstream and appending a validated coordination transition;
 - recording one presidential decision from one active local option;
@@ -767,6 +962,61 @@ I3 may design typed operations only for:
 - direct copy, validate, save, parse, restore, and deterministic continuation.
 
 All operations use the authoritative POP calendar instant, never wall-clock time.
+
+## 10.1 Exact interval and deadline semantics
+
+I3 uses start-inclusive/end-exclusive authority and action windows:
+
+```text
+valid action time: effectiveFrom <= current < deadline/effectiveUntil
+deadline/default time: current >= deadline
+```
+
+Therefore:
+
+- escalation deadline must be strictly after creation and bounded escalation presentation; response deadline must be strictly after issue; reserved instant must be strictly after its authorizing decision;
+- a presidential decision is valid strictly before an escalation deadline;
+- at `current == escalation.expiresAt`, expiration/default wins and a new decision is invalid;
+- a recipient-authored disposition is valid strictly before its response deadline;
+- at `current == responseDeadline`, `NO_ACTION_BY_DEADLINE` wins if no earlier controlling disposition exists;
+- a reserved review becomes due at `current == reservedAt` when no earlier terminal reservation lifecycle occurrence exists;
+- an ordinary cancellation/supersession submitted exactly at `reservedAt` occurs after due eligibility, then removes the review from the final Attention projection through its terminal lifecycle occurrence.
+
+## 10.2 Mandatory deadline processing
+
+`advanceTo(target)` must process every I3 boundary in `(previousCurrent, target]` exactly once. Deadline work is mandatory inside calendar advancement; it is not deferred to an optional helper, projection read, UI render, or later player command.
+
+The operating coordinator orders owner transitions but does not become their semantic owner:
+
+- the escalation owner appends the configured default occurrence and `ESCALATION_EXPIRED_TO_DEFAULT` lifecycle occurrence;
+- the exact recipient office state appends `NO_ACTION_BY_DEADLINE`;
+- the escalation/review owner derives reserved-review due eligibility from calendar plus lifecycle without appending a synthetic activation occurrence.
+
+For each crossed instant, fixed phases are:
+
+```text
+1. escalation default occurrence
+2. escalation EXPIRED_TO_DEFAULT lifecycle occurrence
+3. recipient NO_ACTION_BY_DEADLINE disposition
+4. reserved-review DUE eligibility
+5. ordinary same-instant office/player/session operations
+```
+
+Within a phase, independent records sort by owner identity, source record identity, then deduplication identity. Each reference-only Historical Record entry follows its source record in the same validated transaction and cannot reorder the source phases.
+
+Consequences:
+
+- a deadline terminal occurrence exists before an ordinary decision/disposition attempted at that instant;
+- a reserved review is eligible for Attention before an ordinary same-time cancellation, but the projection after a valid cancellation excludes it;
+- if a decision/disposition/cancellation was recorded at an earlier instant, deadline processing observes that lifecycle/state and does not append a conflicting record;
+- advancing across several boundaries processes them in instant/phase/stable-identity order;
+- repeated advancement, restore-and-continue, or retry cannot append the same default/no-action occurrence twice.
+
+Recipient no-action processing applies only when the exact office admitted instrument receipt at an instant strictly before the response deadline. If no office receipt existed by that boundary, no recipient disposition is invented. A later technical delivery/receipt may remain immutable route history, but it cannot retroactively author a timely disposition; a later response requires a separately authorized revised/superseding instrument.
+
+Every deadline-derived record uses a deterministic identity/deduplication identity derived from the source record and boundary kind, not wall-clock time, array position, or invocation count.
+
+## 10.3 Source-before-derivative and atomic phases
 
 I3 causal edges are source-before-derivative:
 
@@ -783,7 +1033,7 @@ I2 source/presentation
 → explicit workstream transition
 ```
 
-Dependent operations normally use a strictly later instant. One atomic transaction may create same-instant decision, instrument, escalation-resolution, and historical-index records only under this fixed derived phase order:
+Dependent ordinary operations normally use a strictly later instant. One atomic transaction may create same-instant decision, instrument, escalation-resolution, and historical-index records only under this fixed derived phase order, which occurs inside ordinary phase 5 above:
 
 ```text
 source owner record
@@ -796,6 +1046,20 @@ source owner record
 The validator compares canonical instant, fixed record-kind phase, then stable identity. No undocumented array position may decide causality. Any other same-instant causal edge is rejected unless a later reviewed contract explicitly adds it.
 
 Independent same-instant operations must be order-invariant after deterministic sorting by owner kind and stable identity.
+
+## 10.4 Advancement equivalence and valid saves
+
+For identical inputs and choices:
+
+```text
+advance directly across N boundaries
+== advance boundary by boundary
+== save immediately before a boundary → load → advance across it
+```
+
+in canonical owner state, derived Attention, lifecycle results, index entries, control availability, and serialized bytes.
+
+A valid runtime save at `current >= deadline` must already contain the required deterministic terminal/default/no-action state. Parsing/loading validates this closure but does not generate it. A save claiming post-boundary time with missing or conflicting boundary records is rejected as invalid/tampered.
 
 Every operation validates a defensive candidate state before commit. Rejected input leaves all owner states, control binding, index entries, and serialized bytes unchanged.
 
@@ -838,7 +1102,14 @@ I3 tests must prove causality rather than a scripted route:
 10. choose `RESERVE_PRESIDENTIAL_REVIEW`: no outgoing instrument exists, Attention remains empty until the reserved instant, then the due review appears;
 11. choose `ALLOW_MONITORING_DEFAULT` or let the escalation expire: no instrument, assignment, response, or replacement drama is created;
 12. reorder independent OMB/Chief-of-Staff dispatch or receipt operations: sorted final owner state and save bytes remain identical;
-13. change a recipient-owned response: the workstream can change only through a later explicit coordinator transition and unrelated owner state remains unchanged.
+13. change a recipient-owned response: the workstream can change only through a later explicit coordinator transition and unrelated owner state remains unchanged;
+14. give the same delivered instrument to a configured office with no matching effective recipient capability: it cannot emit the same accepted/narrowed disposition merely because it received the instrument;
+15. alter one preview behavior field, bundle position, or authorized payload field after presentation: structural/hash equivalence fails and no decision/instrument is created;
+16. create a new staff-only assessment before a reserved review becomes due but do not present it: the due Attention item reveals none of its identity or substantive content;
+17. attempt a presidential decision or recipient disposition exactly at its deadline: the deterministic default/no-action terminal occurrence already controls and the ordinary act is rejected;
+18. cancel a reserved review exactly at `reservedAt`: due eligibility precedes the cancellation phase, while the final post-cancellation Attention projection excludes the review;
+19. advance directly across several boundaries versus stepwise or save/load immediately before a boundary: canonical states, derived projections, index entries, and bytes match;
+20. restore an ended binding or reject a mismatched active binding: load remains byte-stable and never silently reconciles/rebinds authority.
 
 No counterfactual may be repaired by inserting a substitute escalation, dispatch, recipient response, or dramatic event.
 
@@ -851,6 +1122,7 @@ I3 advances the POP runtime schema and save format to version 3 only if implemen
 The format-3 save contains:
 
 - authenticated configuration identity;
+- authenticated typed recipient-capability authorities through that configuration;
 - active history identity;
 - session-owned presidential control binding;
 - accepted I2 calendar and administration owner states;
@@ -863,7 +1135,7 @@ The format-3 save contains:
 - expanded office-owned instrument receipt/disposition state;
 - reference-only historical index state.
 
-Attention, current workstream projections, full-state audit views, available option caches, and player navigation are not canonical save fields.
+Derived escalation/review/workstream current statuses, reserved-review due activation, Attention, current workstream projections, full-state audit views, available option caches, and player navigation are not canonical save fields.
 
 Every new field must enter atomically across:
 
@@ -890,7 +1162,9 @@ Required save checkpoints:
 8. independent recipient dispositions before assignment/workstream update;
 9. narrowed assignment plus explicit workstream transition;
 10. reserved review before and after its due instant;
-11. expired/defaulted escalation with empty Attention.
+11. immediately before and after an escalation/recipient deadline under coarse and fine advancement;
+12. expired/defaulted escalation with empty Attention;
+13. active and explicitly ended ControlBinding states, each byte-stable without load reconciliation.
 
 For every checkpoint:
 
@@ -910,16 +1184,23 @@ Load must not:
 - create an assignment;
 - append a workstream transition;
 - register a duplicate history entry;
+- reconcile, end, replace, or recreate a ControlBinding;
+- append an escalation/reservation lifecycle occurrence or deadline-derived record;
 - alter Attention except by deterministic projection of restored canonical state.
 
 Tampering must reject before session construction, including:
 
 - mismatched or ended control authority represented as active;
+- valid ended binding silently restored as active or rebound;
 - escalation citing unseen presidential knowledge;
 - unpresented escalation exposed through Attention or accepted for decision;
+- duplicate/conflicting terminal escalation or reserved-review lifecycle occurrences;
+- post-deadline time with missing/conflicting deterministic default/no-action closure;
 - decision using an inactive escalation or unpreviewed instrument;
+- preview/instrument structural or canonical-hash mismatch, altered bundle order, or unpreviewed behavior field;
 - instrument with multiple/wildcard recipients or recipient-disposition fields;
 - delivery before issue, receipt before delivery, or disposition before receipt;
+- accepted/narrowed disposition without a matching effective typed recipient capability;
 - full-scope assignment represented as proceeding or completed without recipient receipt/access support;
 - workstream transition before its sources or with a broken prior chain;
 - duplicate/dangling/wrong-time historical index reference;
@@ -966,6 +1247,8 @@ The boundary checker must grow with the actual I3 factory, session, projection, 
 - the I2 presidential recipient binding alone cannot authorize a decision;
 - the session-owned ControlBinding matches the effective President actor and constitutional office;
 - missing, ended, stale, mismatched-surface, mismatched-actor, or mismatched-office control blocks decision without mutating canonical state;
+- load restores active/ended binding bytes exactly, rejects mismatched active authority, and performs no implicit reconciliation/rebinding;
+- a later real role change may end only the old binding through an explicit idempotent session operation and I3 creates no successor binding;
 - no Population owner or ordinary-person join is introduced;
 - no actor holding multiple roles merges office receipt, response, queue, workstream authority, or control.
 
@@ -977,9 +1260,15 @@ The boundary checker must grow with the actual I3 factory, session, projection, 
 - escalation creation alone creates no presentation, Attention item, or presidential knowledge;
 - Attention and decision require a separate valid bounded escalation presentation;
 - President-known portions never include unseen attachments;
-- invalid/withdrawn/resolved/defaulted/superseded escalations leave Attention;
+- base escalation/reservation records contain no mutable current-status or terminal-reference truth;
+- current escalation/review state derives only from immutable base plus at most one append-only terminal lifecycle occurrence and authoritative time;
+- duplicate/conflicting/cyclic/causally invalid lifecycle occurrences are rejected;
+- withdrawn/resolved/defaulted/superseded escalations leave Attention;
 - due reserved review enters Attention only at its reserved instant;
+- due reserved review never dereferences newly available but unpresented staff evidence;
 - Attention ordering is deterministic without severity/action prefixes;
+- decision/disposition windows are end-exclusive; defaults/no-action win exactly at deadline; due-review activation precedes same-time cancellation;
+- coarse/fine/save-before-boundary advancement yields identical lifecycle, Attention, index, and save state;
 - altered evidence/receipt/conflict state changes or prevents escalation without replacement drama.
 
 ## Workstreams
@@ -997,6 +1286,8 @@ The boundary checker must grow with the actual I3 factory, session, projection, 
 - only active presidential control over an active escalation permits decision;
 - decision basis is limited to actual presidential presentation history;
 - each local option materializes exactly its previewed zero/two instruments;
+- every behavior-driving authorized payload field and bundle position is structurally identical to its immutable preview and canonical hash;
+- only enumerated occurrence/authentication fields may be added during authorization;
 - option and instrument IDs are not parsed for behavior;
 - every outgoing instrument has one exact configured recipient;
 - hidden, extra, free-form, wildcard, fiscal, public, legislative, agency-order, or material-result payloads fail validation;
@@ -1009,6 +1300,8 @@ The boundary checker must grow with the actual I3 factory, session, projection, 
 - one instrument's delivery/receipt never fans out to another office or instrument;
 - failure and retry preserve both immutable dispatch records;
 - disposition requires exact recipient office receipt and an effective holder;
+- disposition validation consumes one effective typed recipient capability rather than office ID or free-form mandate text;
+- no-capability recipient cannot accept/narrow; capability-constrained delay/refusal cites typed recipient constraints;
 - presidential inputs cannot select or embed disposition;
 - metadata-only OMB acceptance creates no knowledge/result and leaves a full-scope assignment blocked unless the office narrows it;
 - valid substantive receipt may permit a full-scope assignment to proceed but does not force acceptance or a result;
@@ -1033,6 +1326,7 @@ The boundary checker must grow with the actual I3 factory, session, projection, 
 - malformed live operation is rejected before mutation and its prior save still restores identically;
 - format-2 save cannot silently acquire I3 history;
 - exact-shape, referential, temporal, control, scope, and index tampering is rejected;
+- load never reconciles ControlBinding or processes deadlines; valid saves are already deadline-closed by mandatory advancement;
 - every saved/indexed occurrence binds to the configured active history identity;
 - POP import closure excludes Stage 1, I10 whole sessions, global action APIs, later domain owners, full-state player input, and UI;
 - merge base remains `44c1724962830225e6fc34f41d0df0cfdb7dfec0` and `main` remains unchanged;
