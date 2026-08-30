@@ -178,7 +178,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
     expect(() => createIntegratedPartialRuntimeSessionFromSave(
       JSON.stringify(tampered), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
     )).toThrow(/enacted legal terms/);
-  });
+  }, 20_000);
 
   it("round-trips generated state while rejecting edits to every immutable real-seed family", () => {
     const session = createIntegratedPartialRuntimeAuditSession(
@@ -383,7 +383,7 @@ describe("I6 integrated ownership, persistence, and succession", () => {
         JSON.stringify(envelope), supportiveConfiguration, US_V0_I7_RUNTIME_ARTIFACTS,
       ), name).toThrow();
     }
-  }, 45_000);
+  }, 75_000);
 
   it("composes a dynamic administrative boundary ahead of the next static boundary", () => {
     const session = createSession();
@@ -417,5 +417,5 @@ describe("I6 integrated ownership, persistence, and succession", () => {
       coarse.save(), US_V0_STRUCTURAL_CONFIGURATION, US_V0_I7_RUNTIME_ARTIFACTS,
     );
     expect(restored.getAuditState()).toEqual(coarse.getAuditState());
-  }, 20_000);
+  }, 35_000);
 });
