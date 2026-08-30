@@ -1,3 +1,10 @@
+import type {
+  EscalationPresentationRecord,
+  OfficeInstrumentReceipt,
+  RecipientCapabilityAuthority,
+  RecipientInstrumentDisposition,
+} from "./presidential-operating-intervention-types";
+
 export const POP0_I2_POPULATION_LINKAGE_STATUS =
   "OUTSIDE_MODELED_ORDINARY_POPULATION_SCOPE" as const;
 
@@ -194,6 +201,7 @@ export interface PresidentialAdministrationConfiguration {
     readonly provenanceReference: string;
   }[];
   readonly assessmentRules: readonly ConfiguredAssessmentRule[];
+  readonly recipientCapabilities: readonly RecipientCapabilityAuthority[];
 }
 
 export type OfficeWorkAssignmentStatus =
@@ -236,6 +244,8 @@ export interface OfficeOperationsState {
     readonly outcome: "DELAYED" | "CANCELLED";
     readonly provenanceReference: string;
   }[];
+  readonly instrumentReceipts: readonly OfficeInstrumentReceipt[];
+  readonly instrumentDispositions: readonly RecipientInstrumentDisposition[];
 }
 
 export interface AdministrationDirectoryState {
@@ -348,6 +358,7 @@ export interface PresidentialPresentationRecord {
 
 export interface PresidentialPresentationHistoryState {
   readonly presentations: readonly PresidentialPresentationRecord[];
+  readonly escalationPresentations: readonly EscalationPresentationRecord[];
 }
 
 export interface PresidentialAdministrationOwnerStates {
@@ -381,6 +392,8 @@ export interface OfficeInformationView {
     readonly receivedSectionIds: readonly string[];
   }[];
   readonly authoredArtifactIds: readonly string[];
+  readonly instrumentReceipts: readonly OfficeInstrumentReceipt[];
+  readonly instrumentDispositions: readonly RecipientInstrumentDisposition[];
 }
 
 const copyPlain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -515,6 +528,13 @@ export const assertPresidentialAdministrationConfiguration = (
   requireUnique(configuration.accessEntitlements.map((entry) => entry.id), "Access-entitlement identities");
   requireUnique(configuration.assumptions.map((entry) => entry.id), "Assessment assumption identities");
   requireUnique(configuration.assessmentRules.map((entry) => entry.id), "Assessment-rule identities");
+  requireNonemptyUnique(
+    configuration.recipientCapabilities.map((entry) => entry.id),
+    "Recipient-capability identities",
+  );
+  if (configuration.recipientCapabilities.length !== 2) {
+    throw new Error("POP0-I3 requires exactly two bounded recipient-capability authorities.");
+  }
 
   for (const institution of configuration.institutions) {
     requireNonempty(institution.id, "Institution identity");
@@ -647,6 +667,44 @@ export const assertPresidentialAdministrationConfiguration = (
       throw new Error(`Assessment rule ${rule.id} references an unknown assumption.`);
     }
   }
+  for (const capability of configuration.recipientCapabilities) {
+    assertInterval(capability.effectiveFrom, capability.effectiveUntil, capability.id);
+    if (!configuration.offices.some((office) => office.id === capability.recipientOfficeId)) {
+      throw new Error(`Recipient capability ${capability.id} references an unknown office.`);
+    }
+    requireNonempty(capability.authorityReference, `${capability.id} authority`);
+    requireNonempty(capability.provenanceReference, `${capability.id} provenance`);
+    if (capability.kind === "ANALYSIS_CAPABILITY") {
+      requireNonemptyUnique(capability.permittedProductKinds, `${capability.id} products`);
+      requireNonemptyUnique(
+        capability.permittedSubjectScopeFamilies,
+        `${capability.id} subject scopes`,
+      );
+      requireUnique(
+        capability.permittedLessClaimingProductKinds,
+        `${capability.id} less-claiming products`,
+      );
+      if (
+        !Number.isSafeInteger(capability.maximumSectionCount) ||
+        capability.maximumSectionCount <= 0 ||
+        capability.permittedLessClaimingProductKinds.some(
+          (kind) => !capability.permittedProductKinds.includes(kind),
+        )
+      ) throw new Error(`Analysis capability ${capability.id} has invalid product/scope bounds.`);
+    } else {
+      requireNonemptyUnique(capability.permittedWorkstreamIds, `${capability.id} workstreams`);
+      requireNonemptyUnique(
+        capability.permittedCoordinationActionKinds,
+        `${capability.id} coordination actions`,
+      );
+      if (
+        !Number.isSafeInteger(capability.maximumParticipatingOfficeCount) ||
+        capability.maximumParticipatingOfficeCount <= 0 ||
+        !Number.isSafeInteger(capability.maximumReviewHorizonHours) ||
+        capability.maximumReviewHorizonHours <= 0
+      ) throw new Error(`Coordination capability ${capability.id} has invalid coordination bounds.`);
+    }
+  }
 };
 
 export const createPresidentialAdministrationOwnerStates = (
@@ -668,8 +726,10 @@ export const createPresidentialAdministrationOwnerStates = (
         .map((office) => ({
           officeId: office.id,
           assignments: [],
-          activeQueueAssignmentIds: [],
-          deadlineDefaultRecords: [],
+           activeQueueAssignmentIds: [],
+           deadlineDefaultRecords: [],
+           instrumentReceipts: [],
+           instrumentDispositions: [],
         }))
         .sort((left, right) => left.officeId.localeCompare(right.officeId)),
     },
@@ -689,7 +749,7 @@ export const createPresidentialAdministrationOwnerStates = (
     },
     presidentialPresentations: {
       ownerId: configuration.ownerIds.presidentialPresentations,
-      state: { presentations: [] },
+      state: { presentations: [], escalationPresentations: [] },
     },
   };
 };
@@ -705,6 +765,10 @@ const allReferenceIds = (state: PresidentialAdministrationOwnerStates): Set<stri
   ...state.informationRoutes.state.metadataNotices.map((entry) => entry.id),
   ...state.informationRoutes.state.retrievals.map((entry) => entry.id),
   ...state.informationRoutes.state.receipts.map((entry) => entry.id),
+  ...state.officeOperations.state.flatMap((office) => [
+    ...office.instrumentReceipts.map((entry) => entry.id),
+    ...office.instrumentDispositions.map((entry) => entry.id),
+  ]),
 ]);
 
 const assertArtifactCommon = (
@@ -1074,6 +1138,23 @@ export const assertPresidentialAdministrationOwnerStates = (
   }
   const assignmentIds = officeStates.flatMap((entry) => entry.assignments.map((assignment) => assignment.id));
   requireNonemptyUnique(assignmentIds, "Office work-assignment identities");
+  requireNonemptyUnique(
+    officeStates.flatMap((entry) => entry.instrumentReceipts.map((receipt) => receipt.id)),
+    "Office instrument-receipt identities",
+  );
+  requireNonemptyUnique(
+    officeStates.flatMap((entry) => entry.instrumentReceipts.map((receipt) => receipt.deduplicationIdentity)),
+    "Office instrument-receipt deduplication identities",
+  );
+  requireNonemptyUnique(
+    officeStates.flatMap((entry) => entry.instrumentDispositions.map((disposition) => disposition.id)),
+    "Recipient disposition identities",
+  );
+  requireNonemptyUnique(
+    officeStates.flatMap((entry) =>
+      entry.instrumentDispositions.map((disposition) => disposition.deduplicationIdentity)),
+    "Recipient disposition deduplication identities",
+  );
   const references = allReferenceIds(state);
   for (const office of officeStates) {
     requireNonemptyUnique(office.activeQueueAssignmentIds, `${office.officeId} queue references`);
@@ -1165,6 +1246,75 @@ export const assertPresidentialAdministrationOwnerStates = (
         assignment.status !== record.outcome
       ) throw new Error(`Office deadline/default record ${record.id} is invalid.`);
       requireNonempty(record.provenanceReference, `${record.id} provenance`);
+    }
+    requireUnique(
+      office.instrumentReceipts.map((receipt) => receipt.instrumentId),
+      `${office.officeId} admitted instrument receipts`,
+    );
+    for (const receipt of office.instrumentReceipts) {
+      if (
+        receipt.recipientOfficeId !== office.officeId ||
+        receipt.receivedPayloadVersion !== "1" ||
+        instant(receipt.receivedAt, `${receipt.id} receipt`) > currentValue
+      ) throw new Error(`Office instrument receipt ${receipt.id} is invalid.`);
+      requireNonempty(receipt.instrumentId, `${receipt.id} instrument`);
+      requireNonempty(receipt.successfulDispatchId, `${receipt.id} dispatch`);
+      requireNonempty(receipt.receiptPath, `${receipt.id} path`);
+      requireNonempty(receipt.receivingAuthorityReference, `${receipt.id} authority`);
+      requireNonempty(receipt.provenanceReference, `${receipt.id} provenance`);
+    }
+    requireUnique(
+      office.instrumentDispositions.map((disposition) => disposition.instrumentReceiptId),
+      `${office.officeId} controlling instrument dispositions`,
+    );
+    for (const disposition of office.instrumentDispositions) {
+      const receipt = office.instrumentReceipts.find(
+        (entry) => entry.id === disposition.instrumentReceiptId,
+      );
+      if (
+        disposition.recipientOfficeId !== office.officeId ||
+        receipt === undefined ||
+        receipt.instrumentId !== disposition.instrumentId ||
+        instant(disposition.dispositionAt, `${disposition.id} disposition`) <
+          instant(receipt.receivedAt, `${receipt.id} receipt`) ||
+        instant(disposition.dispositionAt, `${disposition.id} disposition`) > currentValue
+      ) throw new Error(`Recipient disposition ${disposition.id} is invalid.`);
+      if (disposition.kind === "NO_ACTION_BY_DEADLINE") {
+        if (disposition.authoringOfficeholderAssignmentId !== null) {
+          throw new Error(`Deadline disposition ${disposition.id} cannot have an officeholder author.`);
+        }
+      } else {
+        if (disposition.authoringOfficeholderAssignmentId === null) {
+          throw new Error(`Authored disposition ${disposition.id} requires an officeholder.`);
+        }
+        assertEffectiveOfficeholder(
+          state,
+          disposition.authoringOfficeholderAssignmentId,
+          office.officeId,
+          disposition.dispositionAt,
+        );
+      }
+      if (
+        disposition.capabilityAuthorityId !== null &&
+        !configuration.recipientCapabilities.some(
+          (capability) => capability.id === disposition.capabilityAuthorityId,
+        )
+      ) throw new Error(`Recipient disposition ${disposition.id} cites an unknown capability.`);
+      requireUnique(disposition.acceptedSectionIds, `${disposition.id} accepted sections`);
+      requireUnique(
+        disposition.acceptedCoordinationActions,
+        `${disposition.id} accepted coordination actions`,
+      );
+      requireUnique(disposition.constraintIds, `${disposition.id} constraints`);
+      requireNonemptyValues(disposition.limitations, `${disposition.id} limitations`);
+      if (disposition.reason !== null) requireNonempty(disposition.reason, `${disposition.id} reason`);
+      if (disposition.nextReviewAt !== null) {
+        if (instant(disposition.nextReviewAt, `${disposition.id} next review`) <=
+          instant(disposition.dispositionAt, `${disposition.id} disposition`)) {
+          throw new Error(`Recipient disposition ${disposition.id} has a nonfuture review.`);
+        }
+      }
+      requireNonempty(disposition.provenanceReference, `${disposition.id} provenance`);
     }
   }
 
@@ -1384,6 +1534,55 @@ export const assertPresidentialAdministrationOwnerStates = (
     requireNonempty(presentation.purpose, `${presentation.id} purpose`);
     requireNonempty(presentation.provenanceReference, `${presentation.id} provenance`);
   }
+  const escalationPresentations = state.presidentialPresentations.state.escalationPresentations;
+  requireNonemptyUnique(
+    escalationPresentations.map((entry) => entry.id),
+    "Escalation-presentation identities",
+  );
+  requireNonemptyUnique(
+    escalationPresentations.map((entry) => entry.deduplicationIdentity),
+    "Escalation-presentation deduplication identities",
+  );
+  requireUnique(
+    [...presentations.map((entry) => entry.id), ...escalationPresentations.map((entry) => entry.id)],
+    "Presidential presentation-family identities",
+  );
+  for (const presentation of escalationPresentations) {
+    const binding = state.administrationDirectory.state.presidentialRecipientBinding;
+    if (
+      presentation.recipientBindingId !== binding.id ||
+      presentation.recipientActorId !== binding.actorId ||
+      presentation.constitutionalOfficeId !== binding.constitutionalOfficeId ||
+      !isEffectiveAt(binding.effectiveFrom, binding.effectiveUntil, presentation.presentedAt) ||
+      instant(presentation.presentedAt, `${presentation.id} presentation`) > currentValue
+    ) throw new Error(`Escalation presentation ${presentation.id} has an invalid recipient binding.`);
+    assertEffectiveOfficeholder(
+      state,
+      presentation.presenterOfficeholderAssignmentId,
+      presentation.presentingOfficeId,
+      presentation.presentedAt,
+    );
+    requireNonempty(presentation.sourceEscalationId, `${presentation.id} escalation`);
+    requireNonemptyUnique(presentation.shownSectionIds, `${presentation.id} shown sections`);
+    requireNonemptyUnique(presentation.shownOptionIds, `${presentation.id} shown options`);
+    requireUnique(presentation.shownPreviewIds, `${presentation.id} shown previews`);
+    requireUnique(presentation.shownPreviewHashes, `${presentation.id} shown preview hashes`);
+    if (presentation.shownPreviewIds.length !== presentation.shownPreviewHashes.length) {
+      throw new Error(`Escalation presentation ${presentation.id} has mismatched preview evidence.`);
+    }
+    requireUnique(
+      presentation.referencedButNotShownSourcePortions.map(
+        (portion) => `${portion.artifactId}#${portion.sectionId}`,
+      ),
+      `${presentation.id} referenced source portions`,
+    );
+    for (const portion of presentation.referencedButNotShownSourcePortions) {
+      requireNonempty(portion.artifactId, `${presentation.id} referenced artifact`);
+      requireNonempty(portion.sectionId, `${presentation.id} referenced section`);
+    }
+    requireNonempty(presentation.purpose, `${presentation.id} purpose`);
+    requireNonempty(presentation.provenanceReference, `${presentation.id} provenance`);
+  }
 };
 
 export const deriveOfficeInformationView = (
@@ -1414,5 +1613,9 @@ export const deriveOfficeInformationView = (
     authoredArtifactIds: ledger.artifacts
       .filter((artifact) => artifact.kind !== "SOURCE_EVIDENCE" && artifact.producingOfficeId === officeId)
       .map((artifact) => artifact.id),
+    instrumentReceipts: state.officeOperations.state
+      .find((office) => office.officeId === officeId)?.instrumentReceipts ?? [],
+    instrumentDispositions: state.officeOperations.state
+      .find((office) => office.officeId === officeId)?.instrumentDispositions ?? [],
   });
 };

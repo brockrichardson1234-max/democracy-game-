@@ -20,7 +20,7 @@ describe("POP0-I1 clean operating composition", () => {
     const session = createPresidentialOperatingProofSession();
     const state = session.getOperatingState();
     expect(state).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       operatingStateId: "pop0.operating-world.primary",
       configuration: POP0_V0_OPERATING_CONFIGURATION.identity,
       ownerStates: {
@@ -50,7 +50,12 @@ describe("POP0-I1 clean operating composition", () => {
       configuration: POP0_V0_OPERATING_CONFIGURATION.identity,
       operatingState: session.getOperatingState(),
     });
-    expect(Object.keys(parsed).sort()).toEqual(["configuration", "formatVersion", "operatingState"]);
+    expect(Object.keys(parsed).sort()).toEqual([
+      "configuration",
+      "formatVersion",
+      "operatingState",
+      "session",
+    ]);
     expect(JSON.stringify(parsed)).not.toMatch(forbiddenLegacyShape);
   });
 

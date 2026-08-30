@@ -826,6 +826,7 @@ export const recordPresidentialPresentation = (
     presidentialPresentations: {
       ...state.presidentialPresentations,
       state: {
+        ...state.presidentialPresentations.state,
         presentations: sortedByTimeAndId(
           [...existing, presentation],
           (entry) => entry.presentedAt,

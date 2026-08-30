@@ -34,14 +34,20 @@ describe("POP0-I2 independent office information substrate", () => {
     const session = createPop0I2TraceSession();
     const state = session.getOperatingState();
 
-    expect(PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION).toBe(2);
-    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(2);
-    expect(POP0_V0_CONFIGURATION_VERSION).toBe("0.2.0-pop0-i2");
+    expect(PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION).toBe(3);
+    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(3);
+    expect(POP0_V0_CONFIGURATION_VERSION).toBe("0.3.0-pop0-i3");
     expect(Object.keys(state.ownerStates).sort()).toEqual([
       "administrationDirectory",
+      "administrationWorkstreams",
       "calendar",
+      "historicalRecordIndex",
       "informationRoutes",
+      "instrumentDispatches",
       "officeOperations",
+      "presidentialDecisions",
+      "presidentialEscalations",
+      "presidentialInstruments",
       "presidentialPresentations",
     ]);
     expect(POP0_V0_OPERATING_CONFIGURATION.administration.institutions).toHaveLength(2);
@@ -206,6 +212,8 @@ describe("POP0-I2 independent office information substrate", () => {
     expect(Object.keys(nec).sort()).toEqual([
       "accessEntitlements",
       "authoredArtifactIds",
+      "instrumentDispositions",
+      "instrumentReceipts",
       "metadataNotices",
       "officeId",
       "receipts",

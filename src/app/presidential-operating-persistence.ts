@@ -7,13 +7,28 @@ import {
   type PresidentialOperatingRuntimeConfiguration,
   type PresidentialOperatingRuntimeState,
 } from "../sim/presidential-operating-runtime";
+import {
+  assertPresidentialControlBinding,
+  PRESIDENTIAL_OPERATING_DECISION_SURFACE,
+  type PresidentialControlBindingState,
+} from "../sim/presidential-operating-intervention";
 
-export const PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION = 2 as const;
+export const PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION = 3 as const;
 
-export interface PresidentialOperatingSaveV2 {
+export interface PresidentialOperatingSaveV3 {
   readonly formatVersion: typeof PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION;
   readonly configuration: ConfigurationIdentity;
   readonly operatingState: PresidentialOperatingRuntimeState;
+  readonly session: {
+    readonly controlBinding: PresidentialControlBindingState;
+  };
+}
+
+export interface RestoredPresidentialOperatingSave {
+  readonly operatingState: PresidentialOperatingRuntimeState;
+  readonly session: {
+    readonly controlBinding: PresidentialControlBindingState;
+  };
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -57,6 +72,20 @@ const requireStringArray = (value: unknown, field: string): readonly string[] =>
 
 const requireArray = (value: unknown, field: string): readonly unknown[] => {
   if (!Array.isArray(value)) throw new Error(`Invalid presidential operating save: ${field} must be an array.`);
+  return value;
+};
+
+const requireBoolean = (value: unknown, field: string): boolean => {
+  if (typeof value !== "boolean") {
+    throw new Error(`Invalid presidential operating save: ${field} must be boolean.`);
+  }
+  return value;
+};
+
+const requireSafeInteger = (value: unknown, field: string): number => {
+  if (typeof value !== "number" || !Number.isSafeInteger(value)) {
+    throw new Error(`Invalid presidential operating save: ${field} must be a safe integer.`);
+  }
   return value;
 };
 
@@ -212,6 +241,69 @@ const validateDeadlineDefault = (value: unknown, field: string): void => {
   requireString(record.provenanceReference, `${field}.provenanceReference`);
 };
 
+const validateOfficeInstrumentReceipt = (value: unknown, field: string): void => {
+  const receipt = requireRecord(value, field);
+  requireExactKeys(receipt, field, [
+    "id",
+    "deduplicationIdentity",
+    "recipientOfficeId",
+    "instrumentId",
+    "successfulDispatchId",
+    "receivedPayloadVersion",
+    "receivedAt",
+    "receiptPath",
+    "receivingAuthorityReference",
+    "provenanceReference",
+  ]);
+  for (const key of Object.keys(receipt)) requireString(receipt[key], `${field}.${key}`);
+};
+
+const validateRecipientDisposition = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "recipientOfficeId",
+    "instrumentReceiptId",
+    "instrumentId",
+    "authoringOfficeholderAssignmentId",
+    "capabilityAuthorityId",
+    "kind",
+    "dispositionAt",
+    "acceptedProductKind",
+    "acceptedSectionIds",
+    "acceptedCoordinationActions",
+    "constraintIds",
+    "reason",
+    "limitations",
+    "nextReviewAt",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "recipientOfficeId",
+    "instrumentReceiptId",
+    "instrumentId",
+    "kind",
+    "dispositionAt",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  for (const key of [
+    "authoringOfficeholderAssignmentId",
+    "capabilityAuthorityId",
+    "acceptedProductKind",
+    "reason",
+    "nextReviewAt",
+  ] as const) requireNullableString(record[key], `${field}.${key}`);
+  for (const key of [
+    "acceptedSectionIds",
+    "acceptedCoordinationActions",
+    "constraintIds",
+    "limitations",
+  ] as const) requireStringArray(record[key], `${field}.${key}`);
+};
+
 const validateOfficeOperationsState = (value: unknown, field: string): void => {
   requireArray(value, field).forEach((entry, index) => {
     const office = requireRecord(entry, `${field}[${index}]`);
@@ -220,6 +312,8 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
       "assignments",
       "activeQueueAssignmentIds",
       "deadlineDefaultRecords",
+      "instrumentReceipts",
+      "instrumentDispositions",
     ]);
     requireString(office.officeId, `${field}[${index}].officeId`);
     requireArray(office.assignments, `${field}[${index}].assignments`).forEach(
@@ -233,6 +327,18 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
       (record, recordIndex) => validateDeadlineDefault(
         record,
         `${field}[${index}].deadlineDefaultRecords[${recordIndex}]`,
+      ),
+    );
+    requireArray(office.instrumentReceipts, `${field}[${index}].instrumentReceipts`).forEach(
+      (record, recordIndex) => validateOfficeInstrumentReceipt(
+        record,
+        `${field}[${index}].instrumentReceipts[${recordIndex}]`,
+      ),
+    );
+    requireArray(office.instrumentDispositions, `${field}[${index}].instrumentDispositions`).forEach(
+      (record, recordIndex) => validateRecipientDisposition(
+        record,
+        `${field}[${index}].instrumentDispositions[${recordIndex}]`,
       ),
     );
   });
@@ -608,12 +714,589 @@ const validatePresentation = (value: unknown, field: string): void => {
   requireNullableString(record.supersedesPresentationId, `${field}.supersedesPresentationId`);
 };
 
+const validateEscalationPresentation = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "sourceEscalationId",
+    "recipientBindingId",
+    "recipientActorId",
+    "constitutionalOfficeId",
+    "presentingOfficeId",
+    "presenterOfficeholderAssignmentId",
+    "presentedAt",
+    "shownSectionIds",
+    "shownOptionIds",
+    "shownPreviewIds",
+    "shownPreviewHashes",
+    "referencedButNotShownSourcePortions",
+    "purpose",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "sourceEscalationId",
+    "recipientBindingId",
+    "recipientActorId",
+    "constitutionalOfficeId",
+    "presentingOfficeId",
+    "presenterOfficeholderAssignmentId",
+    "presentedAt",
+    "purpose",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  for (const key of [
+    "shownSectionIds",
+    "shownOptionIds",
+    "shownPreviewIds",
+    "shownPreviewHashes",
+  ] as const) requireStringArray(record[key], `${field}.${key}`);
+  requireArray(
+    record.referencedButNotShownSourcePortions,
+    `${field}.referencedButNotShownSourcePortions`,
+  ).forEach((entry, index) => {
+    const portion = requireRecord(entry, `${field}.referencedButNotShownSourcePortions[${index}]`);
+    requireExactKeys(portion, `${field}.referencedButNotShownSourcePortions[${index}]`, [
+      "artifactId",
+      "sectionId",
+    ]);
+    requireString(portion.artifactId, `${field}.referencedButNotShownSourcePortions[${index}].artifactId`);
+    requireString(portion.sectionId, `${field}.referencedButNotShownSourcePortions[${index}].sectionId`);
+  });
+};
+
 const validatePresentationHistoryState = (value: unknown, field: string): void => {
   const state = requireRecord(value, field);
-  requireExactKeys(state, field, ["presentations"]);
+  requireExactKeys(state, field, ["presentations", "escalationPresentations"]);
   requireArray(state.presentations, `${field}.presentations`).forEach(
     (entry, index) => validatePresentation(entry, `${field}.presentations[${index}]`),
   );
+  requireArray(state.escalationPresentations, `${field}.escalationPresentations`).forEach(
+    (entry, index) => validateEscalationPresentation(
+      entry,
+      `${field}.escalationPresentations[${index}]`,
+    ),
+  );
+};
+
+const validateInstrumentAttachment = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, ["artifactId", "sectionIds", "shownToPresident"]);
+  requireString(record.artifactId, `${field}.artifactId`);
+  requireStringArray(record.sectionIds, `${field}.sectionIds`);
+  requireBoolean(record.shownToPresident, `${field}.shownToPresident`);
+};
+
+const validateInstrumentPayload = (value: unknown, field: string): void => {
+  const payload = requireRecord(value, field);
+  const kind = requireString(payload.kind, `${field}.kind`);
+  const common = [
+    "kind",
+    "payloadVersion",
+    "recipientOfficeId",
+    "subjectScopeFamily",
+    "requestedAct",
+    "sourceReferenceIds",
+    "attachmentMetadata",
+    "authorityBasis",
+    "requestedResponseDeadline",
+  ];
+  if (kind === "REQUEST_OFFICE_ANALYSIS") {
+    requireExactKeys(payload, field, [
+      ...common,
+      "requestedQuestion",
+      "requestedProductKind",
+      "evidenceArtifactId",
+      "evidenceSectionIds",
+      "knownAccessLimitation",
+      "narrowingPermitted",
+    ]);
+    for (const key of [
+      "requestedQuestion",
+      "requestedProductKind",
+      "evidenceArtifactId",
+    ] as const) requireString(payload[key], `${field}.${key}`);
+    requireStringArray(payload.evidenceSectionIds, `${field}.evidenceSectionIds`);
+    requireNullableString(payload.knownAccessLimitation, `${field}.knownAccessLimitation`);
+    requireBoolean(payload.narrowingPermitted, `${field}.narrowingPermitted`);
+  } else if (kind === "REQUEST_WORKSTREAM_COORDINATION") {
+    requireExactKeys(payload, field, [
+      ...common,
+      "workstreamId",
+      "coordinationObjective",
+      "participatingOfficeIds",
+      "requestedReviewAt",
+      "permittedCoordinationActions",
+    ]);
+    for (const key of [
+      "workstreamId",
+      "coordinationObjective",
+      "requestedReviewAt",
+    ] as const) requireString(payload[key], `${field}.${key}`);
+    requireStringArray(payload.participatingOfficeIds, `${field}.participatingOfficeIds`);
+    requireStringArray(payload.permittedCoordinationActions, `${field}.permittedCoordinationActions`);
+  } else throw new Error(`Invalid presidential operating save: ${field}.kind is unsupported.`);
+  for (const key of [
+    "payloadVersion",
+    "recipientOfficeId",
+    "subjectScopeFamily",
+    "requestedAct",
+    "authorityBasis",
+    "requestedResponseDeadline",
+  ] as const) requireString(payload[key], `${field}.${key}`);
+  requireStringArray(payload.sourceReferenceIds, `${field}.sourceReferenceIds`);
+  requireArray(payload.attachmentMetadata, `${field}.attachmentMetadata`).forEach(
+    (entry, index) => validateInstrumentAttachment(entry, `${field}.attachmentMetadata[${index}]`),
+  );
+};
+
+const validateInstrumentPreview = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "payload",
+    "payloadHash",
+    "bundlePosition",
+    "provenanceReference",
+  ]);
+  requireString(record.id, `${field}.id`);
+  validateInstrumentPayload(record.payload, `${field}.payload`);
+  requireString(record.payloadHash, `${field}.payloadHash`);
+  requireSafeInteger(record.bundlePosition, `${field}.bundlePosition`);
+  requireString(record.provenanceReference, `${field}.provenanceReference`);
+};
+
+const validateEscalationOption = (value: unknown, field: string): void => {
+  const option = requireRecord(value, field);
+  const kind = requireString(option.kind, `${field}.kind`);
+  if (kind === "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION") {
+    requireExactKeys(option, field, ["id", "kind", "previews"]);
+  } else if (kind === "RESERVE_PRESIDENTIAL_REVIEW") {
+    requireExactKeys(option, field, [
+      "id",
+      "kind",
+      "previews",
+      "reservedAt",
+      "reviewQuestion",
+      "expectedSourceReferenceIds",
+    ]);
+    requireString(option.reservedAt, `${field}.reservedAt`);
+    requireString(option.reviewQuestion, `${field}.reviewQuestion`);
+    requireStringArray(option.expectedSourceReferenceIds, `${field}.expectedSourceReferenceIds`);
+  } else if (kind === "ALLOW_MONITORING_DEFAULT") {
+    requireExactKeys(option, field, ["id", "kind", "previews"]);
+  } else throw new Error(`Invalid presidential operating save: ${field}.kind is unsupported.`);
+  requireString(option.id, `${field}.id`);
+  requireArray(option.previews, `${field}.previews`).forEach(
+    (entry, index) => validateInstrumentPreview(entry, `${field}.previews[${index}]`),
+  );
+};
+
+const validatePresidentialKnownPortion = (value: unknown, field: string): void => {
+  const portion = requireRecord(value, field);
+  requireExactKeys(portion, field, ["presentationId", "artifactId", "sectionId"]);
+  requireString(portion.presentationId, `${field}.presentationId`);
+  requireString(portion.artifactId, `${field}.artifactId`);
+  requireString(portion.sectionId, `${field}.sectionId`);
+};
+
+const validateStaffOnlyPortion = (value: unknown, field: string): void => {
+  const portion = requireRecord(value, field);
+  requireExactKeys(portion, field, ["artifactId", "sectionId"]);
+  requireString(portion.artifactId, `${field}.artifactId`);
+  requireString(portion.sectionId, `${field}.sectionId`);
+};
+
+const validateEscalation = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "escalatingOfficeId",
+    "escalatingOfficeholderAssignmentId",
+    "createdAt",
+    "basisKind",
+    "basisSynthesisArtifactId",
+    "sourceRecordIds",
+    "presidentKnownPortions",
+    "staffOnlySourcePortions",
+    "requestedJudgment",
+    "knownClaims",
+    "uncertainties",
+    "limitations",
+    "options",
+    "expiresAt",
+    "defaultRule",
+    "downstreamResolverOfficeIds",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "escalatingOfficeId",
+    "escalatingOfficeholderAssignmentId",
+    "createdAt",
+    "basisKind",
+    "basisSynthesisArtifactId",
+    "requestedJudgment",
+    "expiresAt",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  for (const key of [
+    "sourceRecordIds",
+    "uncertainties",
+    "limitations",
+    "downstreamResolverOfficeIds",
+  ] as const) requireStringArray(record[key], `${field}.${key}`);
+  requireArray(record.presidentKnownPortions, `${field}.presidentKnownPortions`).forEach(
+    (entry, index) => validatePresidentialKnownPortion(entry, `${field}.presidentKnownPortions[${index}]`),
+  );
+  requireArray(record.staffOnlySourcePortions, `${field}.staffOnlySourcePortions`).forEach(
+    (entry, index) => validateStaffOnlyPortion(entry, `${field}.staffOnlySourcePortions[${index}]`),
+  );
+  requireArray(record.knownClaims, `${field}.knownClaims`).forEach((entry, index) => {
+    const claim = requireRecord(entry, `${field}.knownClaims[${index}]`);
+    requireExactKeys(claim, `${field}.knownClaims[${index}]`, ["claim", "sourceReferenceIds"]);
+    requireString(claim.claim, `${field}.knownClaims[${index}].claim`);
+    requireStringArray(claim.sourceReferenceIds, `${field}.knownClaims[${index}].sourceReferenceIds`);
+  });
+  requireArray(record.options, `${field}.options`).forEach(
+    (entry, index) => validateEscalationOption(entry, `${field}.options[${index}]`),
+  );
+  const defaultRule = requireRecord(record.defaultRule, `${field}.defaultRule`);
+  requireExactKeys(defaultRule, `${field}.defaultRule`, [
+    "presidentialInstrumentOutcome",
+    "officeMonitoringOutcome",
+  ]);
+  requireString(defaultRule.presidentialInstrumentOutcome, `${field}.defaultRule.presidentialInstrumentOutcome`);
+  requireString(defaultRule.officeMonitoringOutcome, `${field}.defaultRule.officeMonitoringOutcome`);
+};
+
+const validateEscalationLifecycle = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "escalationId",
+    "kind",
+    "occurredAt",
+    "actingOfficeId",
+    "actingOfficeholderAssignmentId",
+    "causeRecordId",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "escalationId",
+    "kind",
+    "occurredAt",
+    "causeRecordId",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  requireNullableString(record.actingOfficeId, `${field}.actingOfficeId`);
+  requireNullableString(record.actingOfficeholderAssignmentId, `${field}.actingOfficeholderAssignmentId`);
+};
+
+const validateDefaultOccurrence = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "escalationId",
+    "occurredAt",
+    "outcome",
+    "provenanceReference",
+  ]);
+  for (const key of Object.keys(record)) requireString(record[key], `${field}.${key}`);
+};
+
+const validateReservedReview = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "sourceEscalationId",
+    "sourceDecisionId",
+    "reservedAt",
+    "reviewQuestion",
+    "priorPresentationIds",
+    "expectedSourceReferenceIds",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "sourceEscalationId",
+    "sourceDecisionId",
+    "reservedAt",
+    "reviewQuestion",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  requireStringArray(record.priorPresentationIds, `${field}.priorPresentationIds`);
+  requireStringArray(record.expectedSourceReferenceIds, `${field}.expectedSourceReferenceIds`);
+};
+
+const validateReservedReviewLifecycle = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "reservationId",
+    "kind",
+    "occurredAt",
+    "actingOfficeId",
+    "actingOfficeholderAssignmentId",
+    "causeRecordId",
+    "provenanceReference",
+  ]);
+  for (const key of Object.keys(record)) requireString(record[key], `${field}.${key}`);
+};
+
+const validateEscalationOwnerState = (value: unknown, field: string): void => {
+  const state = requireRecord(value, field);
+  requireExactKeys(state, field, [
+    "escalations",
+    "lifecycleOccurrences",
+    "defaultOccurrences",
+    "reservedReviews",
+    "reservedReviewLifecycleOccurrences",
+  ]);
+  requireArray(state.escalations, `${field}.escalations`).forEach(
+    (entry, index) => validateEscalation(entry, `${field}.escalations[${index}]`),
+  );
+  requireArray(state.lifecycleOccurrences, `${field}.lifecycleOccurrences`).forEach(
+    (entry, index) => validateEscalationLifecycle(entry, `${field}.lifecycleOccurrences[${index}]`),
+  );
+  requireArray(state.defaultOccurrences, `${field}.defaultOccurrences`).forEach(
+    (entry, index) => validateDefaultOccurrence(entry, `${field}.defaultOccurrences[${index}]`),
+  );
+  requireArray(state.reservedReviews, `${field}.reservedReviews`).forEach(
+    (entry, index) => validateReservedReview(entry, `${field}.reservedReviews[${index}]`),
+  );
+  requireArray(state.reservedReviewLifecycleOccurrences, `${field}.reservedReviewLifecycleOccurrences`).forEach(
+    (entry, index) => validateReservedReviewLifecycle(
+      entry,
+      `${field}.reservedReviewLifecycleOccurrences[${index}]`,
+    ),
+  );
+};
+
+const validateWorkstream = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "label",
+    "adoptedObjective",
+    "creatingOfficeId",
+    "creatingOfficeholderAssignmentId",
+    "authorityReference",
+    "coordinatorOfficeId",
+    "participatingOfficeIds",
+    "createdAt",
+    "provenanceReference",
+    "initialSourceReferenceIds",
+    "initialReviewAt",
+  ]);
+  for (const key of Object.keys(record).filter((key) =>
+    !["participatingOfficeIds", "initialSourceReferenceIds"].includes(key))) {
+    requireString(record[key], `${field}.${key}`);
+  }
+  requireStringArray(record.participatingOfficeIds, `${field}.participatingOfficeIds`);
+  requireStringArray(record.initialSourceReferenceIds, `${field}.initialSourceReferenceIds`);
+};
+
+const validateWorkstreamTransition = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "workstreamId",
+    "priorTransitionId",
+    "status",
+    "actingOfficeId",
+    "actingOfficeholderAssignmentId",
+    "sourceOccurrenceIds",
+    "occurredAt",
+    "reason",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "workstreamId",
+    "status",
+    "actingOfficeId",
+    "actingOfficeholderAssignmentId",
+    "occurredAt",
+    "reason",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  requireNullableString(record.priorTransitionId, `${field}.priorTransitionId`);
+  requireStringArray(record.sourceOccurrenceIds, `${field}.sourceOccurrenceIds`);
+};
+
+const validateWorkstreamOwnerState = (value: unknown, field: string): void => {
+  const state = requireRecord(value, field);
+  requireExactKeys(state, field, ["workstreams", "transitions"]);
+  requireArray(state.workstreams, `${field}.workstreams`).forEach(
+    (entry, index) => validateWorkstream(entry, `${field}.workstreams[${index}]`),
+  );
+  requireArray(state.transitions, `${field}.transitions`).forEach(
+    (entry, index) => validateWorkstreamTransition(entry, `${field}.transitions[${index}]`),
+  );
+};
+
+const validateDecision = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "controlBindingId",
+    "presidentActorId",
+    "constitutionalOfficeId",
+    "sourceEscalationId",
+    "selectedOptionId",
+    "selectedOptionKind",
+    "previewIds",
+    "previewHashes",
+    "decidedAt",
+    "basisEscalationPresentationId",
+    "acknowledgedUncertainties",
+    "authorizedInstrumentIds",
+    "reservedReviewId",
+    "deliberateDefaultRuleReference",
+    "provenanceReference",
+    "supersedesDecisionId",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "controlBindingId",
+    "presidentActorId",
+    "constitutionalOfficeId",
+    "sourceEscalationId",
+    "selectedOptionId",
+    "selectedOptionKind",
+    "decidedAt",
+    "basisEscalationPresentationId",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  for (const key of [
+    "previewIds",
+    "previewHashes",
+    "acknowledgedUncertainties",
+    "authorizedInstrumentIds",
+  ] as const) requireStringArray(record[key], `${field}.${key}`);
+  for (const key of [
+    "reservedReviewId",
+    "deliberateDefaultRuleReference",
+    "supersedesDecisionId",
+  ] as const) requireNullableString(record[key], `${field}.${key}`);
+};
+
+const validateInstrument = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "authorizingDecisionId",
+    "selectedOptionId",
+    "sourcePreviewId",
+    "sourcePreviewHash",
+    "issuingPresidentActorId",
+    "issuingConstitutionalOfficeId",
+    "issuedAt",
+    "provenanceReference",
+    "revisionOfInstrumentId",
+    "supersedesInstrumentId",
+    "payload",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "authorizingDecisionId",
+    "selectedOptionId",
+    "sourcePreviewId",
+    "sourcePreviewHash",
+    "issuingPresidentActorId",
+    "issuingConstitutionalOfficeId",
+    "issuedAt",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  requireNullableString(record.revisionOfInstrumentId, `${field}.revisionOfInstrumentId`);
+  requireNullableString(record.supersedesInstrumentId, `${field}.supersedesInstrumentId`);
+  validateInstrumentPayload(record.payload, `${field}.payload`);
+};
+
+const validateDispatch = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "instrumentId",
+    "recipientOfficeId",
+    "dispatchingOfficeId",
+    "dispatchPath",
+    "attemptedAt",
+    "outcome",
+    "deliveredAt",
+    "failureReason",
+    "outcomeProvenanceReference",
+    "retryOfDispatchId",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "instrumentId",
+    "recipientOfficeId",
+    "dispatchingOfficeId",
+    "dispatchPath",
+    "attemptedAt",
+    "outcome",
+    "outcomeProvenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  requireNullableString(record.deliveredAt, `${field}.deliveredAt`);
+  requireNullableString(record.failureReason, `${field}.failureReason`);
+  requireNullableString(record.retryOfDispatchId, `${field}.retryOfDispatchId`);
+};
+
+const validateRecordArray = (
+  value: unknown,
+  field: string,
+  validate: (entry: unknown, entryField: string) => void,
+): void => requireArray(value, field).forEach(
+  (entry, index) => validate(entry, `${field}[${index}]`),
+);
+
+const validateHistoricalIndexState = (value: unknown, field: string): void => {
+  const state = requireRecord(value, field);
+  requireExactKeys(state, field, ["historyId", "entries"]);
+  requireString(state.historyId, `${field}.historyId`);
+  requireArray(state.entries, `${field}.entries`).forEach((entry, index) => {
+    const entryField = `${field}.entries[${index}]`;
+    const record = requireRecord(entry, entryField);
+    requireExactKeys(record, entryField, [
+      "historyId",
+      "occurrenceId",
+      "ownerId",
+      "recordKind",
+      "occurredAt",
+      "ownerRecordId",
+      "causalParentOccurrenceIds",
+    ]);
+    for (const key of [
+      "historyId",
+      "occurrenceId",
+      "ownerId",
+      "recordKind",
+      "occurredAt",
+      "ownerRecordId",
+    ] as const) requireString(record[key], `${entryField}.${key}`);
+    requireStringArray(record.causalParentOccurrenceIds, `${entryField}.causalParentOccurrenceIds`);
+  });
 };
 
 const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState => {
@@ -636,6 +1319,12 @@ const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState 
     "officeOperations",
     "informationRoutes",
     "presidentialPresentations",
+    "presidentialEscalations",
+    "administrationWorkstreams",
+    "presidentialDecisions",
+    "presidentialInstruments",
+    "instrumentDispatches",
+    "historicalRecordIndex",
   ]);
   validateOwner(ownerStates.calendar, "operatingState.ownerStates.calendar", validateCalendarState);
   validateOwner(
@@ -658,25 +1347,71 @@ const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState 
     "operatingState.ownerStates.presidentialPresentations",
     validatePresentationHistoryState,
   );
+  validateOwner(
+    ownerStates.presidentialEscalations,
+    "operatingState.ownerStates.presidentialEscalations",
+    validateEscalationOwnerState,
+  );
+  validateOwner(
+    ownerStates.administrationWorkstreams,
+    "operatingState.ownerStates.administrationWorkstreams",
+    validateWorkstreamOwnerState,
+  );
+  validateOwner(
+    ownerStates.presidentialDecisions,
+    "operatingState.ownerStates.presidentialDecisions",
+    (ownerState, field) => validateRecordArray(ownerState, field, validateDecision),
+  );
+  validateOwner(
+    ownerStates.presidentialInstruments,
+    "operatingState.ownerStates.presidentialInstruments",
+    (ownerState, field) => validateRecordArray(ownerState, field, validateInstrument),
+  );
+  validateOwner(
+    ownerStates.instrumentDispatches,
+    "operatingState.ownerStates.instrumentDispatches",
+    (ownerState, field) => validateRecordArray(ownerState, field, validateDispatch),
+  );
+  validateOwner(
+    ownerStates.historicalRecordIndex,
+    "operatingState.ownerStates.historicalRecordIndex",
+    validateHistoricalIndexState,
+  );
   return JSON.parse(JSON.stringify(state)) as PresidentialOperatingRuntimeState;
 };
 
 export const serializePresidentialOperatingSave = (
   state: PresidentialOperatingRuntimeState,
   configuration: PresidentialOperatingRuntimeConfiguration,
+  controlBinding: PresidentialControlBindingState = {
+    id: configuration.intervention.controlBinding.id,
+    decisionSurface: PRESIDENTIAL_OPERATING_DECISION_SURFACE,
+    executiveOfficeId: configuration.administration.presidentialRecipientBinding.constitutionalOfficeId,
+    boundOfficeholderActorId: configuration.administration.presidentialRecipientBinding.actorId,
+    status: "ACTIVE",
+    endedAt: null,
+    endReason: null,
+  },
 ): string => {
   assertPresidentialOperatingRuntimeState(state, configuration);
+  assertPresidentialControlBinding(
+    controlBinding,
+    configuration.intervention,
+    state.ownerStates,
+    state.ownerStates.calendar.state.current,
+  );
   return JSON.stringify({
     formatVersion: PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION,
     configuration: { ...configuration.identity },
     operatingState: copyPresidentialOperatingRuntimeState(state),
-  } satisfies PresidentialOperatingSaveV2);
+    session: { controlBinding: { ...controlBinding } },
+  } satisfies PresidentialOperatingSaveV3);
 };
 
 export const parsePresidentialOperatingSave = (
   serializedSave: string,
   configuration: PresidentialOperatingRuntimeConfiguration,
-): PresidentialOperatingRuntimeState => {
+): RestoredPresidentialOperatingSave => {
   let parsed: unknown;
   try {
     parsed = JSON.parse(serializedSave) as unknown;
@@ -684,7 +1419,12 @@ export const parsePresidentialOperatingSave = (
     throw new Error("Invalid presidential operating save: serialized data is not valid JSON.");
   }
   const envelope = requireRecord(parsed, "save envelope");
-  requireExactKeys(envelope, "save envelope", ["formatVersion", "configuration", "operatingState"]);
+  requireExactKeys(envelope, "save envelope", [
+    "formatVersion",
+    "configuration",
+    "operatingState",
+    "session",
+  ]);
   if (envelope.formatVersion !== PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION) {
     throw new Error(
       `Unsupported presidential operating save format: ${String(envelope.formatVersion)}.`,
@@ -695,5 +1435,43 @@ export const parsePresidentialOperatingSave = (
   const state = parseOperatingState(envelope.operatingState);
   assertConfigurationIdentityCompatible(savedConfiguration, state.configuration);
   assertPresidentialOperatingRuntimeState(state, configuration);
-  return copyPresidentialOperatingRuntimeState(state);
+  const session = requireRecord(envelope.session, "session");
+  requireExactKeys(session, "session", ["controlBinding"]);
+  const binding = requireRecord(session.controlBinding, "session.controlBinding");
+  requireExactKeys(binding, "session.controlBinding", [
+    "id",
+    "decisionSurface",
+    "executiveOfficeId",
+    "boundOfficeholderActorId",
+    "status",
+    "endedAt",
+    "endReason",
+  ]);
+  for (const key of [
+    "id",
+    "decisionSurface",
+    "executiveOfficeId",
+    "boundOfficeholderActorId",
+    "status",
+  ] as const) requireString(binding[key], `session.controlBinding.${key}`);
+  if (
+    binding.decisionSurface !== PRESIDENTIAL_OPERATING_DECISION_SURFACE ||
+    (binding.status !== "ACTIVE" && binding.status !== "ENDED") ||
+    (binding.endReason !== null &&
+      binding.endReason !== "BOUND_OFFICEHOLDER_CHANGED" &&
+      binding.endReason !== "TERM_ENDED")
+  ) throw new Error("Invalid presidential operating save: ControlBinding enum value is unsupported.");
+  requireNullableString(binding.endedAt, "session.controlBinding.endedAt");
+  requireNullableString(binding.endReason, "session.controlBinding.endReason");
+  const controlBinding = JSON.parse(JSON.stringify(binding)) as PresidentialControlBindingState;
+  assertPresidentialControlBinding(
+    controlBinding,
+    configuration.intervention,
+    state.ownerStates,
+    state.ownerStates.calendar.state.current,
+  );
+  return {
+    operatingState: copyPresidentialOperatingRuntimeState(state),
+    session: { controlBinding: { ...controlBinding } },
+  };
 };

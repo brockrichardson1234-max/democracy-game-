@@ -213,12 +213,17 @@ describe("POP0-I2 atomic persistence", () => {
       .toThrow(/shows an unavailable artifact portion/i);
   });
 
-  it("serializes the version-2 envelope without any opaque legacy save", () => {
+  it("serializes the version-3 envelope without any opaque legacy save", () => {
     const session = createPop0I2TraceSession();
     runFullPop0I2Trace(session);
     const envelope = JSON.parse(session.save()) as Record<string, unknown>;
     expect(envelope.formatVersion).toBe(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION);
-    expect(Object.keys(envelope).sort()).toEqual(["configuration", "formatVersion", "operatingState"]);
+    expect(Object.keys(envelope).sort()).toEqual([
+      "configuration",
+      "formatVersion",
+      "operatingState",
+      "session",
+    ]);
     expect(JSON.stringify(envelope)).not.toMatch(/i10Save|integratedPartialSave|formatVersion":11/);
   });
 });

@@ -51,6 +51,7 @@ const withAdministration = (
     operatingStateId: base.operatingStateId,
     calendar: base.calendar,
     administration,
+    intervention: base.intervention,
   };
   return {
     ...withoutHash,

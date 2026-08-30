@@ -8,6 +8,9 @@ export default defineConfig({
     // Integrated persistence, election/succession, and Housing paths legitimately
     // cross the 5-second unit-test default in CI. Ten seconds preserves hang detection.
     testTimeout: 10_000,
+    // The authenticated runtime suites load large fixed artifacts. Bounding fork
+    // concurrency prevents worker-start starvation while retaining parallelism.
+    maxWorkers: 4,
   },
   server: {
     host: "127.0.0.1",

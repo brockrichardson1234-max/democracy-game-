@@ -9,11 +9,15 @@ import {
   PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION,
   type PresidentialOperatingRuntimeConfiguration,
 } from "../../sim/presidential-operating-runtime";
+import {
+  PRESIDENTIAL_OPERATING_DECISION_SURFACE,
+  type PresidentialInterventionConfiguration,
+} from "../../sim/presidential-operating-intervention";
 
 export const POP0_V0_CONFIGURATION_ID = "presidential-operating-proof";
-export const POP0_V0_CONFIGURATION_VERSION = "0.2.0-pop0-i2";
+export const POP0_V0_CONFIGURATION_VERSION = "0.3.0-pop0-i3";
 export const POP0_V0_SCENARIO_ID = "us-presidential-operating-proof-v0";
-export const POP0_V0_SCENARIO_VERSION = "0.2.0-pop0-i2";
+export const POP0_V0_SCENARIO_VERSION = "0.3.0-pop0-i3";
 export const POP0_V0_CLASSIFICATION = "APPROXIMATED_NON_HISTORICAL_PRODUCT_PROOF";
 export const POP0_V0_OPERATING_STATE_ID = "pop0.operating-world.primary";
 export const POP0_V0_CALENDAR_OWNER_ID = "pop0.owner.calendar";
@@ -84,6 +88,28 @@ export const POP0_I2_ASSESSMENT_RULE_IDS = {
     "pop0.assessment-rule.supplier-assumption-supports-plausibility",
   metadataCannotSupportEstimate:
     "pop0.assessment-rule.metadata-cannot-support-estimate",
+} as const;
+
+export const POP0_I3_OWNER_IDS = {
+  presidentialEscalations: "pop0.owner.presidential-escalations",
+  administrationWorkstreams: "pop0.owner.administration-workstreams",
+  presidentialDecisions: "pop0.owner.presidential-decisions",
+  presidentialInstruments: "pop0.owner.presidential-instruments",
+  instrumentDispatches: "pop0.owner.instrument-dispatches",
+  historicalRecordIndex: "pop0.owner.historical-record-index",
+} as const;
+
+export const POP0_I3_HISTORY_ID = "pop0.history.primary";
+export const POP0_I3_CONTROL_BINDING_ID = "pop0.control-binding.presidential-operating";
+export const POP0_I3_WORKSTREAM_ID = "pop0.workstream.preliminary-labor-evidence-review";
+export const POP0_I3_STANDING_COORDINATION_AUTHORITY_ID =
+  "pop0.authority.chief-of-staff.preliminary-labor-coordination";
+export const POP0_I3_ESCALATION_RULE_ID =
+  "pop0.escalation-rule.preserved-labor-disagreement";
+export const POP0_I3_RECIPIENT_CAPABILITY_IDS = {
+  ombAnalysis: "pop0.recipient-capability.omb.bounded-analysis",
+  chiefOfStaffCoordination:
+    "pop0.recipient-capability.chief-of-staff.workstream-coordination",
 } as const;
 
 const institutions: PresidentialAdministrationConfiguration["institutions"] = [
@@ -264,6 +290,97 @@ const administration: PresidentialAdministrationConfiguration = {
       requiredAssumptionIds: [],
     },
   ],
+  recipientCapabilities: [
+    {
+      kind: "ANALYSIS_CAPABILITY",
+      id: POP0_I3_RECIPIENT_CAPABILITY_IDS.ombAnalysis,
+      recipientOfficeId: POP0_I2_OFFICE_IDS.omb,
+      instrumentKind: "REQUEST_OFFICE_ANALYSIS",
+      effectiveFrom: POP0_V0_EPOCH,
+      effectiveUntil: null,
+      authorityReference: POP0_V0_PROVENANCE_ROOT,
+      provenanceReference: POP0_V0_PROVENANCE_ROOT,
+      mayNarrow: true,
+      permittedProductKinds: [
+        "FISCAL_SUPPORTABILITY_SCOPING",
+        "METADATA_ACCESS_GAP_SCOPING",
+      ],
+      permittedSubjectScopeFamilies: ["PRELIMINARY_LABOR_EVIDENCE_REVIEW"],
+      maximumSectionCount: 3,
+      permittedLessClaimingProductKinds: ["METADATA_ACCESS_GAP_SCOPING"],
+    },
+    {
+      kind: "COORDINATION_CAPABILITY",
+      id: POP0_I3_RECIPIENT_CAPABILITY_IDS.chiefOfStaffCoordination,
+      recipientOfficeId: POP0_I2_OFFICE_IDS.chiefOfStaff,
+      instrumentKind: "REQUEST_WORKSTREAM_COORDINATION",
+      effectiveFrom: POP0_V0_EPOCH,
+      effectiveUntil: null,
+      authorityReference: POP0_V0_PROVENANCE_ROOT,
+      provenanceReference: POP0_V0_PROVENANCE_ROOT,
+      mayNarrow: true,
+      permittedWorkstreamIds: [POP0_I3_WORKSTREAM_ID],
+      permittedCoordinationActionKinds: [
+        "TRACK_RECIPIENT_DISPOSITIONS",
+        "COORDINATE_FOLLOW_UP",
+      ],
+      maximumParticipatingOfficeCount: 2,
+      maximumReviewHorizonHours: 72,
+    },
+  ],
+};
+
+const intervention: PresidentialInterventionConfiguration = {
+  ownerIds: POP0_I3_OWNER_IDS,
+  historyId: POP0_I3_HISTORY_ID,
+  controlBinding: {
+    id: POP0_I3_CONTROL_BINDING_ID,
+    decisionSurface: PRESIDENTIAL_OPERATING_DECISION_SURFACE,
+  },
+  standingCoordinationAuthorities: [{
+    id: POP0_I3_STANDING_COORDINATION_AUTHORITY_ID,
+    officeId: POP0_I2_OFFICE_IDS.chiefOfStaff,
+    effectiveFrom: POP0_V0_EPOCH,
+    effectiveUntil: null,
+    permittedWorkstreamIds: [POP0_I3_WORKSTREAM_ID],
+    permittedStatuses: [
+      "MONITORED",
+      "ACTIVE",
+      "DELEGATED",
+      "PAUSED",
+      "BLOCKED",
+      "COMPLETED",
+      "ABANDONED",
+    ],
+    authorityReference: POP0_V0_PROVENANCE_ROOT,
+    provenanceReference: POP0_V0_PROVENANCE_ROOT,
+  }],
+  escalationEligibilityRules: [{
+    id: POP0_I3_ESCALATION_RULE_ID,
+    initiatingOfficeId: POP0_I2_OFFICE_IDS.chiefOfStaff,
+    standingAuthorityId: POP0_I3_STANDING_COORDINATION_AUTHORITY_ID,
+    requiredBasisKind: "SYNTHESIS_CONFLICT",
+    requiredCommonPropositionId: POP0_I2_COMMON_PROPOSITION_ID,
+    requiredShownSynthesisSectionCount: 2,
+    requiredOptionKinds: [
+      "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION",
+      "RESERVE_PRESIDENTIAL_REVIEW",
+      "ALLOW_MONITORING_DEFAULT",
+    ],
+    provenanceReference: POP0_V0_PROVENANCE_ROOT,
+  }],
+  workstreamDefinition: {
+    id: POP0_I3_WORKSTREAM_ID,
+    label: "Preliminary Labor Evidence Review",
+    adoptedObjective:
+      "Coordinate bounded follow-up on the accepted preliminary Labor disagreement and OMB access gap",
+    coordinatorOfficeId: POP0_I2_OFFICE_IDS.chiefOfStaff,
+    participatingOfficeIds: [
+      POP0_I2_OFFICE_IDS.chiefOfStaff,
+      POP0_I2_OFFICE_IDS.omb,
+    ],
+  },
+  provenanceReference: POP0_V0_PROVENANCE_ROOT,
 };
 
 const configurationWithoutHash = {
@@ -282,6 +399,7 @@ const configurationWithoutHash = {
     boundaries: [],
   },
   administration,
+  intervention,
 } as const;
 
 export const POP0_V0_OPERATING_CONFIGURATION: PresidentialOperatingRuntimeConfiguration = {

@@ -3,6 +3,7 @@ import type { ConfigurationIdentity } from "../configuration/types";
 import {
   assertCalendarTimeState,
   createCalendarTimeState,
+  expectedProcessedBoundaryIds,
   type CalendarTimeState,
   type ConfiguredCalendarBoundary,
 } from "./calendar-time";
@@ -14,8 +15,17 @@ import {
   type PresidentialAdministrationConfiguration,
   type PresidentialAdministrationOwnerStates,
 } from "./presidential-office-information";
+import {
+  advancePresidentialInterventionTime,
+  assertPresidentialInterventionConfiguration,
+  assertPresidentialInterventionOwnerStates,
+  copyPresidentialInterventionOwnerStates,
+  createPresidentialInterventionOwnerStates,
+  type PresidentialInterventionConfiguration,
+  type PresidentialInterventionOwnerStates,
+} from "./presidential-operating-intervention";
 
-export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 2 as const;
+export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 3 as const;
 
 export interface PresidentialOperatingRuntimeConfiguration {
   readonly schemaVersion: typeof PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION;
@@ -28,6 +38,7 @@ export interface PresidentialOperatingRuntimeConfiguration {
     readonly boundaries: readonly ConfiguredCalendarBoundary[];
   };
   readonly administration: PresidentialAdministrationConfiguration;
+  readonly intervention: PresidentialInterventionConfiguration;
 }
 
 export interface PresidentialOperatingRuntimeState {
@@ -39,7 +50,7 @@ export interface PresidentialOperatingRuntimeState {
       readonly ownerId: string;
       readonly state: CalendarTimeState;
     };
-  } & PresidentialAdministrationOwnerStates;
+  } & PresidentialAdministrationOwnerStates & PresidentialInterventionOwnerStates;
 }
 
 const requireNonempty = (value: string, field: string): void => {
@@ -85,6 +96,7 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     operatingStateId: configuration.operatingStateId,
     calendar: configuration.calendar,
     administration: configuration.administration,
+    intervention: configuration.intervention,
   });
   if (configuration.identity.configurationHash !== expectedHash) {
     throw new Error(
@@ -100,6 +112,11 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     configuration.administration,
     configuration.calendar.epoch,
   );
+  assertPresidentialInterventionConfiguration(
+    configuration.intervention,
+    configuration.administration,
+    configuration.calendar.epoch,
+  );
 }
 
 export const createPresidentialOperatingRuntimeState = (
@@ -107,6 +124,11 @@ export const createPresidentialOperatingRuntimeState = (
 ): PresidentialOperatingRuntimeState => {
   assertPresidentialOperatingRuntimeConfiguration(configuration);
   const administration = createPresidentialAdministrationOwnerStates(
+    configuration.administration,
+    configuration.calendar.epoch,
+  );
+  const intervention = createPresidentialInterventionOwnerStates(
+    configuration.intervention,
     configuration.administration,
     configuration.calendar.epoch,
   );
@@ -123,6 +145,7 @@ export const createPresidentialOperatingRuntimeState = (
         ),
       },
       ...administration,
+      ...intervention,
     },
   };
 };
@@ -131,6 +154,7 @@ export const copyPresidentialOperatingRuntimeState = (
   state: PresidentialOperatingRuntimeState,
 ): PresidentialOperatingRuntimeState => {
   const administration = copyPresidentialAdministrationOwnerStates(state.ownerStates);
+  const intervention = copyPresidentialInterventionOwnerStates(state.ownerStates);
   return {
     schemaVersion: state.schemaVersion,
     operatingStateId: state.operatingStateId,
@@ -144,6 +168,7 @@ export const copyPresidentialOperatingRuntimeState = (
         },
       },
       ...administration,
+      ...intervention,
     },
   };
 };
@@ -180,6 +205,13 @@ export const assertPresidentialOperatingRuntimeState = (
     configuration.calendar.epoch,
     state.ownerStates.calendar.state.current,
   );
+  assertPresidentialInterventionOwnerStates(
+    state.ownerStates,
+    configuration.administration,
+    configuration.intervention,
+    configuration.calendar.epoch,
+    state.ownerStates.calendar.state.current,
+  );
 };
 
 export const advancePresidentialOperatingRuntimeTime = (
@@ -193,15 +225,26 @@ export const advancePresidentialOperatingRuntimeTime = (
   if (!Number.isFinite(targetValue) || targetValue < currentValue) {
     throw new Error("Presidential operating time requires a valid nondecreasing target.");
   }
+  const advancedOwners = advancePresidentialInterventionTime(
+    state.ownerStates,
+    configuration.administration,
+    configuration.intervention,
+    configuration.calendar.epoch,
+    state.ownerStates.calendar.state.current,
+    target,
+  );
   const next: PresidentialOperatingRuntimeState = {
     ...state,
     ownerStates: {
-      ...state.ownerStates,
+      ...advancedOwners,
       calendar: {
         ...state.ownerStates.calendar,
         state: {
           current: target,
-          processedBoundaryIds: [],
+          processedBoundaryIds: expectedProcessedBoundaryIds(
+            target,
+            configuration.calendar.boundaries,
+          ),
         },
       },
     },
