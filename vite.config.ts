@@ -10,8 +10,9 @@ export default defineConfig({
     // while covering observed runner variance in the authenticated tamper suites.
     testTimeout: 20_000,
     // The authenticated runtime suites load large fixed artifacts. Bounding fork
-    // concurrency prevents worker-start starvation while retaining parallelism.
-    maxWorkers: 2,
+    // concurrency prevents worker-start starvation and cross-suite timeout
+    // contention on the authenticated D-drive verification host.
+    maxWorkers: 1,
   },
   server: {
     host: "127.0.0.1",
