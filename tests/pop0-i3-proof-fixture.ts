@@ -190,7 +190,8 @@ export const createI3Escalation = (
     escalatingOfficeId: POP0_I2_OFFICE_IDS.chiefOfStaff,
     escalatingOfficeholderAssignmentId: POP0_I2_OFFICEHOLDER_ASSIGNMENT_IDS.chiefOfStaff,
     basisKind: "SYNTHESIS_CONFLICT",
-    basisSynthesisArtifactId: POP0_I2_TRACE_IDS.synthesis,
+    basisArtifactId: POP0_I2_TRACE_IDS.synthesis,
+    basisReceiptId: null,
     sourceRecordIds,
     presidentKnownPortions: [
       {

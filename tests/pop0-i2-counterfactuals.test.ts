@@ -52,6 +52,7 @@ const withAdministration = (
     calendar: base.calendar,
     administration,
     intervention: base.intervention,
+    housing: base.housing,
   };
   return {
     ...withoutHash,
@@ -244,7 +245,7 @@ describe("POP0-I2 hostile and counterfactual gates", () => {
     createProofAssignments(right, ["OMB", "NEC"]);
     expect(right.getOperatingState()).toEqual(left.getOperatingState());
     expect(right.getOperatingState().ownerStates.informationRoutes.state.artifacts)
-      .toHaveLength(1);
+      .toContainEqual(expect.objectContaining({ id: POP0_I2_SOURCE_ARTIFACT_ID }));
   });
 
   it("does not merge office access or queues when one actor holds two roles", () => {

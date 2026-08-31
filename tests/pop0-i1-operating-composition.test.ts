@@ -20,7 +20,7 @@ describe("POP0-I1 clean operating composition", () => {
     const session = createPresidentialOperatingProofSession();
     const state = session.getOperatingState();
     expect(state).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       operatingStateId: "pop0.operating-world.primary",
       configuration: POP0_V0_OPERATING_CONFIGURATION.identity,
       ownerStates: {

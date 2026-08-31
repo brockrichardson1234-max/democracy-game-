@@ -5,6 +5,7 @@ import {
   assessmentSemanticContentIsReceived,
   findArtifact,
   isEffectiveAt,
+  isOfficeProducedArtifact,
   type PresidentialAdministrationConfiguration,
   type PresidentialAdministrationOwnerStates,
   type PresidentialInformationArtifact,
@@ -84,7 +85,7 @@ export interface StandingCoordinationAuthority {
   readonly provenanceReference: string;
 }
 
-export interface EscalationEligibilityRule {
+export interface SynthesisConflictEscalationEligibilityRule {
   readonly id: string;
   readonly initiatingOfficeId: string;
   readonly standingAuthorityId: string;
@@ -94,6 +95,26 @@ export interface EscalationEligibilityRule {
   readonly requiredOptionKinds: readonly PresidentialEscalationOption["kind"][];
   readonly provenanceReference: string;
 }
+
+export interface ReceivedAssessmentEscalationEligibilityRule {
+  readonly id: string;
+  readonly initiatingOfficeId: string;
+  readonly standingAuthorityId: string;
+  readonly requiredBasisKind: "RECEIPT";
+  readonly requiredWorkstreamId: string;
+  readonly requiredSourceArtifactId: string;
+  readonly requiredSourceArtifactKind: "ASSESSMENT";
+  readonly requiredAssessmentRuleId: string;
+  readonly requiredProducingOfficeId: string;
+  readonly requiredReceivingOfficeId: string;
+  readonly requiredSemanticSectionIds: readonly string[];
+  readonly requiredOptionKinds: readonly PresidentialEscalationOption["kind"][];
+  readonly provenanceReference: string;
+}
+
+export type EscalationEligibilityRule =
+  | SynthesisConflictEscalationEligibilityRule
+  | ReceivedAssessmentEscalationEligibilityRule;
 
 export interface ConfiguredWorkstreamDefinition {
   readonly id: string;
@@ -119,7 +140,7 @@ export interface PresidentialInterventionConfiguration {
   };
   readonly standingCoordinationAuthorities: readonly StandingCoordinationAuthority[];
   readonly escalationEligibilityRules: readonly EscalationEligibilityRule[];
-  readonly workstreamDefinition: ConfiguredWorkstreamDefinition;
+  readonly workstreamDefinitions: readonly ConfiguredWorkstreamDefinition[];
   readonly provenanceReference: string;
 }
 
@@ -398,18 +419,43 @@ export const assertPresidentialInterventionConfiguration = (
     configuration.escalationEligibilityRules.map((entry) => entry.id),
     "Escalation eligibility rules",
   );
+  if (configuration.escalationEligibilityRules.length !== 2) {
+    throw new Error("POP0-I4 requires exactly the accepted I3 rule and one Housing rule.");
+  }
+  if (!sameSet(
+    configuration.escalationEligibilityRules.map((entry) => entry.requiredBasisKind),
+    ["SYNTHESIS_CONFLICT", "RECEIPT"],
+  )) throw new Error("POP0-I4 requires one synthesis-conflict rule and one received-assessment rule.");
   for (const rule of configuration.escalationEligibilityRules) {
     if (
       !administration.offices.some((office) => office.id === rule.initiatingOfficeId) ||
       !configuration.standingCoordinationAuthorities.some(
         (authority) => authority.id === rule.standingAuthorityId &&
           authority.officeId === rule.initiatingOfficeId,
-      ) ||
-      rule.requiredBasisKind !== "SYNTHESIS_CONFLICT" ||
-      !Number.isSafeInteger(rule.requiredShownSynthesisSectionCount) ||
-      rule.requiredShownSynthesisSectionCount <= 0
+      )
     ) throw new Error(`Escalation rule ${rule.id} is invalid.`);
-    requireNonempty(rule.requiredCommonPropositionId, `${rule.id} proposition`);
+    if (rule.requiredBasisKind === "SYNTHESIS_CONFLICT") {
+      if (
+        !Number.isSafeInteger(rule.requiredShownSynthesisSectionCount) ||
+        rule.requiredShownSynthesisSectionCount <= 0
+      ) throw new Error(`Escalation rule ${rule.id} has invalid synthesis requirements.`);
+      requireNonempty(rule.requiredCommonPropositionId, `${rule.id} proposition`);
+    } else {
+      for (const [value, field] of [
+        [rule.requiredWorkstreamId, "workstream"],
+        [rule.requiredSourceArtifactId, "source artifact"],
+        [rule.requiredAssessmentRuleId, "assessment rule"],
+        [rule.requiredProducingOfficeId, "producing office"],
+        [rule.requiredReceivingOfficeId, "receiving office"],
+      ] as const) requireNonempty(value, `${rule.id} ${field}`);
+      requireNonemptyUnique(rule.requiredSemanticSectionIds, `${rule.id} semantic sections`);
+      if (
+        rule.requiredSourceArtifactKind !== "ASSESSMENT" ||
+        rule.requiredReceivingOfficeId !== rule.initiatingOfficeId ||
+        !configuration.workstreamDefinitions.some((entry) => entry.id === rule.requiredWorkstreamId) ||
+        !administration.offices.some((entry) => entry.id === rule.requiredProducingOfficeId)
+      ) throw new Error(`Escalation rule ${rule.id} has invalid received-assessment requirements.`);
+    }
     if (!sameSet(rule.requiredOptionKinds, [
       "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION",
       "RESERVE_PRESIDENTIAL_REVIEW",
@@ -417,22 +463,29 @@ export const assertPresidentialInterventionConfiguration = (
     ])) throw new Error(`Escalation rule ${rule.id} requires the exact I3 option set.`);
     requireNonempty(rule.provenanceReference, `${rule.id} provenance`);
   }
-  const definition = configuration.workstreamDefinition;
-  requireNonempty(definition.id, "Configured workstream identity");
-  requireNonempty(definition.label, "Configured workstream label");
-  requireNonempty(definition.adoptedObjective, "Configured workstream objective");
-  if (!administration.offices.some((office) => office.id === definition.coordinatorOfficeId)) {
-    throw new Error("Configured workstream coordinator is unknown.");
+  requireNonemptyUnique(
+    configuration.workstreamDefinitions.map((entry) => entry.id),
+    "Configured workstream identities",
+  );
+  if (configuration.workstreamDefinitions.length !== 2) {
+    throw new Error("POP0-I4 requires exactly the accepted I3 and inherited Housing workstreams.");
   }
-  requireNonemptyUnique(definition.participatingOfficeIds, "Configured workstream participants");
-  if (definition.participatingOfficeIds.some(
-    (officeId) => !administration.offices.some((office) => office.id === officeId),
-  )) throw new Error("Configured workstream contains an unknown participating office.");
-  if (!configuration.standingCoordinationAuthorities.some(
-    (authority) => authority.officeId === definition.coordinatorOfficeId &&
-      authority.permittedWorkstreamIds.includes(definition.id) &&
-      isEffectiveAt(authority.effectiveFrom, authority.effectiveUntil, epoch),
-  )) throw new Error("Configured workstream lacks standing coordination authority at the epoch.");
+  for (const definition of configuration.workstreamDefinitions) {
+    requireNonempty(definition.label, "Configured workstream label");
+    requireNonempty(definition.adoptedObjective, "Configured workstream objective");
+    if (!administration.offices.some((office) => office.id === definition.coordinatorOfficeId)) {
+      throw new Error("Configured workstream coordinator is unknown.");
+    }
+    requireNonemptyUnique(definition.participatingOfficeIds, "Configured workstream participants");
+    if (definition.participatingOfficeIds.some(
+      (officeId) => !administration.offices.some((office) => office.id === officeId),
+    )) throw new Error("Configured workstream contains an unknown participating office.");
+    if (!configuration.standingCoordinationAuthorities.some(
+      (authority) => authority.officeId === definition.coordinatorOfficeId &&
+        authority.permittedWorkstreamIds.includes(definition.id) &&
+        isEffectiveAt(authority.effectiveFrom, authority.effectiveUntil, epoch),
+    )) throw new Error("Configured workstream lacks standing coordination authority at the epoch.");
+  }
 };
 
 export const createPresidentialInterventionOwnerStates = (
@@ -486,6 +539,10 @@ const sourceOccurrenceTime = (
   const artifact = state.informationRoutes.state.artifacts.find((entry) => entry.id === id);
   if (artifact !== undefined) return artifact.createdAt;
   const routeRecords = [
+    ...state.informationRoutes.state.institutionArtifactObservations.map(
+      (entry) => [entry.id, entry.observedAt] as const,
+    ),
+    ...state.informationRoutes.state.officeArtifactProductions.map((entry) => [entry.id, entry.producedAt] as const),
     ...state.informationRoutes.state.institutionPossessions.map((entry) => [entry.id, entry.possessedAt] as const),
     ...state.informationRoutes.state.indexEntries.map((entry) => [entry.id, entry.createdAt] as const),
     ...state.informationRoutes.state.metadataNotices.map((entry) => [entry.id, entry.noticedAt] as const),
@@ -514,6 +571,7 @@ const sourceOccurrenceTime = (
       ...office.instrumentReceipts.map((entry) => [entry.id, entry.receivedAt] as const),
       ...office.instrumentDispositions.map((entry) => [entry.id, entry.dispositionAt] as const),
       ...office.assignments.map((entry) => [entry.id, entry.createdAt] as const),
+      ...office.departmentHandlingSubmissions.map((entry) => [entry.id, entry.submittedAt] as const),
     ]),
   ];
   return routeRecords.find(([candidate]) => candidate === id)?.[1] ?? null;
@@ -534,7 +592,7 @@ const officeCanCiteOccurrence = (
   }
   const artifact = findArtifact(state, occurrenceId);
   if (artifact !== undefined) {
-    if (artifact.kind !== "SOURCE_EVIDENCE" && artifact.producingOfficeId === officeId) return true;
+    if (isOfficeProducedArtifact(artifact) && artifact.producingOfficeId === officeId) return true;
     return state.informationRoutes.state.receipts.some((receipt) =>
       receipt.recipientOfficeId === officeId &&
       receipt.artifactId === artifact.id &&
@@ -585,7 +643,15 @@ const presidentKnowsOccurrenceReference = (
   instant(presentation.presentedAt, `${presentation.id} presentation`) <= instant(at, "Presidential knowledge time") &&
   (presentation.id === occurrenceId || presentation.shownPortions.some(
     (portion) => portion.artifactId === occurrenceId,
-  )));
+  ))) || state.presidentialPresentations.state.escalationPresentations.some((presentation) => {
+  if (instant(presentation.presentedAt, `${presentation.id} presentation`) > instant(at, "Presidential knowledge time")) {
+    return false;
+  }
+  const escalation = state.presidentialEscalations.state.escalations.find(
+    (entry) => entry.id === presentation.sourceEscalationId,
+  );
+  return presentation.id === occurrenceId || escalation?.sourceRecordIds.includes(occurrenceId) === true;
+});
 
 const indexEntry = (
   configuration: PresidentialInterventionConfiguration,
@@ -641,7 +707,7 @@ const officeHasArtifactPortion = (
   const artifact = findArtifact(state, portion.artifactId);
   if (artifact === undefined || !artifact.sectionIds.includes(portion.sectionId) ||
     instant(artifact.createdAt, `${artifact.id} creation`) > instant(at, "Portion query")) return false;
-  if (artifact.kind !== "SOURCE_EVIDENCE" && artifact.producingOfficeId === officeId) return true;
+  if (isOfficeProducedArtifact(artifact) && artifact.producingOfficeId === officeId) return true;
   return state.informationRoutes.state.receipts.some((receipt) =>
     receipt.recipientOfficeId === officeId && receipt.artifactId === portion.artifactId &&
     receipt.receivedSectionIds.includes(portion.sectionId) &&
@@ -715,7 +781,20 @@ const recordKindPhase: Readonly<Record<string, number>> = {
   OFFICE_INSTRUMENT_RECEIPT: 5,
   RECIPIENT_DISPOSITION: 5,
   INSTRUMENT_AUTHORIZED_OFFICE_ASSIGNMENT: 5,
+  DOMAIN_ARTIFACT_PRODUCTION: 5,
+  DOMAIN_HANDLING_SUBMISSION: 6,
+  LOWER_OWNER_RESULT: 7,
+  MATERIAL_OWNER_INPUT_ADMISSION: 8,
+  MATERIAL_OWNER_RESULT: 9,
 };
+
+const boundedExternalHistoryKinds = new Set([
+  "DOMAIN_ARTIFACT_PRODUCTION",
+  "DOMAIN_HANDLING_SUBMISSION",
+  "LOWER_OWNER_RESULT",
+  "MATERIAL_OWNER_INPUT_ADMISSION",
+  "MATERIAL_OWNER_RESULT",
+]);
 
 const compareHistoricalEntries = (
   left: HistoricalRecordIndexEntry,
@@ -743,6 +822,7 @@ const assertPreview = (
   administration: PresidentialAdministrationConfiguration,
   presentingOfficeId: string,
   at: string,
+  newlyPresentedSourceReferenceIds: readonly string[] = [],
 ): void => {
   requireExactKeys(preview, `Instrument preview ${preview.id}`, [
     "id",
@@ -761,7 +841,7 @@ const assertPreview = (
   }
   if (preview.payload.sourceReferenceIds.some((id) =>
     !officeCanCiteOccurrence(state, presentingOfficeId, id, at) ||
-    !presidentKnowsOccurrenceReference(state, id, at))) {
+    (!presidentKnowsOccurrenceReference(state, id, at) && !newlyPresentedSourceReferenceIds.includes(id)))) {
     throw new Error(`Instrument preview ${preview.id} references records not authorized for presidential disclosure.`);
   }
   for (const attachment of preview.payload.attachmentMetadata) {
@@ -825,7 +905,14 @@ const assertEscalationOptions = (
     ])
   ) throw new Error(`Escalation ${escalation.id} has a hidden, reordered, or unsupported bundle.`);
   for (const preview of request.previews) {
-    assertPreview(preview, state, administration, escalation.escalatingOfficeId, escalation.createdAt);
+    assertPreview(
+      preview,
+      state,
+      administration,
+      escalation.escalatingOfficeId,
+      escalation.createdAt,
+      rule.requiredBasisKind === "RECEIPT" ? escalation.sourceRecordIds : [],
+    );
   }
   if (
     instant(reserve.reservedAt, `${reserve.id} reserved time`) <=
@@ -841,7 +928,7 @@ const assertEscalationOptions = (
 
 const assertSynthesisConflict = (
   artifact: PresidentialInformationArtifact,
-  rule: EscalationEligibilityRule,
+  rule: SynthesisConflictEscalationEligibilityRule,
 ): void => {
   if (artifact.kind !== "SYNTHESIS") {
     throw new Error(`Escalation rule ${rule.id} requires a synthesis artifact.`);
@@ -899,23 +986,45 @@ const assertEscalationRecord = (
     authority === undefined ||
     !isEffectiveAt(authority.effectiveFrom, authority.effectiveUntil, escalation.createdAt)
   ) throw new Error(`Escalation ${escalation.id} lacks effective initiating authority.`);
-  const synthesis = findArtifact(state, escalation.basisSynthesisArtifactId);
-  if (synthesis === undefined || synthesis.kind !== "SYNTHESIS" ||
-    synthesis.producingOfficeId !== escalation.escalatingOfficeId ||
-    instant(synthesis.createdAt, `${synthesis.id} creation`) > instant(escalation.createdAt, `${escalation.id} creation`)) {
-    throw new Error(`Escalation ${escalation.id} lacks an office-owned source synthesis.`);
+  const basisArtifact = findArtifact(state, escalation.basisArtifactId);
+  if (basisArtifact === undefined ||
+    instant(basisArtifact.createdAt, `${basisArtifact.id} creation`) > instant(escalation.createdAt, `${escalation.id} creation`)) {
+    throw new Error(`Escalation ${escalation.id} lacks a valid source artifact.`);
   }
-  assertSynthesisConflict(synthesis, rule);
-  if (synthesis.sourceAssessmentReceiptIds.some((receiptId) => {
-    const receipt = state.informationRoutes.state.receipts.find((entry) => entry.id === receiptId);
-    const source = receipt === undefined ? undefined : findArtifact(state, receipt.artifactId);
-    return receipt === undefined || receipt.recipientOfficeId !== escalation.escalatingOfficeId ||
-      source?.kind !== "ASSESSMENT" ||
-      !assessmentSemanticContentIsReceived(source, receipt.receivedSectionIds);
-  })) throw new Error(`Escalation ${escalation.id} lacks complete source-assessment receipt.`);
+  if (rule.requiredBasisKind === "SYNTHESIS_CONFLICT") {
+    if (basisArtifact.kind !== "SYNTHESIS" ||
+      basisArtifact.producingOfficeId !== escalation.escalatingOfficeId ||
+      escalation.basisReceiptId !== null) {
+      throw new Error(`Escalation ${escalation.id} lacks an office-owned source synthesis.`);
+    }
+    assertSynthesisConflict(basisArtifact, rule);
+    if (basisArtifact.sourceAssessmentReceiptIds.some((receiptId) => {
+      const receipt = state.informationRoutes.state.receipts.find((entry) => entry.id === receiptId);
+      const source = receipt === undefined ? undefined : findArtifact(state, receipt.artifactId);
+      return receipt === undefined || receipt.recipientOfficeId !== escalation.escalatingOfficeId ||
+        source?.kind !== "ASSESSMENT" ||
+        !assessmentSemanticContentIsReceived(source, receipt.receivedSectionIds);
+    })) throw new Error(`Escalation ${escalation.id} lacks complete source-assessment receipt.`);
+  } else {
+    const receipt = escalation.basisReceiptId === null ? undefined :
+      state.informationRoutes.state.receipts.find((entry) => entry.id === escalation.basisReceiptId);
+    if (
+      basisArtifact.kind !== rule.requiredSourceArtifactKind ||
+      basisArtifact.id !== rule.requiredSourceArtifactId ||
+      basisArtifact.producingOfficeId !== rule.requiredProducingOfficeId ||
+      !basisArtifact.judgments.some((entry) => entry.ruleId === rule.requiredAssessmentRuleId) ||
+      receipt === undefined ||
+      receipt.artifactId !== basisArtifact.id ||
+      receipt.recipientOfficeId !== rule.requiredReceivingOfficeId ||
+      !rule.requiredSemanticSectionIds.every((sectionId) => receipt.receivedSectionIds.includes(sectionId)) ||
+      instant(receipt.receivedAt, `${receipt.id} receipt`) > instant(escalation.createdAt, `${escalation.id} creation`) ||
+      !state.administrationWorkstreams.state.workstreams.some((entry) => entry.id === rule.requiredWorkstreamId)
+    ) throw new Error(`Escalation ${escalation.id} lacks the configured complete assessment receipt.`);
+  }
   requireNonemptyUnique(escalation.sourceRecordIds, `${escalation.id} source records`);
   if (
-    !escalation.sourceRecordIds.includes(escalation.basisSynthesisArtifactId) ||
+    !escalation.sourceRecordIds.includes(escalation.basisArtifactId) ||
+    (escalation.basisReceiptId !== null && !escalation.sourceRecordIds.includes(escalation.basisReceiptId)) ||
     escalation.sourceRecordIds.some((id) =>
       !officeCanCiteOccurrence(state, escalation.escalatingOfficeId, id, escalation.createdAt))
   ) throw new Error(`Escalation ${escalation.id} has unavailable source records.`);
@@ -927,11 +1036,15 @@ const assertEscalationRecord = (
   );
   escalation.presidentKnownPortions.forEach((portion) =>
     assertPresidentialKnowledgePortion(state, portion, escalation.createdAt));
-  const shownSynthesisCount = escalation.presidentKnownPortions.filter(
-    (portion) => portion.artifactId === synthesis.id,
-  ).length;
-  if (shownSynthesisCount < rule.requiredShownSynthesisSectionCount) {
-    throw new Error(`Escalation ${escalation.id} lacks the configured bounded presidential presentation.`);
+  if (rule.requiredBasisKind === "SYNTHESIS_CONFLICT") {
+    const shownSynthesisCount = escalation.presidentKnownPortions.filter(
+      (portion) => portion.artifactId === basisArtifact.id,
+    ).length;
+    if (shownSynthesisCount < rule.requiredShownSynthesisSectionCount) {
+      throw new Error(`Escalation ${escalation.id} lacks the configured bounded presidential presentation.`);
+    }
+  } else if (escalation.presidentKnownPortions.length !== 0) {
+    throw new Error(`Escalation ${escalation.id} cannot pre-expose received Housing evidence.`);
   }
   requireUnique(
     escalation.staffOnlySourcePortions.map((portion) => `${portion.artifactId}#${portion.sectionId}`),
@@ -1499,7 +1612,9 @@ export const assertPresidentialInterventionOwnerStates = (
   assertCanonicalOrder(workstreamState.transitions, (entry) => entry.occurredAt, (entry) => entry.id,
     "Workstream transitions");
   for (const workstream of workstreamState.workstreams) {
-    const definition = configuration.workstreamDefinition;
+    const matches = configuration.workstreamDefinitions.filter((entry) => entry.id === workstream.id);
+    if (matches.length !== 1) throw new Error(`Workstream ${workstream.id} lacks one exact configured definition.`);
+    const definition = matches[0];
     if (
       workstream.id !== definition.id ||
       workstream.label !== definition.label ||
@@ -1574,7 +1689,9 @@ export const assertPresidentialInterventionOwnerStates = (
       requireNonempty(transition.provenanceReference, `${transition.id} provenance`);
     }
   }
-  if (workstreamState.workstreams.length > 1) throw new Error("POP0-I3 permits one bounded workstream only.");
+  if (workstreamState.workstreams.length > configuration.workstreamDefinitions.length) {
+    throw new Error("POP0-I4 permits only its two configured bounded workstreams.");
+  }
 
   requireNonemptyUnique(state.presidentialDecisions.state.map((entry) => entry.id), "Decision identities");
   requireNonemptyUnique(
@@ -1900,19 +2017,22 @@ export const assertPresidentialInterventionOwnerStates = (
 
   const expected = expectedIndexEntries(state, configuration);
   const actual = state.historicalRecordIndex.state.entries;
+  const actualCore = actual.filter((entry) => !boundedExternalHistoryKinds.has(entry.recordKind));
   requireNonemptyUnique(actual.map((entry) => entry.occurrenceId), "Historical occurrence identities");
   requireUnique(actual.map((entry) => `${entry.ownerId}#${entry.ownerRecordId}`), "Historical owner references");
   if (!sameOrdered(actual, [...actual].sort(compareHistoricalEntries))) {
     throw new Error("Historical record index is not in fixed time/phase/owner order.");
   }
-  if (!sameOrdered(actual, expected)) {
+  if (!sameOrdered(actualCore, expected)) {
     throw new Error("Historical record index is missing, duplicated, dangling, or substantively inconsistent.");
   }
   for (const entry of actual) {
-    if (entry.historyId !== configuration.historyId || entry.occurrenceId !== entry.ownerRecordId ||
+    const external = boundedExternalHistoryKinds.has(entry.recordKind);
+    if (entry.historyId !== configuration.historyId || (!external && entry.occurrenceId !== entry.ownerRecordId) ||
       recordKindPhase[entry.recordKind] === undefined) {
       throw new Error(`Historical entry ${entry.occurrenceId} has invalid identity/kind.`);
     }
+    if (external) continue;
     for (const parentId of entry.causalParentOccurrenceIds) {
       const parentTime = sourceOccurrenceTime(state, parentId);
       if (parentTime === null || instant(parentTime, `${parentId} parent`) > instant(entry.occurredAt, `${entry.occurrenceId} occurrence`)) {
@@ -2014,8 +2134,9 @@ export const createAdministrationWorkstream = (
   input: CreateAdministrationWorkstreamInput,
 ): PresidentialInterventionState => {
   beginOperation(state, administration, intervention, epoch, current);
-  const definition = intervention.workstreamDefinition;
-  if (input.id !== definition.id) throw new Error("POP0-I3 permits only its configured bounded workstream.");
+  const matches = intervention.workstreamDefinitions.filter((entry) => entry.id === input.id);
+  if (matches.length !== 1) throw new Error("POP0-I4 requires one exact configured workstream definition.");
+  const definition = matches[0];
   if (state.administrationWorkstreams.state.workstreams.some((entry) => entry.id === input.id)) {
     const existingTransition = state.administrationWorkstreams.state.transitions.find(
       (entry) => entry.id === input.initialTransitionId &&
@@ -2083,8 +2204,16 @@ export const createAdministrationWorkstream = (
     administrationWorkstreams: {
       ...state.administrationWorkstreams,
       state: {
-        workstreams: [workstream],
-        transitions: [transition],
+        workstreams: sortedByTimeAndId(
+          [...state.administrationWorkstreams.state.workstreams, workstream],
+          (entry) => entry.createdAt,
+          (entry) => entry.id,
+        ),
+        transitions: sortedByTimeAndId(
+          [...state.administrationWorkstreams.state.transitions, transition],
+          (entry) => entry.occurredAt,
+          (entry) => entry.id,
+        ),
       },
     },
   };

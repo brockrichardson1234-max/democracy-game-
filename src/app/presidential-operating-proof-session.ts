@@ -70,6 +70,15 @@ import {
   type TransitionAdministrationWorkstreamInput,
 } from "../sim/presidential-operating-intervention";
 import {
+  admitImplementationMaterialInputs,
+  authorDepartmentSupplementalRecord,
+  submitDepartmentHandling,
+  type AdmitImplementationMaterialInputsInput,
+  type AuthorDepartmentSupplementalRecordInput,
+  type PresidentialHousingOperationState,
+  type SubmitDepartmentHandlingInput,
+} from "../sim/presidential-operating-housing";
+import {
   parsePresidentialOperatingSave,
   serializePresidentialOperatingSave,
 } from "./presidential-operating-persistence";
@@ -115,6 +124,9 @@ export interface PresidentialOperatingProofSession {
   admitOfficeInstrumentReceipt(input: AdmitOfficeInstrumentReceiptInput): void;
   recordRecipientDisposition(input: RecordRecipientDispositionInput): void;
   createInstrumentAuthorizedAssignment(input: CreateInstrumentAuthorizedAssignmentInput): void;
+  authorDepartmentSupplementalRecord(input: AuthorDepartmentSupplementalRecordInput): void;
+  submitDepartmentHandling(input: SubmitDepartmentHandlingInput): void;
+  admitImplementationMaterialInputs(input: AdmitImplementationMaterialInputsInput): void;
   save(): string;
 }
 
@@ -150,20 +162,15 @@ class PresidentialOperatingProofSessionImpl implements PresidentialOperatingProo
   }
 
   #applyAdministration(next: PresidentialAdministrationOwnerStates): void {
-    this.#state = {
+    const candidate: PresidentialOperatingRuntimeState = {
       ...this.#state,
       ownerStates: {
         ...this.#state.ownerStates,
         ...next,
       },
     };
-    this.#assertWholeState();
-  }
-
-  #assertWholeState(): void {
-    // Runtime assertion includes I2 and I3 cross-owner closure. Kept private so
-    // the full canonical graph cannot become a player-facing input surface.
-    assertPresidentialOperatingRuntimeState(this.#state, this.#configuration);
+    assertPresidentialOperatingRuntimeState(candidate, this.#configuration);
+    this.#state = candidate;
   }
 
   #operate(
@@ -299,14 +306,15 @@ class PresidentialOperatingProofSessionImpl implements PresidentialOperatingProo
       this.#configuration.calendar.epoch,
       this.#state.ownerStates.calendar.state.current,
     );
-    this.#state = {
+    const candidate: PresidentialOperatingRuntimeState = {
       ...this.#state,
       ownerStates: {
         ...this.#state.ownerStates,
         ...updated,
       },
     };
-    this.#assertWholeState();
+    assertPresidentialOperatingRuntimeState(candidate, this.#configuration);
+    this.#state = candidate;
   }
 
   createAdministrationWorkstream(input: CreateAdministrationWorkstreamInput): void {
@@ -370,6 +378,41 @@ class PresidentialOperatingProofSessionImpl implements PresidentialOperatingProo
   createInstrumentAuthorizedAssignment(input: CreateInstrumentAuthorizedAssignmentInput): void {
     this.#operateIntervention((state, administration, intervention, epoch, current) =>
       createInstrumentAuthorizedAssignment(state, administration, intervention, epoch, current, input));
+  }
+
+  #operateHousing(
+    operation: (
+      state: PresidentialHousingOperationState,
+      configuration: PresidentialOperatingRuntimeConfiguration["housing"],
+      current: string,
+    ) => PresidentialHousingOperationState,
+  ): void {
+    const updated = operation(
+      this.#state.ownerStates,
+      this.#configuration.housing,
+      this.#state.ownerStates.calendar.state.current,
+    );
+    const candidate: PresidentialOperatingRuntimeState = {
+      ...this.#state,
+      ownerStates: { ...this.#state.ownerStates, ...updated },
+    };
+    assertPresidentialOperatingRuntimeState(candidate, this.#configuration);
+    this.#state = candidate;
+  }
+
+  authorDepartmentSupplementalRecord(input: AuthorDepartmentSupplementalRecordInput): void {
+    this.#operateHousing((state, configuration, current) =>
+      authorDepartmentSupplementalRecord(state, configuration, current, input));
+  }
+
+  submitDepartmentHandling(input: SubmitDepartmentHandlingInput): void {
+    this.#operateHousing((state, configuration, current) =>
+      submitDepartmentHandling(state, configuration, current, input));
+  }
+
+  admitImplementationMaterialInputs(input: AdmitImplementationMaterialInputsInput): void {
+    this.#operateHousing((state, configuration, current) =>
+      admitImplementationMaterialInputs(state, configuration, current, input));
   }
 
   save(): string {

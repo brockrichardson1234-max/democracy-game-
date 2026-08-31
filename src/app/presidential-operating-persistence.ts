@@ -13,9 +13,9 @@ import {
   type PresidentialControlBindingState,
 } from "../sim/presidential-operating-intervention";
 
-export const PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION = 3 as const;
+export const PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION = 4 as const;
 
-export interface PresidentialOperatingSaveV3 {
+export interface PresidentialOperatingSaveV4 {
   readonly formatVersion: typeof PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION;
   readonly configuration: ConfigurationIdentity;
   readonly operatingState: PresidentialOperatingRuntimeState;
@@ -349,6 +349,72 @@ const validateInstrumentAssignmentAuthorization = (value: unknown, field: string
   } else throw new Error(`Invalid presidential operating save: ${field}.scope.kind is unsupported.`);
 };
 
+const validateDepartmentHandlingSubmission = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "deduplicationIdentity",
+    "submittingOfficeId",
+    "submittingOfficeholderAssignmentId",
+    "handlingAuthorityId",
+    "sourceDispositionId",
+    "sourceAssignmentId",
+    "sourceAssignmentResultArtifactId",
+    "targetInstitutionId",
+    "targetRequestId",
+    "targetProjectId",
+    "targetRelationshipId",
+    "targetScopeKey",
+    "submittedAt",
+    "payload",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "deduplicationIdentity",
+    "submittingOfficeId",
+    "submittingOfficeholderAssignmentId",
+    "handlingAuthorityId",
+    "sourceDispositionId",
+    "sourceAssignmentId",
+    "sourceAssignmentResultArtifactId",
+    "targetInstitutionId",
+    "targetRequestId",
+    "targetProjectId",
+    "targetRelationshipId",
+    "targetScopeKey",
+    "submittedAt",
+    "provenanceReference",
+  ] as const) requireString(record[key], `${field}.${key}`);
+  const payload = requireRecord(record.payload, `${field}.payload`);
+  if (payload.kind === "SUBMIT_SUPPLEMENTAL_RECORDS") {
+    requireExactKeys(payload, `${field}.payload`, ["kind", "recordTypeIds", "qualifyingEvidenceReference"]);
+    const recordTypes = requireStringArray(payload.recordTypeIds, `${field}.payload.recordTypeIds`);
+    if (recordTypes.length !== 1 || recordTypes[0] !== "NONAVAILABILITY_RECORD") {
+      throw new Error(`Invalid presidential operating save: ${field}.payload has unsupported record types.`);
+    }
+    const evidence = requireRecord(payload.qualifyingEvidenceReference, `${field}.payload.qualifyingEvidenceReference`);
+    requireExactKeys(evidence, `${field}.payload.qualifyingEvidenceReference`, [
+      "artifactId",
+      "artifactKind",
+      "recordTypeId",
+      "certificationSectionId",
+      "sourceArtifactProductionId",
+      "sourceRawEvidenceReceiptId",
+      "sourceLineageSectionId",
+    ]);
+    for (const key of Object.keys(evidence)) {
+      requireString(evidence[key], `${field}.payload.qualifyingEvidenceReference.${key}`);
+    }
+  } else if (payload.kind === "SUBMIT_WAIVER_REVIEW_INTENTION") {
+    requireExactKeys(payload, `${field}.payload`, ["kind", "intention", "supportingHandlingSubmissionIds"]);
+    if (!["GRANT_SCOPED_WAIVER", "DENY", "RETURN_FOR_SUPPLEMENTAL_RECORD"].includes(payload.intention as string)) {
+      throw new Error(`Invalid presidential operating save: ${field}.payload.intention is unsupported.`);
+    }
+    requireStringArray(payload.supportingHandlingSubmissionIds, `${field}.payload.supportingHandlingSubmissionIds`);
+  } else throw new Error(`Invalid presidential operating save: ${field}.payload.kind is unsupported.`);
+};
+
 const validateOfficeOperationsState = (value: unknown, field: string): void => {
   requireArray(value, field).forEach((entry, index) => {
     const office = requireRecord(entry, `${field}[${index}]`);
@@ -360,6 +426,7 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
       "instrumentReceipts",
       "instrumentDispositions",
       "instrumentAssignmentAuthorizations",
+      "departmentHandlingSubmissions",
     ]);
     requireString(office.officeId, `${field}[${index}].officeId`);
     requireArray(office.assignments, `${field}[${index}].assignments`).forEach(
@@ -393,6 +460,13 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
     ).forEach((record, recordIndex) => validateInstrumentAssignmentAuthorization(
       record,
       `${field}[${index}].instrumentAssignmentAuthorizations[${recordIndex}]`,
+    ));
+    requireArray(
+      office.departmentHandlingSubmissions,
+      `${field}[${index}].departmentHandlingSubmissions`,
+    ).forEach((record, recordIndex) => validateDepartmentHandlingSubmission(
+      record,
+      `${field}[${index}].departmentHandlingSubmissions[${recordIndex}]`,
     ));
   });
 };
@@ -548,12 +622,178 @@ const validateSynthesisArtifact = (artifact: Record<string, unknown>, field: str
   requireNullableString(artifact.supersedesArtifactId, `${field}.supersedesArtifactId`);
 };
 
+const validateHousingMonitoringClaim = (value: unknown, field: string): void => {
+  const claim = requireRecord(value, field);
+  requireExactKeys(claim, field, [
+    "id",
+    "sectionId",
+    "sourceStateField",
+    "sourceOwnerId",
+    "sourceRecordKind",
+    "sourceRecordId",
+    "projectId",
+    "claimFamily",
+    "observedFieldPath",
+    "observedValue",
+    "sourceOccurredAt",
+    "observedAt",
+    "observationAuthorityId",
+    "authorityScopeKey",
+    "sourceRecordHash",
+    "supportingOccurrenceIds",
+    "provenanceReference",
+  ]);
+  for (const key of [
+    "id",
+    "sectionId",
+    "sourceStateField",
+    "sourceOwnerId",
+    "sourceRecordKind",
+    "sourceRecordId",
+    "projectId",
+    "claimFamily",
+    "observedFieldPath",
+    "observedAt",
+    "observationAuthorityId",
+    "authorityScopeKey",
+    "sourceRecordHash",
+    "provenanceReference",
+  ] as const) requireString(claim[key], `${field}.${key}`);
+  requireNullableString(claim.sourceOccurredAt, `${field}.sourceOccurredAt`);
+  requireStringArray(claim.supportingOccurrenceIds, `${field}.supportingOccurrenceIds`);
+  if (
+    claim.observedValue !== null &&
+    typeof claim.observedValue !== "string" &&
+    typeof claim.observedValue !== "number" &&
+    typeof claim.observedValue !== "boolean" &&
+    !Array.isArray(claim.observedValue)
+  ) throw new Error(`Invalid presidential operating save: ${field}.observedValue is unsupported.`);
+  if (Array.isArray(claim.observedValue)) {
+    requireStringArray(claim.observedValue, `${field}.observedValue`);
+  }
+};
+
+const validateHousingMonitoringArtifact = (artifact: Record<string, unknown>, field: string): void => {
+  requireExactKeys(artifact, field, [
+    "kind",
+    "id",
+    "version",
+    "producerInstitutionId",
+    "observationAuthorityId",
+    "institutionIdentityBindingId",
+    "asOf",
+    "createdAt",
+    "releasedAt",
+    "sectionIds",
+    "sectionClaims",
+    "claims",
+    "accessClass",
+    "canonicalArtifactHash",
+    "provenanceReference",
+    "revisionOfArtifactId",
+    "supersedesArtifactId",
+  ]);
+  for (const key of [
+    "id",
+    "version",
+    "producerInstitutionId",
+    "observationAuthorityId",
+    "institutionIdentityBindingId",
+    "asOf",
+    "createdAt",
+    "releasedAt",
+    "accessClass",
+    "canonicalArtifactHash",
+    "provenanceReference",
+  ] as const) requireString(artifact[key], `${field}.${key}`);
+  requireStringArray(artifact.sectionIds, `${field}.sectionIds`);
+  requireArray(artifact.sectionClaims, `${field}.sectionClaims`).forEach((entry, index) => {
+    const section = requireRecord(entry, `${field}.sectionClaims[${index}]`);
+    requireExactKeys(section, `${field}.sectionClaims[${index}]`, ["sectionId", "claimIds"]);
+    requireString(section.sectionId, `${field}.sectionClaims[${index}].sectionId`);
+    requireStringArray(section.claimIds, `${field}.sectionClaims[${index}].claimIds`);
+  });
+  requireArray(artifact.claims, `${field}.claims`).forEach(
+    (entry, index) => validateHousingMonitoringClaim(entry, `${field}.claims[${index}]`),
+  );
+  requireNullableString(artifact.revisionOfArtifactId, `${field}.revisionOfArtifactId`);
+  requireNullableString(artifact.supersedesArtifactId, `${field}.supersedesArtifactId`);
+};
+
+const validateSupplierEvidenceArtifact = (artifact: Record<string, unknown>, field: string): void => {
+  requireExactKeys(artifact, field, [
+    "kind", "id", "version", "producerInstitutionId", "targetProjectId", "targetRequestId",
+    "targetScopeKey", "sourceDocumentIds", "asOf", "createdAt", "releasedAt", "sectionIds",
+    "accessClass", "canonicalArtifactHash", "provenanceReference", "revisionOfArtifactId",
+    "supersedesArtifactId",
+  ]);
+  for (const key of [
+    "id", "version", "producerInstitutionId", "targetProjectId", "targetRequestId", "targetScopeKey",
+    "asOf", "createdAt", "releasedAt", "accessClass", "canonicalArtifactHash", "provenanceReference",
+  ] as const) requireString(artifact[key], `${field}.${key}`);
+  requireStringArray(artifact.sourceDocumentIds, `${field}.sourceDocumentIds`);
+  requireStringArray(artifact.sectionIds, `${field}.sectionIds`);
+  requireNullableString(artifact.revisionOfArtifactId, `${field}.revisionOfArtifactId`);
+  requireNullableString(artifact.supersedesArtifactId, `${field}.supersedesArtifactId`);
+};
+
+const validateSupplementalRecordArtifact = (artifact: Record<string, unknown>, field: string): void => {
+  requireExactKeys(artifact, field, [
+    "kind", "id", "version", "recordTypeId", "producingOfficeId",
+    "authoringOfficeholderAssignmentId", "sourceDispositionId", "sourceAssignmentId",
+    "sourceAssignmentResultArtifactId", "targetInstitutionId", "targetRequestId", "targetProjectId",
+    "targetRelationshipId", "targetScopeKey", "sourceEvidenceArtifactId", "sourceEvidenceReceiptId",
+    "sourceEvidenceSectionIds", "asOf", "createdAt", "releasedAt", "sectionIds", "accessClass",
+    "canonicalArtifactHash", "provenanceReference", "revisionOfArtifactId", "supersedesArtifactId",
+  ]);
+  for (const key of [
+    "id", "version", "recordTypeId", "producingOfficeId", "authoringOfficeholderAssignmentId",
+    "sourceDispositionId", "sourceAssignmentId", "sourceAssignmentResultArtifactId", "targetInstitutionId",
+    "targetRequestId", "targetProjectId", "targetRelationshipId", "targetScopeKey",
+    "sourceEvidenceArtifactId", "sourceEvidenceReceiptId", "asOf", "createdAt", "releasedAt",
+    "accessClass", "canonicalArtifactHash", "provenanceReference",
+  ] as const) requireString(artifact[key], `${field}.${key}`);
+  requireStringArray(artifact.sourceEvidenceSectionIds, `${field}.sourceEvidenceSectionIds`);
+  requireStringArray(artifact.sectionIds, `${field}.sectionIds`);
+  requireNullableString(artifact.revisionOfArtifactId, `${field}.revisionOfArtifactId`);
+  requireNullableString(artifact.supersedesArtifactId, `${field}.supersedesArtifactId`);
+};
+
 const validateArtifact = (value: unknown, field: string): void => {
   const artifact = requireRecord(value, field);
   if (artifact.kind === "SOURCE_EVIDENCE") return validateSourceArtifact(artifact, field);
   if (artifact.kind === "ASSESSMENT") return validateAssessmentArtifact(artifact, field);
   if (artifact.kind === "SYNTHESIS") return validateSynthesisArtifact(artifact, field);
+  if (artifact.kind === "HOUSING_MONITORING_EVIDENCE") return validateHousingMonitoringArtifact(artifact, field);
+  if (artifact.kind === "HUD_SUPPLIER_SEARCH_EVIDENCE") return validateSupplierEvidenceArtifact(artifact, field);
+  if (artifact.kind === "HUD_SUPPLEMENTAL_RECORD") return validateSupplementalRecordArtifact(artifact, field);
   throw new Error(`Invalid presidential operating save: ${field}.kind is unsupported.`);
+};
+
+const validateOfficeArtifactProduction = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "artifactId",
+    "producingOfficeId",
+    "producingOfficeholderAssignmentId",
+    "producedAt",
+    "provenanceReference",
+  ]);
+  for (const key of Object.keys(record)) requireString(record[key], `${field}.${key}`);
+};
+
+const validateInstitutionArtifactObservation = (value: unknown, field: string): void => {
+  const record = requireRecord(value, field);
+  requireExactKeys(record, field, [
+    "id",
+    "artifactId",
+    "observingInstitutionId",
+    "observationAuthorityId",
+    "observedAt",
+    "provenanceReference",
+  ]);
+  for (const key of Object.keys(record)) requireString(record[key], `${field}.${key}`);
 };
 
 const validatePossession = (value: unknown, field: string): void => {
@@ -697,6 +937,8 @@ const validateInformationRouteState = (value: unknown, field: string): void => {
   const state = requireRecord(value, field);
   requireExactKeys(state, field, [
     "artifacts",
+    "institutionArtifactObservations",
+    "officeArtifactProductions",
     "institutionPossessions",
     "indexEntries",
     "metadataNotices",
@@ -706,6 +948,8 @@ const validateInformationRouteState = (value: unknown, field: string): void => {
   ]);
   const validators: readonly [string, (value: unknown, field: string) => void][] = [
     ["artifacts", validateArtifact],
+    ["institutionArtifactObservations", validateInstitutionArtifactObservation],
+    ["officeArtifactProductions", validateOfficeArtifactProduction],
     ["institutionPossessions", validatePossession],
     ["indexEntries", validateIndex],
     ["metadataNotices", validateNotice],
@@ -971,7 +1215,8 @@ const validateEscalation = (value: unknown, field: string): void => {
     "escalatingOfficeholderAssignmentId",
     "createdAt",
     "basisKind",
-    "basisSynthesisArtifactId",
+    "basisArtifactId",
+    "basisReceiptId",
     "sourceRecordIds",
     "presidentKnownPortions",
     "staffOnlySourcePortions",
@@ -992,11 +1237,12 @@ const validateEscalation = (value: unknown, field: string): void => {
     "escalatingOfficeholderAssignmentId",
     "createdAt",
     "basisKind",
-    "basisSynthesisArtifactId",
+    "basisArtifactId",
     "requestedJudgment",
     "expiresAt",
     "provenanceReference",
   ] as const) requireString(record[key], `${field}.${key}`);
+  requireNullableString(record.basisReceiptId, `${field}.basisReceiptId`);
   for (const key of [
     "sourceRecordIds",
     "uncertainties",
@@ -1352,6 +1598,74 @@ const validateHistoricalIndexState = (value: unknown, field: string): void => {
   });
 };
 
+const validateProgramImplementationState = (value: unknown, field: string): void => {
+  const state = requireRecord(value, field);
+  requireExactKeys(state, field, [
+    "schemaVersion",
+    "sourceArtifactId",
+    "detailCoverage",
+    "nationalBalance",
+    "legalOrder",
+    "publicFinance",
+    "ownerResolution",
+    "fiscalExecution",
+    "administrativeProgram",
+    "intergovernmental",
+    "recipientAdministration",
+    "materialInputs",
+    "coverage",
+  ]);
+  requireSafeInteger(state.schemaVersion, `${field}.schemaVersion`);
+  requireString(state.sourceArtifactId, `${field}.sourceArtifactId`);
+  requireString(state.detailCoverage, `${field}.detailCoverage`);
+  requireString(state.nationalBalance, `${field}.nationalBalance`);
+  for (const key of [
+    "legalOrder",
+    "publicFinance",
+    "ownerResolution",
+    "fiscalExecution",
+    "administrativeProgram",
+    "intergovernmental",
+    "recipientAdministration",
+  ] as const) requireRecord(state[key], `${field}.${key}`);
+  requireArray(state.materialInputs, `${field}.materialInputs`);
+  requireArray(state.coverage, `${field}.coverage`);
+};
+
+const validateIntegratedMaterialHousingState = (value: unknown, field: string): void => {
+  const state = requireRecord(value, field);
+  requireExactKeys(state, field, [
+    "schemaVersion",
+    "sourceArtifactId",
+    "catchmentScaffoldVersion",
+    "materialCalibrationVersion",
+    "controls",
+    "regions",
+    "projects",
+    "acceptedInputs",
+    "materialConditions",
+    "materialExposureReferences",
+    "calibration",
+    "behavior",
+  ]);
+  requireSafeInteger(state.schemaVersion, `${field}.schemaVersion`);
+  for (const key of [
+    "sourceArtifactId",
+    "catchmentScaffoldVersion",
+    "materialCalibrationVersion",
+  ] as const) requireString(state[key], `${field}.${key}`);
+  for (const key of [
+    "controls",
+    "regions",
+    "projects",
+    "acceptedInputs",
+    "materialConditions",
+    "materialExposureReferences",
+  ] as const) requireArray(state[key], `${field}.${key}`);
+  requireRecord(state.calibration, `${field}.calibration`);
+  requireRecord(state.behavior, `${field}.behavior`);
+};
+
 const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState => {
   const state = requireRecord(value, "operatingState");
   requireExactKeys(state, "operatingState", [
@@ -1378,6 +1692,8 @@ const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState 
     "presidentialInstruments",
     "instrumentDispatches",
     "historicalRecordIndex",
+    "programImplementation",
+    "materialHousing",
   ]);
   validateOwner(ownerStates.calendar, "operatingState.ownerStates.calendar", validateCalendarState);
   validateOwner(
@@ -1430,6 +1746,14 @@ const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState 
     "operatingState.ownerStates.historicalRecordIndex",
     validateHistoricalIndexState,
   );
+  validateProgramImplementationState(
+    ownerStates.programImplementation,
+    "operatingState.ownerStates.programImplementation",
+  );
+  validateIntegratedMaterialHousingState(
+    ownerStates.materialHousing,
+    "operatingState.ownerStates.materialHousing",
+  );
   return JSON.parse(JSON.stringify(state)) as PresidentialOperatingRuntimeState;
 };
 
@@ -1458,7 +1782,7 @@ export const serializePresidentialOperatingSave = (
     configuration: { ...configuration.identity },
     operatingState: copyPresidentialOperatingRuntimeState(state),
     session: { controlBinding: { ...controlBinding } },
-  } satisfies PresidentialOperatingSaveV3);
+  } satisfies PresidentialOperatingSaveV4);
 };
 
 export const parsePresidentialOperatingSave = (

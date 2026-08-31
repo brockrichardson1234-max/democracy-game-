@@ -142,7 +142,8 @@ export interface PresidentialEscalationRecord {
   readonly escalatingOfficeholderAssignmentId: string;
   readonly createdAt: string;
   readonly basisKind: EscalationBasisKind;
-  readonly basisSynthesisArtifactId: string;
+  readonly basisArtifactId: string;
+  readonly basisReceiptId: string | null;
   readonly sourceRecordIds: readonly string[];
   readonly presidentKnownPortions: readonly PresidentialKnownPortion[];
   readonly staffOnlySourcePortions: readonly StaffOnlySourcePortion[];

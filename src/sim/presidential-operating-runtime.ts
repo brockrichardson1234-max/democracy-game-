@@ -24,8 +24,19 @@ import {
   type PresidentialInterventionConfiguration,
   type PresidentialInterventionOwnerStates,
 } from "./presidential-operating-intervention";
+import {
+  appendDerivedPresidentialHousingHistory,
+  advancePresidentialHousingOwners,
+  assertPresidentialHousingOwnerStates,
+  assertPresidentialOperatingHousingConfiguration,
+  copyPresidentialHousingOwnerStates,
+  createOpeningHousingComposition,
+  type PresidentialHousingOwnerStates,
+  type PresidentialOperatingHousingConfiguration,
+} from "./presidential-operating-housing";
+import { createAdministrationWorkstream } from "./presidential-operating-intervention";
 
-export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 3 as const;
+export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 4 as const;
 
 export interface PresidentialOperatingRuntimeConfiguration {
   readonly schemaVersion: typeof PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION;
@@ -39,6 +50,7 @@ export interface PresidentialOperatingRuntimeConfiguration {
   };
   readonly administration: PresidentialAdministrationConfiguration;
   readonly intervention: PresidentialInterventionConfiguration;
+  readonly housing: PresidentialOperatingHousingConfiguration;
 }
 
 export interface PresidentialOperatingRuntimeState {
@@ -50,7 +62,7 @@ export interface PresidentialOperatingRuntimeState {
       readonly ownerId: string;
       readonly state: CalendarTimeState;
     };
-  } & PresidentialAdministrationOwnerStates & PresidentialInterventionOwnerStates;
+  } & PresidentialAdministrationOwnerStates & PresidentialInterventionOwnerStates & PresidentialHousingOwnerStates;
 }
 
 const requireNonempty = (value: string, field: string): void => {
@@ -97,6 +109,7 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     calendar: configuration.calendar,
     administration: configuration.administration,
     intervention: configuration.intervention,
+    housing: configuration.housing,
   });
   if (configuration.identity.configurationHash !== expectedHash) {
     throw new Error(
@@ -117,7 +130,115 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     configuration.administration,
     configuration.calendar.epoch,
   );
+  assertPresidentialOperatingHousingConfiguration(configuration.housing, configuration.calendar.epoch);
+  if (
+    configuration.housing.history.historyId !== configuration.intervention.historyId ||
+    configuration.housing.history.informationRoutesOwnerId !== configuration.administration.ownerIds.informationRoutes ||
+    configuration.housing.history.officeOperationsOwnerId !== configuration.administration.ownerIds.officeOperations ||
+    configuration.housing.history.implementationOwnerId !==
+      configuration.housing.ownerContent.implementationConfiguration.administeringInstitutionId ||
+    configuration.housing.history.materialHousingOwnerId !== configuration.housing.materialHousing.ownerId
+  ) throw new Error("Presidential Housing history owner bindings contradict canonical owner identities.");
 }
+
+const composeOpeningAdministration = (
+  administration: PresidentialAdministrationOwnerStates,
+  configuration: PresidentialOperatingRuntimeConfiguration,
+  opening: ReturnType<typeof createOpeningHousingComposition>,
+): PresidentialAdministrationOwnerStates => {
+  const housing = configuration.housing;
+  const institutionId = housing.institutionBinding.presidentialInstitutionId;
+  const secretaryOfficeId = housing.handlingAuthority.officeId;
+  const housingDefinition = configuration.intervention.workstreamDefinitions.find(
+    (entry) => entry.id === configuration.intervention.escalationEligibilityRules.find(
+      (rule) => rule.requiredBasisKind === "RECEIPT",
+    )?.requiredWorkstreamId,
+  );
+  if (housingDefinition === undefined) throw new Error("Opening Housing workstream definition is missing.");
+  const at = housing.opening.informationRoutedAt;
+  const monitoringPossession = {
+    id: housing.openingInformation.monitoringPossessionId,
+    artifactId: opening.monitoringArtifact.id,
+    possessingInstitutionId: institutionId,
+    possessedAt: at,
+    acquisitionProvenanceReference: housing.provenanceReference,
+  };
+  const rawPossession = {
+    id: housing.openingInformation.rawSupplierPossessionId,
+    artifactId: housing.rawSupplierEvidenceArtifact.id,
+    possessingInstitutionId: institutionId,
+    possessedAt: housing.opening.rawEvidencePossessedAt,
+    acquisitionProvenanceReference: housing.provenanceReference,
+  };
+  const indexEntries = [
+    {
+      id: housing.openingInformation.rawSupplierIndexId,
+      artifactId: housing.rawSupplierEvidenceArtifact.id,
+      sourcePossessionId: rawPossession.id,
+      sourceInstitutionId: institutionId,
+      artifactVersion: housing.rawSupplierEvidenceArtifact.version,
+      accessClass: housing.rawSupplierEvidenceArtifact.accessClass,
+      availableSectionIds: [...housing.rawSupplierEvidenceArtifact.sectionIds],
+      createdAt: at,
+      provenanceReference: housing.provenanceReference,
+    },
+    {
+      id: housing.openingInformation.monitoringIndexId,
+      artifactId: opening.monitoringArtifact.id,
+      sourcePossessionId: monitoringPossession.id,
+      sourceInstitutionId: institutionId,
+      artifactVersion: opening.monitoringArtifact.version,
+      accessClass: opening.monitoringArtifact.accessClass,
+      availableSectionIds: [...opening.monitoringArtifact.sectionIds],
+      createdAt: at,
+      provenanceReference: housing.provenanceReference,
+    },
+  ].sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id));
+  const metadataNotices = [
+    {
+      id: housing.openingInformation.monitoringSecretaryNoticeId,
+      indexEntryId: housing.openingInformation.monitoringIndexId,
+      recipientOfficeId: secretaryOfficeId,
+      noticedAt: at,
+      deliveryPath: "HUD_DEPARTMENT_TO_SECRETARY_INDEX_NOTICE",
+      deduplicationIdentity: `${housing.openingInformation.monitoringSecretaryNoticeId}.dedupe`,
+    },
+    {
+      id: housing.openingInformation.monitoringChiefOfStaffNoticeId,
+      indexEntryId: housing.openingInformation.monitoringIndexId,
+      recipientOfficeId: housingDefinition.coordinatorOfficeId,
+      noticedAt: at,
+      deliveryPath: "HUD_DEPARTMENT_TO_CHIEF_OF_STAFF_EXISTENCE_NOTICE",
+      deduplicationIdentity: `${housing.openingInformation.monitoringChiefOfStaffNoticeId}.dedupe`,
+    },
+  ].sort((left, right) => left.noticedAt.localeCompare(right.noticedAt) || left.id.localeCompare(right.id));
+  return {
+    ...administration,
+    informationRoutes: {
+      ...administration.informationRoutes,
+      state: {
+        ...administration.informationRoutes.state,
+        artifacts: [
+          ...administration.informationRoutes.state.artifacts,
+          housing.rawSupplierEvidenceArtifact,
+          opening.monitoringArtifact,
+        ].sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id)),
+        institutionArtifactObservations: [{
+          id: housing.openingInformation.monitoringObservationId,
+          artifactId: opening.monitoringArtifact.id,
+          observingInstitutionId: institutionId,
+          observationAuthorityId: housing.observationAuthority.id,
+          observedAt: housing.opening.monitoringObservedAt,
+          provenanceReference: housing.provenanceReference,
+        }],
+        institutionPossessions: [rawPossession, monitoringPossession]
+          .sort((left, right) => left.possessedAt.localeCompare(right.possessedAt) || left.id.localeCompare(right.id)),
+        indexEntries,
+        metadataNotices,
+      },
+    },
+  };
+};
 
 export const createPresidentialOperatingRuntimeState = (
   configuration: PresidentialOperatingRuntimeConfiguration,
@@ -127,27 +248,78 @@ export const createPresidentialOperatingRuntimeState = (
     configuration.administration,
     configuration.calendar.epoch,
   );
+  const openingHousing = createOpeningHousingComposition(configuration.housing);
+  const openingAdministration = composeOpeningAdministration(administration, configuration, openingHousing);
   const intervention = createPresidentialInterventionOwnerStates(
     configuration.intervention,
     configuration.administration,
     configuration.calendar.epoch,
   );
-  return {
+  const initialOwners = {
+    ...openingAdministration,
+    ...intervention,
+    programImplementation: openingHousing.programImplementation,
+    materialHousing: openingHousing.materialHousing,
+  };
+  const housingRule = configuration.intervention.escalationEligibilityRules.find(
+    (entry) => entry.requiredBasisKind === "RECEIPT",
+  );
+  if (housingRule === undefined) throw new Error("Opening Housing escalation rule is missing.");
+  const housingDefinition = configuration.intervention.workstreamDefinitions.find(
+    (entry) => entry.id === housingRule.requiredWorkstreamId,
+  );
+  const housingAuthority = configuration.intervention.standingCoordinationAuthorities.find(
+    (entry) => entry.id === housingRule.standingAuthorityId,
+  );
+  const creatingAssignment = configuration.administration.officeholderAssignments.find(
+    (entry) => entry.officeId === housingDefinition?.coordinatorOfficeId,
+  );
+  if (housingDefinition === undefined || housingAuthority === undefined || creatingAssignment === undefined) {
+    throw new Error("Opening Housing workstream lacks configured authority or officeholder.");
+  }
+  const withHousingWorkstream = createAdministrationWorkstream(
+    initialOwners,
+    configuration.administration,
+    configuration.intervention,
+    configuration.calendar.epoch,
+    configuration.calendar.epoch,
+    {
+      id: housingDefinition.id,
+      initialTransitionId: `${housingDefinition.id}.transition.opening-monitored`,
+      initialTransitionDeduplicationIdentity: `${housingDefinition.id}.dedupe.opening-monitored`,
+      creatingOfficeId: housingDefinition.coordinatorOfficeId,
+      creatingOfficeholderAssignmentId: creatingAssignment.id,
+      standingAuthorityId: housingAuthority.id,
+      initialSourceReferenceIds: [configuration.housing.openingInformation.monitoringChiefOfStaffNoticeId],
+      initialReviewAt: "2029-02-12T08:00:00-05:00",
+      reason: "Inherited Housing monitoring is adopted without substantive evidence fan-out.",
+      provenanceReference: configuration.housing.provenanceReference,
+    },
+  );
+  const openingOwners = {
+    ...withHousingWorkstream,
+    programImplementation: openingHousing.programImplementation,
+    materialHousing: openingHousing.materialHousing,
+  };
+  const ownerStates = {
+    calendar: {
+      ownerId: configuration.calendar.ownerId,
+      state: createCalendarTimeState(
+        configuration.calendar.epoch,
+        configuration.calendar.boundaries,
+      ),
+    },
+    ...openingOwners,
+    ...appendDerivedPresidentialHousingHistory(openingOwners, configuration.housing),
+  };
+  const state: PresidentialOperatingRuntimeState = {
     schemaVersion: PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION,
     operatingStateId: configuration.operatingStateId,
     configuration: { ...configuration.identity },
-    ownerStates: {
-      calendar: {
-        ownerId: configuration.calendar.ownerId,
-        state: createCalendarTimeState(
-          configuration.calendar.epoch,
-          configuration.calendar.boundaries,
-        ),
-      },
-      ...administration,
-      ...intervention,
-    },
+    ownerStates,
   };
+  assertPresidentialOperatingRuntimeState(state, configuration);
+  return state;
 };
 
 export const copyPresidentialOperatingRuntimeState = (
@@ -155,6 +327,7 @@ export const copyPresidentialOperatingRuntimeState = (
 ): PresidentialOperatingRuntimeState => {
   const administration = copyPresidentialAdministrationOwnerStates(state.ownerStates);
   const intervention = copyPresidentialInterventionOwnerStates(state.ownerStates);
+  const housing = copyPresidentialHousingOwnerStates(state.ownerStates);
   return {
     schemaVersion: state.schemaVersion,
     operatingStateId: state.operatingStateId,
@@ -169,6 +342,7 @@ export const copyPresidentialOperatingRuntimeState = (
       },
       ...administration,
       ...intervention,
+      ...housing,
     },
   };
 };
@@ -212,6 +386,12 @@ export const assertPresidentialOperatingRuntimeState = (
     configuration.calendar.epoch,
     state.ownerStates.calendar.state.current,
   );
+  assertPresidentialHousingOwnerStates(
+    state.ownerStates,
+    state.ownerStates,
+    configuration.housing,
+    state.ownerStates.calendar.state.current,
+  );
 };
 
 export const advancePresidentialOperatingRuntimeTime = (
@@ -225,18 +405,24 @@ export const advancePresidentialOperatingRuntimeTime = (
   if (!Number.isFinite(targetValue) || targetValue < currentValue) {
     throw new Error("Presidential operating time requires a valid nondecreasing target.");
   }
-  const advancedOwners = advancePresidentialInterventionTime(
+  const advancedHousing = advancePresidentialHousingOwners(
     state.ownerStates,
+    state.ownerStates.calendar.state.current,
+    target,
+  );
+  const advancedOwners = advancePresidentialInterventionTime(
+    { ...state.ownerStates, ...advancedHousing },
     configuration.administration,
     configuration.intervention,
     configuration.calendar.epoch,
     state.ownerStates.calendar.state.current,
     target,
   );
-  const next: PresidentialOperatingRuntimeState = {
+  const nextWithoutHousingHistory: PresidentialOperatingRuntimeState = {
     ...state,
     ownerStates: {
       ...advancedOwners,
+      ...advancedHousing,
       calendar: {
         ...state.ownerStates.calendar,
         state: {
@@ -247,6 +433,16 @@ export const advancePresidentialOperatingRuntimeTime = (
           ),
         },
       },
+    },
+  };
+  const next: PresidentialOperatingRuntimeState = {
+    ...nextWithoutHousingHistory,
+    ownerStates: {
+      ...nextWithoutHousingHistory.ownerStates,
+      ...appendDerivedPresidentialHousingHistory(
+        nextWithoutHousingHistory.ownerStates,
+        configuration.housing,
+      ),
     },
   };
   assertPresidentialOperatingRuntimeState(next, configuration);

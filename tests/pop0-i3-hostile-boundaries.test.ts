@@ -183,7 +183,7 @@ describe("POP0-I3 hostile operation and restoration boundaries", () => {
       .state.transitions[1];
     transition.priorTransitionId = transition.id;
     expect(() => createPresidentialOperatingProofSession(JSON.stringify(workstreamEnvelope)))
-      .toThrow(/broken prior chain|historical/i);
+      .toThrow(/broken prior chain|historical|immutable monitored creation transition/i);
   });
 
   it("lets deterministic default/no-action win exactly at both end-exclusive deadlines", () => {

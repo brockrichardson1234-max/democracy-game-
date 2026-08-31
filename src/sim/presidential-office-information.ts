@@ -95,6 +95,95 @@ export interface SourceEvidenceArtifact {
   readonly supersedesArtifactId: string | null;
 }
 
+export interface HousingMonitoringClaim {
+  readonly id: string;
+  readonly sectionId: string;
+  readonly sourceStateField: "programImplementation" | "materialHousing";
+  readonly sourceOwnerId: string;
+  readonly sourceRecordKind: string;
+  readonly sourceRecordId: string;
+  readonly projectId: string;
+  readonly claimFamily: string;
+  readonly observedFieldPath: string;
+  readonly observedValue: string | number | boolean | null | readonly string[];
+  readonly sourceOccurredAt: string | null;
+  readonly observedAt: string;
+  readonly observationAuthorityId: string;
+  readonly authorityScopeKey: string;
+  readonly sourceRecordHash: string;
+  readonly supportingOccurrenceIds: readonly string[];
+  readonly provenanceReference: string;
+}
+
+export interface HousingMonitoringEvidenceArtifact {
+  readonly kind: "HOUSING_MONITORING_EVIDENCE";
+  readonly id: string;
+  readonly version: string;
+  readonly producerInstitutionId: string;
+  readonly observationAuthorityId: string;
+  readonly institutionIdentityBindingId: string;
+  readonly asOf: string;
+  readonly createdAt: string;
+  readonly releasedAt: string;
+  readonly sectionIds: readonly string[];
+  readonly sectionClaims: readonly { readonly sectionId: string; readonly claimIds: readonly string[] }[];
+  readonly claims: readonly HousingMonitoringClaim[];
+  readonly accessClass: string;
+  readonly canonicalArtifactHash: string;
+  readonly provenanceReference: string;
+  readonly revisionOfArtifactId: string | null;
+  readonly supersedesArtifactId: string | null;
+}
+
+export interface DepartmentSupplierSearchEvidenceArtifact {
+  readonly kind: "HUD_SUPPLIER_SEARCH_EVIDENCE";
+  readonly id: string;
+  readonly version: string;
+  readonly producerInstitutionId: string;
+  readonly targetProjectId: string;
+  readonly targetRequestId: string;
+  readonly targetScopeKey: string;
+  readonly sourceDocumentIds: readonly string[];
+  readonly asOf: string;
+  readonly createdAt: string;
+  readonly releasedAt: string;
+  readonly sectionIds: readonly string[];
+  readonly accessClass: string;
+  readonly canonicalArtifactHash: string;
+  readonly provenanceReference: string;
+  readonly revisionOfArtifactId: string | null;
+  readonly supersedesArtifactId: string | null;
+}
+
+export interface DepartmentSupplementalRecordArtifact {
+  readonly kind: "HUD_SUPPLEMENTAL_RECORD";
+  readonly id: string;
+  readonly version: string;
+  readonly recordTypeId: "NONAVAILABILITY_RECORD";
+  readonly producingOfficeId: string;
+  readonly authoringOfficeholderAssignmentId: string;
+  readonly sourceDispositionId: string;
+  readonly sourceAssignmentId: string;
+  readonly sourceAssignmentResultArtifactId: string;
+  readonly targetInstitutionId: string;
+  readonly targetRequestId: string;
+  readonly targetProjectId: string;
+  readonly targetRelationshipId: string;
+  readonly targetScopeKey: string;
+  readonly sourceEvidenceArtifactId: string;
+  readonly sourceEvidenceReceiptId: string;
+  readonly sourceEvidenceSectionIds: readonly string[];
+  readonly asOf: string;
+  readonly createdAt: string;
+  readonly releasedAt: string;
+  readonly sectionIds: readonly string[];
+  readonly accessClass: string;
+  readonly canonicalArtifactHash: string;
+  readonly provenanceReference: string;
+  readonly revisionOfArtifactId: string | null;
+  readonly supersedesArtifactId: string | null;
+}
+
 export interface AssessmentPropositionJudgment {
   readonly ruleId: string;
   readonly propositionId: string;
@@ -159,7 +248,16 @@ export interface SynthesisArtifact {
 export type PresidentialInformationArtifact =
   | SourceEvidenceArtifact
   | AssessmentArtifact
-  | SynthesisArtifact;
+  | SynthesisArtifact
+  | HousingMonitoringEvidenceArtifact
+  | DepartmentSupplierSearchEvidenceArtifact
+  | DepartmentSupplementalRecordArtifact;
+
+export interface ConfiguredExternalArtifactAccessScope {
+  readonly artifactId: string;
+  readonly accessClass: string;
+  readonly sectionIds: readonly string[];
+}
 
 export interface ConfiguredAccessEntitlement {
   readonly id: string;
@@ -195,6 +293,7 @@ export interface PresidentialAdministrationConfiguration {
   readonly presidentialRecipientBinding: PresidentialRecipientBinding;
   readonly populationLinkages: readonly PresidentialActorPopulationLinkage[];
   readonly sourceArtifacts: readonly SourceEvidenceArtifact[];
+  readonly externalArtifactAccessScopes: readonly ConfiguredExternalArtifactAccessScope[];
   readonly accessEntitlements: readonly ConfiguredAccessEntitlement[];
   readonly assumptions: readonly {
     readonly id: string;
@@ -248,6 +347,46 @@ export interface OfficeOperationsState {
   readonly instrumentReceipts: readonly OfficeInstrumentReceipt[];
   readonly instrumentDispositions: readonly RecipientInstrumentDisposition[];
   readonly instrumentAssignmentAuthorizations: readonly InstrumentAssignmentAuthorizationBinding[];
+  readonly departmentHandlingSubmissions: readonly DepartmentHandlingSubmissionRecord[];
+}
+
+export type DepartmentHandlingSubmissionPayload =
+  | {
+      readonly kind: "SUBMIT_SUPPLEMENTAL_RECORDS";
+      readonly recordTypeIds: readonly ["NONAVAILABILITY_RECORD"];
+      readonly qualifyingEvidenceReference: {
+        readonly artifactId: string;
+        readonly artifactKind: "HUD_SUPPLEMENTAL_RECORD";
+        readonly recordTypeId: "NONAVAILABILITY_RECORD";
+        readonly certificationSectionId: "nonavailability-certification";
+        readonly sourceArtifactProductionId: string;
+        readonly sourceRawEvidenceReceiptId: string;
+        readonly sourceLineageSectionId: "source-evidence-lineage";
+      };
+    }
+  | {
+      readonly kind: "SUBMIT_WAIVER_REVIEW_INTENTION";
+      readonly intention: "GRANT_SCOPED_WAIVER" | "DENY" | "RETURN_FOR_SUPPLEMENTAL_RECORD";
+      readonly supportingHandlingSubmissionIds: readonly string[];
+    };
+
+export interface DepartmentHandlingSubmissionRecord {
+  readonly id: string;
+  readonly deduplicationIdentity: string;
+  readonly submittingOfficeId: string;
+  readonly submittingOfficeholderAssignmentId: string;
+  readonly handlingAuthorityId: string;
+  readonly sourceDispositionId: string;
+  readonly sourceAssignmentId: string;
+  readonly sourceAssignmentResultArtifactId: string;
+  readonly targetInstitutionId: string;
+  readonly targetRequestId: string;
+  readonly targetProjectId: string;
+  readonly targetRelationshipId: string;
+  readonly targetScopeKey: string;
+  readonly submittedAt: string;
+  readonly payload: DepartmentHandlingSubmissionPayload;
+  readonly provenanceReference: string;
 }
 
 export interface AdministrationDirectoryState {
@@ -328,12 +467,32 @@ export interface SubstantiveOfficeReceipt {
 
 export interface InformationRouteLedgerState {
   readonly artifacts: readonly PresidentialInformationArtifact[];
+  readonly institutionArtifactObservations: readonly InstitutionArtifactObservationRecord[];
+  readonly officeArtifactProductions: readonly OfficeArtifactProductionRecord[];
   readonly institutionPossessions: readonly InstitutionPossessionRecord[];
   readonly indexEntries: readonly InformationIndexEntry[];
   readonly metadataNotices: readonly OfficeMetadataNotice[];
   readonly accessEntitlements: readonly ConfiguredAccessEntitlement[];
   readonly retrievals: readonly InformationRetrievalRecord[];
   readonly receipts: readonly SubstantiveOfficeReceipt[];
+}
+
+export interface InstitutionArtifactObservationRecord {
+  readonly id: string;
+  readonly artifactId: string;
+  readonly observingInstitutionId: string;
+  readonly observationAuthorityId: string;
+  readonly observedAt: string;
+  readonly provenanceReference: string;
+}
+
+export interface OfficeArtifactProductionRecord {
+  readonly id: string;
+  readonly artifactId: string;
+  readonly producingOfficeId: string;
+  readonly producingOfficeholderAssignmentId: string;
+  readonly producedAt: string;
+  readonly provenanceReference: string;
 }
 
 export interface PresentedArtifactPortion {
@@ -397,6 +556,18 @@ export interface OfficeInformationView {
   readonly instrumentReceipts: readonly OfficeInstrumentReceipt[];
   readonly instrumentDispositions: readonly RecipientInstrumentDisposition[];
 }
+
+export const isInstitutionProducedArtifact = (
+  artifact: PresidentialInformationArtifact,
+): artifact is SourceEvidenceArtifact | HousingMonitoringEvidenceArtifact | DepartmentSupplierSearchEvidenceArtifact =>
+  artifact.kind === "SOURCE_EVIDENCE" ||
+  artifact.kind === "HOUSING_MONITORING_EVIDENCE" ||
+  artifact.kind === "HUD_SUPPLIER_SEARCH_EVIDENCE";
+
+export const isOfficeProducedArtifact = (
+  artifact: PresidentialInformationArtifact,
+): artifact is AssessmentArtifact | SynthesisArtifact | DepartmentSupplementalRecordArtifact =>
+  artifact.kind === "ASSESSMENT" || artifact.kind === "SYNTHESIS" || artifact.kind === "HUD_SUPPLEMENTAL_RECORD";
 
 const copyPlain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -527,6 +698,10 @@ export const assertPresidentialAdministrationConfiguration = (
   requireUnique(configuration.officeholderAssignments.map((entry) => entry.id), "Officeholder assignment identities");
   requireUnique(configuration.populationLinkages.map((entry) => entry.actorId), "Population-linkage actor identities");
   requireUnique(configuration.sourceArtifacts.map((entry) => entry.id), "Source artifact identities");
+  requireUnique(
+    configuration.externalArtifactAccessScopes.map((entry) => entry.artifactId),
+    "External artifact-access identities",
+  );
   requireUnique(configuration.accessEntitlements.map((entry) => entry.id), "Access-entitlement identities");
   requireUnique(configuration.assumptions.map((entry) => entry.id), "Assessment assumption identities");
   requireUnique(configuration.assessmentRules.map((entry) => entry.id), "Assessment-rule identities");
@@ -534,8 +709,8 @@ export const assertPresidentialAdministrationConfiguration = (
     configuration.recipientCapabilities.map((entry) => entry.id),
     "Recipient-capability identities",
   );
-  if (configuration.recipientCapabilities.length !== 2) {
-    throw new Error("POP0-I3 requires exactly two bounded recipient-capability authorities.");
+  if (configuration.recipientCapabilities.length !== 4) {
+    throw new Error("POP0-I4 requires exactly four bounded recipient-capability authorities.");
   }
 
   for (const institution of configuration.institutions) {
@@ -637,10 +812,20 @@ export const assertPresidentialAdministrationConfiguration = (
     requireNonempty(artifact.provenanceReference, `${artifact.id} provenance`);
   }
 
+  for (const scope of configuration.externalArtifactAccessScopes) {
+    requireNonempty(scope.artifactId, "External artifact-access identity");
+    requireNonempty(scope.accessClass, `${scope.artifactId} access class`);
+    requireNonemptyUnique(scope.sectionIds, `${scope.artifactId} sections`);
+    if (configuration.sourceArtifacts.some((entry) => entry.id === scope.artifactId)) {
+      throw new Error(`External artifact-access scope ${scope.artifactId} duplicates configured source evidence.`);
+    }
+  }
+
   for (const entitlement of configuration.accessEntitlements) {
     assertInterval(entitlement.effectiveFrom, entitlement.effectiveUntil, entitlement.id);
     const office = configuration.offices.find((entry) => entry.id === entitlement.officeId);
-    const artifact = configuration.sourceArtifacts.find((entry) => entry.id === entitlement.artifactId);
+    const artifact = configuration.sourceArtifacts.find((entry) => entry.id === entitlement.artifactId) ??
+      configuration.externalArtifactAccessScopes.find((entry) => entry.artifactId === entitlement.artifactId);
     if (office === undefined || artifact === undefined) {
       throw new Error(`Access entitlement ${entitlement.id} has an unknown office or artifact.`);
     }
@@ -733,6 +918,7 @@ export const createPresidentialAdministrationOwnerStates = (
            instrumentReceipts: [],
            instrumentDispositions: [],
            instrumentAssignmentAuthorizations: [],
+           departmentHandlingSubmissions: [],
         }))
         .sort((left, right) => left.officeId.localeCompare(right.officeId)),
     },
@@ -741,6 +927,8 @@ export const createPresidentialAdministrationOwnerStates = (
       state: {
         artifacts: [...copyPlain(configuration.sourceArtifacts)]
           .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id)),
+        institutionArtifactObservations: [],
+        officeArtifactProductions: [],
         institutionPossessions: [],
         indexEntries: [],
         metadataNotices: [],
@@ -763,6 +951,8 @@ export const copyPresidentialAdministrationOwnerStates = (
 
 const allReferenceIds = (state: PresidentialAdministrationOwnerStates): Set<string> => new Set([
   ...state.informationRoutes.state.artifacts.map((entry) => entry.id),
+  ...state.informationRoutes.state.institutionArtifactObservations.map((entry) => entry.id),
+  ...state.informationRoutes.state.officeArtifactProductions.map((entry) => entry.id),
   ...state.informationRoutes.state.institutionPossessions.map((entry) => entry.id),
   ...state.informationRoutes.state.indexEntries.map((entry) => entry.id),
   ...state.informationRoutes.state.metadataNotices.map((entry) => entry.id),
@@ -771,6 +961,7 @@ const allReferenceIds = (state: PresidentialAdministrationOwnerStates): Set<stri
   ...state.officeOperations.state.flatMap((office) => [
     ...office.instrumentReceipts.map((entry) => entry.id),
     ...office.instrumentDispositions.map((entry) => entry.id),
+    ...office.departmentHandlingSubmissions.map((entry) => entry.id),
   ]),
 ]);
 
@@ -1026,7 +1217,7 @@ const presenterCanShowArtifact = (
     !artifact.sectionIds.includes(sectionId) ||
     instant(artifact.createdAt, `${artifact.id} creation`) > instant(at, "Presentation time")
   ) return false;
-  if (artifact.kind !== "SOURCE_EVIDENCE" && artifact.producingOfficeId === officeId) return true;
+  if (isOfficeProducedArtifact(artifact) && artifact.producingOfficeId === officeId) return true;
   return state.informationRoutes.state.receipts.some((receipt) =>
     receipt.recipientOfficeId === officeId &&
     receipt.artifactId === artifactId &&
@@ -1210,7 +1401,7 @@ export const assertPresidentialAdministrationOwnerStates = (
           assignment.resultArtifactIds.length === 0 ||
           assignment.resultArtifactIds.some((id) => {
             const artifact = findArtifact(state, id);
-            return artifact === undefined || artifact.kind === "SOURCE_EVIDENCE" || artifact.producingOfficeId !== office.officeId;
+            return artifact === undefined || !isOfficeProducedArtifact(artifact) || artifact.producingOfficeId !== office.officeId;
           })
         ) throw new Error(`Completed assignment ${assignment.id} requires office-owned result artifacts.`);
       } else if (assignment.resultArtifactIds.length !== 0) {
@@ -1323,6 +1514,14 @@ export const assertPresidentialAdministrationOwnerStates = (
 
   const ledger = state.informationRoutes.state;
   requireNonemptyUnique(ledger.artifacts.map((entry) => entry.id), "Information artifact identities");
+  requireNonemptyUnique(
+    ledger.institutionArtifactObservations.map((entry) => entry.id),
+    "Institution-artifact observation identities",
+  );
+  requireNonemptyUnique(
+    ledger.officeArtifactProductions.map((entry) => entry.id),
+    "Office-artifact production identities",
+  );
   requireNonemptyUnique(ledger.institutionPossessions.map((entry) => entry.id), "Institution-possession identities");
   requireNonemptyUnique(ledger.indexEntries.map((entry) => entry.id), "Information-index identities");
   requireNonemptyUnique(ledger.metadataNotices.map((entry) => entry.id), "Metadata-notice identities");
@@ -1355,11 +1554,40 @@ export const assertPresidentialAdministrationOwnerStates = (
     if (artifact.kind === "ASSESSMENT") assertAssessmentArtifact(artifact, state, configuration);
     if (artifact.kind === "SYNTHESIS") assertSynthesisArtifact(artifact, state);
   }
+  for (const production of ledger.officeArtifactProductions) {
+    const artifact = findArtifact(state, production.artifactId);
+    if (
+      artifact === undefined ||
+      !isOfficeProducedArtifact(artifact) ||
+      artifact.producingOfficeId !== production.producingOfficeId ||
+      artifact.createdAt !== production.producedAt ||
+      instant(production.producedAt, `${production.id} production`) > currentValue
+    ) throw new Error(`Office artifact production ${production.id} is invalid.`);
+    assertEffectiveOfficeholder(
+      state,
+      production.producingOfficeholderAssignmentId,
+      production.producingOfficeId,
+      production.producedAt,
+    );
+    requireNonempty(production.provenanceReference, `${production.id} provenance`);
+  }
+  for (const observation of ledger.institutionArtifactObservations) {
+    const artifact = findArtifact(state, observation.artifactId);
+    if (
+      artifact === undefined || artifact.kind !== "HOUSING_MONITORING_EVIDENCE" ||
+      artifact.producerInstitutionId !== observation.observingInstitutionId ||
+      artifact.observationAuthorityId !== observation.observationAuthorityId ||
+      artifact.createdAt !== observation.observedAt ||
+      !configuration.institutions.some((entry) => entry.id === observation.observingInstitutionId) ||
+      instant(observation.observedAt, `${observation.id} observation`) > currentValue
+    ) throw new Error(`Institution artifact observation ${observation.id} is invalid.`);
+    requireNonempty(observation.provenanceReference, `${observation.id} provenance`);
+  }
   assertArtifactHistory(state);
   for (const possession of ledger.institutionPossessions) {
     const artifact = findArtifact(state, possession.artifactId);
     if (
-      artifact?.kind !== "SOURCE_EVIDENCE" ||
+      artifact === undefined || !isInstitutionProducedArtifact(artifact) ||
       artifact.producerInstitutionId !== possession.possessingInstitutionId ||
       !configuration.institutions.some((entry) => entry.id === possession.possessingInstitutionId) ||
       instant(possession.possessedAt, `${possession.id} possession`) > currentValue
@@ -1373,7 +1601,7 @@ export const assertPresidentialAdministrationOwnerStates = (
       possession === undefined ||
       possession.artifactId !== entry.artifactId ||
       possession.possessingInstitutionId !== entry.sourceInstitutionId ||
-      artifact?.kind !== "SOURCE_EVIDENCE" ||
+      artifact === undefined || !isInstitutionProducedArtifact(artifact) ||
       entry.artifactVersion !== artifact.version ||
       entry.accessClass !== artifact.accessClass ||
       !sameValues(entry.availableSectionIds, artifact.sectionIds) ||
@@ -1457,7 +1685,7 @@ export const assertPresidentialAdministrationOwnerStates = (
         instant(receipt.receivedAt, `${receipt.id} receipt`) < instant(retrieval.completedAt, `${retrieval.id} completion`)
       ) throw new Error(`Office receipt ${receipt.id} lacks a valid technical retrieval.`);
     } else {
-      const source = artifact.kind === "SOURCE_EVIDENCE" ? null : artifact.producingOfficeId;
+      const source = isOfficeProducedArtifact(artifact) ? artifact.producingOfficeId : null;
       assertEffectiveOfficeholder(
         state,
         receiptSource.sourceOfficeholderAssignmentId,
@@ -1614,7 +1842,7 @@ export const deriveOfficeInformationView = (
       };
     }),
     authoredArtifactIds: ledger.artifacts
-      .filter((artifact) => artifact.kind !== "SOURCE_EVIDENCE" && artifact.producingOfficeId === officeId)
+      .filter((artifact) => isOfficeProducedArtifact(artifact) && artifact.producingOfficeId === officeId)
       .map((artifact) => artifact.id),
     instrumentReceipts: state.officeOperations.state
       .find((office) => office.officeId === officeId)?.instrumentReceipts ?? [],

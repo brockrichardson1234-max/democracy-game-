@@ -34,9 +34,9 @@ describe("POP0-I2 independent office information substrate", () => {
     const session = createPop0I2TraceSession();
     const state = session.getOperatingState();
 
-    expect(PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION).toBe(3);
-    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(3);
-    expect(POP0_V0_CONFIGURATION_VERSION).toBe("0.3.0-pop0-i3");
+    expect(PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION).toBe(4);
+    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(4);
+    expect(POP0_V0_CONFIGURATION_VERSION).toBe("0.4.0-pop0-i4");
     expect(Object.keys(state.ownerStates).sort()).toEqual([
       "administrationDirectory",
       "administrationWorkstreams",
@@ -44,11 +44,13 @@ describe("POP0-I2 independent office information substrate", () => {
       "historicalRecordIndex",
       "informationRoutes",
       "instrumentDispatches",
+      "materialHousing",
       "officeOperations",
       "presidentialDecisions",
       "presidentialEscalations",
       "presidentialInstruments",
       "presidentialPresentations",
+      "programImplementation",
     ]);
     expect(POP0_V0_OPERATING_CONFIGURATION.administration.institutions).toHaveLength(2);
     expect(state.ownerStates.officeOperations.state).toHaveLength(6);
@@ -84,7 +86,9 @@ describe("POP0-I2 independent office information substrate", () => {
     });
 
     const state = session.getOperatingState();
-    expect(state.ownerStates.informationRoutes.state.institutionPossessions).toHaveLength(1);
+    expect(state.ownerStates.informationRoutes.state.institutionPossessions).toContainEqual(
+      expect.objectContaining({ artifactId: POP0_I2_SOURCE_ARTIFACT_ID }),
+    );
     expect(session.getOfficeInformation(POP0_I2_OFFICE_IDS.secretaryOfLabor)).toMatchObject({
       metadataNotices: [],
       retrievals: [],

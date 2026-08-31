@@ -71,6 +71,7 @@ const withAdministration = (
     calendar: base.calendar,
     administration,
     intervention: base.intervention,
+    housing: base.housing,
   };
   return {
     ...withoutHash,

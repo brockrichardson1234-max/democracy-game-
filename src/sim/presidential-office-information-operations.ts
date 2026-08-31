@@ -5,6 +5,8 @@ import {
   assertPresidentialAdministrationOwnerStates,
   findArtifact,
   isEffectiveAt,
+  isInstitutionProducedArtifact,
+  isOfficeProducedArtifact,
   type AssessmentArtifact,
   type AssessmentPropositionJudgment,
   type ConfiguredAssessmentRule,
@@ -238,7 +240,7 @@ export const recordInstitutionPossession = (
   begin(state, configuration, epoch, current);
   const artifact = findArtifact(state, input.artifactId);
   if (
-    artifact?.kind !== "SOURCE_EVIDENCE" ||
+    artifact === undefined || !isInstitutionProducedArtifact(artifact) ||
     artifact.producerInstitutionId !== input.possessingInstitutionId
   ) throw new Error("Institution possession requires its configured source artifact.");
   if (state.informationRoutes.state.institutionPossessions.some((entry) =>
@@ -283,7 +285,7 @@ export const createInformationIndexEntry = (
   const ledger = state.informationRoutes.state;
   const artifact = findArtifact(state, input.artifactId);
   const possession = ledger.institutionPossessions.find((entry) => entry.id === input.sourcePossessionId);
-  if (artifact?.kind !== "SOURCE_EVIDENCE" || possession?.artifactId !== artifact.id) {
+  if (artifact === undefined || !isInstitutionProducedArtifact(artifact) || possession?.artifactId !== artifact.id) {
     throw new Error(`Information index ${input.id} requires valid institution possession.`);
   }
   if (ledger.indexEntries.some((entry) => entry.id === input.id || entry.artifactId === input.artifactId)) {
@@ -539,7 +541,7 @@ export const transferOfficeArtifact = (
   const artifact = findArtifact(state, input.artifactId);
   if (
     artifact === undefined ||
-    artifact.kind === "SOURCE_EVIDENCE" ||
+    !isOfficeProducedArtifact(artifact) ||
     artifact.producingOfficeId !== input.sourceOfficeId ||
     input.receivedSectionIds.some((id) => !artifactSectionIds(artifact).includes(id))
   ) throw new Error(`Office transfer ${input.id} requires a source-office artifact and valid scope.`);
