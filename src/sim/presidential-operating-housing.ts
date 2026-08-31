@@ -229,7 +229,7 @@ const findRequest = (
   return request;
 };
 
-const createOpeningLowerOwners = (
+const createOpeningLowerOwnersAtObservation = (
   configuration: PresidentialOperatingHousingConfiguration,
 ): PresidentialHousingOwnerStates => {
   const implementationConfiguration = configuration.ownerContent.implementationConfiguration;
@@ -332,7 +332,7 @@ const createOpeningLowerOwners = (
   materialHousing = advanceIntegratedMaterialHousing(
     materialHousing,
     configuration.opening.palmsReleaseAt,
-    configuration.opening.epoch,
+    configuration.opening.monitoringObservedAt,
   );
 
   assertProgramImplementationState(
@@ -342,6 +342,30 @@ const createOpeningLowerOwners = (
   );
   assertIntegratedMaterialHousingState(materialHousing);
   return { programImplementation, materialHousing };
+};
+
+const advanceOpeningLowerOwnersToEpoch = (
+  observed: PresidentialHousingOwnerStates,
+  configuration: PresidentialOperatingHousingConfiguration,
+): PresidentialHousingOwnerStates => {
+  const owners = {
+    programImplementation: advanceAdministrativeDeadlines(
+      observed.programImplementation,
+      configuration.opening.epoch,
+    ),
+    materialHousing: advanceIntegratedMaterialHousing(
+      observed.materialHousing,
+      configuration.opening.monitoringObservedAt,
+      configuration.opening.epoch,
+    ),
+  };
+  assertProgramImplementationState(
+    owners.programImplementation,
+    configuration.ownerContent.implementationConfiguration,
+    configuration.ownerContent.implementationSeed,
+  );
+  assertIntegratedMaterialHousingState(owners.materialHousing);
+  return owners;
 };
 
 const project = (state: IntegratedMaterialHousingState, id: string): MaterialHousingProject => {
@@ -436,7 +460,7 @@ const createMonitoringArtifact = (
       claimFamily: "PROJECT_MATERIAL_STATUS",
       observedFieldPath: "stage",
       observedValue: stables.stage,
-      sourceOccurredAt: configuration.opening.epoch,
+      sourceOccurredAt: configuration.opening.monitoringObservedAt,
       sourceRecordHash: hash(stables),
       supportingOccurrenceIds: [...stables.acceptedGovernmentInputRefs],
     }),
@@ -451,7 +475,7 @@ const createMonitoringArtifact = (
       claimFamily: "PROJECT_MATERIAL_STATUS",
       observedFieldPath: "stage",
       observedValue: palms.stage,
-      sourceOccurredAt: configuration.opening.epoch,
+      sourceOccurredAt: configuration.opening.monitoringObservedAt,
       sourceRecordHash: hash(palms),
       supportingOccurrenceIds: [...palms.acceptedGovernmentInputRefs],
     }),
@@ -491,7 +515,7 @@ export const computeOpeningMonitoringArtifactHash = (
     ...configuration,
     monitoringArtifact: { ...configuration.monitoringArtifact, expectedCanonicalHash: "PENDING" },
   } satisfies PresidentialOperatingHousingConfiguration;
-  const owners = createOpeningLowerOwners(provisional);
+  const owners = createOpeningLowerOwnersAtObservation(provisional);
   return createMonitoringArtifact(provisional, owners).canonicalArtifactHash;
 };
 
@@ -528,6 +552,12 @@ export const assertPresidentialOperatingHousingConfiguration = (
     !configuration.observationAuthority.sourceConfigurationHashes.includes(implementationConfiguration.parameterHash) ||
     !configuration.observationAuthority.sourceConfigurationHashes.includes(materialConfiguration.parameterHash)
   ) throw new Error("Presidential Housing configuration contradicts authenticated I6/I7 owner content.");
+  if (
+    instant(configuration.opening.monitoringObservedAt, "Monitoring observation") >
+      instant(configuration.opening.informationRoutedAt, "Monitoring route") ||
+    instant(configuration.opening.informationRoutedAt, "Monitoring route") >
+      instant(configuration.opening.epoch, "Housing epoch")
+  ) throw new Error("Opening Housing observation, route, and epoch chronology is invalid.");
   if (
     instant(configuration.observationAuthority.effectiveFrom, "Observation authority start") >
       instant(configuration.opening.monitoringObservedAt, "Monitoring observation") ||
@@ -603,12 +633,13 @@ export const createOpeningHousingComposition = (
   configuration: PresidentialOperatingHousingConfiguration,
 ): OpeningHousingComposition => {
   assertPresidentialOperatingHousingConfiguration(configuration, configuration.opening.epoch);
-  const owners = createOpeningLowerOwners(configuration);
-  const monitoringArtifact = createMonitoringArtifact(configuration, owners);
+  const observedOwners = createOpeningLowerOwnersAtObservation(configuration);
+  const monitoringArtifact = createMonitoringArtifact(configuration, observedOwners);
   if (monitoringArtifact.canonicalArtifactHash !== configuration.monitoringArtifact.expectedCanonicalHash) {
     throw new Error("Opening Housing monitoring artifact does not match authenticated configuration.");
   }
   expectedMonitoringArtifacts.set(configuration, monitoringArtifact);
+  const owners = advanceOpeningLowerOwnersToEpoch(observedOwners, configuration);
   return { ...copyPlain(owners), monitoringArtifact: copyPlain(monitoringArtifact) };
 };
 
@@ -684,6 +715,7 @@ const assertSupplementalArtifactsAndHandling = (
         JSON.stringify(configuration.rawSupplierEvidenceArtifact.sectionIds) ||
       JSON.stringify(artifact.sectionIds) !== JSON.stringify(configuration.supplementalRecordArtifact.sectionIds) ||
       artifact.accessClass !== configuration.supplementalRecordArtifact.accessClass ||
+      artifact.provenanceReference !== configuration.provenanceReference ||
       canonicalArtifactHash !== computeDepartmentSupplementalArtifactHash(withoutHash) ||
       disposition === undefined || !["ACCEPTED_AS_REQUESTED", "NARROWED"].includes(disposition.kind) ||
       assignment === undefined || assignment.status !== "COMPLETED" ||
@@ -698,6 +730,7 @@ const assertSupplementalArtifactsAndHandling = (
       production.producingOfficeId !== artifact.producingOfficeId ||
       production.producingOfficeholderAssignmentId !== artifact.authoringOfficeholderAssignmentId ||
       production.producedAt !== artifact.createdAt ||
+      production.provenanceReference !== configuration.provenanceReference ||
       !effectiveOfficeholder(
         state,
         artifact.authoringOfficeholderAssignmentId,
@@ -742,6 +775,7 @@ const assertSupplementalArtifactsAndHandling = (
       record.targetProjectId !== configuration.handlingAuthority.targetProjectId ||
       record.targetRelationshipId !== configuration.handlingAuthority.targetRelationshipId ||
       record.targetScopeKey !== configuration.handlingAuthority.targetScopeKey ||
+      record.provenanceReference !== configuration.provenanceReference ||
       !isEffective(
         configuration.handlingAuthority.effectiveFrom,
         configuration.handlingAuthority.effectiveUntil,
@@ -892,7 +926,6 @@ const expectedI4HistoryEntries = (
 ): readonly HistoricalRecordIndexEntry[] => {
   const entries: HistoricalRecordIndexEntry[] = [];
   const allHandling = state.officeOperations.state.flatMap((office) => office.departmentHandlingSubmissions);
-  const supplementals = allHandling.filter((entry) => entry.payload.kind === "SUBMIT_SUPPLEMENTAL_RECORDS");
   const reviews = allHandling.filter((entry) => entry.payload.kind === "SUBMIT_WAIVER_REVIEW_INTENTION");
 
   for (const observation of state.informationRoutes.state.institutionArtifactObservations) {
@@ -948,18 +981,6 @@ const expectedI4HistoryEntries = (
       handling.submittedAt,
       handling.id,
       [...sourceParents, ...payloadParents],
-    ));
-  }
-
-  for (const handling of supplementals) {
-    entries.push(i4HistoryEntry(
-      configuration,
-      `${handling.id}.lower-owner-result`,
-      configuration.history.implementationOwnerId,
-      "LOWER_OWNER_RESULT",
-      handling.submittedAt,
-      handling.targetRequestId,
-      [handling.id],
     ));
   }
 
@@ -1067,6 +1088,16 @@ const assertI4HistoricalReferences = (
       entry.historyId !== configuration.history.historyId ||
       instant(entry.occurredAt, `${entry.occurrenceId} occurrence`) > instant(current, "Current Housing time")
     ) throw new Error(`I4 historical entry ${entry.occurrenceId} has invalid identity or chronology.`);
+    if (entry.recordKind === "LOWER_OWNER_RESULT") {
+      const canonicalResultExists = state.programImplementation.administrativeProgram.determinations.some(
+        (record) => record.id === entry.occurrenceId && record.id === entry.ownerRecordId,
+      ) || state.programImplementation.materialInputs.some(
+        (record) => record.id === entry.occurrenceId && record.id === entry.ownerRecordId,
+      );
+      if (!canonicalResultExists) {
+        throw new Error(`I4 lower-owner history ${entry.occurrenceId} lacks a canonical lower-owner result.`);
+      }
+    }
     for (const parentId of entry.causalParentOccurrenceIds) {
       const parentTime = knownI4ParentTime(state, parentId);
       if (parentTime === null ||
@@ -1137,12 +1168,29 @@ export const assertPresidentialHousingOwnerStates = (
   const monitoring = administration.informationRoutes.state.artifacts.find(
     (entry) => entry.id === configuration.monitoringArtifact.id,
   );
+  if (
+    monitoring === undefined || monitoring.kind !== "HOUSING_MONITORING_EVIDENCE" ||
+    monitoring.asOf !== configuration.opening.monitoringObservedAt ||
+    monitoring.createdAt !== monitoring.asOf ||
+    instant(monitoring.releasedAt, `${monitoring.id} release`) < instant(monitoring.asOf, `${monitoring.id} as-of`)
+  ) throw new Error("Housing monitoring evidence has invalid observation chronology.");
+  for (const claim of monitoring.claims) {
+    if (
+      claim.observedAt !== monitoring.asOf ||
+      (claim.sourceOccurredAt !== null && instant(claim.sourceOccurredAt, `${claim.id} source occurrence`) >
+        instant(claim.observedAt, `${claim.id} observation`)
+      )
+    ) throw new Error(`Housing monitoring claim ${claim.id} observes future owner state.`);
+  }
   let expectedMonitoring = expectedMonitoringArtifacts.get(configuration);
   if (expectedMonitoring === undefined) {
-    expectedMonitoring = createMonitoringArtifact(configuration, createOpeningLowerOwners(configuration));
+    expectedMonitoring = createMonitoringArtifact(
+      configuration,
+      createOpeningLowerOwnersAtObservation(configuration),
+    );
     expectedMonitoringArtifacts.set(configuration, expectedMonitoring);
   }
-  if (monitoring === undefined || JSON.stringify(monitoring) !== JSON.stringify(expectedMonitoring)) {
+  if (JSON.stringify(monitoring) !== JSON.stringify(expectedMonitoring)) {
     throw new Error("Housing monitoring evidence is missing, tampered, or no longer claim-lineaged.");
   }
   const observations = administration.informationRoutes.state.institutionArtifactObservations;
@@ -1296,6 +1344,9 @@ export const authorDepartmentSupplementalRecord = (
   current: string,
   input: AuthorDepartmentSupplementalRecordInput,
 ): PresidentialHousingOperationState => {
+  if (input.provenanceReference !== configuration.provenanceReference) {
+    throw new Error("Department supplemental record provenance must match configured I4 provenance.");
+  }
   assertHandlingSource(state, configuration, current, {
     officeId: input.producingOfficeId,
     officeholderAssignmentId: input.authoringOfficeholderAssignmentId,
@@ -1338,7 +1389,7 @@ export const authorDepartmentSupplementalRecord = (
     releasedAt: current,
     sectionIds: [...spec.sectionIds],
     accessClass: spec.accessClass,
-    provenanceReference: input.provenanceReference,
+    provenanceReference: configuration.provenanceReference,
     revisionOfArtifactId: null,
     supersedesArtifactId: null,
   };
@@ -1352,7 +1403,7 @@ export const authorDepartmentSupplementalRecord = (
     producingOfficeId: input.producingOfficeId,
     producingOfficeholderAssignmentId: input.authoringOfficeholderAssignmentId,
     producedAt: current,
-    provenanceReference: input.provenanceReference,
+    provenanceReference: configuration.provenanceReference,
   };
   const existingArtifact = findInformationArtifact(state, artifact.id);
   const existingProduction = state.informationRoutes.state.officeArtifactProductions.find(
@@ -1395,6 +1446,9 @@ export const submitDepartmentHandling = (
   current: string,
   input: SubmitDepartmentHandlingInput,
 ): PresidentialHousingOperationState => {
+  if (input.provenanceReference !== configuration.provenanceReference) {
+    throw new Error("Department handling provenance must match configured I4 provenance.");
+  }
   assertHandlingSource(state, configuration, current, {
     officeId: input.submittingOfficeId,
     officeholderAssignmentId: input.submittingOfficeholderAssignmentId,
