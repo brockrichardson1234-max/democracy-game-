@@ -448,12 +448,23 @@ I5 chooses the preferred gate-only seam: received evidence may determine whether
 
 - ID and label/committee-jurisdiction content;
 - `opensAt` inclusive and `closesAt` exclusive;
-- exact permitted lower transition kinds `SEEK_MEMBER_SPONSORSHIP | ADVANCE_INTRODUCED_PROPOSAL_TO_CONSIDERATION_GATE`;
+- exact permitted lower transition kinds, in fixed sequence:
+
+  ```text
+  BEGIN_SPONSOR_SEARCH
+  SEEK_MEMBER_SPONSORSHIP
+  INTRODUCE_SPONSORED_PROPOSAL
+  ADVANCE_INTRODUCED_PROPOSAL_TO_CONSIDERATION_GATE
+  ```
+
 - required role/capability and evidence-eligibility assessment kinds;
 - authority/provenance;
-- append-only lifecycle `OPENED | USED | EXPIRED` with derived status.
+- append-only window lifecycle `OPENED | EXPIRED` with derived status `OPEN | EXPIRED`;
+- append-only per-transition `CongressionalProcedureTransitionAttemptOccurrence` records, each of which consumes only its exact transition kind and never makes the entire window terminal.
 
 It contains no sponsor ID/result, proposal stage, committee decision, consideration-gate status/result, amendment, vote, or copied lower deadline. The label “committee opportunity” does not create a second committee/procedure owner. Actual consideration-gate state remains solely in `LegislativeRuntimeState`.
+
+Each permitted transition kind may be attempted at most once in this bounded I5 window. A transition is unused only while no attempt occurrence exists for that exact kind. A sponsorship attempt therefore consumes only `SEEK_MEMBER_SPONSORSHIP`; it does not close the window or consume introduction or gate advancement. A nonaccepting sponsorship attempt leaves the latter kinds unused but ineligible because their direct lower-state preconditions are absent. The window remains open until its end-exclusive deadline even when no remaining lower transition is currently eligible.
 
 ### Stateless adapter operation
 
@@ -461,17 +472,27 @@ At an eligible boundary, the adapter may atomically call a permitted lower trans
 
 - a valid effective role/capability;
 - a recipient-owned receipt or other permitted public record;
-- an authored `ELIGIBLE_TO_ATTEMPT` assessment;
+- an authored `ELIGIBLE_TO_ATTEMPT` assessment for that exact lower transition kind;
 - an open procedural opportunity;
-- no already-terminal occurrence for the same opportunity.
+- no existing attempt occurrence for that exact transition kind;
+- the direct lower pre-state required for that exact next transition.
 
-For sponsorship, the adapter calls accepted `seekMemberSponsorship(...)` exactly once. That lower operation alone resolves sponsorship from the direct lower `PoliticalState` and persists any accepted sponsorship in lower state. The outer owner records only an immutable `LegislativeTransitionAttemptAuthorization` containing opportunity, assessment, receipt, actor/role, lower transition kind, call time, authority, provenance, lower pre/post state hashes, and any real lower occurrence reference. It stores no sponsorship choice/result; a valid non-accepting lower call may retain identical lower pre/post hashes.
+The complete authorized lower sequence is exact:
 
-For consideration, the adapter similarly gates the accepted lower transition. The lower runtime alone changes or retains the consideration gate. The outer `USED` lifecycle occurrence references the real lower transition occurrence/state-version identity but does not copy its result.
+1. `BEGIN_SPONSOR_SEARCH` calls accepted `beginSponsorSearch()` only from direct lower stage `DRAFT_AGENDA`. The resulting `SPONSOR_SOUGHT` stage and `SOUGHT` sponsorship status exist only in the lower runtime.
+2. `SEEK_MEMBER_SPONSORSHIP` calls accepted `seekMemberSponsorship(...)` only from direct lower stage `SPONSOR_SOUGHT` with sponsorship status `SOUGHT`. That lower operation alone resolves the sponsorship attempt from direct lower `PoliticalState`. A nonaccepting call may return byte-identical lower state, consumes only this transition-kind attempt, and cannot be recorded as introduction or successful procedure use.
+3. `INTRODUCE_SPONSORED_PROPOSAL` calls accepted `introduceSponsoredProposal(...)` only when direct lower state still has stage `SPONSOR_SOUGHT`, sponsorship status `ACCEPTED`, the exact accepted sponsoring actor and assignment, and the accepted proposal version still equals the current agenda version. The actor's effective assignment, required origin-chamber role/capability, recipient evidence/assessment, and open outer window must still be valid at call time. Only the lower operation may change sponsorship to `INTRODUCED` and stage to `INTRODUCED_IN_ORIGIN`.
+4. `ADVANCE_INTRODUCED_PROPOSAL_TO_CONSIDERATION_GATE` calls accepted `advanceIntroducedProposalToGate()` only when direct lower state has stage `INTRODUCED_IN_ORIGIN` and sponsorship status `INTRODUCED`. Only the lower operation may create the lower consideration-gate stage.
 
-Validation is atomic: if the lower transition rejects, no attempt authorization or `USED` lifecycle record is appended. Removing the required receipt/assessment prevents the adapter call and leaves the complete lower runtime byte-identical.
+Transition order is enforced from the current direct lower state, not from an outer copied stage. Missing introduction authorization therefore leaves a runtime with accepted sponsorship at `SPONSOR_SOUGHT`; gate advancement remains invalid. No configured date, adapter shortcut, or outer occurrence may automatically introduce a proposal.
 
-At `current == closesAt`, `EXPIRED` is appended before any new attempt and expiration wins. An expired outer window cannot call a lower transition. Lower-runtime native deadlines remain independently owned and cannot be extended by the outer window.
+For every lawful call, one immutable `LegislativeTransitionAttemptAuthorization` identifies the opportunity, exact transition kind, exact eligibility assessment and receipt/public-record authority, actor/role, authorized lower pre-state hash, call time, authority, and provenance. The same atomic operation appends one `CongressionalProcedureTransitionAttemptOccurrence` containing that authorization ID, exact transition kind, call time, lower pre-state hash, lower post-state hash, authority/provenance, and an optional lower occurrence ID only when the accepted lower owner actually creates one. Equal pre/post hashes are valid only for a nonaccepting lower call and do not mean introduction, gate use, or lower success.
+
+The outer authorization and attempt occurrence record only eligibility, authorization, timing, and the fact that the lower call occurred. They contain no sponsorship acceptance, sponsor result, introduction status, proposal stage, consideration-gate result, or other lower result. A state hash is not an occurrence identity. When the lower API creates no immutable occurrence, neither the adapter nor the Historical Record may invent one.
+
+Validation is atomic: if eligibility, effective assignment, window timing, at-most-once, or direct lower preconditions fail—or if the lower transition throws—no authorization or attempt occurrence is appended and the complete lower runtime remains byte-identical. Removing the required receipt/assessment has the same no-call/no-mutation effect.
+
+At `current == closesAt`, `EXPIRED` is appended before any new attempt and expiration wins for every remaining unused transition kind. An expired outer window cannot begin sponsor search, seek sponsorship, introduce, or advance to gate. Lower-runtime native deadlines remain independently owned and cannot be extended by the outer window.
 
 ## 6.3 No presidential command surface
 
@@ -494,8 +515,13 @@ With all unrelated owners held constant:
 
 - removing the relevant lawmaker receipt must prevent the same transition attempt and leave lower sponsorship/procedure state byte-identical;
 - changing one lower sponsor objective/relationship while preserving attempt eligibility must change, narrow, or prevent the lower-owned sponsorship result without replacement drama;
-- closing or removing the committee opportunity must prevent the same procedure use;
-- after a lower sponsorship/procedure occurrence exists, no outer record may contain a second choice/status/result for it;
+- canonical lower introduction must reject without accepted lower sponsorship by the exact actor/assignment/version;
+- canonical gate advancement must reject without lower stage `INTRODUCED_IN_ORIGIN` and sponsorship status `INTRODUCED`;
+- removing the introduction authorization after accepted sponsorship must leave the lower runtime at accepted `SPONSOR_SOUGHT` and prevent gate advancement;
+- a refused/nonaccepted sponsorship call must produce no introduction, no gate state, and no outer record that labels it as successful introduction or procedure use;
+- replaying any one of the four lower transition kinds must reject, while a prior sponsorship attempt must not terminally consume the still-open whole window;
+- closing or removing the committee opportunity, including reaching the exact end-exclusive deadline, must prevent every remaining unused lower transition;
+- after any lower call, no outer authorization, attempt occurrence, or history entry may contain a second sponsorship choice, introduction status, proposal stage, gate status, or result;
 - omitting every presidential act must not prevent Congress from independently initiating when its own conditions are satisfied;
 - the same configuration/seed and inputs must reproduce the same Congress trace.
 
@@ -1081,8 +1107,8 @@ Restore and live-operation validation must independently prove:
 - every evidence claim resolves to nonfuture source owner records and exact permitted scope;
 - every modeled income/coverage estimate remains analysis-only;
 - every Congress proposal/procedure/actor decision exists in the direct legislative owner;
-- every outer congressional transition record is attempt eligibility/authorization only, and no outer record duplicates a lower sponsorship/procedure choice or result;
-- every committee-window lifecycle reference resolves to the real lower transition it permitted, while lower gate/procedure state exists only in `LegislativeRuntimeState`;
+- every outer congressional transition record is attempt eligibility/authorization/timing only, each transition kind occurs at most once in exact lower-state order, and no outer record duplicates a lower sponsorship/introduction/procedure choice or result;
+- every committee-window attempt occurrence resolves to its real outer authorization and exact lower pre/post hashes; an optional lower occurrence reference resolves only when the lower owner actually emitted it, while lower sponsorship/introduction/gate state exists only in `LegislativeRuntimeState`;
 - every actor/outlet/office assessment is covered by that exact recipient's receipts;
 - every publication claim is covered by outlet access/receipt and predates publication;
 - every distribution/exposure/receipt follows the artifact and delivery;
@@ -1149,8 +1175,13 @@ The hostile suite must additionally prove every item below:
 - exact-deadline OMB default wins over new booking, reprioritization, supersession, or completion;
 - a narrow OMB product requires a new scope-contained assignment and supersession occurrence; mutating or later re-broadening the original rejects;
 - removing the relevant congressional receipt/eligibility assessment prevents the lower transition call and leaves complete `LegislativeRuntimeState` bytes unchanged;
-- after an eligible attempt, sponsorship/procedure result exists only in the direct lower runtime; any outer copied choice/status/result rejects;
-- outer committee-window expiry at the exact deadline prevents the lower call but does not rewrite lower native procedure/deadline state.
+- introduction without canonical accepted lower sponsorship by the exact actor/assignment/version rejects;
+- gate advancement without canonical lower introduction rejects;
+- removing introduction authorization after accepted lower sponsorship leaves lower state at accepted `SPONSOR_SOUGHT` and blocks gate advancement;
+- a lower sponsorship refusal/nonacceptance cannot be labeled as introduction, successful procedure use, or any lower result by an outer record;
+- each of `BEGIN_SPONSOR_SEARCH`, `SEEK_MEMBER_SPONSORSHIP`, `INTRODUCE_SPONSORED_PROPOSAL`, and `ADVANCE_INTRODUCED_PROPOSAL_TO_CONSIDERATION_GATE` may be attempted at most once and only in direct lower-state order;
+- after an eligible attempt, sponsorship/introduction/procedure result exists only in the direct lower runtime; any outer copied choice/status/result or fabricated lower occurrence reference rejects;
+- outer committee-window expiry at the exact deadline prevents every remaining unused lower call but does not rewrite lower native procedure/deadline state.
 
 ## Employment and analysis-only artifacts
 
