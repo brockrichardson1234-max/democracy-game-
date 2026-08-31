@@ -11,6 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:pop0": "vitest run pop0-",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.sim.json --pretty false && tsc -p tsconfig.json --pretty false",
     "lint": "eslint .",
@@ -26,6 +27,7 @@
     "verify:us-i6-artifacts": "node scripts/verify-us-i6-artifacts.mjs",
     "build:us-i7-artifacts": "node scripts/build-us-i7-artifacts.mjs",
     "verify:us-i7-artifacts": "node scripts/verify-us-i7-artifacts.mjs",
+    "verify:pop0-bounded": "npm run typecheck && npm run check:boundaries && npm run check:pop0-i3-boundaries && npm run check:production-runtime && npm run lint && npm run test:pop0 && npm run build && npm run check:built-production-runtime",
     "verify": "npm run typecheck && npm run check:boundaries && npm run check:pop0-i3-boundaries && npm run check:production-runtime && npm run verify:us-topology-artifacts && npm run verify:us-i4-artifacts && npm run verify:us-i6-artifacts && npm run verify:us-i7-artifacts && npm run lint && npm test && npm run build && npm run check:built-production-runtime"
   },
   "dependencies": {

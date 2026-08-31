@@ -43,7 +43,8 @@ const comparable = (session: ReturnType<typeof createSession>) => ({
 });
 
 describe("I5 deterministic temporal persistence", () => {
-  it.each([
+  it("matches direct advancement with save/restore immediately before every fixed boundary", () => {
+    const boundaryCases = [
     [US_V0_2027_TERM_BOUNDARY, "2027-01-03T11:59:59-05:00"],
     [US_V0_2028_POPULAR_SELECTION, "2028-11-07T19:59:59-05:00"],
     [US_V0_2028_ATTESTATION, "2028-12-13T11:59:59-05:00"],
@@ -51,15 +52,18 @@ describe("I5 deterministic temporal persistence", () => {
     [US_V0_2029_TERM_BOUNDARY, "2029-01-03T11:59:59-05:00"],
     [US_V0_2029_DECLARATION, "2029-01-06T12:59:59-05:00"],
     [US_V0_2029_TRANSFER, "2029-01-20T11:59:59-05:00"],
-  ])("matches direct advancement across %s with save/restore immediately before it", (target, before) => {
+    ] as const;
     const direct = createSession();
-    direct.advanceTo(target);
-    const interrupted = createSession();
-    interrupted.advanceTo(before);
-    const resumed = restore(interrupted.save());
-    resumed.advanceTo(target);
-    expect(comparable(resumed)).toEqual(comparable(direct));
-  }, 20_000);
+    let resumed = createSession();
+    for (const [target, before] of boundaryCases) {
+      direct.advanceTo(target);
+      resumed.advanceTo(before);
+      resumed = restore(resumed.save());
+      resumed.advanceTo(target);
+      expect(comparable(resumed), `save/restore immediately before ${target}`)
+        .toEqual(comparable(direct));
+    }
+  }, 75_000);
 
   it("makes one large jump identical to fine-grained advancement through every boundary", () => {
     const coarse = createSession();

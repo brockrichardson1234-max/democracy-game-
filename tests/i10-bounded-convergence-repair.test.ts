@@ -10,7 +10,7 @@ import type {
 } from "../src/configuration/types";
 import { US_V0_STRUCTURAL_CONFIGURATION } from "../src/content/us-v0/configuration";
 import { US_V0_OPPOSITION_TICKET_ID } from "../src/content/us-v0/i5";
-import { US_V0_I9_STAY_DECISION } from "../src/content/us-v0/i9";
+import { US_V0_I9_APPELLATE_RULING, US_V0_I9_STAY_DECISION } from "../src/content/us-v0/i9";
 import { US_V0_I10_RUNTIME_ARTIFACTS } from "../src/content/us-v0/i10";
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -84,7 +84,10 @@ interface PoliticalSnapshot {
     };
   };
   readonly housing: {
-    readonly projects: readonly { readonly stage: string }[];
+    readonly projects: readonly {
+      readonly stage: string;
+      readonly acceptedGovernmentInputRefs: readonly string[];
+    }[];
   };
 }
 
@@ -380,7 +383,14 @@ describe("I10 bounded black-box production route", () => {
     expect(completed.implementation.paymentCount).toBe(1);
     expect(completed.legal.publicRulings).toHaveLength(1);
     expect(completed.legal.stayStatuses).toHaveLength(1);
+    expect(completed.legal.appealStatuses).toEqual(["FILED"]);
+    expect(completed.officialInformation.releasedMeasurements.length).toBeGreaterThan(0);
+    expect(completed.officialInformation.releasedClaims.length).toBeGreaterThan(0);
     expect(completed.officialInformation.completedDeliveryCount).toBeGreaterThan(0);
+    expect(snapshot(session).housing.projects.some(
+      (project) => project.acceptedGovernmentInputRefs.length > 0,
+    )).toBe(true);
+    expect(() => session.dispatchPlayerCommand("agenda:balanced-delivery")).toThrow(/unavailable/);
 
     const beforeContinuation = session.getProductionGameView().currentInstant;
     session.advanceProductionWorld();
@@ -390,5 +400,7 @@ describe("I10 bounded black-box production route", () => {
       (project) => project.stage === "USABLE",
     ); step += 1) session.advanceProductionWorld();
     expect(snapshot(session).housing.projects.some((project) => project.stage === "USABLE")).toBe(true);
+    session.advanceTo(US_V0_I9_APPELLATE_RULING);
+    expect(session.getProductionGameView().legal.appealStatuses).toEqual(["RESOLVED"]);
   }, 120_000);
 });

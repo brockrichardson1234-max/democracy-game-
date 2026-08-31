@@ -138,7 +138,7 @@ describe("I4 source-authenticated initialization", () => {
     entries[DISTRICT_SHP_MEMBER] = serializeShapefile(source);
     expect(() => buildGeographyArtifacts({
       stateZipBytes: stateZip,
-      districtZipBytes: Buffer.from(zipSync(entries)),
+      districtZipBytes: Buffer.from(zipSync(entries, { level: 0 })),
       stateIdentityRecords: stateRecords,
       districtIdentityRecords: districtRecords,
       retrievedAt: "2026-08-23",
@@ -153,7 +153,7 @@ describe("I4 source-authenticated initialization", () => {
     entries[DISTRICT_SHP_MEMBER] = serializeShapefile(source);
     expect(() => buildGeographyArtifacts({
       stateZipBytes: stateZip,
-      districtZipBytes: Buffer.from(zipSync(entries)),
+      districtZipBytes: Buffer.from(zipSync(entries, { level: 0 })),
       stateIdentityRecords: stateRecords,
       districtIdentityRecords: districtRecords,
       retrievedAt: "2026-08-23",
@@ -200,7 +200,7 @@ describe("I4 source-authenticated initialization", () => {
     });
     entries["State.csv"] = strToU8(changedRows.join("\n"));
     const changed = buildCvapArtifact({
-      bytes: Buffer.from(zipSync(entries)),
+      bytes: Buffer.from(zipSync(entries, { level: 0 })),
       stateIdentityRecords: stateRecords,
       populationArtifact,
       retrievedAt: "2026-08-23",
