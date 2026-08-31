@@ -274,6 +274,7 @@ const validateRecipientDisposition = (value: unknown, field: string): void => {
     "acceptedSectionIds",
     "acceptedCoordinationActions",
     "constraintIds",
+    "constraintSourceReferenceIds",
     "reason",
     "limitations",
     "nextReviewAt",
@@ -300,8 +301,52 @@ const validateRecipientDisposition = (value: unknown, field: string): void => {
     "acceptedSectionIds",
     "acceptedCoordinationActions",
     "constraintIds",
+    "constraintSourceReferenceIds",
     "limitations",
   ] as const) requireStringArray(record[key], `${field}.${key}`);
+};
+
+const validateInstrumentAssignmentAuthorization = (value: unknown, field: string): void => {
+  const binding = requireRecord(value, field);
+  requireExactKeys(binding, field, [
+    "assignmentId",
+    "dispositionId",
+    "instrumentId",
+    "recipientOfficeId",
+    "authorizedDeadline",
+    "scope",
+    "boundAt",
+  ]);
+  for (const key of [
+    "assignmentId",
+    "dispositionId",
+    "instrumentId",
+    "recipientOfficeId",
+    "authorizedDeadline",
+    "boundAt",
+  ] as const) requireString(binding[key], `${field}.${key}`);
+  const scope = requireRecord(binding.scope, `${field}.scope`);
+  if (scope.kind === "ANALYSIS_ASSIGNMENT_SCOPE") {
+    requireExactKeys(scope, `${field}.scope`, [
+      "kind",
+      "evidenceArtifactId",
+      "evidenceSectionIds",
+      "productKind",
+    ]);
+    requireString(scope.evidenceArtifactId, `${field}.scope.evidenceArtifactId`);
+    requireStringArray(scope.evidenceSectionIds, `${field}.scope.evidenceSectionIds`);
+    requireString(scope.productKind, `${field}.scope.productKind`);
+  } else if (scope.kind === "COORDINATION_ASSIGNMENT_SCOPE") {
+    requireExactKeys(scope, `${field}.scope`, [
+      "kind",
+      "workstreamId",
+      "coordinationActionKinds",
+      "productKind",
+    ]);
+    requireString(scope.workstreamId, `${field}.scope.workstreamId`);
+    requireStringArray(scope.coordinationActionKinds, `${field}.scope.coordinationActionKinds`);
+    requireString(scope.productKind, `${field}.scope.productKind`);
+  } else throw new Error(`Invalid presidential operating save: ${field}.scope.kind is unsupported.`);
 };
 
 const validateOfficeOperationsState = (value: unknown, field: string): void => {
@@ -314,6 +359,7 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
       "deadlineDefaultRecords",
       "instrumentReceipts",
       "instrumentDispositions",
+      "instrumentAssignmentAuthorizations",
     ]);
     requireString(office.officeId, `${field}[${index}].officeId`);
     requireArray(office.assignments, `${field}[${index}].assignments`).forEach(
@@ -341,6 +387,13 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
         `${field}[${index}].instrumentDispositions[${recordIndex}]`,
       ),
     );
+    requireArray(
+      office.instrumentAssignmentAuthorizations,
+      `${field}[${index}].instrumentAssignmentAuthorizations`,
+    ).forEach((record, recordIndex) => validateInstrumentAssignmentAuthorization(
+      record,
+      `${field}[${index}].instrumentAssignmentAuthorizations[${recordIndex}]`,
+    ));
   });
 };
 

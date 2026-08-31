@@ -5,6 +5,7 @@ import { createPresidentialOperatingProofSession } from
 import {
   POP0_I2_OFFICEHOLDER_ASSIGNMENT_IDS,
   POP0_I2_OFFICE_IDS,
+  POP0_I2_SOURCE_ARTIFACT_ID,
   POP0_I2_SOURCE_SECTION_IDS,
   POP0_I3_RECIPIENT_CAPABILITY_IDS,
   POP0_V0_PROVENANCE_ROOT,
@@ -66,6 +67,7 @@ const exactOmbDispositionInput = {
   acceptedSectionIds: [],
   acceptedCoordinationActions: [],
   constraintIds: [],
+  constraintSourceReferenceIds: [],
   reason: null,
   limitations: ["No substantive preliminary source receipt is available to OMB"],
   nextReviewAt: null,
@@ -334,6 +336,7 @@ describe("POP0-I3 hostile operation and restoration boundaries", () => {
       acceptedSectionIds: Object.values(POP0_I2_SOURCE_SECTION_IDS),
       acceptedCoordinationActions: [],
       constraintIds: [],
+      constraintSourceReferenceIds: [],
       reason: null,
       limitations: [],
       nextReviewAt: null,
@@ -351,6 +354,12 @@ describe("POP0-I3 hostile operation and restoration boundaries", () => {
       authorityReference: "pop0.disposition.omb.hostile-full-acceptance",
       deadline: POP0_I3_TRACE_TIMES.assignmentDeadline,
       expectedProductKind: "FISCAL_SUPPORTABILITY_SCOPING",
+      authorizationScope: {
+        kind: "ANALYSIS_ASSIGNMENT_SCOPE",
+        evidenceArtifactId: POP0_I2_SOURCE_ARTIFACT_ID,
+        evidenceSectionIds: Object.values(POP0_I2_SOURCE_SECTION_IDS),
+        productKind: "FISCAL_SUPPORTABILITY_SCOPING",
+      },
     });
     const envelope = JSON.parse(session.save()) as {
       operatingState: {

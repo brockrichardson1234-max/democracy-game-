@@ -27,6 +27,8 @@ import type {
   EscalationLifecycleOccurrence,
   EscalationPresentationRecord,
   HistoricalRecordIndexEntry,
+  InstrumentAssignmentAuthorizationBinding,
+  InstrumentAssignmentAuthorizationScope,
   InstrumentAttachmentMetadata,
   InstrumentDispatchOutcome,
   InstrumentDispatchRecord,
@@ -477,35 +479,6 @@ export const copyPresidentialInterventionOwnerStates = (
   state: PresidentialInterventionOwnerStates,
 ): PresidentialInterventionOwnerStates => copyPlain(state);
 
-const allInformationReferenceIds = (state: PresidentialInterventionState): Set<string> => new Set([
-  ...state.informationRoutes.state.artifacts.map((entry) => entry.id),
-  ...state.informationRoutes.state.institutionPossessions.map((entry) => entry.id),
-  ...state.informationRoutes.state.indexEntries.map((entry) => entry.id),
-  ...state.informationRoutes.state.metadataNotices.map((entry) => entry.id),
-  ...state.informationRoutes.state.retrievals.map((entry) => entry.id),
-  ...state.informationRoutes.state.receipts.map((entry) => entry.id),
-  ...state.presidentialPresentations.state.presentations.map((entry) => entry.id),
-]);
-
-const allOccurrenceIds = (state: PresidentialInterventionState): Set<string> => new Set([
-  ...allInformationReferenceIds(state),
-  ...state.presidentialEscalations.state.escalations.map((entry) => entry.id),
-  ...state.presidentialEscalations.state.lifecycleOccurrences.map((entry) => entry.id),
-  ...state.presidentialEscalations.state.defaultOccurrences.map((entry) => entry.id),
-  ...state.presidentialEscalations.state.reservedReviews.map((entry) => entry.id),
-  ...state.presidentialEscalations.state.reservedReviewLifecycleOccurrences.map((entry) => entry.id),
-  ...state.administrationWorkstreams.state.workstreams.map((entry) => entry.id),
-  ...state.administrationWorkstreams.state.transitions.map((entry) => entry.id),
-  ...state.presidentialDecisions.state.map((entry) => entry.id),
-  ...state.presidentialInstruments.state.map((entry) => entry.id),
-  ...state.instrumentDispatches.state.map((entry) => entry.id),
-  ...state.officeOperations.state.flatMap((office) => [
-    ...office.instrumentReceipts.map((entry) => entry.id),
-    ...office.instrumentDispositions.map((entry) => entry.id),
-    ...office.assignments.map((entry) => entry.id),
-  ]),
-]);
-
 const sourceOccurrenceTime = (
   state: PresidentialInterventionState,
   id: string,
@@ -545,6 +518,74 @@ const sourceOccurrenceTime = (
   ];
   return routeRecords.find(([candidate]) => candidate === id)?.[1] ?? null;
 };
+
+// History membership is deliberately global and noncognitive. These helpers
+// are the separate authorization boundary for citing a record as office
+// knowledge or exposing its identity in a presidentially visible preview.
+const officeCanCiteOccurrence = (
+  state: PresidentialInterventionState,
+  officeId: string,
+  occurrenceId: string,
+  at: string,
+): boolean => {
+  const occurredAt = sourceOccurrenceTime(state, occurrenceId);
+  if (occurredAt === null || instant(occurredAt, `${occurrenceId} occurrence`) > instant(at, "Office knowledge time")) {
+    return false;
+  }
+  const artifact = findArtifact(state, occurrenceId);
+  if (artifact !== undefined) {
+    if (artifact.kind !== "SOURCE_EVIDENCE" && artifact.producingOfficeId === officeId) return true;
+    return state.informationRoutes.state.receipts.some((receipt) =>
+      receipt.recipientOfficeId === officeId &&
+      receipt.artifactId === artifact.id &&
+      artifact.sectionIds.every((sectionId) => receipt.receivedSectionIds.includes(sectionId)) &&
+      instant(receipt.receivedAt, `${receipt.id} receipt`) <= instant(at, "Office knowledge time"));
+  }
+  if (state.informationRoutes.state.metadataNotices.some(
+    (entry) => entry.id === occurrenceId && entry.recipientOfficeId === officeId,
+  )) return true;
+  if (state.informationRoutes.state.retrievals.some(
+    (entry) => entry.id === occurrenceId && entry.requestingOfficeId === officeId,
+  )) return true;
+  if (state.informationRoutes.state.receipts.some(
+    (entry) => entry.id === occurrenceId && entry.recipientOfficeId === officeId,
+  )) return true;
+  if (state.presidentialPresentations.state.presentations.some(
+    (entry) => entry.id === occurrenceId && entry.presentingOfficeId === officeId,
+  )) return true;
+  if (state.presidentialPresentations.state.escalationPresentations.some(
+    (entry) => entry.id === occurrenceId && entry.presentingOfficeId === officeId,
+  )) return true;
+  if (state.presidentialEscalations.state.escalations.some(
+    (entry) => entry.id === occurrenceId && entry.escalatingOfficeId === officeId,
+  )) return true;
+  if (state.administrationWorkstreams.state.workstreams.some((entry) =>
+    entry.id === occurrenceId && (
+      entry.creatingOfficeId === officeId ||
+      entry.coordinatorOfficeId === officeId ||
+      entry.participatingOfficeIds.includes(officeId)
+    ))) return true;
+  if (state.administrationWorkstreams.state.transitions.some(
+    (entry) => entry.id === occurrenceId && entry.actingOfficeId === officeId,
+  )) return true;
+  if (state.instrumentDispatches.state.some((entry) =>
+    entry.id === occurrenceId &&
+      (entry.dispatchingOfficeId === officeId || entry.recipientOfficeId === officeId))) return true;
+  const operations = state.officeOperations.state.find((entry) => entry.officeId === officeId);
+  return operations?.instrumentReceipts.some((entry) => entry.id === occurrenceId) === true ||
+    operations?.instrumentDispositions.some((entry) => entry.id === occurrenceId) === true ||
+    operations?.assignments.some((entry) => entry.id === occurrenceId) === true;
+};
+
+const presidentKnowsOccurrenceReference = (
+  state: PresidentialInterventionState,
+  occurrenceId: string,
+  at: string,
+): boolean => state.presidentialPresentations.state.presentations.some((presentation) =>
+  instant(presentation.presentedAt, `${presentation.id} presentation`) <= instant(at, "Presidential knowledge time") &&
+  (presentation.id === occurrenceId || presentation.shownPortions.some(
+    (portion) => portion.artifactId === occurrenceId,
+  )));
 
 const indexEntry = (
   configuration: PresidentialInterventionConfiguration,
@@ -700,6 +741,7 @@ const assertPreview = (
   preview: PresidentialInstrumentPreview,
   state: PresidentialInterventionState,
   administration: PresidentialAdministrationConfiguration,
+  presentingOfficeId: string,
   at: string,
 ): void => {
   requireExactKeys(preview, `Instrument preview ${preview.id}`, [
@@ -717,8 +759,10 @@ const assertPreview = (
   if (preview.payloadHash !== computePresidentialInstrumentPayloadHash(preview.payload)) {
     throw new Error(`Instrument preview ${preview.id} has a canonical payload-hash mismatch.`);
   }
-  if (preview.payload.sourceReferenceIds.some((id) => !allOccurrenceIds(state).has(id))) {
-    throw new Error(`Instrument preview ${preview.id} references unavailable source records.`);
+  if (preview.payload.sourceReferenceIds.some((id) =>
+    !officeCanCiteOccurrence(state, presentingOfficeId, id, at) ||
+    !presidentKnowsOccurrenceReference(state, id, at))) {
+    throw new Error(`Instrument preview ${preview.id} references records not authorized for presidential disclosure.`);
   }
   for (const attachment of preview.payload.attachmentMetadata) {
     const artifact = findArtifact(state, attachment.artifactId);
@@ -781,7 +825,7 @@ const assertEscalationOptions = (
     ])
   ) throw new Error(`Escalation ${escalation.id} has a hidden, reordered, or unsupported bundle.`);
   for (const preview of request.previews) {
-    assertPreview(preview, state, administration, escalation.createdAt);
+    assertPreview(preview, state, administration, escalation.escalatingOfficeId, escalation.createdAt);
   }
   if (
     instant(reserve.reservedAt, `${reserve.id} reserved time`) <=
@@ -872,7 +916,8 @@ const assertEscalationRecord = (
   requireNonemptyUnique(escalation.sourceRecordIds, `${escalation.id} source records`);
   if (
     !escalation.sourceRecordIds.includes(escalation.basisSynthesisArtifactId) ||
-    escalation.sourceRecordIds.some((id) => !allOccurrenceIds(state).has(id))
+    escalation.sourceRecordIds.some((id) =>
+      !officeCanCiteOccurrence(state, escalation.escalatingOfficeId, id, escalation.createdAt))
   ) throw new Error(`Escalation ${escalation.id} has unavailable source records.`);
   requireNonemptyUnique(
     escalation.presidentKnownPortions.map(
@@ -982,6 +1027,10 @@ const expectedIndexEntries = (
       [record.instrumentId, ...(record.retryOfDispatchId === null ? [] : [record.retryOfDispatchId])]);
   }
   for (const office of state.officeOperations.state) {
+    requireUnique(
+      office.instrumentAssignmentAuthorizations.map((entry) => entry.assignmentId),
+      `${office.officeId} instrument-assignment authority bindings`,
+    );
     for (const record of office.instrumentReceipts) {
       add(record.id, state.officeOperations.ownerId, "OFFICE_INSTRUMENT_RECEIPT", record.receivedAt,
         [record.instrumentId, record.successfulDispatchId]);
@@ -1037,7 +1086,160 @@ const assertControlBindingRecord = (
       instant(binding.endedAt, "ControlBinding end") > instant(at, "ControlBinding save time")) {
       throw new Error("Ended presidential ControlBinding has invalid end evidence.");
     }
-    requireNonempty(binding.boundOfficeholderActorId, "Ended ControlBinding actor");
+    if (binding.boundOfficeholderActorId !== presidential.actorId) {
+      throw new Error("Ended presidential ControlBinding has a substituted actor identity.");
+    }
+  }
+};
+
+const assertRecipientConstraintSupport = (
+  state: PresidentialInterventionState,
+  administration: PresidentialAdministrationConfiguration,
+  officeId: string,
+  instrument: PresidentialInstrumentRecord,
+  capability: RecipientCapabilityAuthority | undefined,
+  kind: RecipientDispositionKind,
+  constraintIds: readonly RecipientConstraint[],
+  constraintSourceReferenceIds: readonly string[],
+  at: string,
+  nextReviewAt: string | null,
+): void => {
+  requireUnique(constraintIds, "Recipient disposition constraints");
+  requireUnique(constraintSourceReferenceIds, "Recipient constraint source references");
+  const relevant = administration.recipientCapabilities.filter((candidate) =>
+    candidate.recipientOfficeId === officeId && candidate.instrumentKind === instrument.payload.kind);
+  const effective = relevant.filter((candidate) =>
+    isEffectiveAt(candidate.effectiveFrom, candidate.effectiveUntil, at));
+  const fitting = effective.filter((candidate) => recipientCapabilityFitsInstrument(
+    candidate,
+    instrument.payload,
+    instrument.issuedAt,
+    at,
+  ));
+  const office = state.officeOperations.state.find((entry) => entry.officeId === officeId);
+  if (office === undefined) throw new Error("Recipient constraint references an unknown office.");
+  const queueSources = constraintSourceReferenceIds.filter((sourceId) =>
+    office.activeQueueAssignmentIds.includes(sourceId) &&
+    office.assignments.some((assignment) => assignment.id === sourceId));
+  if (constraintSourceReferenceIds.some((sourceId) => !queueSources.includes(sourceId))) {
+    throw new Error("Recipient constraint cites a record that is not an active recipient-owned queue condition.");
+  }
+  for (const constraint of constraintIds) {
+    if (constraint === "NO_EFFECTIVE_RECIPIENT_CAPABILITY") {
+      if (effective.length !== 0 || (capability !== undefined &&
+        isEffectiveAt(capability.effectiveFrom, capability.effectiveUntil, at))) {
+        throw new Error("NO_EFFECTIVE_RECIPIENT_CAPABILITY contradicts canonical capability state.");
+      }
+    } else if (constraint === "REQUEST_OUTSIDE_CAPABILITY") {
+      if (effective.length === 0 || fitting.length !== 0 || capability === undefined ||
+        !effective.some((candidate) => candidate.id === capability.id)) {
+        throw new Error("REQUEST_OUTSIDE_CAPABILITY lacks an effective bounded capability reference.");
+      }
+    } else if (constraint === "MISSING_REQUIRED_EVIDENCE") {
+      if (instrument.payload.kind !== "REQUEST_OFFICE_ANALYSIS") {
+        throw new Error("MISSING_REQUIRED_EVIDENCE is unsupported for a coordination request.");
+      }
+      const analysisPayload = instrument.payload;
+      const hasRequiredEvidence = state.informationRoutes.state.receipts.some((receipt) =>
+        receipt.recipientOfficeId === officeId &&
+        receipt.artifactId === analysisPayload.evidenceArtifactId &&
+        analysisPayload.evidenceSectionIds.every((sectionId) =>
+          receipt.receivedSectionIds.includes(sectionId)) &&
+        instant(receipt.receivedAt, `${receipt.id} receipt`) <= instant(at, "Disposition time"));
+      if (hasRequiredEvidence) {
+        throw new Error("MISSING_REQUIRED_EVIDENCE contradicts the recipient's substantive receipts.");
+      }
+    } else if (constraint === "OFFICE_QUEUE_OR_DEADLINE_CONSTRAINT") {
+      const atDeadline = kind === "NO_ACTION_BY_DEADLINE" &&
+        instant(at, "Deadline disposition") ===
+          instant(instrument.payload.requestedResponseDeadline, "Response deadline");
+      if (!atDeadline && queueSources.length === 0) {
+        throw new Error("OFFICE_QUEUE_OR_DEADLINE_CONSTRAINT lacks a concrete office queue/deadline source.");
+      }
+    } else if (constraint === "EFFECTIVE_AUTHORITY_NOT_YET_AVAILABLE") {
+      const futureFits = capability !== undefined && relevant.some((candidate) =>
+        candidate.id === capability.id &&
+        instant(candidate.effectiveFrom, `${candidate.id} effective start`) > instant(at, "Disposition time") &&
+        instant(candidate.effectiveFrom, `${candidate.id} effective start`) <
+          instant(instrument.payload.requestedResponseDeadline, "Response deadline") &&
+        recipientCapabilityFitsInstrument(
+          candidate,
+          instrument.payload,
+          instrument.issuedAt,
+          candidate.effectiveFrom,
+        ));
+      if (!futureFits || nextReviewAt === null || capability === undefined ||
+        instant(nextReviewAt, "Recipient next review") <
+          instant(capability.effectiveFrom, "Future capability effective start")) {
+        throw new Error("EFFECTIVE_AUTHORITY_NOT_YET_AVAILABLE lacks future authority evidence.");
+      }
+    }
+  }
+};
+
+const assertInstrumentAssignmentAuthorization = (
+  state: PresidentialInterventionState,
+  officeId: string,
+  assignment: PresidentialInterventionState["officeOperations"]["state"][number]["assignments"][number],
+  disposition: RecipientInstrumentDisposition,
+  instrument: PresidentialInstrumentRecord,
+  binding: InstrumentAssignmentAuthorizationBinding,
+): void => {
+  if (
+    binding.assignmentId !== assignment.id ||
+    binding.dispositionId !== disposition.id ||
+    binding.instrumentId !== instrument.id ||
+    binding.recipientOfficeId !== officeId ||
+    binding.authorizedDeadline !== assignment.deadline ||
+    binding.boundAt !== assignment.createdAt ||
+    assignment.authorityReference !== disposition.id ||
+    assignment.leadOfficeId !== disposition.recipientOfficeId ||
+    !assignment.sourceReferenceIds.includes(disposition.id)
+  ) throw new Error(`Instrument-authorized assignment ${assignment.id} has an invalid typed authority binding.`);
+  if (disposition.nextReviewAt !== null &&
+    instant(assignment.deadline, `${assignment.id} deadline`) >
+      instant(disposition.nextReviewAt, `${disposition.id} review`)) {
+    throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds disposition timing.`);
+  }
+  const receipt = state.officeOperations.state
+    .find((entry) => entry.officeId === officeId)?.instrumentReceipts
+    .find((entry) => entry.id === disposition.instrumentReceiptId);
+  const allowedReferences = new Set<string>([disposition.id]);
+  if (receipt !== undefined) allowedReferences.add(receipt.id);
+  if (instrument.payload.kind === "REQUEST_OFFICE_ANALYSIS") {
+    for (const informationReceipt of state.informationRoutes.state.receipts) {
+      if (
+        informationReceipt.recipientOfficeId === officeId &&
+        informationReceipt.artifactId === instrument.payload.evidenceArtifactId &&
+        informationReceipt.receivedSectionIds.every((sectionId) =>
+          disposition.acceptedSectionIds.includes(sectionId))
+      ) allowedReferences.add(informationReceipt.id);
+    }
+  }
+  if (assignment.sourceReferenceIds.some((sourceId) => !allowedReferences.has(sourceId))) {
+    throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds its typed source scope.`);
+  }
+  if (instrument.payload.kind === "REQUEST_OFFICE_ANALYSIS") {
+    const analysisPayload = instrument.payload;
+    if (
+      binding.scope.kind !== "ANALYSIS_ASSIGNMENT_SCOPE" ||
+      binding.scope.evidenceArtifactId !== analysisPayload.evidenceArtifactId ||
+      !sameSet(binding.scope.evidenceSectionIds, disposition.acceptedSectionIds) ||
+      binding.scope.productKind !== disposition.acceptedProductKind ||
+      assignment.expectedProductKind !== binding.scope.productKind ||
+      assignment.requiredConsultationOfficeIds.length !== 0
+    ) throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds accepted analysis scope.`);
+  } else {
+    const coordinationPayload = instrument.payload;
+    if (
+    binding.scope.kind !== "COORDINATION_ASSIGNMENT_SCOPE" ||
+    binding.scope.workstreamId !== coordinationPayload.workstreamId ||
+    !sameSet(binding.scope.coordinationActionKinds, disposition.acceptedCoordinationActions) ||
+    assignment.expectedProductKind !== binding.scope.productKind ||
+    assignment.requiredConsultationOfficeIds.some(
+      (id) => !coordinationPayload.participatingOfficeIds.includes(id),
+    )
+    ) throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds accepted coordination scope.`);
   }
 };
 
@@ -1540,6 +1742,10 @@ export const assertPresidentialInterventionOwnerStates = (
       const dispositionTime = instant(disposition.dispositionAt, `${disposition.id} disposition`);
       const capability = disposition.capabilityAuthorityId === null ? undefined :
         administration.recipientCapabilities.find((entry) => entry.id === disposition.capabilityAuthorityId);
+      requireUnique(disposition.constraintSourceReferenceIds, `${disposition.id} constraint sources`);
+      if (disposition.constraintIds.some((constraint) => !allowedRecipientConstraints.includes(constraint))) {
+        throw new Error(`Recipient disposition ${disposition.id} has an unsupported typed constraint.`);
+      }
       if (disposition.kind === "NO_ACTION_BY_DEADLINE") {
         if (dispositionTime !== deadline ||
           instant(receipt.receivedAt, `${receipt.id} receipt`) >= deadline ||
@@ -1567,6 +1773,18 @@ export const assertPresidentialInterventionOwnerStates = (
           )) throw new Error(`Recipient disposition ${disposition.id} lacks matching jurisdiction.`);
         }
       }
+      assertRecipientConstraintSupport(
+        state,
+        administration,
+        disposition.recipientOfficeId,
+        instrument,
+        capability,
+        disposition.kind,
+        disposition.constraintIds,
+        disposition.constraintSourceReferenceIds,
+        disposition.dispositionAt,
+        disposition.nextReviewAt,
+      );
       if (instrument.payload.kind === "REQUEST_OFFICE_ANALYSIS") {
         const analysisPayload = instrument.payload;
         if (disposition.kind === "ACCEPTED_AS_REQUESTED" && (
@@ -1575,8 +1793,11 @@ export const assertPresidentialInterventionOwnerStates = (
         )) throw new Error(`Recipient disposition ${disposition.id} does not accept the exact request.`);
         if (disposition.kind === "NARROWED") {
           if (capability?.kind !== "ANALYSIS_CAPABILITY" || !capability.mayNarrow ||
+            !analysisPayload.narrowingPermitted ||
             disposition.acceptedProductKind === null ||
             !capability.permittedProductKinds.includes(disposition.acceptedProductKind) ||
+            (disposition.acceptedProductKind !== analysisPayload.requestedProductKind &&
+              !capability.permittedLessClaimingProductKinds.includes(disposition.acceptedProductKind)) ||
             disposition.acceptedSectionIds.some((id) => !analysisPayload.evidenceSectionIds.includes(id)) ||
             (disposition.acceptedProductKind === analysisPayload.requestedProductKind &&
               disposition.acceptedSectionIds.length >= analysisPayload.evidenceSectionIds.length)) {
@@ -1598,7 +1819,7 @@ export const assertPresidentialInterventionOwnerStates = (
         )) throw new Error(`Recipient disposition ${disposition.id} is not strict coordination narrowing.`);
       }
       if (["ACCEPTED_AS_REQUESTED", "NARROWED"].includes(disposition.kind) &&
-        disposition.constraintIds.length !== 0) {
+        (disposition.constraintIds.length !== 0 || disposition.constraintSourceReferenceIds.length !== 0)) {
         throw new Error(`Accepted disposition ${disposition.id} cannot carry refusal/delay constraints.`);
       }
       if (["DELAYED", "REFUSED"].includes(disposition.kind) && disposition.constraintIds.length === 0) {
@@ -1614,14 +1835,23 @@ export const assertPresidentialInterventionOwnerStates = (
     for (const assignment of office.assignments) {
       const disposition = office.instrumentDispositions.find((entry) => entry.id === assignment.authorityReference);
       if (disposition === undefined) continue;
-      if (!["ACCEPTED_AS_REQUESTED", "NARROWED"].includes(disposition.kind) ||
-        !assignment.sourceReferenceIds.includes(disposition.id) ||
-        assignment.leadOfficeId !== disposition.recipientOfficeId ||
-        assignment.expectedProductKind !== disposition.acceptedProductKind) {
-        throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds its disposition.`);
-      }
       const instrument = state.presidentialInstruments.state.find(
         (entry) => entry.id === disposition.instrumentId,
+      );
+      const authorization = office.instrumentAssignmentAuthorizations.find(
+        (entry) => entry.assignmentId === assignment.id,
+      );
+      if (!["ACCEPTED_AS_REQUESTED", "NARROWED"].includes(disposition.kind) ||
+        instrument === undefined || authorization === undefined) {
+        throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds its disposition.`);
+      }
+      assertInstrumentAssignmentAuthorization(
+        state,
+        office.officeId,
+        assignment,
+        disposition,
+        instrument,
+        authorization,
       );
       if (instrument?.payload.kind === "REQUEST_OFFICE_ANALYSIS" &&
         disposition.kind === "ACCEPTED_AS_REQUESTED") {
@@ -1641,6 +1871,16 @@ export const assertPresidentialInterventionOwnerStates = (
             `Full-scope instrument assignment ${assignment.id} is represented as proceeding without substantive receipt.`,
           );
         }
+      }
+    }
+    for (const authorization of office.instrumentAssignmentAuthorizations) {
+      const assignment = office.assignments.find((entry) => entry.id === authorization.assignmentId);
+      const disposition = office.instrumentDispositions.find(
+        (entry) => entry.id === authorization.dispositionId,
+      );
+      if (assignment === undefined || disposition === undefined ||
+        assignment.authorityReference !== disposition.id) {
+        throw new Error(`Instrument assignment authority for ${authorization.assignmentId} is dangling.`);
       }
     }
   }
@@ -2276,7 +2516,7 @@ export const recordPresidentialDecision = (
     !sameOrdered(presentation.shownPreviewHashes, allPresentedPreviews.map((entry) => entry.payloadHash))
   ) throw new Error(`Decision ${input.id} does not match the presented preview bundle.`);
   for (const preview of previews) {
-    assertPreview(preview, state, administration, current);
+    assertPreview(preview, state, administration, escalation.escalatingOfficeId, current);
     for (const attachment of preview.payload.attachmentMetadata) {
       const shown = attachment.sectionIds.every((sectionId) =>
         escalation.presidentKnownPortions.some((portion) =>
@@ -2592,6 +2832,7 @@ export interface RecordRecipientDispositionInput {
   readonly acceptedSectionIds: readonly string[];
   readonly acceptedCoordinationActions: readonly string[];
   readonly constraintIds: readonly RecipientConstraint[];
+  readonly constraintSourceReferenceIds: readonly string[];
   readonly reason: string | null;
   readonly limitations: readonly string[];
   readonly nextReviewAt: string | null;
@@ -2636,6 +2877,7 @@ export const recordRecipientDisposition = (
   requireUnique(input.acceptedSectionIds, `${input.id} accepted sections`);
   requireUnique(input.acceptedCoordinationActions, `${input.id} accepted coordination actions`);
   requireUnique(input.constraintIds, `${input.id} constraints`);
+  requireUnique(input.constraintSourceReferenceIds, `${input.id} constraint sources`);
   if (input.constraintIds.some((constraint) => !allowedRecipientConstraints.includes(constraint))) {
     throw new Error(`Recipient disposition ${input.id} has an unsupported typed constraint.`);
   }
@@ -2650,27 +2892,27 @@ export const recordRecipientDisposition = (
   if (["ACCEPTED_AS_REQUESTED", "NARROWED"].includes(input.kind) && !capabilityFits) {
     throw new Error(`Recipient disposition ${input.id} lacks an effective matching capability.`);
   }
+  assertRecipientConstraintSupport(
+    state,
+    administration,
+    input.recipientOfficeId,
+    instrument,
+    capability,
+    input.kind,
+    input.constraintIds,
+    input.constraintSourceReferenceIds,
+    current,
+    input.nextReviewAt,
+  );
   if (input.kind === "DELAYED") {
     if (input.nextReviewAt === null || input.constraintIds.length === 0 ||
       instant(input.nextReviewAt, `${input.id} next review`) <= instant(current, "Disposition time")) {
       throw new Error(`Delayed disposition ${input.id} lacks a future typed constraint.`);
     }
-    if (input.constraintIds.includes("EFFECTIVE_AUTHORITY_NOT_YET_AVAILABLE")) {
-      const futureCapability = capability !== undefined &&
-        capability.recipientOfficeId === input.recipientOfficeId &&
-        capability.instrumentKind === instrument.payload.kind &&
-        instant(capability.effectiveFrom, `${capability.id} effective start`) > instant(current, "Disposition time") &&
-        instant(capability.effectiveFrom, `${capability.id} effective start`) <
-          instant(instrument.payload.requestedResponseDeadline, `${instrument.id} response deadline`);
-      if (!futureCapability) throw new Error(`Delayed disposition ${input.id} lacks future authority evidence.`);
-    }
   }
   if (input.kind === "REFUSED") {
     if (input.reason === null || input.constraintIds.length === 0) {
       throw new Error(`Refused disposition ${input.id} requires typed reason/constraints.`);
-    }
-    if (input.constraintIds.includes("NO_EFFECTIVE_RECIPIENT_CAPABILITY") && capability !== undefined) {
-      throw new Error(`Refused disposition ${input.id} contradicts its capability reference.`);
     }
   }
   requireNonempty(input.provenanceReference, `${input.id} provenance`);
@@ -2710,6 +2952,7 @@ export const recordRecipientDisposition = (
 
 export interface CreateInstrumentAuthorizedAssignmentInput extends CreateOfficeWorkAssignmentInput {
   readonly dispositionId: string;
+  readonly authorizationScope: InstrumentAssignmentAuthorizationScope;
 }
 
 export const createInstrumentAuthorizedAssignment = (
@@ -2727,10 +2970,13 @@ export const createInstrumentAuthorizedAssignment = (
     !["ACCEPTED_AS_REQUESTED", "NARROWED"].includes(disposition.kind)) {
     throw new Error(`Assignment ${input.id} lacks an accepting recipient disposition.`);
   }
+  const instrument = state.presidentialInstruments.state.find(
+    (entry) => entry.id === disposition.instrumentId,
+  );
+  if (instrument === undefined) throw new Error(`Assignment ${input.id} lacks its source instrument.`);
   if (
     input.authorityReference !== disposition.id ||
     !input.sourceReferenceIds.includes(disposition.id) ||
-    input.expectedProductKind !== disposition.acceptedProductKind ||
     input.leadOfficeId !== disposition.recipientOfficeId
   ) throw new Error(`Assignment ${input.id} exceeds its recipient-owned disposition.`);
   if (disposition.nextReviewAt !== null &&
@@ -2748,6 +2994,32 @@ export const createInstrumentAuthorizedAssignment = (
     deadline: input.deadline,
     expectedProductKind: input.expectedProductKind,
   };
+  const authorization: InstrumentAssignmentAuthorizationBinding = {
+    assignmentId: input.id,
+    dispositionId: disposition.id,
+    instrumentId: instrument.id,
+    recipientOfficeId: disposition.recipientOfficeId,
+    authorizedDeadline: input.deadline,
+    scope: copyPlain(input.authorizationScope),
+    boundAt: current,
+  };
+  assertInstrumentAssignmentAuthorization(
+    state,
+    input.leadOfficeId,
+    {
+      ...assignmentInput,
+      createdAt: current,
+      status: "QUEUED",
+      statusUpdatedAt: current,
+      failureReason: null,
+      statusProvenanceReferenceId: null,
+      resultArtifactIds: [],
+      supersededByAssignmentId: null,
+    },
+    disposition,
+    instrument,
+    authorization,
+  );
   let administrationNext = createOfficeWorkAssignment(
     state,
     administration,
@@ -2755,11 +3027,8 @@ export const createInstrumentAuthorizedAssignment = (
     current,
     assignmentInput,
   );
-  const instrument = state.presidentialInstruments.state.find(
-    (entry) => entry.id === disposition.instrumentId,
-  );
-  const payload = instrument?.payload;
-  if (payload?.kind === "REQUEST_OFFICE_ANALYSIS" &&
+  const payload = instrument.payload;
+  if (payload.kind === "REQUEST_OFFICE_ANALYSIS" &&
     disposition.kind === "ACCEPTED_AS_REQUESTED") {
     const hasSubstantiveScope = state.informationRoutes.state.receipts.some((receipt) =>
       receipt.recipientOfficeId === disposition.recipientOfficeId &&
@@ -2788,6 +3057,23 @@ export const createInstrumentAuthorizedAssignment = (
     ...state,
     ...administrationNext,
   };
+  next = replaceOffice(next, input.leadOfficeId, (candidate) => {
+    const existing = candidate.instrumentAssignmentAuthorizations.find(
+      (entry) => entry.assignmentId === input.id,
+    );
+    if (existing !== undefined) {
+      if (!sameOrdered([existing], [authorization])) {
+        throw new Error(`Instrument assignment authority ${input.id} conflicts with an existing record.`);
+      }
+      return candidate;
+    }
+    return {
+      ...candidate,
+      instrumentAssignmentAuthorizations: [...candidate.instrumentAssignmentAuthorizations, authorization]
+        .sort((left, right) => left.boundAt.localeCompare(right.boundAt) ||
+          left.assignmentId.localeCompare(right.assignmentId)),
+    };
+  });
   next = appendIndexEntries(next, [indexEntry(
     intervention,
     input.id,
@@ -2991,6 +3277,7 @@ const applyRecipientDeadline = (
     acceptedSectionIds: [],
     acceptedCoordinationActions: [],
     constraintIds: ["OFFICE_QUEUE_OR_DEADLINE_CONSTRAINT"],
+    constraintSourceReferenceIds: [],
     reason: "No recipient-owned disposition was recorded before the end-exclusive response deadline.",
     limitations: [],
     nextReviewAt: null,

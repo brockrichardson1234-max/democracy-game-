@@ -1,5 +1,6 @@
 import type {
   EscalationPresentationRecord,
+  InstrumentAssignmentAuthorizationBinding,
   OfficeInstrumentReceipt,
   RecipientCapabilityAuthority,
   RecipientInstrumentDisposition,
@@ -246,6 +247,7 @@ export interface OfficeOperationsState {
   }[];
   readonly instrumentReceipts: readonly OfficeInstrumentReceipt[];
   readonly instrumentDispositions: readonly RecipientInstrumentDisposition[];
+  readonly instrumentAssignmentAuthorizations: readonly InstrumentAssignmentAuthorizationBinding[];
 }
 
 export interface AdministrationDirectoryState {
@@ -730,6 +732,7 @@ export const createPresidentialAdministrationOwnerStates = (
            deadlineDefaultRecords: [],
            instrumentReceipts: [],
            instrumentDispositions: [],
+           instrumentAssignmentAuthorizations: [],
         }))
         .sort((left, right) => left.officeId.localeCompare(right.officeId)),
     },

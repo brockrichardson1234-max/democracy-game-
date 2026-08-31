@@ -94,6 +94,7 @@ const recordFullOmbAcceptance = (session: PresidentialOperatingProofSession): vo
     ],
     acceptedCoordinationActions: [],
     constraintIds: [],
+    constraintSourceReferenceIds: [],
     reason: null,
     limitations: [],
     nextReviewAt: null,
@@ -113,6 +114,12 @@ const createFullOmbAssignment = (session: PresidentialOperatingProofSession): vo
     authorityReference: "pop0.disposition.omb.accepted-full-scope",
     deadline: POP0_I3_TRACE_TIMES.assignmentDeadline,
     expectedProductKind: "FISCAL_SUPPORTABILITY_SCOPING",
+    authorizationScope: {
+      kind: "ANALYSIS_ASSIGNMENT_SCOPE",
+      evidenceArtifactId: POP0_I2_SOURCE_ARTIFACT_ID,
+      evidenceSectionIds: Object.values(POP0_I2_SOURCE_SECTION_IDS),
+      productKind: "FISCAL_SUPPORTABILITY_SCOPING",
+    },
   });
 };
 
@@ -377,6 +384,7 @@ describe("POP0-I3 causal counterfactuals", () => {
       acceptedSectionIds: [],
       acceptedCoordinationActions: [],
       constraintIds: ["NO_EFFECTIVE_RECIPIENT_CAPABILITY"],
+      constraintSourceReferenceIds: [],
       reason: "No effective typed jurisdiction covers this delivered request.",
       limitations: [],
       nextReviewAt: null,
@@ -408,6 +416,17 @@ describe("POP0-I3 causal counterfactuals", () => {
     const session = createPop0I3TraceSession();
     runI3ThroughReceipt(session);
     session.advanceTo(POP0_I3_TRACE_TIMES.disposition);
+    session.createOfficeAssignment({
+      id: "pop0.assignment.chief-of-staff.preexisting-queue-pressure",
+      requesterId: POP0_I2_OFFICE_IDS.chiefOfStaff,
+      leadOfficeId: POP0_I2_OFFICE_IDS.chiefOfStaff,
+      objective: "Complete a preexisting bounded queue obligation",
+      sourceReferenceIds: [POP0_I2_TRACE_IDS.synthesis],
+      requiredConsultationOfficeIds: [],
+      authorityReference: POP0_V0_PROVENANCE_ROOT,
+      deadline: POP0_I3_TRACE_TIMES.responseDeadline,
+      expectedProductKind: "PREEXISTING_QUEUE_PRODUCT",
+    });
     session.recordRecipientDisposition({
       id: "pop0.disposition.chief-of-staff.refused",
       deduplicationIdentity: "pop0.dedupe.disposition.chief-of-staff.refused",
@@ -420,6 +439,7 @@ describe("POP0-I3 causal counterfactuals", () => {
       acceptedSectionIds: [],
       acceptedCoordinationActions: [],
       constraintIds: ["OFFICE_QUEUE_OR_DEADLINE_CONSTRAINT"],
+      constraintSourceReferenceIds: ["pop0.assignment.chief-of-staff.preexisting-queue-pressure"],
       reason: "The office independently declines this bounded request.",
       limitations: [],
       nextReviewAt: null,

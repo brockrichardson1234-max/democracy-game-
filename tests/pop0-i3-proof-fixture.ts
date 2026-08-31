@@ -176,6 +176,12 @@ export const createI3Workstream = (session: PresidentialOperatingProofSession): 
 export const createI3Escalation = (
   session: PresidentialOperatingProofSession,
   options: readonly PresidentialEscalationOption[] = createPop0I3Options(),
+  sourceRecordIds: readonly string[] = [
+    POP0_I2_TRACE_IDS.synthesis,
+    POP0_I2_TRACE_IDS.laborAssessmentReceiptAtChiefOfStaff,
+    POP0_I2_TRACE_IDS.necAssessmentReceiptAtChiefOfStaff,
+    POP0_I2_TRACE_IDS.presentation,
+  ],
 ): void => {
   session.advanceTo(POP0_I3_TRACE_TIMES.escalation);
   session.createPresidentialEscalation({
@@ -185,12 +191,7 @@ export const createI3Escalation = (
     escalatingOfficeholderAssignmentId: POP0_I2_OFFICEHOLDER_ASSIGNMENT_IDS.chiefOfStaff,
     basisKind: "SYNTHESIS_CONFLICT",
     basisSynthesisArtifactId: POP0_I2_TRACE_IDS.synthesis,
-    sourceRecordIds: [
-      POP0_I2_TRACE_IDS.synthesis,
-      POP0_I2_TRACE_IDS.laborAssessmentReceiptAtChiefOfStaff,
-      POP0_I2_TRACE_IDS.necAssessmentReceiptAtChiefOfStaff,
-      POP0_I2_TRACE_IDS.presentation,
-    ],
+    sourceRecordIds,
     presidentKnownPortions: [
       {
         presentationId: POP0_I2_TRACE_IDS.presentation,
@@ -358,6 +359,7 @@ export const dispositionI3Instruments = (session: PresidentialOperatingProofSess
     acceptedSectionIds: [],
     acceptedCoordinationActions: ["TRACK_RECIPIENT_DISPOSITIONS", "COORDINATE_FOLLOW_UP"],
     constraintIds: [],
+    constraintSourceReferenceIds: [],
     reason: null,
     limitations: [],
     nextReviewAt: null,
@@ -375,6 +377,7 @@ export const dispositionI3Instruments = (session: PresidentialOperatingProofSess
     acceptedSectionIds: [],
     acceptedCoordinationActions: [],
     constraintIds: [],
+    constraintSourceReferenceIds: [],
     reason: null,
     limitations: ["No substantive preliminary source receipt is available to OMB"],
     nextReviewAt: null,
@@ -390,11 +393,17 @@ export const createI3OmbAssignment = (session: PresidentialOperatingProofSession
     requesterId: POP0_I2_OFFICE_IDS.omb,
     leadOfficeId: POP0_I2_OFFICE_IDS.omb,
     objective: "Scope the metadata and access gap without claiming a substantive fiscal estimate",
-    sourceReferenceIds: [POP0_I3_TRACE_IDS.ombDisposition, POP0_I2_TRACE_IDS.ombAssessment],
+    sourceReferenceIds: [POP0_I3_TRACE_IDS.ombDisposition],
     requiredConsultationOfficeIds: [],
     authorityReference: POP0_I3_TRACE_IDS.ombDisposition,
     deadline: POP0_I3_TRACE_TIMES.assignmentDeadline,
     expectedProductKind: "METADATA_ACCESS_GAP_SCOPING",
+    authorizationScope: {
+      kind: "ANALYSIS_ASSIGNMENT_SCOPE",
+      evidenceArtifactId: POP0_I2_SOURCE_ARTIFACT_ID,
+      evidenceSectionIds: [],
+      productKind: "METADATA_ACCESS_GAP_SCOPING",
+    },
   });
 };
 

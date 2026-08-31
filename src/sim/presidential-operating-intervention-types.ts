@@ -365,10 +365,35 @@ export interface RecipientInstrumentDisposition {
   readonly acceptedSectionIds: readonly string[];
   readonly acceptedCoordinationActions: readonly string[];
   readonly constraintIds: readonly RecipientConstraint[];
+  readonly constraintSourceReferenceIds: readonly string[];
   readonly reason: string | null;
   readonly limitations: readonly string[];
   readonly nextReviewAt: string | null;
   readonly provenanceReference: string;
+}
+
+export type InstrumentAssignmentAuthorizationScope =
+  | {
+      readonly kind: "ANALYSIS_ASSIGNMENT_SCOPE";
+      readonly evidenceArtifactId: string;
+      readonly evidenceSectionIds: readonly string[];
+      readonly productKind: string;
+    }
+  | {
+      readonly kind: "COORDINATION_ASSIGNMENT_SCOPE";
+      readonly workstreamId: string;
+      readonly coordinationActionKinds: readonly string[];
+      readonly productKind: string;
+    };
+
+export interface InstrumentAssignmentAuthorizationBinding {
+  readonly assignmentId: string;
+  readonly dispositionId: string;
+  readonly instrumentId: string;
+  readonly recipientOfficeId: string;
+  readonly authorizedDeadline: string;
+  readonly scope: InstrumentAssignmentAuthorizationScope;
+  readonly boundAt: string;
 }
 
 export interface EscalationPresentationRecord {
