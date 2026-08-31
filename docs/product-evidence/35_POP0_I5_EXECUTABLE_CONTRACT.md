@@ -101,7 +101,7 @@ There is no `storyStage`, thread director, replacement-event scheduler, route ID
 
 ## 3.1 Minimum new I5 humans
 
-The I5 fixture configures only these additional fictional individualized humans:
+The I5 fixture configures these additional legible named fictional humans. Any exact supporting lower-legislative humans required by the direct runtime are governed exclusively by section 3.5 and are not additional legible proof actors:
 
 ### Administration
 
@@ -153,12 +153,35 @@ I5 adds no `WeightedPopulationState`, population association, eligibility projec
 
 ## 3.4 Exact institutional additions
 
-I5 adds only:
+The presidential-administration configuration is a closed replacement of the I4 count validators, not an open list. It contains exactly:
 
-- Department of Health and Human Services institution;
-- Office of the Secretary of Health and Human Services;
-- Intergovernmental Affairs office;
-- Communications office;
+```text
+institutions:                  3
+administration offices:       9
+administration actor IDs:     10
+officeholder assignments:     9
+administration linkages:      10
+```
+
+The accepted I4 entries remain byte-for-byte identical in identity and meaning:
+
+- institutions: `pop0.institution.department-of-labor`, `pop0.institution.department-of-housing-and-urban-development`;
+- offices: `pop0.office.chief-of-staff`, `pop0.office.nec`, `pop0.office.omb`, `pop0.office.legislative-affairs`, `pop0.office.secretary-of-labor`, `pop0.office.secretary-of-hud`;
+- actors: President Elena Ward plus Dana Okafor, Maya Chen, Rafael Ortiz, Tessa Monroe, Naomi Mercer, and Luis Ortega;
+- the six accepted officeholder assignments and all seven accepted administration Population-linkage declarations.
+
+I5 adds exactly:
+
+- institution `pop0.institution.department-of-health-and-human-services`;
+- office `pop0.office.secretary-of-health-and-human-services`, held by `pop0.actor.amara-singh` under `pop0.officeholder-assignment.amara-singh.secretary-of-health-and-human-services`;
+- office `pop0.office.intergovernmental-affairs`, held by `pop0.actor.joel-baptiste` under `pop0.officeholder-assignment.joel-baptiste.intergovernmental-affairs`;
+- office `pop0.office.communications`, held by `pop0.actor.erin-shaw` under `pop0.officeholder-assignment.erin-shaw.communications`;
+- one administration linkage declaration for each added actor under section 3.2.
+
+No other administration institution, office, actor, holder assignment, or administration linkage is permitted in configuration `0.5.0-pop0-i5`. Missing, extra, duplicate, ambiguous, or cross-role-inconsistent entries reject.
+
+The non-administration fixture also contains only these institutional additions:
+
 - Lake Erie Components employer institution;
 - Great Lakes Workers Alliance labor organization;
 - Regional Manufacturers Council industry organization;
@@ -169,6 +192,31 @@ I5 adds only:
 Department possession remains distinct from Secretary-office possession and knowledge. Every new administration office has its own holder interval, records, assignments, queue, receipts, and access.
 
 One human holding more than one role, if ever configured, would not merge office or actor receipts. I5 does not configure such a cross-role holder.
+
+## 3.5 Shared external human identity/linkage registry
+
+All exact congressional, gubernatorial, and supporting lower-legislative human identities live in one authenticated configuration-level registry:
+
+```text
+I5HumanIdentityLinkageRegistry
+```
+
+Each entry contains exactly:
+
+- globally unique `actorId` and display identity;
+- effective interval;
+- `OUTSIDE_MODELED_ORDINARY_POPULATION_SCOPE`;
+- Population weight `0`;
+- the exact permitted joins from section 3.2;
+- the exact prohibited joins from section 3.2;
+- role/office/constituency-jurisdiction references;
+- synthetic-fixture provenance.
+
+The registry's actor-ID set must equal the union of every exact human actor ID referenced by the congressional configuration/direct lower legislative structure and the three governor records. It includes the six named congressional humans and three named governors in section 3.1 plus any exact supporting legislative humans required by the direct lower runtime. It contains no administration actor, organization, outlet, employer, facility, or aggregate-population identity.
+
+The administration actor/linkage set and external registry are disjoint, globally unique, and validated together. Congress and external-actor owners reference registry IDs; they may not copy names, linkage status, Population weight, or join permissions into owner state. Unknown actors, duplicate humans, incompatible linkage declarations, registry/owner set mismatch, or an exact lower-legislative human without one registry entry reject during configuration validation and restoration.
+
+The registry is authenticated configuration, not a Population owner or mutable actor-state owner.
 
 ---
 
@@ -372,15 +420,58 @@ The direct legislative configuration must reconcile the accepted disclosed chamb
 
 Configuration may not supply draft adoption, sponsorship acceptance, introduction, committee use, amendment, support, opposition, or abandonment as final outcomes.
 
-At each eligible boundary, the stateless adapter asks the relevant congressional owner to resolve only a decision for which the actor has:
+The ownership seam is exact:
+
+### Before lower-runtime creation
+
+`congressionalInitiative` alone owns the formation opportunity and `INITIATE_DRAFT | DEFER | DECLINE` formation decision. This decision answers only whether an authenticated Congress-owned draft runtime is created. It is not sponsorship, support posture, introduction, procedure, or a vote.
+
+### After lower-runtime creation
+
+`LegislativeRuntimeState` alone owns:
+
+- sponsorship acceptance and sponsorship state (a lower non-accepting attempt may leave that state unchanged under the accepted lower API);
+- proposal stage/version and agenda;
+- lower `PoliticalState` actor positions/decisions;
+- consideration-gate state;
+- amendments and votes if reached;
+- native legislative deadlines;
+- terminal disposition.
+
+The outer owner may retain only recipient-scoped external evidence receipts and `CongressionalAttemptEligibilityAssessment` records. An eligibility assessment records whether exact receipt, role/capability, effective time, and an open outer window permit an attempt to call a named lower transition. Its result is only `ELIGIBLE_TO_ATTEMPT | NOT_ELIGIBLE_TO_ATTEMPT`; it may not contain or predict a sponsorship choice, support posture, gate result, amendment, vote, or terminal disposition.
+
+I5 chooses the preferred gate-only seam: received evidence may determine whether the lower act may be attempted, but the lower canonical political actor state determines the sponsorship/procedure result. I5 does not add an externally admitted sponsorship-decision API.
+
+### Outer procedure window
+
+`congressionalInitiative` owns exactly one `CongressionalProcedureOpportunity` whose responsibility is only availability/deadline for calling permitted lower transitions. It contains:
+
+- ID and label/committee-jurisdiction content;
+- `opensAt` inclusive and `closesAt` exclusive;
+- exact permitted lower transition kinds `SEEK_MEMBER_SPONSORSHIP | ADVANCE_INTRODUCED_PROPOSAL_TO_CONSIDERATION_GATE`;
+- required role/capability and evidence-eligibility assessment kinds;
+- authority/provenance;
+- append-only lifecycle `OPENED | USED | EXPIRED` with derived status.
+
+It contains no sponsor ID/result, proposal stage, committee decision, consideration-gate status/result, amendment, vote, or copied lower deadline. The label “committee opportunity” does not create a second committee/procedure owner. Actual consideration-gate state remains solely in `LegislativeRuntimeState`.
+
+### Stateless adapter operation
+
+At an eligible boundary, the adapter may atomically call a permitted lower transition only when the actor has:
 
 - a valid effective role/capability;
 - a recipient-owned receipt or other permitted public record;
-- an authored bounded assessment;
+- an authored `ELIGIBLE_TO_ATTEMPT` assessment;
 - an open procedural opportunity;
 - no already-terminal occurrence for the same opportunity.
 
-Actor-owned decisions then invoke accepted lower-level legislative transitions. At the exact committee deadline, expiration/no-use wins before a new actor choice.
+For sponsorship, the adapter calls accepted `seekMemberSponsorship(...)` exactly once. That lower operation alone resolves sponsorship from the direct lower `PoliticalState` and persists any accepted sponsorship in lower state. The outer owner records only an immutable `LegislativeTransitionAttemptAuthorization` containing opportunity, assessment, receipt, actor/role, lower transition kind, call time, authority, provenance, lower pre/post state hashes, and any real lower occurrence reference. It stores no sponsorship choice/result; a valid non-accepting lower call may retain identical lower pre/post hashes.
+
+For consideration, the adapter similarly gates the accepted lower transition. The lower runtime alone changes or retains the consideration gate. The outer `USED` lifecycle occurrence references the real lower transition occurrence/state-version identity but does not copy its result.
+
+Validation is atomic: if the lower transition rejects, no attempt authorization or `USED` lifecycle record is appended. Removing the required receipt/assessment prevents the adapter call and leaves the complete lower runtime byte-identical.
+
+At `current == closesAt`, `EXPIRED` is appended before any new attempt and expiration wins. An expired outer window cannot call a lower transition. Lower-runtime native deadlines remain independently owned and cannot be extended by the outer window.
 
 ## 6.3 No presidential command surface
 
@@ -401,9 +492,10 @@ Congress may proceed, narrow, delay, oppose, transform, or ignore the administra
 
 With all unrelated owners held constant:
 
-- removing the relevant lawmaker receipt must prevent or delay the same evidence-grounded sponsorship assessment;
-- changing one sponsor objective/relationship must change, narrow, or prevent sponsorship without replacement drama;
+- removing the relevant lawmaker receipt must prevent the same transition attempt and leave lower sponsorship/procedure state byte-identical;
+- changing one lower sponsor objective/relationship while preserving attempt eligibility must change, narrow, or prevent the lower-owned sponsorship result without replacement drama;
 - closing or removing the committee opportunity must prevent the same procedure use;
+- after a lower sponsorship/procedure occurrence exists, no outer record may contain a second choice/status/result for it;
 - omitting every presidential act must not prevent Congress from independently initiating when its own conditions are satisfied;
 - the same configuration/seed and inputs must reproduce the same Congress trace.
 
@@ -589,11 +681,61 @@ Employment deterioration, a Congress occurrence, governor/organization action, p
 
 Unknown, duplicate, missing, extra, ambiguous, prefix-matched, label-matched, or office-ID-special-cased definitions/rules reject in live operations and restore.
 
-## 10.2 Exact administration additions
+## 10.2 Exact administration and recipient-capability closure
 
-The I2 directory/office configuration expands atomically with the HHS Secretary, Intergovernmental Affairs, and Communications offices and holders from section 3. Each has independent office state and queue.
+The directory/office configuration expands atomically to the exact closed counts and identities in section 3.4. Each added office has independent office state and queue.
 
 HHS Department possession does not imply Secretary receipt. A governor communication does not imply Intergovernmental Affairs receipt. An administration statement does not imply outlet receipt or coverage.
+
+The I5 `RecipientCapabilityAuthority` union contains exactly five discriminants:
+
+```text
+ANALYSIS_CAPABILITY
+COORDINATION_CAPABILITY
+LEGISLATIVE_POSITION_CAPABILITY
+INTERGOVERNMENTAL_CONTACT_CAPABILITY
+PUBLIC_STATEMENT_CAPABILITY
+```
+
+The first two retain their accepted I4 shapes. Each new capability record contains common ID, recipient office, exact instrument kind, effective interval, authority reference, provenance, and `mayNarrow`, plus:
+
+- `LEGISLATIVE_POSITION_CAPABILITY`: permitted initiative IDs, proposal-version rule, permitted position kinds, permitted negotiable term IDs/count, and whether a less-committing position is allowed;
+- `INTERGOVERNMENTAL_CONTACT_CAPABILITY`: permitted governor IDs, subject/purpose families, maximum recipients/talking points, prohibited commitment/promise kinds, and permitted recipient narrowing;
+- `PUBLIC_STATEMENT_CAPABILITY`: permitted subject families, maximum claim count, required presented-source lineage, prohibited unsupported-claim families, release-window bound, and permitted claim removal during narrowing.
+
+Configuration `0.5.0-pop0-i5` contains exactly nine capability records:
+
+1. accepted OMB analysis capability, with its accepted I4 identity/fields plus the exact additive product/scope extension below;
+2. accepted Chief-of-Staff Labor coordination capability unchanged;
+3. accepted HUD analysis capability unchanged;
+4. accepted Chief-of-Staff Housing coordination capability unchanged;
+5. `pop0.capability.hhs.rural-maternity-analysis`: HHS analysis capability for recipient `pop0.office.secretary-of-health-and-human-services`, subject `RURAL_MATERNITY_SERVICE_ACCESS`, products `RURAL_MATERNITY_ACCESS_SCOPING` and less-claiming `MATERNITY_MONITORING_GAP_MEMO`, `mayNarrow: true` only to that less-claiming product;
+6. `pop0.capability.legislative-affairs.regional-employment-position`: Legislative Affairs `LEGISLATIVE_POSITION_CAPABILITY` for only `pop0.proposal.regional-employment-stabilization`, proposal-version rule `CURRENT_CANONICAL_VERSION_AT_PREVIEW`, positions `SUPPORT_AS_INTRODUCED | OPPOSE | NEGOTIATE_EXACT_TERMS`, only configured proposal term IDs, and `mayNarrow: false`;
+7. `pop0.capability.intergovernmental-affairs.bounded-contact`: Intergovernmental Affairs `INTERGOVERNMENTAL_CONTACT_CAPABILITY` for exactly the three configured governors, purpose families `REGIONAL_EMPLOYMENT_RESPONSE | RURAL_MATERNITY_SERVICE_ACCESS`, no promise/funding/legal commitment/state-outcome authority, and `mayNarrow: true` only by removing recipients or talking points while retaining the same purpose;
+8. `pop0.capability.communications.bounded-public-statement`: Communications `PUBLIC_STATEMENT_CAPABILITY` for `REGIONAL_EMPLOYMENT_AND_CONGRESS | RURAL_MATERNITY_SERVICE_ACCESS`, limited to presented claims/limitations, and `mayNarrow: true` only by claim removal;
+9. `pop0.capability.omb.review-queue-coordination`: OMB coordination capability for recipient `pop0.office.omb`, the Labor and Housing workstreams only, actions `REPRIORITIZE_OMB_REVIEW_QUEUE | SUPERSEDE_WITH_PERMITTED_NARROW_PRODUCT` only, and `mayNarrow: true` only by dropping one requested action or selecting the configured less-claiming product.
+
+Every new record is effective from the POP epoch through `null`, uses its exact listed ID/recipient/instrument kind, cites the configured I5 authority/provenance root, and has no wildcard scope. The legislative capability rejects if the proposal version changes between preview and authorization rather than silently rebinding to the newer version.
+
+The accepted OMB analysis capability is explicitly extended in I5—without removing or changing its accepted fields—to add:
+
+```text
+products:
+  FULL_REGIONAL_EMPLOYMENT_CONGRESSIONAL_ANALYSIS
+  NARROW_EMPLOYMENT_COMMITTEE_BRIEF
+  FULL_HOUSING_IMPLEMENTATION_REVIEW
+  NARROW_HOUSING_IMPLEMENTATION_ACCESS_GAP_MEMO
+
+subject scopes:
+  REGIONAL_EMPLOYMENT_CONGRESSIONAL_WINDOW
+  INHERITED_HOUSING_IMPLEMENTATION
+
+less-claiming products:
+  NARROW_EMPLOYMENT_COMMITTEE_BRIEF
+  NARROW_HOUSING_IMPLEMENTATION_ACCESS_GAP_MEMO
+```
+
+All capability collections resolve by exact discriminant and ID. Missing, unknown, duplicate, extra, ambiguous, prefix/label-matched, ineffective, or provenance-inconsistent records reject. No office mandate prose or free-form reason establishes jurisdiction.
 
 ## 10.3 Typed presidential instruments
 
@@ -615,13 +757,115 @@ Their behavior-driving payloads are closed:
 
 Every evidence claim, term, and talking point in these previews must be contained in presidentially presented sections effective before preview creation. Staff-only sources, referenced-but-unpresented attachments, global artifacts, workstream/history references, and later evidence cannot enter the authorized payload.
 
+The accepted `InstrumentAssignmentAuthorizationScope` union expands only with:
+
+- `LEGISLATIVE_POSITION_ASSIGNMENT_SCOPE`: exact initiative/version, position kind, exact configured terms, presented evidence references, and authorized deadline;
+- `INTERGOVERNMENTAL_CONTACT_ASSIGNMENT_SCOPE`: exact governor-ID subset, unchanged purpose, talking-point subset, prohibited commitment kinds, and authorized deadline;
+- `PUBLIC_STATEMENT_ASSIGNMENT_SCOPE`: exact claim/limitation subset, presented source sections, unchanged prohibited-claim families, release window, and authorized deadline.
+
+Recipient dispositions for these kinds must be supported by the exact capability and canonical office/queue/deadline state. Narrowing is permitted only as stated in section 10.2. A later assignment and office-produced external communication must be structurally contained by its disposition and assignment-authorization scope; free text cannot add a term, governor, talking point, promise, claim, source, release time, or deadline.
+
 Office capabilities and narrowing are configured by exact typed authority and effective interval. Free-form reason text, office identity, or mandate prose cannot establish capability, constraint, evidence, or jurisdiction.
 
 An office-produced external communication is a new immutable artifact. Its external dispatch/delivery/receipt and recipient-owned response are separate from the presidential instrument and office assignment.
 
 No new instrument can directly select a congressional decision, governor/organization response, outlet decision, exposure, belief, employment result, quiet-condition result, or Housing result.
 
-## 10.4 Historical Record remains reference-only
+### Exact local escalation options
+
+The accepted I3/I4 `REQUEST_SCOPED_ANALYSIS_AND_COORDINATION` option remains structurally and semantically unchanged. It always contains exactly two previews in this order:
+
+```text
+1. REQUEST_OFFICE_ANALYSIS
+2. REQUEST_WORKSTREAM_COORDINATION
+```
+
+I5 adds exactly three single-instrument local option kinds:
+
+```text
+AUTHORIZE_LEGISLATIVE_POSITION_OPTION
+  previews: [AUTHORIZE_LEGISLATIVE_POSITION]
+
+REQUEST_INTERGOVERNMENTAL_CONTACT_OPTION
+  previews: [REQUEST_INTERGOVERNMENTAL_CONTACT]
+
+AUTHORIZE_PUBLIC_STATEMENT_OPTION
+  previews: [AUTHORIZE_PUBLIC_STATEMENT]
+```
+
+Each tuple has cardinality `1`; no second preview, undisclosed attachment, post-confirmation instrument, or arbitrary payload list is permitted. Existing reserve-review and allow-default options retain zero previews.
+
+The two accepted rules preserve their accepted I4 option records, cardinalities, ordering, and permitted instrument kinds exactly; they may not expose any new I5 option/instrument:
+
+- `pop0.escalation-rule.preserved-labor-disagreement`;
+- `pop0.escalation-rule.inherited-housing-receipt`.
+
+The two I5 rules have these exact ordered local-option sets:
+
+| Rule | Ordered option kinds | Permitted instrument kinds |
+|---|---|---|
+| `pop0.escalation-rule.congressional-opportunity-receipt` | `REQUEST_SCOPED_ANALYSIS_AND_COORDINATION`, `AUTHORIZE_LEGISLATIVE_POSITION_OPTION`, `REQUEST_INTERGOVERNMENTAL_CONTACT_OPTION`, `AUTHORIZE_PUBLIC_STATEMENT_OPTION`, `RESERVE_PRESIDENTIAL_REVIEW`, `ALLOW_MONITORING_DEFAULT` | one OMB analysis preview followed by one OMB Labor/Housing review-queue coordination preview; legislative position; intergovernmental contact; public statement |
+| `pop0.escalation-rule.quiet-service-access-assessment` | `REQUEST_INTERGOVERNMENTAL_CONTACT_OPTION`, `AUTHORIZE_PUBLIC_STATEMENT_OPTION`, `RESERVE_PRESIDENTIAL_REVIEW`, `ALLOW_MONITORING_DEFAULT` | intergovernmental contact; public statement; never legislative position and no analysis/coordination bundle |
+
+The Congress rule's `REQUEST_SCOPED_ANALYSIS_AND_COORDINATION` option retains the accepted tuple shape/order while binding the first preview to the effective OMB analysis capability and the second to the effective OMB queue-coordination capability. The quiet rule does not expose that accepted bundle; proactive HHS investigation uses only section 10.4's one-preview inquiry path.
+
+Every option is an immutable record local to one escalation and source presentation. Configuration authenticates the rule-to-option mapping; no global catalogue, generic bundle, arbitrary payload array, action-ID prefix, or option copied from another escalation is permitted.
+
+Every new option follows the complete accepted chain:
+
+```text
+immutable local option with visible complete preview
+→ canonical payload and hash
+→ escalation presentation showing the option/preview
+→ active ControlBinding-authenticated presidential decision
+→ structurally/hash-identical instrument
+→ dispatch attempt
+→ technical delivery
+→ recipient-office receipt
+→ causally supported recipient disposition
+→ scope-contained office assignment
+→ separate office-produced external communication
+→ external dispatch/receipt
+→ external-owner result or no action
+```
+
+Omitting any link prevents the later link. Presentation of one option does not present another; authorization of one option cannot emit another option's instrument.
+
+## 10.4 Proactive presidential inquiry without fabricated Attention
+
+I5 adds one narrow canonical `PresidentialInquiryOwnerState` inside the accepted presidential intervention owner composition. It contains immutable opportunities, immutable preview presentations, immutable initiated requests, and append-only lifecycle occurrences. Current status is derived; there is no mutable second status truth.
+
+A `PresidentialInquiryOpportunity` contains exactly:
+
+- ID and subject family `RURAL_MATERNITY_SERVICE_ACCESS`;
+- source kind `PRESENTED_MONITORING_GAP | GENERAL_SERVICE_ACCESS_QUESTION`;
+- source presidential-presentation ID and shown metadata section IDs when source kind is `PRESENTED_MONITORING_GAP`, otherwise `null`/empty;
+- the general question text and typed scope `NATIONWIDE_RURAL_MATERNITY_SERVICE_MONITORING`;
+- allowed recipient `pop0.office.secretary-of-health-and-human-services`;
+- allowed instrument kind `REQUEST_OFFICE_ANALYSIS`;
+- allowed products `RURAL_MATERNITY_ACCESS_SCOPING | MATERNITY_MONITORING_GAP_MEMO`;
+- effective interval, deadline/default, authority reference, and provenance.
+
+The configured `GENERAL_SERVICE_ACCESS_QUESTION` opportunity contains no artifact, facility, catchment, closure, burden, geography-below-national-scope, or source-record identity. A `PRESENTED_MONITORING_GAP` opportunity must resolve to an earlier real presidential presentation and only the shown general coverage/gap metadata sections.
+
+`presentPresidentialInquiryPreview(...)` creates one immutable `PresidentialInquiryPreviewPresentation` containing exactly one complete `REQUEST_OFFICE_ANALYSIS` preview and canonical payload hash, the opportunity ID, recipient binding/actor, constitutional office, shown question/scope, and presentation time. The preview may cite only the opportunity and permitted earlier presentation; it cannot cite hidden service-owner, facility, catchment, closure, burden, or unpresented source identities.
+
+`recordPresidentialInitiatedRequest(...)` extends the presidential-decision source as an exact discriminated union:
+
+```text
+ESCALATION_PRESENTATION       // accepted I3/I4 behavior unchanged
+INQUIRY_PREVIEW_PRESENTATION // I5 proactive path only
+```
+
+The inquiry branch requires an ACTIVE ControlBinding for the same President/constitutional office at decision time, an effective unconsumed opportunity, the exact preview presentation, structural deep equality and canonical hash equality, and exactly one `REQUEST_OFFICE_ANALYSIS` instrument to HHS. `PresidentialInitiatedRequest` is the exact I5 variant of the ordinary immutable `PresidentialDecisionRecord` stored once in the existing decision collection; it is not a second request/decision truth. The operation records that decision variant and one consumed lifecycle occurrence. Exact-deadline expiration wins over a new request.
+
+After authorization, the ordinary accepted instrument chain applies without exception: dispatch, technical delivery, HHS office receipt, HHS recipient disposition, and a scope-contained assignment. The proactive record itself creates no HHS receipt, assignment, result, workstream, escalation, presentation of findings, material observation, or Attention item.
+
+Inquiry opportunities and preview presentations are not Attention and never appear in `derivePresidentialAttention()`. They are persisted in format 5, restored without replay/reconciliation, and referenceable in the Historical Record by their real IDs. A decision source may be either escalation presentation or inquiry preview presentation, never both.
+
+No generic proactive presidential command surface is authorized. I5 permits only this HHS analysis inquiry subject, recipient, instrument kind, product set, and source boundary.
+
+## 10.5 Historical Record remains reference-only
 
 New history entries reference real canonical Labor occurrences/artifacts, legislative records, actor actions, media decisions/stories/distributions/exposures, service-access occurrences, office records, presidential instruments, and Housing records.
 
@@ -645,14 +889,115 @@ The proof does not advance one thread only after another finishes. No mandatory 
 
 ## 11.2 Exact OMB queue collision
 
-I5 configures one named OMB review team/queue with two real accepted assignments:
+I5 adds one OMB-specific canonical capacity field under the `pop0.office.omb` `OfficeOperationsState`:
 
-1. employment/Congress economic analysis needed before the committee opportunity;
-2. Housing implementation analysis needed before its recipient/handling review deadline.
+```text
+ombReviewCapacity: OMBReviewCapacityState
+```
 
-The team has exact scheduled work periods and cannot produce both full-depth products by both preferred deadlines in the opening queue order.
+Every other office must have this field absent. This is not a general office/staff/Presidential Capacity system.
 
-The authenticated primary fixture provides one full-depth team slot ending `2029-02-23T17:00:00-05:00` and a second ending `2029-03-04T17:00:00-05:00`. The Housing full-review preferred deadline is the first boundary; the employment/Congress full-review deadline is `2029-03-01T17:00:00-05:00`, before the committee opportunity closes. A configured capability-authorized narrow product requires a shorter exact work period. Queue ordering, narrowing, or delegation—not a hidden capacity score—determines which product is full, narrow, or late.
+The state identifies exactly one team:
+
+```text
+pop0.office-team.omb.economic-implementation-review
+```
+
+Authenticated configuration defines exactly these nine nonoverlapping ordered work periods for that team:
+
+| Period | Start inclusive | End exclusive |
+|---|---|---|
+| `P1` | `2029-02-19T09:00:00-05:00` | `2029-02-20T17:00:00-05:00` |
+| `P2` | `2029-02-20T17:00:00-05:00` | `2029-02-21T17:00:00-05:00` |
+| `P3` | `2029-02-21T17:00:00-05:00` | `2029-02-22T17:00:00-05:00` |
+| `P4` | `2029-02-22T17:00:00-05:00` | `2029-02-23T09:00:00-05:00` |
+| `P5` | `2029-02-23T09:00:00-05:00` | `2029-02-27T09:00:00-05:00` |
+| `P6` | `2029-02-27T09:00:00-05:00` | `2029-02-28T09:00:00-05:00` |
+| `P7` | `2029-02-28T09:00:00-05:00` | `2029-03-01T18:00:00-05:00` |
+| `P8` | `2029-03-01T18:00:00-05:00` | `2029-03-02T18:00:00-05:00` |
+| `P9` | `2029-03-02T18:00:00-05:00` | `2029-03-04T17:00:00-05:00` |
+
+Every period carries the exact team ID and configured provenance. A period may be booked by at most one active assignment. Booking allocates the earliest consecutive unbooked periods in stable order after the assignment becomes effective; it cannot skip an earlier available period to manufacture a preferred completion time.
+
+Configuration defines only these product requirements:
+
+| Product | Periods consumed | Classification |
+|---|---:|---|
+| `FULL_HOUSING_IMPLEMENTATION_REVIEW` | 4 | full |
+| `NARROW_HOUSING_IMPLEMENTATION_ACCESS_GAP_MEMO` | 1 | less-claiming Housing product |
+| `FULL_REGIONAL_EMPLOYMENT_CONGRESSIONAL_ANALYSIS` | 4 | full |
+| `NARROW_EMPLOYMENT_COMMITTEE_BRIEF` | 1 | less-claiming employment product |
+
+No free-form objective or reason changes period consumption.
+
+`OMBReviewCapacityState` owns immutable booking records containing booking ID, team/period IDs, assignment ID, authorized product kind, reservation time, consumption time or release time, status `RESERVED | CONSUMED | RELEASED`, source authorization, acting officeholder, and provenance. It also owns the queue/reprioritization and assignment-supersession occurrences below.
+
+Validation rejects overlapping periods, double booking, one booking serving two assignments, booking a non-OMB assignment, product/period-count mismatch, booking before assignment authority, consumption before every required period ends, completion without consumed bookings, or release after consumption.
+
+I5 configures two real OMB assignments:
+
+1. `pop0.assignment.omb.housing-full-implementation-review`, Housing implementation analysis needed before its recipient/handling review deadline;
+2. `pop0.assignment.omb.employment-congress-full-analysis`, employment/Congress economic analysis needed before the committee opportunity.
+
+Both begin as immutable full-product assignments with their own accepted authorization bindings. The team cannot produce both full products by both preferred deadlines.
+
+The exact opening `activeQueueAssignmentIds` order is:
+
+```text
+1. pop0.assignment.omb.housing-full-implementation-review
+2. pop0.assignment.omb.employment-congress-full-analysis
+```
+
+The initial bookings follow that order. Any different later order requires the immutable authority/occurrence chain below.
+
+The Housing preferred deadline is `2029-02-23T17:00:00-05:00`; the employment/Congress deadline is `2029-03-01T17:00:00-05:00`; the committee window closes `2029-03-03T17:00:00-05:00`. Queue order, exact booking, permitted supersession/narrowing, or default—not a hidden capacity score—determines which product is full, narrow, or late.
+
+### Immutable queue authority and occurrence
+
+Direct `reorderOfficeQueue(...)` is internal plumbing only and is not product authority. The queue may change only in one atomic `recordOMBQueueReprioritization(...)` operation supported by either:
+
+1. an OMB-received `REQUEST_WORKSTREAM_COORDINATION` instrument authorized under the exact OMB coordination capability in section 10.2, with a causally supported disposition and scope-contained OMB assignment; or
+2. an immutable Chief-of-Staff `OMBQueueCoordinationRequest` authored under the exact I5 standing authority below, dispatched to OMB, technically delivered, substantively received by OMB, and accepted/narrowed through the same OMB coordination capability.
+
+The second route is an office-to-office typed request, not a presidential decision and not direct Chief-of-Staff mutation of OMB state.
+
+Configuration contains exactly one `StandingOMBQueueCoordinationAuthority` with:
+
+- ID `pop0.authority.chief-of-staff.omb-review-queue-coordination`;
+- initiating office `pop0.office.chief-of-staff` and effective holder requirement;
+- recipient office `pop0.office.omb` and exact team ID;
+- permitted workstreams Labor and inherited Housing only;
+- permitted actions `REPRIORITIZE_OMB_REVIEW_QUEUE | SUPERSEDE_WITH_PERMITTED_NARROW_PRODUCT` only;
+- maximum two referenced active OMB assignments;
+- effective interval, authority reference, and provenance.
+
+The office-to-office request uses the same closed coordination payload shape/hash as the presidential coordination instrument but carries source kind `STANDING_CHIEF_OF_STAFF_AUTHORITY`. OMB capability, disposition constraints, scope containment, and assignment/supersession validation are otherwise identical. Missing, expired, extra, cross-office, or broader standing authority rejects.
+
+The resulting immutable `OMBQueueReprioritizationOccurrence` records:
+
+- ID and OMB team ID;
+- acting OMB office and effective OMB officeholder assignment/person;
+- source instrument/receipt/disposition/assignment IDs or Chief-of-Staff request/delivery/receipt IDs;
+- exact authority reference;
+- complete prior and resulting active queue assignment-ID order;
+- affected booking IDs;
+- `occurredAt` and provenance.
+
+The operation validates first, appends the occurrence, applies exactly its resulting order, and creates/releases only the declared bookings. Unknown assignments, omitted active assignments, duplicate queue IDs, source/actor mismatch, unsupported workstream/action, retrospective occurrence, or booking conflict reject without mutation. Restore independently replays no operation but proves that each queue change is explained by exactly one valid occurrence and that occurrence chains reproduce the serialized current order.
+
+### Narrow product by explicit supersession
+
+An existing full assignment is never mutated into a narrow assignment. Narrowing requires the same valid OMB coordination source route plus an immutable `OMBAssignmentSupersessionOccurrence` that atomically:
+
+1. verifies the original assignment is active and has no completed/consumed full-product result;
+2. verifies the original analysis authorization and the effective OMB capability list the requested product in `permittedLessClaimingProductKinds` for the same subject/workstream;
+3. creates a new recipient disposition/assignment-authorization binding scoped to the exact less-claiming product and an evidence/source scope no broader than the original;
+4. transitions the original assignment to `SUPERSEDED` with `supersededByAssignmentId`;
+5. creates a new assignment with a new ID, the permitted narrow product, deadline no later than the authorized source deadline, and exact source/consultation scope containment;
+6. records actor, source references, prior/replacement assignment IDs, occurredAt, reason classification, authority, and provenance;
+7. atomically updates the queue and bookings through the linked queue-reprioritization occurrence.
+
+The accepted original disposition, assignment, and authorization binding remain immutable. Free-form objective/reason text cannot authorize the replacement. A replacement cannot later be broadened back to the full product without a new independently authorized assignment.
 
 Before reprioritization, the decision package must expose:
 
@@ -662,9 +1007,11 @@ Before reprioritization, the decision package must expose:
 - the queue periods consumed;
 - which route will be narrowed, delayed, or miss an opportunity under each choice.
 
-The President/Chief of Staff may use accepted typed assignment/coordination mechanisms to reprioritize, accept a capability-authorized narrower product, delegate permitted work, or allow a deadline/default.
+The President or Chief of Staff may use only the two typed source routes above to request reprioritization or a permitted supersession. OMB remains the owner that accepts/narrows/refuses and records the queue/supersession occurrence.
 
-The result must be recorded in the OMB office queue and resulting product scope. There is no administration-wide capacity meter or generic overextension penalty.
+At an assignment deadline, accepted deadline/default processing runs before new booking, reprioritization, supersession, or completion. A full assignment lacking all required consumed periods cannot complete; its configured default records `DELAYED | CANCELLED` under existing assignment semantics. A narrow replacement follows its own immutable authorized deadline. Save/load restores periods, bookings, occurrences, queue, supersession links, and defaults byte-stably without reserving or consuming work again.
+
+The result is recorded in OMB office state and exact product scope. There is no administration-wide capacity meter or generic overextension penalty.
 
 The consequence is bounded:
 
@@ -675,7 +1022,7 @@ The consequence is bounded:
 
 `advanceTo(target)` processes every crossed boundary exactly once in this order at each instant:
 
-1. accepted I3 escalation, reserved-review, assignment, recipient-response, and other deadline/default closures;
+1. accepted I3 escalation/reserved-review/recipient-response closures plus I5 inquiry expiration and OMB assignment/default closures;
 2. Congress/editorial/external-actor opportunity expiration, where expiration wins at the exact deadline;
 3. material owner transitions for Employment, maternity service access, implementation, and Housing;
 4. observation, evidence-version creation, and scheduled institutional release;
@@ -698,11 +1045,13 @@ Format 5 serializes exactly once:
 
 - all accepted I4 direct owner state and session-owned ControlBinding;
 - direct regional Employment state;
-- direct legislative runtime state;
+- congressional formation/attempt-opportunity owner and its null-or-one direct legislative runtime state;
 - external actor state;
 - bounded media state;
 - maternity-service-access state;
 - expanded administration directory, offices, assignments, queues, routes, presentations, intervention state, workstreams, and historical references;
+- `PresidentialInquiryOwnerState`, including opportunities, preview presentations, initiated requests, and lifecycle occurrences;
+- OMB review-team bookings/consumption, queue-reprioritization occurrences, assignment-supersession occurrences, and linked assignment/default state inside the OMB office owner;
 - all immutable new artifacts, receipts, assessments, decisions, publications, distributions, exposures, and lifecycle occurrences.
 
 Configuration-authenticated definitions, actor rules, authority records, source identities, scheduled opportunities, and fixture roots are not mutable world state.
@@ -732,16 +1081,24 @@ Restore and live-operation validation must independently prove:
 - every evidence claim resolves to nonfuture source owner records and exact permitted scope;
 - every modeled income/coverage estimate remains analysis-only;
 - every Congress proposal/procedure/actor decision exists in the direct legislative owner;
+- every outer congressional transition record is attempt eligibility/authorization only, and no outer record duplicates a lower sponsorship/procedure choice or result;
+- every committee-window lifecycle reference resolves to the real lower transition it permitted, while lower gate/procedure state exists only in `LegislativeRuntimeState`;
 - every actor/outlet/office assessment is covered by that exact recipient's receipts;
 - every publication claim is covered by outlet access/receipt and predates publication;
 - every distribution/exposure/receipt follows the artifact and delivery;
 - every quiet-condition evidence claim respects observation authority and cannot expose hidden owner state;
 - every workstream/escalation/instrument/assignment is supported by exact configured authority and scope;
+- every I5 escalation option matches its exact rule-local option/instrument mapping, preview cardinality, and preview order;
+- every proactive inquiry source, preview presentation, decision, and instrument satisfies the exact HHS-only source union and contains no hidden service identity;
+- every OMB period is configured once and booked/consumed at most once, every completion has exact required consumed periods, and every current queue order is explained by valid immutable occurrences;
+- every narrowed OMB assignment is a scope-contained replacement linked through one valid supersession occurrence while the original remains immutable and `SUPERSEDED`;
+- the administration configuration has exact `3/9/10/9/10` institution/office/actor/holder/linkage counts and exactly nine unambiguous recipient capabilities;
+- the external human registry exactly covers and is referenced by every Congress/governor exact human without copying or conflicting with administration identity/linkage;
 - every history entry resolves to a real canonical occurrence;
 - no new named human has a Population join or nonzero weight;
 - all effective intervals, deadlines, revisions, supersessions, and append-only graphs are chronological and acyclic.
 
-Loading performs no material advancement, evidence creation, retrieval, receipt, actor assessment, autonomous decision, publication, distribution, exposure, escalation, presentation, presidential decision, dispatch, disposition, assignment, queue work, or deadline processing.
+Loading performs no material advancement, evidence creation, retrieval, receipt, actor assessment, autonomous decision, lower legislative transition, publication, distribution, exposure, escalation, inquiry opportunity/preview/request creation, presentation, presidential decision, dispatch, disposition, assignment, queue reorder, period booking/consumption, supersession, queue work, or deadline processing.
 
 ## 12.4 Required checkpoints
 
@@ -750,11 +1107,12 @@ At minimum preserve byte-stable save/load/save at:
 1. opening with Housing active, Employment closure plan present, quiet condition material but no I5 presidential knowledge;
 2. after first Employment separation and preliminary evidence release but before selected external receipts;
 3. after Congress/governor/media opportunities exist with materially different owner decisions;
-4. before and after the OMB queue reprioritization/default boundary;
-5. after local publication without White House receipt;
-6. after revised Labor evidence while the preliminary vintage and earlier decisions remain intact;
-7. quiet-condition investigation returning bounded/inconclusive evidence;
-8. quiet condition remaining undiscovered through the same date in the counterfactual trace.
+4. before and after a proactive inquiry preview/authorization, with no fabricated escalation or Attention;
+5. before and after OMB queue reprioritization, booking, supersession, and default boundaries;
+6. after local publication without White House receipt;
+7. after revised Labor evidence while the preliminary vintage and earlier decisions remain intact;
+8. quiet-condition investigation returning bounded/inconclusive evidence;
+9. quiet condition remaining undiscovered through the same date in the counterfactual trace.
 
 ---
 
@@ -770,6 +1128,29 @@ A future implementation candidate must prove at least:
 4. metadata-only access cannot support substantive assessment or publication;
 5. rehashed persisted tampering with source time/scope, receipt coverage, publication claims, or actor provenance rejects;
 6. no new human acquires a Population join, weight, belief, residence, household, eligibility, or material-exposure fact.
+
+## Repaired authority and ownership seams
+
+The hostile suite must additionally prove every item below:
+
+- accepted I3/I4 Labor/Housing option records retain exact two-preview analysis/coordination ordering and cannot expose an I5 instrument;
+- Congress and quiet-condition escalation options reject wrong option kind, preview count/order, instrument kind, payload, hash, attachment, or rule mapping;
+- no single-instrument I5 option emits a second instrument and no new option exists outside its source escalation;
+- a general-question inquiry contains no hidden service identity; metadata inquiry cites only actually presented general sections;
+- inquiry authorization without exact preview presentation, active ControlBinding, matching hash/payload, effective opportunity, or HHS capability rejects without mutation;
+- inquiry existence/preview/authorization creates no escalation, Attention, HHS result, assignment, or workstream directly;
+- format-5 load does not recreate/consume an inquiry or dispatch its instrument;
+- administration configuration rejects any count other than `3/9/10/9/10`, any changed accepted I4 identity, or any missing/extra/duplicate holder/linkage;
+- capability configuration accepts exactly the nine records in section 10.2 and rejects unknown/extra/duplicate/ambiguous kinds, IDs, scopes, products, intervals, or provenance;
+- the shared external-human registry is disjoint from administration actors, exactly covers all Congress/governor human references, and rejects copies/conflicting linkage declarations;
+- one OMB period cannot be booked twice or satisfy two assignments, and a product cannot complete with missing/unconsumed periods;
+- direct queue-array mutation without one valid immutable OMB reprioritization occurrence rejects on restore;
+- presidential and Chief-of-Staff routes cannot mutate OMB queue/bookings before OMB receipt/disposition/owned occurrence;
+- exact-deadline OMB default wins over new booking, reprioritization, supersession, or completion;
+- a narrow OMB product requires a new scope-contained assignment and supersession occurrence; mutating or later re-broadening the original rejects;
+- removing the relevant congressional receipt/eligibility assessment prevents the lower transition call and leaves complete `LegislativeRuntimeState` bytes unchanged;
+- after an eligible attempt, sponsorship/procedure result exists only in the direct lower runtime; any outer copied choice/status/result rejects;
+- outer committee-window expiry at the exact deadline prevents the lower call but does not rewrite lower native procedure/deadline state.
 
 ## Employment and analysis-only artifacts
 
@@ -876,6 +1257,10 @@ I5 design and any later authorized implementation may not add:
 - general staff/politician/governor/organization/media AI;
 - multiple formal congressional proposals, final passage, enactment, appropriations, or enacted employment effects;
 - generalized journalism, social platforms, misinformation, advertising, or national audience simulation;
+- a generic proactive presidential action surface or inquiry subject beyond the exact HHS analysis path in section 10.4;
+- a general staff/office/Presidential Capacity engine, fungible work points, or capacity score beyond the one OMB team/period owner;
+- direct queue-array mutation as product authority, unrecorded booking/consumption, or in-place assignment-scope narrowing;
+- an outer POP sponsorship choice, support posture, committee/procedure result, or externally admitted lower legislative decision;
 - a fifth administration workstream definition or quiet-condition automatic workstream;
 - a fifth escalation eligibility rule or severity/global-threshold Attention;
 - presidential command of votes, procedure, governors, organizations, coverage, exposure, belief, Employment, service access, implementation, or Housing;
