@@ -53,6 +53,7 @@ const withAdministration = (
     administration,
     intervention: base.intervention,
     housing: base.housing,
+    concurrentWorld: base.concurrentWorld,
   };
   return {
     ...withoutHash,
@@ -69,7 +70,7 @@ describe("POP0-I2 hostile and counterfactual gates", () => {
     expect(() => createPresidentialOperatingProofSession(undefined, withAdministration({
       ...base,
       populationLinkages: base.populationLinkages.slice(1),
-    }))).toThrow(/exactly two institutions, six offices\/holders, and seven linked humans/i);
+    }))).toThrow(/exactly three institutions, nine offices\/holders, and ten linked humans/i);
 
     const weighted = base.populationLinkages.map((linkage, index) => index === 0
       ? { ...linkage, populationWeight: 1 }
@@ -270,7 +271,11 @@ describe("POP0-I2 hostile and counterfactual gates", () => {
     expect(offices.find((entry) => entry.officeId === POP0_I2_OFFICE_IDS.nec)?.activeQueueAssignmentIds)
       .toEqual([POP0_I2_TRACE_IDS.necAssignment]);
     expect(offices.find((entry) => entry.officeId === POP0_I2_OFFICE_IDS.omb)?.activeQueueAssignmentIds)
-      .toEqual([POP0_I2_TRACE_IDS.ombAssignment]);
+      .toEqual([
+        "pop0.assignment.omb.housing-full-implementation-review",
+        "pop0.assignment.omb.employment-congress-full-analysis",
+        POP0_I2_TRACE_IDS.ombAssignment,
+      ]);
   });
 
   it("rejects assessment and presentation outside effective role intervals", () => {

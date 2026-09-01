@@ -86,6 +86,22 @@ import {
   reconcileAdministrationControlBinding,
   type AdministrationControlBinding,
 } from "./control-binding";
+import {
+  authorI5OfficeCommunication,
+  authorHHSProactiveInquiryResult,
+  dispatchI5OfficeCommunication,
+  presentPresidentialInquiryPreview,
+  recordOMBQueueCoordination,
+  recordPresidentialInitiatedRequest,
+  supersedeOMBAssignmentWithNarrowProduct,
+  type AuthorI5OfficeCommunicationInput,
+  type AuthorHHSProactiveInquiryResultInput,
+  type DispatchI5OfficeCommunicationInput,
+  type PresentPresidentialInquiryPreviewInput,
+  type RecordOMBQueueCoordinationInput,
+  type RecordPresidentialInitiatedRequestInput,
+  type SupersedeOMBAssignmentWithNarrowProductInput,
+} from "../sim/presidential-operating-concurrent-world";
 
 export type PresidentialOperatingControlBinding = AdministrationControlBinding<
   string,
@@ -127,6 +143,13 @@ export interface PresidentialOperatingProofSession {
   authorDepartmentSupplementalRecord(input: AuthorDepartmentSupplementalRecordInput): void;
   submitDepartmentHandling(input: SubmitDepartmentHandlingInput): void;
   admitImplementationMaterialInputs(input: AdmitImplementationMaterialInputsInput): void;
+  presentPresidentialInquiryPreview(input: PresentPresidentialInquiryPreviewInput): void;
+  recordPresidentialInitiatedRequest(input: RecordPresidentialInitiatedRequestInput): void;
+  recordOMBQueueCoordination(input: RecordOMBQueueCoordinationInput): void;
+  supersedeOMBAssignmentWithNarrowProduct(input: SupersedeOMBAssignmentWithNarrowProductInput): void;
+  authorHHSProactiveInquiryResult(input: AuthorHHSProactiveInquiryResultInput): void;
+  authorI5OfficeCommunication(input: AuthorI5OfficeCommunicationInput): void;
+  dispatchI5OfficeCommunication(input: DispatchI5OfficeCommunicationInput): void;
   save(): string;
 }
 
@@ -413,6 +436,108 @@ class PresidentialOperatingProofSessionImpl implements PresidentialOperatingProo
   admitImplementationMaterialInputs(input: AdmitImplementationMaterialInputsInput): void {
     this.#operateHousing((state, configuration, current) =>
       admitImplementationMaterialInputs(state, configuration, current, input));
+  }
+
+  #operateConcurrent(
+    operation: (
+      state: PresidentialOperatingRuntimeState["ownerStates"],
+      current: string,
+    ) => Partial<PresidentialOperatingRuntimeState["ownerStates"]>,
+  ): void {
+    const updated = operation(this.#state.ownerStates, this.#state.ownerStates.calendar.state.current);
+    const candidate: PresidentialOperatingRuntimeState = {
+      ...this.#state,
+      ownerStates: { ...this.#state.ownerStates, ...updated },
+    };
+    assertPresidentialOperatingRuntimeState(candidate, this.#configuration);
+    this.#state = candidate;
+  }
+
+  presentPresidentialInquiryPreview(input: PresentPresidentialInquiryPreviewInput): void {
+    this.#operateConcurrent((state, current) => presentPresidentialInquiryPreview(
+      state,
+      this.#configuration.administration,
+      this.#configuration.intervention,
+      this.#configuration.concurrentWorld,
+      this.#configuration.calendar.epoch,
+      current,
+      input,
+    ));
+  }
+
+  recordPresidentialInitiatedRequest(input: RecordPresidentialInitiatedRequestInput): void {
+    this.#operateConcurrent((state, current) => recordPresidentialInitiatedRequest(
+      state,
+      this.#configuration.administration,
+      this.#configuration.intervention,
+      this.#configuration.concurrentWorld,
+      this.#controlBinding as PresidentialControlBindingState,
+      this.#configuration.calendar.epoch,
+      current,
+      input,
+    ));
+  }
+
+  recordOMBQueueCoordination(input: RecordOMBQueueCoordinationInput): void {
+    this.#operateConcurrent((state, current) => recordOMBQueueCoordination(
+      state,
+      this.#configuration.administration,
+      this.#configuration.intervention,
+      this.#configuration.concurrentWorld,
+      this.#configuration.calendar.epoch,
+      current,
+      input,
+    ));
+  }
+
+  supersedeOMBAssignmentWithNarrowProduct(
+    input: SupersedeOMBAssignmentWithNarrowProductInput,
+  ): void {
+    this.#operateConcurrent((state, current) => supersedeOMBAssignmentWithNarrowProduct(
+      state,
+      this.#configuration.administration,
+      this.#configuration.intervention,
+      this.#configuration.concurrentWorld,
+      this.#configuration.calendar.epoch,
+      current,
+      input,
+    ));
+  }
+
+  authorHHSProactiveInquiryResult(input: AuthorHHSProactiveInquiryResultInput): void {
+    this.#operateConcurrent((state, current) => authorHHSProactiveInquiryResult(
+      state,
+      this.#configuration.administration,
+      this.#configuration.intervention,
+      this.#configuration.concurrentWorld,
+      this.#configuration.calendar.epoch,
+      current,
+      input,
+    ));
+  }
+
+  authorI5OfficeCommunication(input: AuthorI5OfficeCommunicationInput): void {
+    this.#operateConcurrent((state, current) => authorI5OfficeCommunication(
+      state,
+      this.#configuration.administration,
+      this.#configuration.intervention,
+      this.#configuration.concurrentWorld,
+      this.#configuration.calendar.epoch,
+      current,
+      input,
+    ));
+  }
+
+  dispatchI5OfficeCommunication(input: DispatchI5OfficeCommunicationInput): void {
+    this.#operateConcurrent((state, current) => dispatchI5OfficeCommunication(
+      state,
+      this.#configuration.administration,
+      this.#configuration.intervention,
+      this.#configuration.concurrentWorld,
+      this.#configuration.calendar.epoch,
+      current,
+      input,
+    ));
   }
 
   save(): string {

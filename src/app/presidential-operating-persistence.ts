@@ -13,9 +13,9 @@ import {
   type PresidentialControlBindingState,
 } from "../sim/presidential-operating-intervention";
 
-export const PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION = 4 as const;
+export const PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION = 5 as const;
 
-export interface PresidentialOperatingSaveV4 {
+export interface PresidentialOperatingSaveV5 {
   readonly formatVersion: typeof PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION;
   readonly configuration: ConfigurationIdentity;
   readonly operatingState: PresidentialOperatingRuntimeState;
@@ -346,6 +346,47 @@ const validateInstrumentAssignmentAuthorization = (value: unknown, field: string
     requireString(scope.workstreamId, `${field}.scope.workstreamId`);
     requireStringArray(scope.coordinationActionKinds, `${field}.scope.coordinationActionKinds`);
     requireString(scope.productKind, `${field}.scope.productKind`);
+  } else if (scope.kind === "LEGISLATIVE_POSITION_ASSIGNMENT_SCOPE") {
+    requireExactKeys(scope, `${field}.scope`, [
+      "kind", "initiativeId", "proposalVersion", "positionKind", "negotiableTermIds",
+      "evidenceReferenceIds",
+    ]);
+    requireString(scope.initiativeId, `${field}.scope.initiativeId`);
+    requireSafeInteger(scope.proposalVersion, `${field}.scope.proposalVersion`);
+    requireString(scope.positionKind, `${field}.scope.positionKind`);
+    requireStringArray(scope.negotiableTermIds, `${field}.scope.negotiableTermIds`);
+    requireStringArray(scope.evidenceReferenceIds, `${field}.scope.evidenceReferenceIds`);
+  } else if (scope.kind === "INTERGOVERNMENTAL_CONTACT_ASSIGNMENT_SCOPE") {
+    requireExactKeys(scope, `${field}.scope`, [
+      "kind", "governorActorIds", "purposeFamily", "talkingPoints", "prohibitedCommitmentKinds",
+    ]);
+    requireStringArray(scope.governorActorIds, `${field}.scope.governorActorIds`);
+    requireString(scope.purposeFamily, `${field}.scope.purposeFamily`);
+    requireStringArray(scope.talkingPoints, `${field}.scope.talkingPoints`);
+    requireStringArray(scope.prohibitedCommitmentKinds, `${field}.scope.prohibitedCommitmentKinds`);
+  } else if (scope.kind === "PUBLIC_STATEMENT_ASSIGNMENT_SCOPE") {
+    requireExactKeys(scope, `${field}.scope`, [
+      "kind", "approvedClaims", "limitations", "sourceSectionReferences",
+      "prohibitedUnsupportedClaimFamilies", "releaseWindowEndsAt", "productKind",
+    ]);
+    requireStringArray(scope.approvedClaims, `${field}.scope.approvedClaims`);
+    requireStringArray(scope.limitations, `${field}.scope.limitations`);
+    requireArray(scope.sourceSectionReferences, `${field}.scope.sourceSectionReferences`).forEach(
+      (entry, index) => {
+        const reference = requireRecord(entry, `${field}.scope.sourceSectionReferences[${index}]`);
+        requireExactKeys(reference, `${field}.scope.sourceSectionReferences[${index}]`, [
+          "artifactId", "sectionId",
+        ]);
+        requireString(reference.artifactId, `${field}.scope.sourceSectionReferences[${index}].artifactId`);
+        requireString(reference.sectionId, `${field}.scope.sourceSectionReferences[${index}].sectionId`);
+      },
+    );
+    requireStringArray(
+      scope.prohibitedUnsupportedClaimFamilies,
+      `${field}.scope.prohibitedUnsupportedClaimFamilies`,
+    );
+    requireString(scope.releaseWindowEndsAt, `${field}.scope.releaseWindowEndsAt`);
+    requireString(scope.productKind, `${field}.scope.productKind`);
   } else throw new Error(`Invalid presidential operating save: ${field}.scope.kind is unsupported.`);
 };
 
@@ -426,7 +467,9 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
       "instrumentReceipts",
       "instrumentDispositions",
       "instrumentAssignmentAuthorizations",
+      "externalCommunicationDispatches",
       "departmentHandlingSubmissions",
+      ...(Object.hasOwn(office, "ombReviewCapacity") ? ["ombReviewCapacity"] : []),
     ]);
     requireString(office.officeId, `${field}[${index}].officeId`);
     requireArray(office.assignments, `${field}[${index}].assignments`).forEach(
@@ -462,12 +505,39 @@ const validateOfficeOperationsState = (value: unknown, field: string): void => {
       `${field}[${index}].instrumentAssignmentAuthorizations[${recordIndex}]`,
     ));
     requireArray(
+      office.externalCommunicationDispatches,
+      `${field}[${index}].externalCommunicationDispatches`,
+    ).forEach((record, recordIndex) => {
+      const dispatchField = `${field}[${index}].externalCommunicationDispatches[${recordIndex}]`;
+      const dispatch = requireRecord(record, dispatchField);
+      requireExactKeys(dispatch, dispatchField, [
+        "id", "communicationArtifactId", "sendingOfficeId", "sendingOfficeholderAssignmentId",
+        "recipientActorOrInstitutionId", "dispatchedAt", "deliveredAt", "outcome", "provenanceReference",
+      ]);
+      for (const key of Object.keys(dispatch)) requireString(dispatch[key], `${dispatchField}.${key}`);
+      if (dispatch.outcome !== "DELIVERED_TO_RECIPIENT_BOUNDARY") {
+        throw new Error(`Invalid presidential operating save: ${dispatchField}.outcome is unsupported.`);
+      }
+    });
+    requireArray(
       office.departmentHandlingSubmissions,
       `${field}[${index}].departmentHandlingSubmissions`,
     ).forEach((record, recordIndex) => validateDepartmentHandlingSubmission(
       record,
       `${field}[${index}].departmentHandlingSubmissions[${recordIndex}]`,
     ));
+    if (Object.hasOwn(office, "ombReviewCapacity")) {
+      const capacity = requireRecord(office.ombReviewCapacity, `${field}[${index}].ombReviewCapacity`);
+      requireExactKeys(capacity, `${field}[${index}].ombReviewCapacity`, [
+        "teamId", "periods", "bookings", "coordinationRequests", "queueReprioritizations",
+        "assignmentSupersessions",
+      ]);
+      requireString(capacity.teamId, `${field}[${index}].ombReviewCapacity.teamId`);
+      for (const key of ["periods", "bookings", "coordinationRequests", "queueReprioritizations",
+        "assignmentSupersessions"] as const) {
+        requireArray(capacity[key], `${field}[${index}].ombReviewCapacity.${key}`);
+      }
+    }
   });
 };
 
@@ -767,6 +837,62 @@ const validateArtifact = (value: unknown, field: string): void => {
   if (artifact.kind === "HOUSING_MONITORING_EVIDENCE") return validateHousingMonitoringArtifact(artifact, field);
   if (artifact.kind === "HUD_SUPPLIER_SEARCH_EVIDENCE") return validateSupplierEvidenceArtifact(artifact, field);
   if (artifact.kind === "HUD_SUPPLEMENTAL_RECORD") return validateSupplementalRecordArtifact(artifact, field);
+  if (artifact.kind === "I5_DOMAIN_EVIDENCE") {
+    requireExactKeys(artifact, field, [
+      "kind", "domainEvidenceKind", "id", "version", "producerInstitutionId", "producingOfficeId",
+      "authoringOfficeholderAssignmentId", "sourceOwnerId", "sourceOccurrenceIds",
+      "observationAuthorityId", "asOf", "createdAt", "releasedAt", "sectionIds", "claims",
+      "accessClass", "analysisOnly", "uncertainty", "canonicalArtifactHash", "provenanceReference",
+      "revisionOfArtifactId", "supersedesArtifactId",
+    ]);
+    for (const key of ["domainEvidenceKind", "id", "version", "producerInstitutionId", "sourceOwnerId",
+      "observationAuthorityId", "asOf", "createdAt", "releasedAt", "accessClass",
+      "canonicalArtifactHash", "provenanceReference"] as const) requireString(artifact[key], `${field}.${key}`);
+    requireNullableString(artifact.producingOfficeId, `${field}.producingOfficeId`);
+    requireNullableString(artifact.authoringOfficeholderAssignmentId, `${field}.authoringOfficeholderAssignmentId`);
+    requireStringArray(artifact.sourceOccurrenceIds, `${field}.sourceOccurrenceIds`);
+    requireStringArray(artifact.sectionIds, `${field}.sectionIds`);
+    requireStringArray(artifact.uncertainty, `${field}.uncertainty`);
+    requireBoolean(artifact.analysisOnly, `${field}.analysisOnly`);
+    requireNullableString(artifact.revisionOfArtifactId, `${field}.revisionOfArtifactId`);
+    requireNullableString(artifact.supersedesArtifactId, `${field}.supersedesArtifactId`);
+    requireArray(artifact.claims, `${field}.claims`).forEach((value, index) => {
+      const claim = requireRecord(value, `${field}.claims[${index}]`);
+      requireExactKeys(claim, `${field}.claims[${index}]`, [
+        "id", "sectionId", "claimFamily", "value", "sourceOwnerId", "sourceRecordId",
+        "sourceRecordHash", "observedAt", "observationAuthorityId",
+      ]);
+      for (const key of ["id", "sectionId", "claimFamily", "sourceOwnerId", "sourceRecordId",
+        "sourceRecordHash", "observedAt", "observationAuthorityId"] as const) {
+        requireString(claim[key], `${field}.claims[${index}].${key}`);
+      }
+      if (!(claim.value === null || ["string", "number", "boolean"].includes(typeof claim.value) ||
+        Array.isArray(claim.value) && claim.value.every((entry) => typeof entry === "string"))) {
+        throw new Error(`Invalid presidential operating save: ${field}.claims[${index}].value is unsupported.`);
+      }
+    });
+    return;
+  }
+  if (artifact.kind === "I5_OFFICE_COMMUNICATION") {
+    requireExactKeys(artifact, field, [
+      "kind", "communicationKind", "id", "version", "producingOfficeId",
+      "authoringOfficeholderAssignmentId", "sourceInstrumentId", "sourceDispositionId",
+      "sourceAssignmentId", "recipientActorOrInstitutionIds", "behaviorPayload", "asOf", "createdAt",
+      "releasedAt", "sectionIds", "accessClass", "provenanceReference", "revisionOfArtifactId",
+      "supersedesArtifactId",
+    ]);
+    for (const key of ["communicationKind", "id", "version", "producingOfficeId",
+      "authoringOfficeholderAssignmentId", "sourceInstrumentId", "sourceDispositionId", "sourceAssignmentId",
+      "asOf", "createdAt", "releasedAt", "accessClass", "provenanceReference"] as const) {
+      requireString(artifact[key], `${field}.${key}`);
+    }
+    requireStringArray(artifact.recipientActorOrInstitutionIds, `${field}.recipientActorOrInstitutionIds`);
+    requireRecord(artifact.behaviorPayload, `${field}.behaviorPayload`);
+    requireStringArray(artifact.sectionIds, `${field}.sectionIds`);
+    requireNullableString(artifact.revisionOfArtifactId, `${field}.revisionOfArtifactId`);
+    requireNullableString(artifact.supersedesArtifactId, `${field}.supersedesArtifactId`);
+    return;
+  }
   throw new Error(`Invalid presidential operating save: ${field}.kind is unsupported.`);
 };
 
@@ -904,6 +1030,12 @@ const validateReceiptSource = (value: unknown, field: string): void => {
     requireExactKeys(source, field, ["kind", "sourceOfficeId", "sourceOfficeholderAssignmentId"]);
     requireString(source.sourceOfficeId, `${field}.sourceOfficeId`);
     requireString(source.sourceOfficeholderAssignmentId, `${field}.sourceOfficeholderAssignmentId`);
+    return;
+  }
+  if (source.kind === "EXTERNAL_OWNER_DELIVERY") {
+    requireExactKeys(source, field, ["kind", "sourceOwnerId", "deliveryAuthorityId"]);
+    requireString(source.sourceOwnerId, `${field}.sourceOwnerId`);
+    requireString(source.deliveryAuthorityId, `${field}.deliveryAuthorityId`);
     return;
   }
   throw new Error(`Invalid presidential operating save: ${field}.kind is unsupported.`);
@@ -1134,6 +1266,44 @@ const validateInstrumentPayload = (value: unknown, field: string): void => {
     ] as const) requireString(payload[key], `${field}.${key}`);
     requireStringArray(payload.participatingOfficeIds, `${field}.participatingOfficeIds`);
     requireStringArray(payload.permittedCoordinationActions, `${field}.permittedCoordinationActions`);
+  } else if (kind === "AUTHORIZE_LEGISLATIVE_POSITION") {
+    requireExactKeys(payload, field, [
+      ...common, "initiativeId", "proposalVersion", "positionKind", "negotiableTermIds",
+      "evidenceReferenceIds", "narrowingPermitted",
+    ]);
+    requireString(payload.initiativeId, `${field}.initiativeId`);
+    requireSafeInteger(payload.proposalVersion, `${field}.proposalVersion`);
+    requireString(payload.positionKind, `${field}.positionKind`);
+    requireStringArray(payload.negotiableTermIds, `${field}.negotiableTermIds`);
+    requireStringArray(payload.evidenceReferenceIds, `${field}.evidenceReferenceIds`);
+    requireBoolean(payload.narrowingPermitted, `${field}.narrowingPermitted`);
+  } else if (kind === "REQUEST_INTERGOVERNMENTAL_CONTACT") {
+    requireExactKeys(payload, field, [
+      ...common, "governorActorIds", "purposeFamily", "talkingPoints", "prohibitedCommitmentKinds",
+      "narrowingPermitted",
+    ]);
+    requireStringArray(payload.governorActorIds, `${field}.governorActorIds`);
+    requireString(payload.purposeFamily, `${field}.purposeFamily`);
+    requireStringArray(payload.talkingPoints, `${field}.talkingPoints`);
+    requireStringArray(payload.prohibitedCommitmentKinds, `${field}.prohibitedCommitmentKinds`);
+    requireBoolean(payload.narrowingPermitted, `${field}.narrowingPermitted`);
+  } else if (kind === "AUTHORIZE_PUBLIC_STATEMENT") {
+    requireExactKeys(payload, field, [
+      ...common, "subjectFamily", "approvedClaims", "limitations", "sourceSectionReferences",
+      "prohibitedUnsupportedClaimFamilies", "releaseWindowEndsAt", "narrowingPermitted",
+    ]);
+    requireString(payload.subjectFamily, `${field}.subjectFamily`);
+    requireStringArray(payload.approvedClaims, `${field}.approvedClaims`);
+    requireStringArray(payload.limitations, `${field}.limitations`);
+    requireArray(payload.sourceSectionReferences, `${field}.sourceSectionReferences`).forEach((value, index) => {
+      const source = requireRecord(value, `${field}.sourceSectionReferences[${index}]`);
+      requireExactKeys(source, `${field}.sourceSectionReferences[${index}]`, ["artifactId", "sectionId"]);
+      requireString(source.artifactId, `${field}.sourceSectionReferences[${index}].artifactId`);
+      requireString(source.sectionId, `${field}.sourceSectionReferences[${index}].sectionId`);
+    });
+    requireStringArray(payload.prohibitedUnsupportedClaimFamilies, `${field}.prohibitedUnsupportedClaimFamilies`);
+    requireString(payload.releaseWindowEndsAt, `${field}.releaseWindowEndsAt`);
+    requireBoolean(payload.narrowingPermitted, `${field}.narrowingPermitted`);
   } else throw new Error(`Invalid presidential operating save: ${field}.kind is unsupported.`);
   for (const key of [
     "payloadVersion",
@@ -1168,7 +1338,10 @@ const validateInstrumentPreview = (value: unknown, field: string): void => {
 const validateEscalationOption = (value: unknown, field: string): void => {
   const option = requireRecord(value, field);
   const kind = requireString(option.kind, `${field}.kind`);
-  if (kind === "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION") {
+  if (kind === "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION" ||
+    kind === "AUTHORIZE_LEGISLATIVE_POSITION_OPTION" ||
+    kind === "REQUEST_INTERGOVERNMENTAL_CONTACT_OPTION" ||
+    kind === "AUTHORIZE_PUBLIC_STATEMENT_OPTION") {
     requireExactKeys(option, field, ["id", "kind", "previews"]);
   } else if (kind === "RESERVE_PRESIDENTIAL_REVIEW") {
     requireExactKeys(option, field, [
@@ -1450,7 +1623,9 @@ const validateWorkstreamOwnerState = (value: unknown, field: string): void => {
 
 const validateDecision = (value: unknown, field: string): void => {
   const record = requireRecord(value, field);
-  requireExactKeys(record, field, [
+  const sourceKind = requireString(record.sourceKind, `${field}.sourceKind`);
+  const common = [
+    "sourceKind",
     "id",
     "deduplicationIdentity",
     "controlBindingId",
@@ -1469,20 +1644,39 @@ const validateDecision = (value: unknown, field: string): void => {
     "deliberateDefaultRuleReference",
     "provenanceReference",
     "supersedesDecisionId",
-  ]);
+  ];
+  if (sourceKind === "ESCALATION_PRESENTATION") {
+    requireExactKeys(record, field, common);
+  } else if (sourceKind === "INQUIRY_PREVIEW_PRESENTATION") {
+    requireExactKeys(record, field, [
+      ...common,
+      "sourceInquiryOpportunityId",
+      "inquiryPreviewPresentationId",
+    ]);
+    requireString(record.sourceInquiryOpportunityId, `${field}.sourceInquiryOpportunityId`);
+    requireString(record.inquiryPreviewPresentationId, `${field}.inquiryPreviewPresentationId`);
+  } else {
+    throw new Error(`Invalid presidential operating save: ${field}.sourceKind is unsupported.`);
+  }
   for (const key of [
     "id",
     "deduplicationIdentity",
     "controlBindingId",
     "presidentActorId",
     "constitutionalOfficeId",
-    "sourceEscalationId",
     "selectedOptionId",
     "selectedOptionKind",
     "decidedAt",
-    "basisEscalationPresentationId",
     "provenanceReference",
   ] as const) requireString(record[key], `${field}.${key}`);
+  if (sourceKind === "ESCALATION_PRESENTATION") {
+    requireString(record.sourceEscalationId, `${field}.sourceEscalationId`);
+    requireString(record.basisEscalationPresentationId, `${field}.basisEscalationPresentationId`);
+  } else {
+    if (record.sourceEscalationId !== null || record.basisEscalationPresentationId !== null) {
+      throw new Error(`Invalid presidential operating save: ${field} inquiry decision has escalation truth.`);
+    }
+  }
   for (const key of [
     "previewIds",
     "previewHashes",
@@ -1694,6 +1888,12 @@ const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState 
     "historicalRecordIndex",
     "programImplementation",
     "materialHousing",
+    "regionalEmployment",
+    "congressionalInitiative",
+    "externalActors",
+    "boundedMedia",
+    "maternityServiceAccess",
+    "presidentialInquiries",
   ]);
   validateOwner(ownerStates.calendar, "operatingState.ownerStates.calendar", validateCalendarState);
   validateOwner(
@@ -1754,6 +1954,27 @@ const parseOperatingState = (value: unknown): PresidentialOperatingRuntimeState 
     ownerStates.materialHousing,
     "operatingState.ownerStates.materialHousing",
   );
+  const concurrentOwnerShapes: readonly [string, readonly string[]][] = [
+    ["regionalEmployment", ["cells", "materialOccurrences", "evidenceReleases"]],
+    ["congressionalInitiative", [
+      "formationOpportunity", "procedureOpportunity", "externalReceipts", "eligibilityAssessments",
+      "formationDecisions", "legislativeRuntime", "windowLifecycleOccurrences", "attemptAuthorizations",
+      "transitionAttempts",
+    ]],
+    ["externalActors", ["actorIds", "receipts", "assessments", "actions"]],
+    ["boundedMedia", ["outletIds", "receipts", "editorialDecisions", "stories", "distributionAttempts", "exposures"]],
+    ["maternityServiceAccess", [
+      "facilityId", "serviceAreaId", "effectiveCapacity", "catchmentCount", "currentTravelBurdenMinutes",
+      "materialHistory", "evidenceArtifactIds",
+    ]],
+    ["presidentialInquiries", ["opportunities", "previewPresentations", "initiatedRequestDecisionIds", "lifecycleOccurrences"]],
+  ];
+  for (const [key, stateKeys] of concurrentOwnerShapes) {
+    validateOwner(ownerStates[key], `operatingState.ownerStates.${key}`, (ownerState, ownerField) => {
+      const record = requireRecord(ownerState, ownerField);
+      requireExactKeys(record, ownerField, stateKeys);
+    });
+  }
   return JSON.parse(JSON.stringify(state)) as PresidentialOperatingRuntimeState;
 };
 
@@ -1782,7 +2003,7 @@ export const serializePresidentialOperatingSave = (
     configuration: { ...configuration.identity },
     operatingState: copyPresidentialOperatingRuntimeState(state),
     session: { controlBinding: { ...controlBinding } },
-  } satisfies PresidentialOperatingSaveV4);
+  } satisfies PresidentialOperatingSaveV5);
 };
 
 export const parsePresidentialOperatingSave = (

@@ -1,6 +1,9 @@
 export type PresidentialInstrumentKind =
   | "REQUEST_OFFICE_ANALYSIS"
-  | "REQUEST_WORKSTREAM_COORDINATION";
+  | "REQUEST_WORKSTREAM_COORDINATION"
+  | "AUTHORIZE_LEGISLATIVE_POSITION"
+  | "REQUEST_INTERGOVERNMENTAL_CONTACT"
+  | "AUTHORIZE_PUBLIC_STATEMENT";
 
 export interface AnalysisRecipientCapabilityAuthority {
   readonly kind: "ANALYSIS_CAPABILITY";
@@ -34,9 +37,70 @@ export interface CoordinationRecipientCapabilityAuthority {
   readonly maximumReviewHorizonHours: number;
 }
 
+export interface LegislativePositionRecipientCapabilityAuthority {
+  readonly kind: "LEGISLATIVE_POSITION_CAPABILITY";
+  readonly id: string;
+  readonly recipientOfficeId: string;
+  readonly instrumentKind: "AUTHORIZE_LEGISLATIVE_POSITION";
+  readonly effectiveFrom: string;
+  readonly effectiveUntil: string | null;
+  readonly authorityReference: string;
+  readonly provenanceReference: string;
+  readonly mayNarrow: boolean;
+  readonly permittedInitiativeIds: readonly string[];
+  readonly proposalVersionRule: "CURRENT_CANONICAL_VERSION_AT_PREVIEW";
+  readonly permittedPositionKinds: readonly (
+    | "SUPPORT_AS_INTRODUCED"
+    | "OPPOSE"
+    | "NEGOTIATE_EXACT_TERMS"
+  )[];
+  readonly permittedNegotiableTermIds: readonly string[];
+  readonly maximumNegotiableTermCount: number;
+  readonly lessCommittingPositionAllowed: boolean;
+}
+
+export interface IntergovernmentalContactRecipientCapabilityAuthority {
+  readonly kind: "INTERGOVERNMENTAL_CONTACT_CAPABILITY";
+  readonly id: string;
+  readonly recipientOfficeId: string;
+  readonly instrumentKind: "REQUEST_INTERGOVERNMENTAL_CONTACT";
+  readonly effectiveFrom: string;
+  readonly effectiveUntil: string | null;
+  readonly authorityReference: string;
+  readonly provenanceReference: string;
+  readonly mayNarrow: boolean;
+  readonly permittedGovernorIds: readonly string[];
+  readonly permittedPurposeFamilies: readonly string[];
+  readonly maximumRecipientCount: number;
+  readonly maximumTalkingPointCount: number;
+  readonly prohibitedCommitmentKinds: readonly string[];
+  readonly permittedNarrowing: "REMOVE_RECIPIENTS_OR_TALKING_POINTS_ONLY";
+}
+
+export interface PublicStatementRecipientCapabilityAuthority {
+  readonly kind: "PUBLIC_STATEMENT_CAPABILITY";
+  readonly id: string;
+  readonly recipientOfficeId: string;
+  readonly instrumentKind: "AUTHORIZE_PUBLIC_STATEMENT";
+  readonly effectiveFrom: string;
+  readonly effectiveUntil: string | null;
+  readonly authorityReference: string;
+  readonly provenanceReference: string;
+  readonly mayNarrow: boolean;
+  readonly permittedSubjectFamilies: readonly string[];
+  readonly maximumClaimCount: number;
+  readonly requiresPresentedSourceLineage: true;
+  readonly prohibitedUnsupportedClaimFamilies: readonly string[];
+  readonly maximumReleaseWindowHours: number;
+  readonly permittedNarrowing: "REMOVE_CLAIMS_ONLY";
+}
+
 export type RecipientCapabilityAuthority =
   | AnalysisRecipientCapabilityAuthority
-  | CoordinationRecipientCapabilityAuthority;
+  | CoordinationRecipientCapabilityAuthority
+  | LegislativePositionRecipientCapabilityAuthority
+  | IntergovernmentalContactRecipientCapabilityAuthority
+  | PublicStatementRecipientCapabilityAuthority;
 
 export interface InstrumentAttachmentMetadata {
   readonly artifactId: string;
@@ -74,9 +138,45 @@ export interface RequestWorkstreamCoordinationPayload extends CommonInstrumentPa
   readonly permittedCoordinationActions: readonly string[];
 }
 
+export interface AuthorizeLegislativePositionPayload extends CommonInstrumentPayload {
+  readonly kind: "AUTHORIZE_LEGISLATIVE_POSITION";
+  readonly initiativeId: string;
+  readonly proposalVersion: number;
+  readonly positionKind: "SUPPORT_AS_INTRODUCED" | "OPPOSE" | "NEGOTIATE_EXACT_TERMS";
+  readonly negotiableTermIds: readonly string[];
+  readonly evidenceReferenceIds: readonly string[];
+  readonly narrowingPermitted: boolean;
+}
+
+export interface RequestIntergovernmentalContactPayload extends CommonInstrumentPayload {
+  readonly kind: "REQUEST_INTERGOVERNMENTAL_CONTACT";
+  readonly governorActorIds: readonly string[];
+  readonly purposeFamily: string;
+  readonly talkingPoints: readonly string[];
+  readonly prohibitedCommitmentKinds: readonly string[];
+  readonly narrowingPermitted: boolean;
+}
+
+export interface AuthorizePublicStatementPayload extends CommonInstrumentPayload {
+  readonly kind: "AUTHORIZE_PUBLIC_STATEMENT";
+  readonly subjectFamily: string;
+  readonly approvedClaims: readonly string[];
+  readonly limitations: readonly string[];
+  readonly sourceSectionReferences: readonly {
+    readonly artifactId: string;
+    readonly sectionId: string;
+  }[];
+  readonly prohibitedUnsupportedClaimFamilies: readonly string[];
+  readonly releaseWindowEndsAt: string;
+  readonly narrowingPermitted: boolean;
+}
+
 export type PresidentialInstrumentPayload =
   | RequestOfficeAnalysisPayload
-  | RequestWorkstreamCoordinationPayload;
+  | RequestWorkstreamCoordinationPayload
+  | AuthorizeLegislativePositionPayload
+  | RequestIntergovernmentalContactPayload
+  | AuthorizePublicStatementPayload;
 
 export interface PresidentialInstrumentPreview {
   readonly id: string;
@@ -107,10 +207,31 @@ export interface AllowMonitoringDefaultOption {
   readonly previews: readonly [];
 }
 
+export interface AuthorizeLegislativePositionOption {
+  readonly id: string;
+  readonly kind: "AUTHORIZE_LEGISLATIVE_POSITION_OPTION";
+  readonly previews: readonly [PresidentialInstrumentPreview];
+}
+
+export interface RequestIntergovernmentalContactOption {
+  readonly id: string;
+  readonly kind: "REQUEST_INTERGOVERNMENTAL_CONTACT_OPTION";
+  readonly previews: readonly [PresidentialInstrumentPreview];
+}
+
+export interface AuthorizePublicStatementOption {
+  readonly id: string;
+  readonly kind: "AUTHORIZE_PUBLIC_STATEMENT_OPTION";
+  readonly previews: readonly [PresidentialInstrumentPreview];
+}
+
 export type PresidentialEscalationOption =
   | RequestAnalysisAndCoordinationOption
   | ReservePresidentialReviewOption
-  | AllowMonitoringDefaultOption;
+  | AllowMonitoringDefaultOption
+  | AuthorizeLegislativePositionOption
+  | RequestIntergovernmentalContactOption
+  | AuthorizePublicStatementOption;
 
 export interface PresidentialKnownPortion {
   readonly presentationId: string;
@@ -268,7 +389,8 @@ export interface AdministrationWorkstreamOwnerState {
   readonly transitions: readonly AdministrationWorkstreamTransition[];
 }
 
-export interface PresidentialDecisionRecord {
+export interface EscalationPresidentialDecisionRecord {
+  readonly sourceKind: "ESCALATION_PRESENTATION";
   readonly id: string;
   readonly deduplicationIdentity: string;
   readonly controlBindingId: string;
@@ -288,6 +410,34 @@ export interface PresidentialDecisionRecord {
   readonly provenanceReference: string;
   readonly supersedesDecisionId: string | null;
 }
+
+export interface InquiryPresidentialDecisionRecord {
+  readonly sourceKind: "INQUIRY_PREVIEW_PRESENTATION";
+  readonly id: string;
+  readonly deduplicationIdentity: string;
+  readonly controlBindingId: string;
+  readonly presidentActorId: string;
+  readonly constitutionalOfficeId: string;
+  readonly sourceEscalationId: null;
+  readonly selectedOptionId: string;
+  readonly selectedOptionKind: "PROACTIVE_INQUIRY_REQUEST";
+  readonly sourceInquiryOpportunityId: string;
+  readonly inquiryPreviewPresentationId: string;
+  readonly previewIds: readonly [string];
+  readonly previewHashes: readonly [string];
+  readonly decidedAt: string;
+  readonly acknowledgedUncertainties: readonly string[];
+  readonly authorizedInstrumentIds: readonly [string];
+  readonly reservedReviewId: null;
+  readonly deliberateDefaultRuleReference: null;
+  readonly basisEscalationPresentationId: null;
+  readonly provenanceReference: string;
+  readonly supersedesDecisionId: null;
+}
+
+export type PresidentialDecisionRecord =
+  | EscalationPresidentialDecisionRecord
+  | InquiryPresidentialDecisionRecord;
 
 export interface PresidentialInstrumentRecord {
   readonly id: string;
@@ -385,7 +535,121 @@ export type InstrumentAssignmentAuthorizationScope =
       readonly workstreamId: string;
       readonly coordinationActionKinds: readonly string[];
       readonly productKind: string;
+    }
+  | {
+      readonly kind: "LEGISLATIVE_POSITION_ASSIGNMENT_SCOPE";
+      readonly initiativeId: string;
+      readonly proposalVersion: number;
+      readonly positionKind: "SUPPORT_AS_INTRODUCED" | "OPPOSE" | "NEGOTIATE_EXACT_TERMS";
+      readonly negotiableTermIds: readonly string[];
+      readonly evidenceReferenceIds: readonly string[];
+    }
+  | {
+      readonly kind: "INTERGOVERNMENTAL_CONTACT_ASSIGNMENT_SCOPE";
+      readonly governorActorIds: readonly string[];
+      readonly purposeFamily: string;
+      readonly talkingPoints: readonly string[];
+      readonly prohibitedCommitmentKinds: readonly string[];
+    }
+  | {
+      readonly kind: "PUBLIC_STATEMENT_ASSIGNMENT_SCOPE";
+      readonly approvedClaims: readonly string[];
+      readonly limitations: readonly string[];
+      readonly sourceSectionReferences: readonly {
+        readonly artifactId: string;
+        readonly sectionId: string;
+      }[];
+      readonly prohibitedUnsupportedClaimFamilies: readonly string[];
+      readonly releaseWindowEndsAt: string;
+      readonly productKind: "BOUNDED_PUBLIC_STATEMENT";
     };
+
+export interface OMBReviewWorkPeriod {
+  readonly id: string;
+  readonly teamId: string;
+  readonly startsAt: string;
+  readonly endsAt: string;
+  readonly provenanceReference: string;
+}
+
+export interface OMBReviewBookingRecord {
+  readonly id: string;
+  readonly teamId: string;
+  readonly periodIds: readonly string[];
+  readonly assignmentId: string;
+  readonly authorizedProductKind: string;
+  readonly reservedAt: string;
+  readonly consumedAt: string | null;
+  readonly releasedAt: string | null;
+  readonly status: "RESERVED" | "CONSUMED" | "RELEASED";
+  readonly sourceAuthorizationId: string;
+  readonly actingOfficeholderAssignmentId: string;
+  readonly provenanceReference: string;
+}
+
+export interface OMBQueueCoordinationRequest {
+  readonly id: string;
+  readonly sourceKind: "PRESIDENTIAL_INSTRUMENT" | "STANDING_CHIEF_OF_STAFF_AUTHORITY";
+  readonly initiatingOfficeId: string;
+  readonly initiatingOfficeholderAssignmentId: string;
+  readonly recipientOfficeId: string;
+  readonly teamId: string;
+  readonly requestedActions: readonly (
+    | "REPRIORITIZE_OMB_REVIEW_QUEUE"
+    | "SUPERSEDE_WITH_PERMITTED_NARROW_PRODUCT"
+  )[];
+  readonly referencedAssignmentIds: readonly string[];
+  readonly requestedQueueOrder: readonly string[];
+  readonly requestedNarrowProductKind: string | null;
+  readonly sourceAuthorityId: string;
+  readonly payloadHash: string;
+  readonly createdAt: string;
+  readonly dispatchedAt: string;
+  readonly deliveredAt: string;
+  readonly receivedAt: string;
+  readonly disposition: "ACCEPTED" | "NARROWED" | "REFUSED";
+  readonly provenanceReference: string;
+}
+
+export interface OMBQueueReprioritizationOccurrence {
+  readonly id: string;
+  readonly teamId: string;
+  readonly actingOfficeId: string;
+  readonly actingOfficeholderAssignmentId: string;
+  readonly sourceCoordinationRequestId: string;
+  readonly authorityReference: string;
+  readonly priorQueueAssignmentIds: readonly string[];
+  readonly resultingQueueAssignmentIds: readonly string[];
+  readonly affectedBookingIds: readonly string[];
+  readonly occurredAt: string;
+  readonly provenanceReference: string;
+}
+
+export interface OMBAssignmentSupersessionOccurrence {
+  readonly id: string;
+  readonly teamId: string;
+  readonly actingOfficeId: string;
+  readonly actingOfficeholderAssignmentId: string;
+  readonly sourceCoordinationRequestId: string;
+  readonly priorAssignmentId: string;
+  readonly replacementAssignmentId: string;
+  readonly priorProductKind: string;
+  readonly replacementProductKind: string;
+  readonly sourceScopeReferenceIds: readonly string[];
+  readonly occurredAt: string;
+  readonly reasonClassification: "PERMITTED_LESS_CLAIMING_PRODUCT";
+  readonly authorityReference: string;
+  readonly provenanceReference: string;
+}
+
+export interface OMBReviewCapacityState {
+  readonly teamId: string;
+  readonly periods: readonly OMBReviewWorkPeriod[];
+  readonly bookings: readonly OMBReviewBookingRecord[];
+  readonly coordinationRequests: readonly OMBQueueCoordinationRequest[];
+  readonly queueReprioritizations: readonly OMBQueueReprioritizationOccurrence[];
+  readonly assignmentSupersessions: readonly OMBAssignmentSupersessionOccurrence[];
+}
 
 export interface InstrumentAssignmentAuthorizationBinding {
   readonly assignmentId: string;

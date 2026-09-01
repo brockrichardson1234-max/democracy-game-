@@ -34,32 +34,38 @@ describe("POP0-I2 independent office information substrate", () => {
     const session = createPop0I2TraceSession();
     const state = session.getOperatingState();
 
-    expect(PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION).toBe(4);
-    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(4);
-    expect(POP0_V0_CONFIGURATION_VERSION).toBe("0.4.0-pop0-i4");
+    expect(PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION).toBe(5);
+    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(5);
+    expect(POP0_V0_CONFIGURATION_VERSION).toBe("0.5.0-pop0-i5");
     expect(Object.keys(state.ownerStates).sort()).toEqual([
       "administrationDirectory",
       "administrationWorkstreams",
+      "boundedMedia",
       "calendar",
+      "congressionalInitiative",
+      "externalActors",
       "historicalRecordIndex",
       "informationRoutes",
       "instrumentDispatches",
       "materialHousing",
+      "maternityServiceAccess",
       "officeOperations",
       "presidentialDecisions",
       "presidentialEscalations",
+      "presidentialInquiries",
       "presidentialInstruments",
       "presidentialPresentations",
       "programImplementation",
+      "regionalEmployment",
     ]);
-    expect(POP0_V0_OPERATING_CONFIGURATION.administration.institutions).toHaveLength(2);
-    expect(state.ownerStates.officeOperations.state).toHaveLength(6);
-    expect(state.ownerStates.administrationDirectory.state.officeholderAssignments).toHaveLength(6);
-    expect(POP0_V0_OPERATING_CONFIGURATION.administration.populationLinkages).toHaveLength(7);
+    expect(POP0_V0_OPERATING_CONFIGURATION.administration.institutions).toHaveLength(3);
+    expect(state.ownerStates.officeOperations.state).toHaveLength(9);
+    expect(state.ownerStates.administrationDirectory.state.officeholderAssignments).toHaveLength(9);
+    expect(POP0_V0_OPERATING_CONFIGURATION.administration.populationLinkages).toHaveLength(10);
     expect(JSON.stringify(state)).not.toMatch(/populationState|representedWeight|electorate|publicBelief/i);
   });
 
-  it("authenticates all seven humans as zero-weight outside-scope proof actors", () => {
+  it("authenticates all ten administration humans as zero-weight outside-scope proof actors", () => {
     const administration = POP0_V0_OPERATING_CONFIGURATION.administration;
     expect(administration.actors.map((actor) => actor.id).sort()).toEqual(
       Object.values(POP0_I2_ACTOR_IDS).sort(),
@@ -138,7 +144,11 @@ describe("POP0-I2 independent office information substrate", () => {
     const nec = states.find((office) => office.officeId === POP0_I2_OFFICE_IDS.nec);
     const omb = states.find((office) => office.officeId === POP0_I2_OFFICE_IDS.omb);
     expect(nec?.activeQueueAssignmentIds).toEqual([POP0_I2_TRACE_IDS.necAssignment]);
-    expect(omb?.activeQueueAssignmentIds).toEqual([POP0_I2_TRACE_IDS.ombAssignment]);
+    expect(omb?.activeQueueAssignmentIds).toEqual([
+      "pop0.assignment.omb.housing-full-implementation-review",
+      "pop0.assignment.omb.employment-congress-full-analysis",
+      POP0_I2_TRACE_IDS.ombAssignment,
+    ]);
     expect(JSON.stringify(states)).not.toMatch(/administrationQueue|administrationCapacity/);
 
     attemptProofRetrievals(session);

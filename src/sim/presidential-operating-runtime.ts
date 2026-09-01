@@ -35,8 +35,19 @@ import {
   type PresidentialOperatingHousingConfiguration,
 } from "./presidential-operating-housing";
 import { createAdministrationWorkstream } from "./presidential-operating-intervention";
+import {
+  advancePresidentialConcurrentWorld,
+  appendDerivedPresidentialConcurrentHistory,
+  assertConcurrentWorldConfiguration,
+  assertPresidentialConcurrentWorldOwnerStates,
+  composeOpeningConcurrentAdministration,
+  copyPresidentialConcurrentWorldOwnerStates,
+  createPresidentialConcurrentWorldOwnerStates,
+  type ConcurrentWorldConfiguration,
+  type PresidentialConcurrentWorldOwnerStates,
+} from "./presidential-operating-concurrent-world";
 
-export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 4 as const;
+export const PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION = 5 as const;
 
 export interface PresidentialOperatingRuntimeConfiguration {
   readonly schemaVersion: typeof PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION;
@@ -51,6 +62,7 @@ export interface PresidentialOperatingRuntimeConfiguration {
   readonly administration: PresidentialAdministrationConfiguration;
   readonly intervention: PresidentialInterventionConfiguration;
   readonly housing: PresidentialOperatingHousingConfiguration;
+  readonly concurrentWorld: ConcurrentWorldConfiguration;
 }
 
 export interface PresidentialOperatingRuntimeState {
@@ -62,7 +74,8 @@ export interface PresidentialOperatingRuntimeState {
       readonly ownerId: string;
       readonly state: CalendarTimeState;
     };
-  } & PresidentialAdministrationOwnerStates & PresidentialInterventionOwnerStates & PresidentialHousingOwnerStates;
+  } & PresidentialAdministrationOwnerStates & PresidentialInterventionOwnerStates & PresidentialHousingOwnerStates &
+    PresidentialConcurrentWorldOwnerStates;
 }
 
 const requireNonempty = (value: string, field: string): void => {
@@ -110,6 +123,7 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     administration: configuration.administration,
     intervention: configuration.intervention,
     housing: configuration.housing,
+    concurrentWorld: configuration.concurrentWorld,
   });
   if (configuration.identity.configurationHash !== expectedHash) {
     throw new Error(
@@ -131,6 +145,12 @@ export const assertPresidentialOperatingRuntimeConfiguration = (
     configuration.calendar.epoch,
   );
   assertPresidentialOperatingHousingConfiguration(configuration.housing, configuration.calendar.epoch);
+  assertConcurrentWorldConfiguration(
+    configuration.concurrentWorld,
+    configuration.administration,
+    configuration.intervention,
+    configuration.calendar.epoch,
+  );
   if (
     configuration.housing.history.historyId !== configuration.intervention.historyId ||
     configuration.housing.history.informationRoutesOwnerId !== configuration.administration.ownerIds.informationRoutes ||
@@ -300,7 +320,22 @@ export const createPresidentialOperatingRuntimeState = (
     ...withHousingWorkstream,
     programImplementation: openingHousing.programImplementation,
     materialHousing: openingHousing.materialHousing,
+    ...createPresidentialConcurrentWorldOwnerStates(configuration.concurrentWorld),
   };
+  const composedConcurrentAdministration = composeOpeningConcurrentAdministration(
+    openingOwners,
+    configuration.administration,
+    configuration.concurrentWorld,
+    configuration.calendar.epoch,
+  );
+  const withHousingHistory = {
+    ...composedConcurrentAdministration,
+    ...appendDerivedPresidentialHousingHistory(composedConcurrentAdministration, configuration.housing),
+  };
+  const withConcurrentHistory = appendDerivedPresidentialConcurrentHistory(
+    withHousingHistory,
+    configuration.intervention,
+  );
   const ownerStates = {
     calendar: {
       ownerId: configuration.calendar.ownerId,
@@ -309,8 +344,7 @@ export const createPresidentialOperatingRuntimeState = (
         configuration.calendar.boundaries,
       ),
     },
-    ...openingOwners,
-    ...appendDerivedPresidentialHousingHistory(openingOwners, configuration.housing),
+    ...withConcurrentHistory,
   };
   const state: PresidentialOperatingRuntimeState = {
     schemaVersion: PRESIDENTIAL_OPERATING_RUNTIME_SCHEMA_VERSION,
@@ -328,6 +362,7 @@ export const copyPresidentialOperatingRuntimeState = (
   const administration = copyPresidentialAdministrationOwnerStates(state.ownerStates);
   const intervention = copyPresidentialInterventionOwnerStates(state.ownerStates);
   const housing = copyPresidentialHousingOwnerStates(state.ownerStates);
+  const concurrent = copyPresidentialConcurrentWorldOwnerStates(state.ownerStates);
   return {
     schemaVersion: state.schemaVersion,
     operatingStateId: state.operatingStateId,
@@ -343,6 +378,7 @@ export const copyPresidentialOperatingRuntimeState = (
       ...administration,
       ...intervention,
       ...housing,
+      ...concurrent,
     },
   };
 };
@@ -392,6 +428,14 @@ export const assertPresidentialOperatingRuntimeState = (
     configuration.housing,
     state.ownerStates.calendar.state.current,
   );
+  assertPresidentialConcurrentWorldOwnerStates(
+    state.ownerStates,
+    configuration.administration,
+    configuration.intervention,
+    configuration.concurrentWorld,
+    configuration.calendar.epoch,
+    state.ownerStates.calendar.state.current,
+  );
 };
 
 export const advancePresidentialOperatingRuntimeTime = (
@@ -405,15 +449,24 @@ export const advancePresidentialOperatingRuntimeTime = (
   if (!Number.isFinite(targetValue) || targetValue < currentValue) {
     throw new Error("Presidential operating time requires a valid nondecreasing target.");
   }
+  const afterClosures = advancePresidentialInterventionTime(
+    state.ownerStates,
+    configuration.administration,
+    configuration.intervention,
+    configuration.calendar.epoch,
+    state.ownerStates.calendar.state.current,
+    target,
+  );
   const advancedHousing = advancePresidentialHousingOwners(
     state.ownerStates,
     state.ownerStates.calendar.state.current,
     target,
   );
-  const advancedOwners = advancePresidentialInterventionTime(
-    { ...state.ownerStates, ...advancedHousing },
+  const advancedOwners = advancePresidentialConcurrentWorld(
+    { ...state.ownerStates, ...afterClosures, ...advancedHousing },
     configuration.administration,
-    configuration.intervention,
+    configuration.concurrentWorld,
+    configuration.identity,
     configuration.calendar.epoch,
     state.ownerStates.calendar.state.current,
     target,
@@ -435,13 +488,17 @@ export const advancePresidentialOperatingRuntimeTime = (
       },
     },
   };
+  const withHousingHistory = appendDerivedPresidentialHousingHistory(
+    nextWithoutHousingHistory.ownerStates,
+    configuration.housing,
+  );
   const next: PresidentialOperatingRuntimeState = {
     ...nextWithoutHousingHistory,
     ownerStates: {
       ...nextWithoutHousingHistory.ownerStates,
-      ...appendDerivedPresidentialHousingHistory(
-        nextWithoutHousingHistory.ownerStates,
-        configuration.housing,
+      ...appendDerivedPresidentialConcurrentHistory(
+        { ...nextWithoutHousingHistory.ownerStates, ...withHousingHistory },
+        configuration.intervention,
       ),
     },
   };

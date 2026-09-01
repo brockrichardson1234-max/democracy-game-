@@ -22,6 +22,8 @@ import type {
   AdministrationWorkstreamView,
   AllowMonitoringDefaultOption,
   AnalysisRecipientCapabilityAuthority,
+  AuthorizeLegislativePositionPayload,
+  AuthorizePublicStatementPayload,
   CoordinationRecipientCapabilityAuthority,
   EscalationAttentionItem,
   EscalationLifecycleKind,
@@ -48,7 +50,7 @@ import type {
   RecipientConstraint,
   RecipientDispositionKind,
   RecipientInstrumentDisposition,
-  RequestAnalysisAndCoordinationOption,
+  RequestIntergovernmentalContactPayload,
   RequestOfficeAnalysisPayload,
   RequestWorkstreamCoordinationPayload,
   ReservedPresidentialReviewRecord,
@@ -277,29 +279,72 @@ export const canonicalPresidentialInstrumentPayload = (
       narrowingPermitted: payload.narrowingPermitted,
     };
   }
-  requireExactKeys(payload, "REQUEST_WORKSTREAM_COORDINATION payload", [
+  if (payload.kind === "REQUEST_WORKSTREAM_COORDINATION") {
+    requireExactKeys(payload, "REQUEST_WORKSTREAM_COORDINATION payload", [
     ...commonKeys,
     "workstreamId",
     "coordinationObjective",
     "participatingOfficeIds",
     "requestedReviewAt",
     "permittedCoordinationActions",
+    ]);
+    return {
+      kind: payload.kind, payloadVersion: payload.payloadVersion,
+      recipientOfficeId: payload.recipientOfficeId, subjectScopeFamily: payload.subjectScopeFamily,
+      requestedAct: payload.requestedAct, sourceReferenceIds: [...payload.sourceReferenceIds],
+      attachmentMetadata: payload.attachmentMetadata.map(canonicalAttachment),
+      authorityBasis: payload.authorityBasis, requestedResponseDeadline: payload.requestedResponseDeadline,
+      workstreamId: payload.workstreamId, coordinationObjective: payload.coordinationObjective,
+      participatingOfficeIds: [...payload.participatingOfficeIds], requestedReviewAt: payload.requestedReviewAt,
+      permittedCoordinationActions: [...payload.permittedCoordinationActions],
+    };
+  }
+  if (payload.kind === "AUTHORIZE_LEGISLATIVE_POSITION") {
+    requireExactKeys(payload, "AUTHORIZE_LEGISLATIVE_POSITION payload", [
+      ...commonKeys, "initiativeId", "proposalVersion", "positionKind", "negotiableTermIds",
+      "evidenceReferenceIds", "narrowingPermitted",
+    ]);
+    return {
+      kind: payload.kind, payloadVersion: payload.payloadVersion,
+      recipientOfficeId: payload.recipientOfficeId, subjectScopeFamily: payload.subjectScopeFamily,
+      requestedAct: payload.requestedAct, sourceReferenceIds: [...payload.sourceReferenceIds],
+      attachmentMetadata: payload.attachmentMetadata.map(canonicalAttachment), authorityBasis: payload.authorityBasis,
+      requestedResponseDeadline: payload.requestedResponseDeadline, initiativeId: payload.initiativeId,
+      proposalVersion: payload.proposalVersion, positionKind: payload.positionKind,
+      negotiableTermIds: [...payload.negotiableTermIds], evidenceReferenceIds: [...payload.evidenceReferenceIds],
+      narrowingPermitted: payload.narrowingPermitted,
+    };
+  }
+  if (payload.kind === "REQUEST_INTERGOVERNMENTAL_CONTACT") {
+    requireExactKeys(payload, "REQUEST_INTERGOVERNMENTAL_CONTACT payload", [
+      ...commonKeys, "governorActorIds", "purposeFamily", "talkingPoints",
+      "prohibitedCommitmentKinds", "narrowingPermitted",
+    ]);
+    return {
+      kind: payload.kind, payloadVersion: payload.payloadVersion,
+      recipientOfficeId: payload.recipientOfficeId, subjectScopeFamily: payload.subjectScopeFamily,
+      requestedAct: payload.requestedAct, sourceReferenceIds: [...payload.sourceReferenceIds],
+      attachmentMetadata: payload.attachmentMetadata.map(canonicalAttachment), authorityBasis: payload.authorityBasis,
+      requestedResponseDeadline: payload.requestedResponseDeadline, governorActorIds: [...payload.governorActorIds],
+      purposeFamily: payload.purposeFamily, talkingPoints: [...payload.talkingPoints],
+      prohibitedCommitmentKinds: [...payload.prohibitedCommitmentKinds],
+      narrowingPermitted: payload.narrowingPermitted,
+    };
+  }
+  requireExactKeys(payload, "AUTHORIZE_PUBLIC_STATEMENT payload", [
+    ...commonKeys, "subjectFamily", "approvedClaims", "limitations", "sourceSectionReferences",
+    "prohibitedUnsupportedClaimFamilies", "releaseWindowEndsAt", "narrowingPermitted",
   ]);
   return {
-    kind: payload.kind,
-    payloadVersion: payload.payloadVersion,
-    recipientOfficeId: payload.recipientOfficeId,
-    subjectScopeFamily: payload.subjectScopeFamily,
-    requestedAct: payload.requestedAct,
-    sourceReferenceIds: [...payload.sourceReferenceIds],
-    attachmentMetadata: payload.attachmentMetadata.map(canonicalAttachment),
-    authorityBasis: payload.authorityBasis,
-    requestedResponseDeadline: payload.requestedResponseDeadline,
-    workstreamId: payload.workstreamId,
-    coordinationObjective: payload.coordinationObjective,
-    participatingOfficeIds: [...payload.participatingOfficeIds],
-    requestedReviewAt: payload.requestedReviewAt,
-    permittedCoordinationActions: [...payload.permittedCoordinationActions],
+    kind: payload.kind, payloadVersion: payload.payloadVersion,
+    recipientOfficeId: payload.recipientOfficeId, subjectScopeFamily: payload.subjectScopeFamily,
+    requestedAct: payload.requestedAct, sourceReferenceIds: [...payload.sourceReferenceIds],
+    attachmentMetadata: payload.attachmentMetadata.map(canonicalAttachment), authorityBasis: payload.authorityBasis,
+    requestedResponseDeadline: payload.requestedResponseDeadline, subjectFamily: payload.subjectFamily,
+    approvedClaims: [...payload.approvedClaims], limitations: [...payload.limitations],
+    sourceSectionReferences: payload.sourceSectionReferences.map((entry) => ({ ...entry })),
+    prohibitedUnsupportedClaimFamilies: [...payload.prohibitedUnsupportedClaimFamilies],
+    releaseWindowEndsAt: payload.releaseWindowEndsAt, narrowingPermitted: payload.narrowingPermitted,
   };
 };
 
@@ -340,13 +385,37 @@ const assertInstrumentPayloadCommon = (
     if (payload.knownAccessLimitation !== null) {
       requireNonempty(payload.knownAccessLimitation, "Analysis access limitation");
     }
-  } else {
+  } else if (payload.kind === "REQUEST_WORKSTREAM_COORDINATION") {
     requireNonempty(payload.workstreamId, "Coordination workstream");
     requireNonempty(payload.coordinationObjective, "Coordination objective");
     requireNonemptyUnique(payload.participatingOfficeIds, "Coordination participating offices");
     requireNonemptyUnique(payload.permittedCoordinationActions, "Permitted coordination actions");
     if (instant(payload.requestedReviewAt, "Coordination review") <= instant(current, "Instrument source time")) {
       throw new Error("Coordination review must be strictly future.");
+    }
+  } else if (payload.kind === "AUTHORIZE_LEGISLATIVE_POSITION") {
+    requireNonempty(payload.initiativeId, "Legislative initiative");
+    if (!Number.isSafeInteger(payload.proposalVersion) || payload.proposalVersion <= 0) {
+      throw new Error("Legislative position requires a positive proposal version.");
+    }
+    requireUnique(payload.negotiableTermIds, "Negotiable terms");
+    requireNonemptyUnique(payload.evidenceReferenceIds, "Legislative evidence references");
+  } else if (payload.kind === "REQUEST_INTERGOVERNMENTAL_CONTACT") {
+    requireNonemptyUnique(payload.governorActorIds, "Intergovernmental recipients");
+    requireNonempty(payload.purposeFamily, "Intergovernmental purpose");
+    requireNonemptyUnique(payload.talkingPoints, "Intergovernmental talking points");
+    requireNonemptyUnique(payload.prohibitedCommitmentKinds, "Prohibited commitments");
+  } else {
+    requireNonempty(payload.subjectFamily, "Public-statement subject");
+    requireNonemptyUnique(payload.approvedClaims, "Approved statement claims");
+    requireUnique(payload.limitations, "Public-statement limitations");
+    requireNonemptyUnique(
+      payload.sourceSectionReferences.map((entry) => `${entry.artifactId}#${entry.sectionId}`),
+      "Public-statement source sections",
+    );
+    requireNonemptyUnique(payload.prohibitedUnsupportedClaimFamilies, "Unsupported claim families");
+    if (instant(payload.releaseWindowEndsAt, "Statement release interval") <= instant(current, "Instrument source time")) {
+      throw new Error("Public-statement release interval must be future.");
     }
   }
 };
@@ -371,6 +440,36 @@ const coordinationCapabilityFits = (
   instant(payload.requestedReviewAt, "Coordination review") - instant(issuedAt, "Instrument issue") <=
     capability.maximumReviewHorizonHours * 60 * 60 * 1000;
 
+const legislativeCapabilityFits = (
+  capability: Extract<RecipientCapabilityAuthority, { readonly kind: "LEGISLATIVE_POSITION_CAPABILITY" }>,
+  payload: AuthorizeLegislativePositionPayload,
+): boolean => capability.recipientOfficeId === payload.recipientOfficeId &&
+  capability.permittedInitiativeIds.includes(payload.initiativeId) &&
+  capability.permittedPositionKinds.includes(payload.positionKind) &&
+  payload.negotiableTermIds.length <= capability.maximumNegotiableTermCount &&
+  payload.negotiableTermIds.every((id) => capability.permittedNegotiableTermIds.includes(id));
+
+const intergovernmentalCapabilityFits = (
+  capability: Extract<RecipientCapabilityAuthority, { readonly kind: "INTERGOVERNMENTAL_CONTACT_CAPABILITY" }>,
+  payload: RequestIntergovernmentalContactPayload,
+): boolean => capability.recipientOfficeId === payload.recipientOfficeId &&
+  capability.permittedPurposeFamilies.includes(payload.purposeFamily) &&
+  payload.governorActorIds.length <= capability.maximumRecipientCount &&
+  payload.governorActorIds.every((id) => capability.permittedGovernorIds.includes(id)) &&
+  payload.talkingPoints.length <= capability.maximumTalkingPointCount &&
+  sameSet(payload.prohibitedCommitmentKinds, capability.prohibitedCommitmentKinds);
+
+const publicStatementCapabilityFits = (
+  capability: Extract<RecipientCapabilityAuthority, { readonly kind: "PUBLIC_STATEMENT_CAPABILITY" }>,
+  payload: AuthorizePublicStatementPayload,
+  issuedAt: string,
+): boolean => capability.recipientOfficeId === payload.recipientOfficeId &&
+  capability.permittedSubjectFamilies.includes(payload.subjectFamily) &&
+  payload.approvedClaims.length <= capability.maximumClaimCount &&
+  sameSet(payload.prohibitedUnsupportedClaimFamilies, capability.prohibitedUnsupportedClaimFamilies) &&
+  instant(payload.releaseWindowEndsAt, "Statement release") - instant(issuedAt, "Statement issue") <=
+    capability.maximumReleaseWindowHours * 60 * 60 * 1000;
+
 export const recipientCapabilityFitsInstrument = (
   capability: RecipientCapabilityAuthority,
   payload: PresidentialInstrumentPayload,
@@ -382,7 +481,13 @@ export const recipientCapabilityFitsInstrument = (
     ? analysisCapabilityFits(capability, payload)
     : capability.kind === "COORDINATION_CAPABILITY" &&
         payload.kind === "REQUEST_WORKSTREAM_COORDINATION" &&
-        coordinationCapabilityFits(capability, payload, issuedAt));
+        coordinationCapabilityFits(capability, payload, issuedAt) ||
+      capability.kind === "LEGISLATIVE_POSITION_CAPABILITY" && payload.kind === "AUTHORIZE_LEGISLATIVE_POSITION" &&
+        legislativeCapabilityFits(capability, payload) ||
+      capability.kind === "INTERGOVERNMENTAL_CONTACT_CAPABILITY" &&
+        payload.kind === "REQUEST_INTERGOVERNMENTAL_CONTACT" && intergovernmentalCapabilityFits(capability, payload) ||
+      capability.kind === "PUBLIC_STATEMENT_CAPABILITY" && payload.kind === "AUTHORIZE_PUBLIC_STATEMENT" &&
+        publicStatementCapabilityFits(capability, payload, issuedAt));
 
 export const assertPresidentialInterventionConfiguration = (
   configuration: PresidentialInterventionConfiguration,
@@ -419,19 +524,18 @@ export const assertPresidentialInterventionConfiguration = (
     configuration.escalationEligibilityRules.map((entry) => entry.id),
     "Escalation eligibility rules",
   );
-  if (configuration.escalationEligibilityRules.length !== 2) {
-    throw new Error("POP0-I4 requires exactly the accepted I3 rule and one Housing rule.");
+  if (configuration.escalationEligibilityRules.length !== 4) {
+    throw new Error("POP0-I5 requires exactly four bounded escalation rules.");
   }
   if (!sameSet(
     configuration.escalationEligibilityRules.map((entry) => entry.requiredBasisKind),
-    ["SYNTHESIS_CONFLICT", "RECEIPT"],
-  )) throw new Error("POP0-I4 requires one synthesis-conflict rule and one received-assessment rule.");
+    ["SYNTHESIS_CONFLICT", "RECEIPT", "RECEIPT", "RECEIPT"],
+  )) throw new Error("POP0-I5 requires one synthesis-conflict and three received-assessment rules.");
   for (const rule of configuration.escalationEligibilityRules) {
     if (
       !administration.offices.some((office) => office.id === rule.initiatingOfficeId) ||
       !configuration.standingCoordinationAuthorities.some(
-        (authority) => authority.id === rule.standingAuthorityId &&
-          authority.officeId === rule.initiatingOfficeId,
+        (authority) => authority.id === rule.standingAuthorityId,
       )
     ) throw new Error(`Escalation rule ${rule.id} is invalid.`);
     if (rule.requiredBasisKind === "SYNTHESIS_CONFLICT") {
@@ -456,19 +560,24 @@ export const assertPresidentialInterventionConfiguration = (
         !administration.offices.some((entry) => entry.id === rule.requiredProducingOfficeId)
       ) throw new Error(`Escalation rule ${rule.id} has invalid received-assessment requirements.`);
     }
-    if (!sameSet(rule.requiredOptionKinds, [
-      "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION",
-      "RESERVE_PRESIDENTIAL_REVIEW",
-      "ALLOW_MONITORING_DEFAULT",
-    ])) throw new Error(`Escalation rule ${rule.id} requires the exact I3 option set.`);
+    const allowedOptionKinds = new Set([
+      "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION", "AUTHORIZE_LEGISLATIVE_POSITION_OPTION",
+      "REQUEST_INTERGOVERNMENTAL_CONTACT_OPTION", "AUTHORIZE_PUBLIC_STATEMENT_OPTION",
+      "RESERVE_PRESIDENTIAL_REVIEW", "ALLOW_MONITORING_DEFAULT",
+    ]);
+    if (rule.requiredOptionKinds.some((kind) => !allowedOptionKinds.has(kind)) ||
+      !rule.requiredOptionKinds.includes("RESERVE_PRESIDENTIAL_REVIEW") ||
+      !rule.requiredOptionKinds.includes("ALLOW_MONITORING_DEFAULT")) {
+      throw new Error(`Escalation rule ${rule.id} has an unsupported local option set.`);
+    }
     requireNonempty(rule.provenanceReference, `${rule.id} provenance`);
   }
   requireNonemptyUnique(
     configuration.workstreamDefinitions.map((entry) => entry.id),
     "Configured workstream identities",
   );
-  if (configuration.workstreamDefinitions.length !== 2) {
-    throw new Error("POP0-I4 requires exactly the accepted I3 and inherited Housing workstreams.");
+  if (configuration.workstreamDefinitions.length !== 4) {
+    throw new Error("POP0-I5 requires exactly four bounded workstream definitions.");
   }
   for (const definition of configuration.workstreamDefinitions) {
     requireNonempty(definition.label, "Configured workstream label");
@@ -692,7 +801,7 @@ const appendIndexEntries = (
         ...state.historicalRecordIndex.state,
         entries: [...existing, ...entries.filter((entry) =>
           !existing.some((candidate) => candidate.occurrenceId === entry.occurrenceId))]
-          .sort(compareHistoricalEntries),
+          .sort(comparePresidentialHistoricalEntries),
       },
     },
   };
@@ -777,15 +886,40 @@ const recordKindPhase: Readonly<Record<string, number>> = {
   RESERVED_REVIEW_SUPERSEDED: 5,
   PRESIDENTIAL_DECISION: 5,
   PRESIDENTIAL_INSTRUMENT: 6,
-  INSTRUMENT_DISPATCH: 5,
-  OFFICE_INSTRUMENT_RECEIPT: 5,
-  RECIPIENT_DISPOSITION: 5,
-  INSTRUMENT_AUTHORIZED_OFFICE_ASSIGNMENT: 5,
+  INSTRUMENT_DISPATCH: 7,
+  OFFICE_INSTRUMENT_RECEIPT: 8,
+  RECIPIENT_DISPOSITION: 9,
+  INSTRUMENT_AUTHORIZED_OFFICE_ASSIGNMENT: 10,
   DOMAIN_ARTIFACT_PRODUCTION: 5,
   DOMAIN_HANDLING_SUBMISSION: 6,
   LOWER_OWNER_RESULT: 7,
   MATERIAL_OWNER_INPUT_ADMISSION: 8,
   MATERIAL_OWNER_RESULT: 9,
+  EMPLOYMENT_MATERIAL_OCCURRENCE: 4,
+  EMPLOYMENT_EVIDENCE_RELEASE: 5,
+  CONGRESSIONAL_RECEIPT: 4,
+  CONGRESSIONAL_ELIGIBILITY_ASSESSMENT: 5,
+  CONGRESSIONAL_FORMATION_DECISION: 6,
+  CONGRESSIONAL_WINDOW_LIFECYCLE: 4,
+  CONGRESSIONAL_TRANSITION_ATTEMPT: 7,
+  EXTERNAL_ACTOR_RECEIPT: 4,
+  EXTERNAL_ACTOR_ASSESSMENT: 5,
+  EXTERNAL_ACTOR_ACTION: 6,
+  MEDIA_RECEIPT: 4,
+  MEDIA_EDITORIAL_DECISION: 5,
+  MEDIA_PUBLICATION: 6,
+  MEDIA_DISTRIBUTION: 7,
+  MEDIA_EXPOSURE: 8,
+  MATERNITY_SERVICE_MATERIAL_OCCURRENCE: 4,
+  PRESIDENTIAL_INQUIRY_PRESENTATION: 5,
+  PRESIDENTIAL_INQUIRY_LIFECYCLE: 8,
+  OMB_COORDINATION_REQUEST: 5,
+  OMB_QUEUE_REPRIORITIZATION: 6,
+  OMB_ASSIGNMENT_SUPERSESSION: 7,
+  I5_OFFICE_COMMUNICATION_PRODUCTION: 11,
+  I5_EXTERNAL_COMMUNICATION_DISPATCH: 12,
+  CONGRESSIONAL_ADMINISTRATION_EVIDENCE: 5,
+  CONGRESSIONAL_ADMINISTRATION_RECEIPT: 6,
 };
 
 const boundedExternalHistoryKinds = new Set([
@@ -794,9 +928,34 @@ const boundedExternalHistoryKinds = new Set([
   "LOWER_OWNER_RESULT",
   "MATERIAL_OWNER_INPUT_ADMISSION",
   "MATERIAL_OWNER_RESULT",
+  "EMPLOYMENT_MATERIAL_OCCURRENCE",
+  "EMPLOYMENT_EVIDENCE_RELEASE",
+  "CONGRESSIONAL_RECEIPT",
+  "CONGRESSIONAL_ELIGIBILITY_ASSESSMENT",
+  "CONGRESSIONAL_FORMATION_DECISION",
+  "CONGRESSIONAL_WINDOW_LIFECYCLE",
+  "CONGRESSIONAL_TRANSITION_ATTEMPT",
+  "EXTERNAL_ACTOR_RECEIPT",
+  "EXTERNAL_ACTOR_ASSESSMENT",
+  "EXTERNAL_ACTOR_ACTION",
+  "MEDIA_RECEIPT",
+  "MEDIA_EDITORIAL_DECISION",
+  "MEDIA_PUBLICATION",
+  "MEDIA_DISTRIBUTION",
+  "MEDIA_EXPOSURE",
+  "MATERNITY_SERVICE_MATERIAL_OCCURRENCE",
+  "PRESIDENTIAL_INQUIRY_PRESENTATION",
+  "PRESIDENTIAL_INQUIRY_LIFECYCLE",
+  "OMB_COORDINATION_REQUEST",
+  "OMB_QUEUE_REPRIORITIZATION",
+  "OMB_ASSIGNMENT_SUPERSESSION",
+  "I5_OFFICE_COMMUNICATION_PRODUCTION",
+  "I5_EXTERNAL_COMMUNICATION_DISPATCH",
+  "CONGRESSIONAL_ADMINISTRATION_EVIDENCE",
+  "CONGRESSIONAL_ADMINISTRATION_RECEIPT",
 ]);
 
-const compareHistoricalEntries = (
+export const comparePresidentialHistoricalEntries = (
   left: HistoricalRecordIndexEntry,
   right: HistoricalRecordIndexEntry,
 ): number => instant(left.occurredAt, `${left.occurrenceId} history time`) -
@@ -857,7 +1016,7 @@ const assertPreview = (
       artifact === undefined ||
       preview.payload.evidenceSectionIds.some((sectionId) => !artifact.sectionIds.includes(sectionId))
     ) throw new Error(`Instrument preview ${preview.id} has an invalid evidence scope.`);
-  } else {
+  } else if (preview.payload.kind === "REQUEST_WORKSTREAM_COORDINATION") {
     const coordinationPayload = preview.payload;
     if (!state.administrationWorkstreams.state.workstreams.some(
       (workstream) => workstream.id === coordinationPayload.workstreamId,
@@ -875,36 +1034,40 @@ const assertEscalationOptions = (
   rule: EscalationEligibilityRule,
 ): void => {
   requireNonemptyUnique(escalation.options.map((option) => option.id), `${escalation.id} options`);
-  if (!sameSet(escalation.options.map((option) => option.kind), rule.requiredOptionKinds)) {
+  if (!sameOrdered(escalation.options.map((option) => option.kind), rule.requiredOptionKinds)) {
     throw new Error(`Escalation ${escalation.id} does not contain the configured local option set.`);
   }
-  const request = escalation.options.find(
-    (option): option is RequestAnalysisAndCoordinationOption =>
-      option.kind === "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION",
-  );
   const reserve = escalation.options.find((option) => option.kind === "RESERVE_PRESIDENTIAL_REVIEW");
   const monitoring = escalation.options.find(
     (option): option is AllowMonitoringDefaultOption => option.kind === "ALLOW_MONITORING_DEFAULT",
   );
-  if (request === undefined || reserve === undefined || monitoring === undefined) {
+  if (reserve === undefined || monitoring === undefined) {
     throw new Error(`Escalation ${escalation.id} lacks an exact local option.`);
   }
-  if (request.previews.length !== 2 || reserve.previews.length !== 0 || monitoring.previews.length !== 0) {
+  if (reserve.previews.length !== 0 || monitoring.previews.length !== 0) {
     throw new Error(`Escalation ${escalation.id} has an invalid visible instrument bundle.`);
   }
-  requireNonemptyUnique(request.previews.map((preview) => preview.id), `${request.id} previews`);
-  requireUnique(
-    request.previews.map((preview) => String(preview.bundlePosition)),
-    `${request.id} bundle positions`,
-  );
-  if (
-    !sameOrdered(request.previews.map((preview) => preview.bundlePosition), [0, 1]) ||
-    !sameOrdered(request.previews.map((preview) => preview.payload.kind), [
-      "REQUEST_OFFICE_ANALYSIS",
-      "REQUEST_WORKSTREAM_COORDINATION",
-    ])
-  ) throw new Error(`Escalation ${escalation.id} has a hidden, reordered, or unsupported bundle.`);
-  for (const preview of request.previews) {
+  const previewOptions = escalation.options.filter((option) => option.previews.length > 0);
+  const previews = previewOptions.flatMap((option) => [...option.previews]);
+  requireNonemptyUnique(previews.map((preview) => preview.id), `${escalation.id} previews`);
+  for (const option of previewOptions) {
+    const expectedKinds: readonly PresidentialInstrumentPayload["kind"][] =
+      option.kind === "REQUEST_SCOPED_ANALYSIS_AND_COORDINATION"
+        ? ["REQUEST_OFFICE_ANALYSIS", "REQUEST_WORKSTREAM_COORDINATION"]
+        : option.kind === "AUTHORIZE_LEGISLATIVE_POSITION_OPTION"
+          ? ["AUTHORIZE_LEGISLATIVE_POSITION"]
+          : option.kind === "REQUEST_INTERGOVERNMENTAL_CONTACT_OPTION"
+            ? ["REQUEST_INTERGOVERNMENTAL_CONTACT"]
+            : option.kind === "AUTHORIZE_PUBLIC_STATEMENT_OPTION"
+              ? ["AUTHORIZE_PUBLIC_STATEMENT"]
+              : [];
+    if (!sameOrdered(option.previews.map((preview) => preview.bundlePosition),
+      expectedKinds.map((_, index) => index)) ||
+      !sameOrdered(option.previews.map((preview) => preview.payload.kind), expectedKinds)) {
+      throw new Error(`Escalation ${escalation.id} has a hidden, reordered, or unsupported bundle.`);
+    }
+  }
+  for (const preview of previews) {
     assertPreview(
       preview,
       state,
@@ -920,8 +1083,8 @@ const assertEscalationOptions = (
   ) throw new Error(`Escalation ${escalation.id} has an invalid reserved-review option.`);
   requireNonempty(reserve.reviewQuestion, `${reserve.id} review question`);
   requireNonemptyUnique(reserve.expectedSourceReferenceIds, `${reserve.id} expected references`);
-  const recipients = request.previews.map((preview) => preview.payload.recipientOfficeId);
-  if (!sameSet(recipients, escalation.downstreamResolverOfficeIds)) {
+  const recipients = previews.map((preview) => preview.payload.recipientOfficeId);
+  if (!sameSet([...new Set(recipients)], escalation.downstreamResolverOfficeIds)) {
     throw new Error(`Escalation ${escalation.id} downstream resolvers contradict its visible bundle.`);
   }
 };
@@ -977,7 +1140,9 @@ const assertEscalationRecord = (
   );
   const rule = intervention.escalationEligibilityRules.find((candidate) =>
     candidate.initiatingOfficeId === escalation.escalatingOfficeId &&
-    candidate.requiredBasisKind === escalation.basisKind);
+    candidate.requiredBasisKind === escalation.basisKind &&
+    (candidate.requiredBasisKind === "SYNTHESIS_CONFLICT" ||
+      candidate.requiredSourceArtifactId === escalation.basisArtifactId));
   if (rule === undefined) throw new Error(`Escalation ${escalation.id} lacks configured eligibility.`);
   const authority = intervention.standingCoordinationAuthorities.find(
     (candidate) => candidate.id === rule.standingAuthorityId,
@@ -1128,8 +1293,12 @@ const expectedIndexEntries = (
       [record.reservationId, record.causeRecordId]);
   }
   for (const record of state.presidentialDecisions.state) {
-    add(record.id, configuration.ownerIds.presidentialDecisions, "PRESIDENTIAL_DECISION", record.decidedAt,
-      [record.sourceEscalationId, record.basisEscalationPresentationId]);
+    if (record.sourceKind === "ESCALATION_PRESENTATION") {
+      add(record.id, configuration.ownerIds.presidentialDecisions, "PRESIDENTIAL_DECISION", record.decidedAt,
+        [record.sourceEscalationId, record.basisEscalationPresentationId]);
+    } else {
+      add(record.id, configuration.ownerIds.presidentialDecisions, "PRESIDENTIAL_DECISION", record.decidedAt, []);
+    }
   }
   for (const record of state.presidentialInstruments.state) {
     add(record.id, configuration.ownerIds.presidentialInstruments, "PRESIDENTIAL_INSTRUMENT", record.issuedAt,
@@ -1163,7 +1332,37 @@ const expectedIndexEntries = (
       }
     }
   }
-  return entries.sort(compareHistoricalEntries);
+  return entries.sort(comparePresidentialHistoricalEntries);
+};
+
+export const appendPresidentialInitiatedInquiryHistory = (
+  state: PresidentialInterventionState,
+  configuration: PresidentialInterventionConfiguration,
+  decision: PresidentialDecisionRecord,
+  instrument: PresidentialInstrumentRecord,
+): PresidentialInterventionState => {
+  if (decision.sourceKind !== "INQUIRY_PREVIEW_PRESENTATION" ||
+    instrument.authorizingDecisionId !== decision.id) {
+    throw new Error("Proactive inquiry history requires its exact decision and instrument.");
+  }
+  return appendIndexEntries(state, [
+    indexEntry(
+      configuration,
+      decision.id,
+      configuration.ownerIds.presidentialDecisions,
+      "PRESIDENTIAL_DECISION",
+      decision.decidedAt,
+      [],
+    ),
+    indexEntry(
+      configuration,
+      instrument.id,
+      configuration.ownerIds.presidentialInstruments,
+      "PRESIDENTIAL_INSTRUMENT",
+      instrument.issuedAt,
+      [decision.id],
+    ),
+  ]);
 };
 
 const assertControlBindingRecord = (
@@ -1342,7 +1541,7 @@ const assertInstrumentAssignmentAuthorization = (
       assignment.expectedProductKind !== binding.scope.productKind ||
       assignment.requiredConsultationOfficeIds.length !== 0
     ) throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds accepted analysis scope.`);
-  } else {
+  } else if (instrument.payload.kind === "REQUEST_WORKSTREAM_COORDINATION") {
     const coordinationPayload = instrument.payload;
     if (
     binding.scope.kind !== "COORDINATION_ASSIGNMENT_SCOPE" ||
@@ -1353,6 +1552,41 @@ const assertInstrumentAssignmentAuthorization = (
       (id) => !coordinationPayload.participatingOfficeIds.includes(id),
     )
     ) throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds accepted coordination scope.`);
+  } else if (instrument.payload.kind === "AUTHORIZE_LEGISLATIVE_POSITION") {
+    if (binding.scope.kind !== "LEGISLATIVE_POSITION_ASSIGNMENT_SCOPE" ||
+      binding.scope.initiativeId !== instrument.payload.initiativeId ||
+      binding.scope.proposalVersion !== instrument.payload.proposalVersion ||
+      binding.scope.positionKind !== instrument.payload.positionKind ||
+      !sameSet(binding.scope.negotiableTermIds, instrument.payload.negotiableTermIds) ||
+      !sameSet(binding.scope.evidenceReferenceIds, instrument.payload.evidenceReferenceIds) ||
+      assignment.expectedProductKind !== "BOUNDED_LEGISLATIVE_POSITION") {
+      throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds legislative scope.`);
+    }
+  } else if (instrument.payload.kind === "REQUEST_INTERGOVERNMENTAL_CONTACT") {
+    const contactPayload = instrument.payload;
+    if (binding.scope.kind !== "INTERGOVERNMENTAL_CONTACT_ASSIGNMENT_SCOPE" ||
+      binding.scope.purposeFamily !== contactPayload.purposeFamily ||
+      binding.scope.governorActorIds.some((id) => !contactPayload.governorActorIds.includes(id)) ||
+      binding.scope.talkingPoints.some((point) => !contactPayload.talkingPoints.includes(point)) ||
+      !sameSet(binding.scope.prohibitedCommitmentKinds, contactPayload.prohibitedCommitmentKinds) ||
+      assignment.expectedProductKind !== "BOUNDED_INTERGOVERNMENTAL_CONTACT") {
+      throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds intergovernmental scope.`);
+    }
+  } else if (instrument.payload.kind === "AUTHORIZE_PUBLIC_STATEMENT") {
+    const statementPayload = instrument.payload;
+    if (
+    (binding.scope.kind !== "PUBLIC_STATEMENT_ASSIGNMENT_SCOPE" ||
+    binding.scope.approvedClaims.some((claim) => !statementPayload.approvedClaims.includes(claim)) ||
+    binding.scope.sourceSectionReferences.some((source) => !statementPayload.sourceSectionReferences.some(
+      (candidate) => candidate.artifactId === source.artifactId && candidate.sectionId === source.sectionId,
+    )) || !sameSet(binding.scope.prohibitedUnsupportedClaimFamilies,
+      statementPayload.prohibitedUnsupportedClaimFamilies) ||
+    binding.scope.releaseWindowEndsAt !== statementPayload.releaseWindowEndsAt)) {
+      throw new Error(`Instrument-authorized assignment ${assignment.id} exceeds public-statement scope.`);
+    }
+    if (assignment.expectedProductKind !== binding.scope.productKind) {
+      throw new Error(`Instrument-authorized assignment ${assignment.id} has the wrong public-statement product.`);
+    }
   }
 };
 
@@ -1690,7 +1924,7 @@ export const assertPresidentialInterventionOwnerStates = (
     }
   }
   if (workstreamState.workstreams.length > configuration.workstreamDefinitions.length) {
-    throw new Error("POP0-I4 permits only its two configured bounded workstreams.");
+    throw new Error("POP0-I5 permits only its four configured bounded workstreams.");
   }
 
   requireNonemptyUnique(state.presidentialDecisions.state.map((entry) => entry.id), "Decision identities");
@@ -1699,12 +1933,40 @@ export const assertPresidentialInterventionOwnerStates = (
     "Decision deduplication identities",
   );
   requireUnique(
-    state.presidentialDecisions.state.map((entry) => entry.sourceEscalationId),
+    state.presidentialDecisions.state.filter((entry) => entry.sourceKind === "ESCALATION_PRESENTATION")
+      .map((entry) => entry.sourceEscalationId),
     "Controlling escalation decisions",
   );
   assertCanonicalOrder(state.presidentialDecisions.state, (entry) => entry.decidedAt, (entry) => entry.id,
     "Presidential decisions");
   for (const decision of state.presidentialDecisions.state) {
+    if (decision.sourceKind === "INQUIRY_PREVIEW_PRESENTATION") {
+      const inquiryOwner = (state as PresidentialInterventionState & {
+        readonly presidentialInquiries?: { readonly state: {
+          readonly previewPresentations: readonly {
+            readonly id: string; readonly opportunityId: string; readonly recipientActorId: string;
+            readonly constitutionalOfficeId: string; readonly presentedAt: string;
+            readonly preview: PresidentialInstrumentPreview;
+          }[];
+        } };
+      }).presidentialInquiries;
+      const inquiryPresentation = inquiryOwner?.state.previewPresentations.find((entry) =>
+        entry.id === decision.inquiryPreviewPresentationId);
+      if (decision.sourceEscalationId !== null || decision.basisEscalationPresentationId !== null ||
+        decision.selectedOptionKind !== "PROACTIVE_INQUIRY_REQUEST" || decision.previewIds.length !== 1 ||
+        decision.previewHashes.length !== 1 || decision.authorizedInstrumentIds.length !== 1 ||
+        decision.reservedReviewId !== null || decision.deliberateDefaultRuleReference !== null ||
+        inquiryPresentation === undefined || inquiryPresentation.opportunityId !== decision.sourceInquiryOpportunityId ||
+        inquiryPresentation.recipientActorId !== decision.presidentActorId ||
+        inquiryPresentation.constitutionalOfficeId !== decision.constitutionalOfficeId ||
+        decision.previewIds[0] !== inquiryPresentation.preview.id ||
+        decision.previewHashes[0] !== inquiryPresentation.preview.payloadHash ||
+        instant(decision.decidedAt, `${decision.id} decision`) <
+          instant(inquiryPresentation.presentedAt, `${inquiryPresentation.id} presentation`)) {
+        throw new Error(`Inquiry decision ${decision.id} has mixed or invalid source truth.`);
+      }
+      continue;
+    }
     const escalation = escalationState.escalations.find((entry) => entry.id === decision.sourceEscalationId);
     const presentation = state.presidentialPresentations.state.escalationPresentations.find(
       (entry) => entry.id === decision.basisEscalationPresentationId,
@@ -1774,11 +2036,20 @@ export const assertPresidentialInterventionOwnerStates = (
     "Presidential instruments");
   for (const instrument of state.presidentialInstruments.state) {
     const decision = state.presidentialDecisions.state.find((entry) => entry.id === instrument.authorizingDecisionId);
-    const escalation = decision === undefined ? undefined : escalationState.escalations.find(
+    const escalation = decision?.sourceKind !== "ESCALATION_PRESENTATION" ? undefined : escalationState.escalations.find(
       (entry) => entry.id === decision.sourceEscalationId,
     );
     const option = escalation?.options.find((entry) => entry.id === instrument.selectedOptionId);
-    const preview = option?.previews.find((entry) => entry.id === instrument.sourcePreviewId);
+    const inquiryOwner = (state as PresidentialInterventionState & {
+      readonly presidentialInquiries?: { readonly state: {
+        readonly previewPresentations: readonly { readonly id: string; readonly preview: PresidentialInstrumentPreview }[];
+      } };
+    }).presidentialInquiries;
+    const inquiryPreview = decision?.sourceKind === "INQUIRY_PREVIEW_PRESENTATION"
+      ? inquiryOwner?.state.previewPresentations.find((entry) =>
+        entry.id === decision.inquiryPreviewPresentationId)?.preview
+      : undefined;
+    const preview = inquiryPreview ?? option?.previews.find((entry) => entry.id === instrument.sourcePreviewId);
     if (
       decision === undefined || preview === undefined ||
       instrument.sourcePreviewHash !== preview.payloadHash ||
@@ -1921,7 +2192,7 @@ export const assertPresidentialInterventionOwnerStates = (
             throw new Error(`Recipient disposition ${disposition.id} is not a strict supported narrowing.`);
           }
         }
-      } else {
+      } else if (instrument.payload.kind === "REQUEST_WORKSTREAM_COORDINATION") {
         const coordinationPayload = instrument.payload;
         if (disposition.kind === "ACCEPTED_AS_REQUESTED" &&
           !sameSet(disposition.acceptedCoordinationActions, coordinationPayload.permittedCoordinationActions)) {
@@ -1934,6 +2205,21 @@ export const assertPresidentialInterventionOwnerStates = (
             (action) => !coordinationPayload.permittedCoordinationActions.includes(action),
           )
         )) throw new Error(`Recipient disposition ${disposition.id} is not strict coordination narrowing.`);
+      } else if (instrument.payload.kind === "AUTHORIZE_LEGISLATIVE_POSITION") {
+        if (disposition.kind === "NARROWED" && (
+          capability?.kind !== "LEGISLATIVE_POSITION_CAPABILITY" || !capability.mayNarrow ||
+          !instrument.payload.narrowingPermitted || !capability.lessCommittingPositionAllowed
+        )) throw new Error(`Recipient disposition ${disposition.id} lacks legislative narrowing authority.`);
+      } else if (instrument.payload.kind === "REQUEST_INTERGOVERNMENTAL_CONTACT") {
+        if (disposition.kind === "NARROWED" && (
+          capability?.kind !== "INTERGOVERNMENTAL_CONTACT_CAPABILITY" || !capability.mayNarrow ||
+          !instrument.payload.narrowingPermitted
+        )) throw new Error(`Recipient disposition ${disposition.id} lacks intergovernmental narrowing authority.`);
+      } else if (disposition.kind === "NARROWED" && (
+        capability?.kind !== "PUBLIC_STATEMENT_CAPABILITY" || !capability.mayNarrow ||
+        !instrument.payload.narrowingPermitted
+      )) {
+        throw new Error(`Recipient disposition ${disposition.id} lacks statement narrowing authority.`);
       }
       if (["ACCEPTED_AS_REQUESTED", "NARROWED"].includes(disposition.kind) &&
         (disposition.constraintIds.length !== 0 || disposition.constraintSourceReferenceIds.length !== 0)) {
@@ -1978,7 +2264,16 @@ export const assertPresidentialInterventionOwnerStates = (
           receipt.artifactId === payload.evidenceArtifactId &&
           payload.evidenceSectionIds.every((sectionId) =>
             receipt.receivedSectionIds.includes(sectionId)));
-        if (!hasSubstantiveScope && (
+        const authorizingDecision = state.presidentialDecisions.state.find((entry) =>
+          entry.id === instrument.authorizingDecisionId);
+        const hasBoundedProactiveInquiryResult = authorizingDecision?.sourceKind ===
+          "INQUIRY_PREVIEW_PRESENTATION" && assignment.status === "COMPLETED" &&
+          assignment.resultArtifactIds.length === 1 && assignment.resultArtifactIds.every((artifactId) => {
+            const artifact = findArtifact(state, artifactId);
+            return artifact?.kind === "I5_DOMAIN_EVIDENCE" &&
+              artifact.domainEvidenceKind === payload.requestedProductKind && artifact.analysisOnly;
+          });
+        if (!hasSubstantiveScope && !hasBoundedProactiveInquiryResult && (
           assignment.status !== "BLOCKED" ||
           assignment.resultArtifactIds.length !== 0 ||
           assignment.failureReason === null ||
@@ -2020,7 +2315,7 @@ export const assertPresidentialInterventionOwnerStates = (
   const actualCore = actual.filter((entry) => !boundedExternalHistoryKinds.has(entry.recordKind));
   requireNonemptyUnique(actual.map((entry) => entry.occurrenceId), "Historical occurrence identities");
   requireUnique(actual.map((entry) => `${entry.ownerId}#${entry.ownerRecordId}`), "Historical owner references");
-  if (!sameOrdered(actual, [...actual].sort(compareHistoricalEntries))) {
+  if (!sameOrdered(actual, [...actual].sort(comparePresidentialHistoricalEntries))) {
     throw new Error("Historical record index is not in fixed time/phase/owner order.");
   }
   if (!sameOrdered(actualCore, expected)) {
@@ -2135,7 +2430,7 @@ export const createAdministrationWorkstream = (
 ): PresidentialInterventionState => {
   beginOperation(state, administration, intervention, epoch, current);
   const matches = intervention.workstreamDefinitions.filter((entry) => entry.id === input.id);
-  if (matches.length !== 1) throw new Error("POP0-I4 requires one exact configured workstream definition.");
+  if (matches.length !== 1) throw new Error("POP0-I5 requires one exact configured workstream definition.");
   const definition = matches[0];
   if (state.administrationWorkstreams.state.workstreams.some((entry) => entry.id === input.id)) {
     const existingTransition = state.administrationWorkstreams.state.transitions.find(
@@ -2675,6 +2970,7 @@ export const recordPresidentialDecision = (
     ? `${input.id}.reserved-review`
     : null;
   const decision: PresidentialDecisionRecord = {
+    sourceKind: "ESCALATION_PRESENTATION",
     id: input.id,
     deduplicationIdentity: input.deduplicationIdentity,
     controlBindingId: controlBinding.id,

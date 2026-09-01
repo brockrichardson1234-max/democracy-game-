@@ -67,7 +67,7 @@ describe("POP0-I3 atomic persistence and deterministic boundaries", () => {
     }
   });
 
-  it("serializes session permission outside canonical operating state at format 4", () => {
+  it("serializes session permission outside canonical operating state at format 5", () => {
     const session = createPop0I3TraceSession();
     runI3ThroughDecision(session);
     const envelope = JSON.parse(session.save()) as {
@@ -76,7 +76,7 @@ describe("POP0-I3 atomic persistence and deterministic boundaries", () => {
       operatingState: { ownerStates: Record<string, unknown> };
     };
     expect(envelope.formatVersion).toBe(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION);
-    expect(envelope.formatVersion).toBe(4);
+    expect(envelope.formatVersion).toBe(5);
     expect(envelope.session.controlBinding).toMatchObject({
       id: "pop0.control-binding.presidential-operating",
       status: "ACTIVE",

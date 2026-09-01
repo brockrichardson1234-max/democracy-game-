@@ -1,6 +1,7 @@
 import type {
   EscalationPresentationRecord,
   InstrumentAssignmentAuthorizationBinding,
+  OMBReviewCapacityState,
   OfficeInstrumentReceipt,
   RecipientCapabilityAuthority,
   RecipientInstrumentDisposition,
@@ -184,6 +185,79 @@ export interface DepartmentSupplementalRecordArtifact {
   readonly supersedesArtifactId: string | null;
 }
 
+export type I5DomainEvidenceKind =
+  | "EMPLOYER_CLOSURE_NOTICE"
+  | "PRELIMINARY_REGIONAL_EMPLOYMENT_ESTIMATE"
+  | "REVISED_REGIONAL_EMPLOYMENT_ESTIMATE"
+  | "MODELED_HOUSEHOLD_INCOME_IMPACT"
+  | "MODELED_HEALTHCARE_COVERAGE_RISK"
+  | "MATERNITY_MONITORING_GAP_MEMO"
+  | "RURAL_MATERNITY_ACCESS_SCOPING"
+  | "CONGRESSIONAL_INITIATIVE_OPPORTUNITY"
+  | "OMB_REVIEW_PRODUCT";
+
+export interface I5DomainEvidenceClaim {
+  readonly id: string;
+  readonly sectionId: string;
+  readonly claimFamily: string;
+  readonly value: string | number | boolean | null | readonly string[];
+  readonly sourceOwnerId: string;
+  readonly sourceRecordId: string;
+  readonly sourceRecordHash: string;
+  readonly observedAt: string;
+  readonly observationAuthorityId: string;
+}
+
+export interface I5DomainEvidenceArtifact {
+  readonly kind: "I5_DOMAIN_EVIDENCE";
+  readonly domainEvidenceKind: I5DomainEvidenceKind;
+  readonly id: string;
+  readonly version: string;
+  readonly producerInstitutionId: string;
+  readonly producingOfficeId: string | null;
+  readonly authoringOfficeholderAssignmentId: string | null;
+  readonly sourceOwnerId: string;
+  readonly sourceOccurrenceIds: readonly string[];
+  readonly observationAuthorityId: string;
+  readonly asOf: string;
+  readonly createdAt: string;
+  readonly releasedAt: string;
+  readonly sectionIds: readonly string[];
+  readonly claims: readonly I5DomainEvidenceClaim[];
+  readonly accessClass: string;
+  readonly analysisOnly: boolean;
+  readonly uncertainty: readonly string[];
+  readonly canonicalArtifactHash: string;
+  readonly provenanceReference: string;
+  readonly revisionOfArtifactId: string | null;
+  readonly supersedesArtifactId: string | null;
+}
+
+export interface I5OfficeCommunicationArtifact {
+  readonly kind: "I5_OFFICE_COMMUNICATION";
+  readonly communicationKind:
+    | "LEGISLATIVE_POSITION"
+    | "INTERGOVERNMENTAL_CONTACT"
+    | "PUBLIC_STATEMENT";
+  readonly id: string;
+  readonly version: string;
+  readonly producingOfficeId: string;
+  readonly authoringOfficeholderAssignmentId: string;
+  readonly sourceInstrumentId: string;
+  readonly sourceDispositionId: string;
+  readonly sourceAssignmentId: string;
+  readonly recipientActorOrInstitutionIds: readonly string[];
+  readonly behaviorPayload: Readonly<Record<string, unknown>>;
+  readonly asOf: string;
+  readonly createdAt: string;
+  readonly releasedAt: string;
+  readonly sectionIds: readonly string[];
+  readonly accessClass: string;
+  readonly provenanceReference: string;
+  readonly revisionOfArtifactId: string | null;
+  readonly supersedesArtifactId: string | null;
+}
+
 export interface AssessmentPropositionJudgment {
   readonly ruleId: string;
   readonly propositionId: string;
@@ -251,7 +325,9 @@ export type PresidentialInformationArtifact =
   | SynthesisArtifact
   | HousingMonitoringEvidenceArtifact
   | DepartmentSupplierSearchEvidenceArtifact
-  | DepartmentSupplementalRecordArtifact;
+  | DepartmentSupplementalRecordArtifact
+  | I5DomainEvidenceArtifact
+  | I5OfficeCommunicationArtifact;
 
 export interface ConfiguredExternalArtifactAccessScope {
   readonly artifactId: string;
@@ -347,7 +423,21 @@ export interface OfficeOperationsState {
   readonly instrumentReceipts: readonly OfficeInstrumentReceipt[];
   readonly instrumentDispositions: readonly RecipientInstrumentDisposition[];
   readonly instrumentAssignmentAuthorizations: readonly InstrumentAssignmentAuthorizationBinding[];
+  readonly externalCommunicationDispatches: readonly I5OfficeCommunicationDispatch[];
   readonly departmentHandlingSubmissions: readonly DepartmentHandlingSubmissionRecord[];
+  readonly ombReviewCapacity?: OMBReviewCapacityState;
+}
+
+export interface I5OfficeCommunicationDispatch {
+  readonly id: string;
+  readonly communicationArtifactId: string;
+  readonly sendingOfficeId: string;
+  readonly sendingOfficeholderAssignmentId: string;
+  readonly recipientActorOrInstitutionId: string;
+  readonly dispatchedAt: string;
+  readonly deliveredAt: string;
+  readonly outcome: "DELIVERED_TO_RECIPIENT_BOUNDARY";
+  readonly provenanceReference: string;
 }
 
 export type DepartmentHandlingSubmissionPayload =
@@ -452,6 +542,11 @@ export type OfficeReceiptSource =
       readonly kind: "OFFICE_ARTIFACT_TRANSFER";
       readonly sourceOfficeId: string;
       readonly sourceOfficeholderAssignmentId: string;
+    }
+  | {
+      readonly kind: "EXTERNAL_OWNER_DELIVERY";
+      readonly sourceOwnerId: string;
+      readonly deliveryAuthorityId: string;
     };
 
 export interface SubstantiveOfficeReceipt {
@@ -559,15 +654,18 @@ export interface OfficeInformationView {
 
 export const isInstitutionProducedArtifact = (
   artifact: PresidentialInformationArtifact,
-): artifact is SourceEvidenceArtifact | HousingMonitoringEvidenceArtifact | DepartmentSupplierSearchEvidenceArtifact =>
+): artifact is SourceEvidenceArtifact | HousingMonitoringEvidenceArtifact | DepartmentSupplierSearchEvidenceArtifact | I5DomainEvidenceArtifact =>
   artifact.kind === "SOURCE_EVIDENCE" ||
   artifact.kind === "HOUSING_MONITORING_EVIDENCE" ||
-  artifact.kind === "HUD_SUPPLIER_SEARCH_EVIDENCE";
+  artifact.kind === "HUD_SUPPLIER_SEARCH_EVIDENCE" ||
+  (artifact.kind === "I5_DOMAIN_EVIDENCE" && artifact.producingOfficeId === null);
 
 export const isOfficeProducedArtifact = (
   artifact: PresidentialInformationArtifact,
-): artifact is AssessmentArtifact | SynthesisArtifact | DepartmentSupplementalRecordArtifact =>
-  artifact.kind === "ASSESSMENT" || artifact.kind === "SYNTHESIS" || artifact.kind === "HUD_SUPPLEMENTAL_RECORD";
+): artifact is AssessmentArtifact | SynthesisArtifact | DepartmentSupplementalRecordArtifact | I5DomainEvidenceArtifact | I5OfficeCommunicationArtifact =>
+  artifact.kind === "ASSESSMENT" || artifact.kind === "SYNTHESIS" ||
+  artifact.kind === "HUD_SUPPLEMENTAL_RECORD" || artifact.kind === "I5_OFFICE_COMMUNICATION" ||
+  (artifact.kind === "I5_DOMAIN_EVIDENCE" && artifact.producingOfficeId !== null);
 
 const copyPlain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -680,12 +778,12 @@ export const assertPresidentialAdministrationConfiguration = (
   ownerIds.forEach((id) => requireNonempty(id, "Administration owner identity"));
   requireUnique(ownerIds, "Administration owner identities");
   if (
-    configuration.institutions.length !== 2 ||
-    configuration.offices.length !== 6 ||
-    configuration.actors.length !== 7 ||
-    configuration.officeholderAssignments.length !== 6 ||
-    configuration.populationLinkages.length !== 7
-  ) throw new Error("POP0-I2 requires exactly two institutions, six offices/holders, and seven linked humans.");
+    configuration.institutions.length !== 3 ||
+    configuration.offices.length !== 9 ||
+    configuration.actors.length !== 10 ||
+    configuration.officeholderAssignments.length !== 9 ||
+    configuration.populationLinkages.length !== 10
+  ) throw new Error("POP0-I5 requires exactly three institutions, nine offices/holders, and ten linked humans.");
 
   requireUnique(configuration.institutions.map((entry) => entry.id), "Institution identities");
   requireUnique(configuration.offices.map((entry) => entry.id), "Office identities");
@@ -709,8 +807,8 @@ export const assertPresidentialAdministrationConfiguration = (
     configuration.recipientCapabilities.map((entry) => entry.id),
     "Recipient-capability identities",
   );
-  if (configuration.recipientCapabilities.length !== 4) {
-    throw new Error("POP0-I4 requires exactly four bounded recipient-capability authorities.");
+  if (configuration.recipientCapabilities.length !== 9) {
+    throw new Error("POP0-I5 requires exactly nine bounded recipient-capability authorities.");
   }
 
   for (const institution of configuration.institutions) {
@@ -878,7 +976,7 @@ export const assertPresidentialAdministrationConfiguration = (
           (kind) => !capability.permittedProductKinds.includes(kind),
         )
       ) throw new Error(`Analysis capability ${capability.id} has invalid product/scope bounds.`);
-    } else {
+    } else if (capability.kind === "COORDINATION_CAPABILITY") {
       requireNonemptyUnique(capability.permittedWorkstreamIds, `${capability.id} workstreams`);
       requireNonemptyUnique(
         capability.permittedCoordinationActionKinds,
@@ -890,6 +988,32 @@ export const assertPresidentialAdministrationConfiguration = (
         !Number.isSafeInteger(capability.maximumReviewHorizonHours) ||
         capability.maximumReviewHorizonHours <= 0
       ) throw new Error(`Coordination capability ${capability.id} has invalid coordination bounds.`);
+    } else if (capability.kind === "LEGISLATIVE_POSITION_CAPABILITY") {
+      requireNonemptyUnique(capability.permittedInitiativeIds, `${capability.id} initiatives`);
+      requireNonemptyUnique(capability.permittedPositionKinds, `${capability.id} positions`);
+      requireUnique(capability.permittedNegotiableTermIds, `${capability.id} negotiable terms`);
+      if (!Number.isSafeInteger(capability.maximumNegotiableTermCount) ||
+        capability.maximumNegotiableTermCount < 0) {
+        throw new Error(`Legislative capability ${capability.id} has invalid term bounds.`);
+      }
+    } else if (capability.kind === "INTERGOVERNMENTAL_CONTACT_CAPABILITY") {
+      requireNonemptyUnique(capability.permittedGovernorIds, `${capability.id} governors`);
+      requireNonemptyUnique(capability.permittedPurposeFamilies, `${capability.id} purposes`);
+      requireNonemptyUnique(capability.prohibitedCommitmentKinds, `${capability.id} prohibited commitments`);
+      if (!Number.isSafeInteger(capability.maximumRecipientCount) || capability.maximumRecipientCount <= 0 ||
+        !Number.isSafeInteger(capability.maximumTalkingPointCount) || capability.maximumTalkingPointCount <= 0) {
+        throw new Error(`Intergovernmental capability ${capability.id} has invalid bounds.`);
+      }
+    } else {
+      requireNonemptyUnique(capability.permittedSubjectFamilies, `${capability.id} subjects`);
+      requireNonemptyUnique(
+        capability.prohibitedUnsupportedClaimFamilies,
+        `${capability.id} prohibited claim families`,
+      );
+      if (!Number.isSafeInteger(capability.maximumClaimCount) || capability.maximumClaimCount <= 0 ||
+        !Number.isSafeInteger(capability.maximumReleaseWindowHours) || capability.maximumReleaseWindowHours <= 0) {
+        throw new Error(`Public-statement capability ${capability.id} has invalid bounds.`);
+      }
     }
   }
 };
@@ -918,6 +1042,7 @@ export const createPresidentialAdministrationOwnerStates = (
            instrumentReceipts: [],
            instrumentDispositions: [],
            instrumentAssignmentAuthorizations: [],
+           externalCommunicationDispatches: [],
            departmentHandlingSubmissions: [],
         }))
         .sort((left, right) => left.officeId.localeCompare(right.officeId)),
@@ -959,9 +1084,18 @@ const allReferenceIds = (state: PresidentialAdministrationOwnerStates): Set<stri
   ...state.informationRoutes.state.retrievals.map((entry) => entry.id),
   ...state.informationRoutes.state.receipts.map((entry) => entry.id),
   ...state.officeOperations.state.flatMap((office) => [
+    ...office.assignments.map((entry) => entry.id),
+    ...office.deadlineDefaultRecords.map((entry) => entry.id),
     ...office.instrumentReceipts.map((entry) => entry.id),
     ...office.instrumentDispositions.map((entry) => entry.id),
+    ...office.externalCommunicationDispatches.map((entry) => entry.id),
     ...office.departmentHandlingSubmissions.map((entry) => entry.id),
+    ...(office.ombReviewCapacity === undefined ? [] : [
+      ...office.ombReviewCapacity.bookings.map((entry) => entry.id),
+      ...office.ombReviewCapacity.coordinationRequests.map((entry) => entry.id),
+      ...office.ombReviewCapacity.queueReprioritizations.map((entry) => entry.id),
+      ...office.ombReviewCapacity.assignmentSupersessions.map((entry) => entry.id),
+    ]),
   ]),
 ]);
 
@@ -1341,6 +1475,10 @@ export const assertPresidentialAdministrationOwnerStates = (
     "Office instrument-receipt deduplication identities",
   );
   requireNonemptyUnique(
+    officeStates.flatMap((entry) => entry.externalCommunicationDispatches.map((dispatch) => dispatch.id)),
+    "Office external-communication dispatch identities",
+  );
+  requireNonemptyUnique(
     officeStates.flatMap((entry) => entry.instrumentDispositions.map((disposition) => disposition.id)),
     "Recipient disposition identities",
   );
@@ -1456,6 +1594,27 @@ export const assertPresidentialAdministrationOwnerStates = (
       requireNonempty(receipt.receiptPath, `${receipt.id} path`);
       requireNonempty(receipt.receivingAuthorityReference, `${receipt.id} authority`);
       requireNonempty(receipt.provenanceReference, `${receipt.id} provenance`);
+    }
+    for (const dispatch of office.externalCommunicationDispatches) {
+      const artifact = findArtifact(state, dispatch.communicationArtifactId);
+      if (
+        artifact?.kind !== "I5_OFFICE_COMMUNICATION" ||
+        artifact.producingOfficeId !== office.officeId ||
+        dispatch.sendingOfficeId !== office.officeId ||
+        !artifact.recipientActorOrInstitutionIds.includes(dispatch.recipientActorOrInstitutionId) ||
+        dispatch.dispatchedAt !== dispatch.deliveredAt ||
+        dispatch.outcome !== "DELIVERED_TO_RECIPIENT_BOUNDARY" ||
+        instant(artifact.createdAt, `${artifact.id} creation`) >
+          instant(dispatch.dispatchedAt, `${dispatch.id} dispatch`) ||
+        instant(dispatch.deliveredAt, `${dispatch.id} delivery`) > currentValue
+      ) throw new Error(`External communication dispatch ${dispatch.id} is invalid.`);
+      assertEffectiveOfficeholder(
+        state,
+        dispatch.sendingOfficeholderAssignmentId,
+        dispatch.sendingOfficeId,
+        dispatch.dispatchedAt,
+      );
+      requireNonempty(dispatch.provenanceReference, `${dispatch.id} provenance`);
     }
     requireUnique(
       office.instrumentDispositions.map((disposition) => disposition.instrumentReceiptId),
@@ -1684,7 +1843,7 @@ export const assertPresidentialAdministrationOwnerStates = (
         receipt.receivedSectionIds.some((id) => !retrieval.requestedSectionIds.includes(id)) ||
         instant(receipt.receivedAt, `${receipt.id} receipt`) < instant(retrieval.completedAt, `${retrieval.id} completion`)
       ) throw new Error(`Office receipt ${receipt.id} lacks a valid technical retrieval.`);
-    } else {
+    } else if (receiptSource.kind === "OFFICE_ARTIFACT_TRANSFER") {
       const source = isOfficeProducedArtifact(artifact) ? artifact.producingOfficeId : null;
       assertEffectiveOfficeholder(
         state,
@@ -1697,6 +1856,14 @@ export const assertPresidentialAdministrationOwnerStates = (
       }
       if (instant(artifact.createdAt, `${artifact.id} creation`) > instant(receipt.receivedAt, `${receipt.id} receipt`)) {
         throw new Error(`Office transfer ${receipt.id} predates artifact ${artifact.id}.`);
+      }
+    } else {
+      if (artifact.kind !== "I5_DOMAIN_EVIDENCE" || artifact.producingOfficeId !== null ||
+        artifact.sourceOwnerId !== receiptSource.sourceOwnerId ||
+        artifact.observationAuthorityId !== receiptSource.deliveryAuthorityId ||
+        receipt.receivingAuthorityReference !== receiptSource.deliveryAuthorityId ||
+        instant(artifact.createdAt, `${artifact.id} creation`) > instant(receipt.receivedAt, `${receipt.id} receipt`)) {
+        throw new Error(`Office receipt ${receipt.id} lacks a valid external-owner delivery.`);
       }
     }
     requireNonempty(receipt.receivingAuthorityReference, `${receipt.id} receiving authority`);

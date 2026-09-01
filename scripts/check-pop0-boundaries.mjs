@@ -21,13 +21,12 @@ const forbiddenFiles = new Set([
   "src/sim/information.ts",
   "src/sim/integrated-information.ts",
   "src/sim/integrated-runtime.ts",
-  "src/sim/legislative-procedure.ts",
-  "src/sim/legislative-runtime.ts",
   "src/sim/population-core.ts",
   "src/sim/population.ts",
   "src/sim/world.ts",
   "src/content/us-v0/i6.ts",
   "src/content/us-v0/i7.ts",
+  "src/content/us-v0/configuration.ts",
 ]);
 const playerFacingConsumers = [
   "src/app/production-contract.ts",
@@ -71,18 +70,18 @@ const git = (...args) => {
   const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
   if (result.error !== undefined || result.status !== 0) {
     const detail = result.error?.message ?? (result.stderr.trim() || `exit ${String(result.status)}`);
-    throw new Error(`POP0-I4 ancestry check could not run git ${args.join(" ")}: ${detail}`);
+    throw new Error(`POP0-I5 ancestry check could not run git ${args.join(" ")}: ${detail}`);
   }
   return result.stdout.trim();
 };
 
 const mergeBase = git("merge-base", "HEAD", "origin/main");
 if (mergeBase !== acceptedProductionBase) {
-  throw new Error(`POP0-I4 merge base must remain ${acceptedProductionBase}; received ${mergeBase}.`);
+  throw new Error(`POP0-I5 merge base must remain ${acceptedProductionBase}; received ${mergeBase}.`);
 }
 const mainTip = git("rev-parse", "origin/main");
 if (mainTip !== acceptedProductionBase) {
-  throw new Error(`POP0-I4 verification requires unchanged main at ${acceptedProductionBase}; received ${mainTip}.`);
+  throw new Error(`POP0-I5 verification requires unchanged main at ${acceptedProductionBase}; received ${mainTip}.`);
 }
 const stageOneAncestry = spawnSync(
   "git",
@@ -91,10 +90,10 @@ const stageOneAncestry = spawnSync(
 );
 if (stageOneAncestry.error !== undefined || ![0, 1].includes(stageOneAncestry.status ?? -1)) {
   const detail = stageOneAncestry.error?.message ?? stageOneAncestry.stderr.trim();
-  throw new Error(`POP0-I4 Stage 1 ancestry check failed to execute: ${detail}`);
+  throw new Error(`POP0-I5 Stage 1 ancestry check failed to execute: ${detail}`);
 }
 if (stageOneAncestry.status === 0) {
-  throw new Error(`POP0-I4 branch must not contain Stage 1 commit ${stageOneCommit}.`);
+  throw new Error(`POP0-I5 branch must not contain Stage 1 commit ${stageOneCommit}.`);
 }
 
 const normalizePath = (file) => relative(root, file).replaceAll("\\", "/");
@@ -106,7 +105,7 @@ const resolveImport = (from, specifier) => {
     .find((candidate) => existsSync(candidate) && statSync(candidate).isFile()) ?? null;
 };
 
-if (!existsSync(entry)) throw new Error("POP0-I4 proof factory entry is missing.");
+if (!existsSync(entry)) throw new Error("POP0-I5 proof factory entry is missing.");
 for (const path of forbiddenStageOnePaths) {
   if (existsSync(resolve(root, path))) {
     throw new Error(`Stage 1 source/artifact ${path} must not exist on the POP0 implementation branch.`);
@@ -119,16 +118,16 @@ const visit = async (file) => {
   if (visited.has(file)) return;
   visited.add(file);
   const path = normalizePath(file);
-  if (forbiddenFiles.has(path)) throw new Error(`POP0-I4 reaches forbidden legacy/later dependency ${path}.`);
+  if (forbiddenFiles.has(path)) throw new Error(`POP0-I5 reaches forbidden legacy/later dependency ${path}.`);
   const source = await readFile(file, "utf8");
   for (const symbol of forbiddenSymbols) {
-    if (source.includes(symbol)) throw new Error(`POP0-I4 reaches forbidden symbol ${symbol} through ${path}.`);
+    if (source.includes(symbol)) throw new Error(`POP0-I5 reaches forbidden symbol ${symbol} through ${path}.`);
   }
   for (const pattern of forbiddenAuditPatterns) {
-    if (pattern.test(source)) throw new Error(`POP0-I4 reaches an audit-only API through ${path}.`);
+    if (pattern.test(source)) throw new Error(`POP0-I5 reaches an audit-only API through ${path}.`);
   }
   for (const pattern of forbiddenActionDispatchPatterns) {
-    if (pattern.test(source)) throw new Error(`POP0-I4 reaches action-prefix dispatch through ${path}.`);
+    if (pattern.test(source)) throw new Error(`POP0-I5 reaches action-prefix dispatch through ${path}.`);
   }
   const importPatterns = [
     /(?:import|export)\s+(?:[^"']*?\s+from\s+)?["']([^"']+)["']/g,
@@ -152,7 +151,7 @@ const visit = async (file) => {
 await visit(entry);
 if (!edges.some((edge) =>
   edge.from === allowedControlBindingImporter && edge.to === controlBindingPath)) {
-  throw new Error("POP0-I4 must reuse the narrow lower-level ControlBinding directly.");
+  throw new Error("POP0-I5 must reuse the narrow lower-level ControlBinding directly.");
 }
 
 for (const required of [
@@ -161,9 +160,13 @@ for (const required of [
   "src/sim/presidential-operating-housing.ts",
   "src/content/us-v0/i6-owner-content.ts",
   "src/content/us-v0/i7-owner-content.ts",
+  "src/sim/legislative-runtime.ts",
+  "src/sim/presidential-operating-concurrent-world-types.ts",
+  "src/sim/presidential-operating-concurrent-world.ts",
+  "src/content/us-v0/legislative-owner-content.ts",
 ]) {
   if (![...visited].some((file) => normalizePath(file) === required)) {
-    throw new Error(`POP0-I4 direct lower-owner graph is missing ${required}.`);
+    throw new Error(`POP0-I5 direct lower-owner graph is missing ${required}.`);
   }
 }
 
@@ -179,9 +182,9 @@ for (const projectionInput of [
   const match = interventionSource.match(
     new RegExp(`export interface ${projectionInput}\\s*\\{[\\s\\S]*?\\n\\}`),
   );
-    if (match === null) throw new Error(`POP0-I4 narrow projection input ${projectionInput} is missing.`);
+    if (match === null) throw new Error(`POP0-I5 narrow projection input ${projectionInput} is missing.`);
   if (/PresidentialOperatingRuntimeState|PresidentialInterventionState|ownerStates|getOperatingState/.test(match[0])) {
-      throw new Error(`POP0-I4 projection ${projectionInput} accepts a full canonical-state graph.`);
+      throw new Error(`POP0-I5 projection ${projectionInput} accepts a full canonical-state graph.`);
   }
 }
 
@@ -195,5 +198,5 @@ for (const consumer of playerFacingConsumers) {
 }
 
 console.log(
-  `POP0-I4 boundary verified across ${visited.size} runtime modules at accepted base ${acceptedProductionBase}: direct lower-level ControlBinding and implementation/Housing owners through narrow content only; no Stage 1, legacy session, global action surface, I5+ owner, player-facing full state, or audit dependency.`,
+  `POP0-I5 boundary verified across ${visited.size} runtime modules at accepted base ${acceptedProductionBase}: direct lower-level ControlBinding plus implementation, Housing, Employment, Congress, external-actor, media, and quiet-condition owners through narrow content only; no Stage 1, legacy session, global action surface, I6+ owner, player-facing full state, or audit dependency.`,
 );

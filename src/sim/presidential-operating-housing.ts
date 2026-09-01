@@ -686,7 +686,9 @@ const assertSupplementalArtifactsAndHandling = (
   const artifacts = state.informationRoutes.state.artifacts.filter(
     (entry): entry is DepartmentSupplementalRecordArtifact => entry.kind === "HUD_SUPPLEMENTAL_RECORD",
   );
-  const productions = state.informationRoutes.state.officeArtifactProductions;
+  const productions = state.informationRoutes.state.officeArtifactProductions.filter((entry) =>
+    state.informationRoutes.state.artifacts.some((artifact) =>
+      artifact.id === entry.artifactId && artifact.kind === "HUD_SUPPLEMENTAL_RECORD"));
   if (artifacts.length > 1 || productions.length > 1) {
     throw new Error("POP0-I4 permits one bounded supplemental artifact and production occurrence.");
   }
@@ -741,11 +743,9 @@ const assertSupplementalArtifactsAndHandling = (
       instant(artifact.createdAt, `${artifact.id} creation`) > instant(current, "Current Housing time")
     ) throw new Error(`Department supplemental artifact ${artifact.id} lacks exact causal provenance.`);
   }
-  for (const production of productions) {
-    if (!artifacts.some((entry) => entry.id === production.artifactId)) {
-      throw new Error(`Office artifact production ${production.id} is not a bounded I4 supplemental product.`);
-    }
-  }
+  // I5 adds other office-produced artifacts to the shared, noncognitive
+  // information ledger. The loop above closes every HUD supplemental record;
+  // unrelated office products remain validated by their own owner boundary.
 
   const handling = state.officeOperations.state.flatMap((office) => office.departmentHandlingSubmissions);
   if (new Set(handling.map((entry) => entry.id)).size !== handling.length ||

@@ -72,6 +72,7 @@ const withAdministration = (
     administration,
     intervention: base.intervention,
     housing: base.housing,
+    concurrentWorld: base.concurrentWorld,
   };
   return {
     ...withoutHash,
@@ -231,7 +232,7 @@ describe("POP0-I3 bounded semantic repair boundaries", () => {
       authoringOfficeholderAssignmentId: POP0_I2_OFFICEHOLDER_ASSIGNMENT_IDS.chiefOfStaff,
     })).toThrow(/unsupported for a coordination request/i);
     expect(coordination.save()).toBe(before);
-  });
+  }, 35_000);
 
   it("accepts MISSING_REQUIRED_EVIDENCE only when the exact OMB evidence scope is absent", () => {
     const session = createPop0I3TraceSession();

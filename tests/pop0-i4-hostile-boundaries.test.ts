@@ -56,6 +56,7 @@ const withHousing = (
     administration: base.administration,
     intervention: base.intervention,
     housing,
+    concurrentWorld: base.concurrentWorld,
   };
   return {
     ...withoutHash,
@@ -154,15 +155,17 @@ describe("POP0-I4 hostile owner, knowledge, and causality boundaries", () => {
     }
   });
 
-  it("keeps the exact two-workstream/two-rule I3 substrate closed", () => {
+  it("keeps the exact four-workstream/four-rule I5 substrate closed", () => {
     expect(POP0_V0_OPERATING_CONFIGURATION.intervention.workstreamDefinitions.map((entry) => entry.id))
       .toEqual([
         "pop0.workstream.preliminary-labor-evidence-review",
         POP0_I4_IDS.housingWorkstream,
+        "pop0.workstream.regional-employment-congressional-engagement",
+        "pop0.workstream.rural-maternity-service-access-review",
       ]);
-    expect(POP0_V0_OPERATING_CONFIGURATION.intervention.escalationEligibilityRules).toHaveLength(2);
+    expect(POP0_V0_OPERATING_CONFIGURATION.intervention.escalationEligibilityRules).toHaveLength(4);
     expect(POP0_V0_OPERATING_CONFIGURATION.intervention.escalationEligibilityRules
-      .filter((entry) => entry.requiredBasisKind === "RECEIPT")).toHaveLength(1);
+      .filter((entry) => entry.requiredBasisKind === "RECEIPT")).toHaveLength(3);
   });
 
   it("does not fan Department possession or Secretary receipt into another office or the President", () => {

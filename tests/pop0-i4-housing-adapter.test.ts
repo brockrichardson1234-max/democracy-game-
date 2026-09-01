@@ -29,7 +29,7 @@ describe("POP0-I4 inherited Housing adapter", () => {
     const stables = project(session, housing.opening.stablesProjectId);
     const palms = project(session, housing.opening.palmsProjectId);
 
-    expect(state.schemaVersion).toBe(4);
+    expect(state.schemaVersion).toBe(5);
     expect(state.ownerStates.programImplementation.sourceArtifactId)
       .toBe(housing.programImplementation.initializationArtifactId);
     expect(state.ownerStates.materialHousing.sourceArtifactId)
@@ -43,8 +43,8 @@ describe("POP0-I4 inherited Housing adapter", () => {
     expect(session.getOfficeInformation(POP0_I2_OFFICE_IDS.chiefOfStaff).receipts).toEqual([]);
     expect(state.ownerStates.administrationWorkstreams.state.workstreams.map((entry) => entry.id))
       .toEqual([POP0_I4_IDS.housingWorkstream]);
-    expect(POP0_V0_OPERATING_CONFIGURATION.intervention.workstreamDefinitions).toHaveLength(2);
-    expect(POP0_V0_OPERATING_CONFIGURATION.intervention.escalationEligibilityRules).toHaveLength(2);
+    expect(POP0_V0_OPERATING_CONFIGURATION.intervention.workstreamDefinitions).toHaveLength(4);
+    expect(POP0_V0_OPERATING_CONFIGURATION.intervention.escalationEligibilityRules).toHaveLength(4);
   });
 
   it("advances Palms in the background without creating Housing Attention or unblocking Stables", () => {

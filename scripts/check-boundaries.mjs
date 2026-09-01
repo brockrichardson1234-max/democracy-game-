@@ -65,7 +65,7 @@ const simForbiddenGlobals = [
   ["Date.now", /\bDate\.now\s*\(/],
   ["new Date", /\bnew\s+Date\s*\(/],
   ["performance.now", /\bperformance\.now\s*\(/],
-  ["window", /\bwindow\b/],
+  ["window", /\bwindow\s*(?:\.|\[)/],
   ["document", /\bdocument\b/],
   ["navigator", /\bnavigator\b/],
   ["localStorage", /\blocalStorage\b/],

@@ -60,6 +60,7 @@ const withAdministration = (
     administration,
     intervention: base.intervention,
     housing: base.housing,
+    concurrentWorld: base.concurrentWorld,
   };
   return {
     ...withoutHash,

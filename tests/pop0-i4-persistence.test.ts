@@ -79,7 +79,7 @@ describe("POP0-I4 atomic Housing persistence", () => {
     }
   });
 
-  it("stores direct format-4 lower owners and reference-only I4 history", () => {
+  it("stores direct format-5 lower owners and reference-only I4 history", () => {
     const session = createPop0I4TraceSession();
     runFullPop0I4Trace(session);
     const saved = session.save();
@@ -87,8 +87,8 @@ describe("POP0-I4 atomic Housing persistence", () => {
     const owners = envelope.operatingState.ownerStates;
     const historyKinds = owners.historicalRecordIndex.state.entries.map((entry) => entry.recordKind);
 
-    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(4);
-    expect(envelope.formatVersion).toBe(4);
+    expect(PRESIDENTIAL_OPERATING_SAVE_FORMAT_VERSION).toBe(5);
+    expect(envelope.formatVersion).toBe(5);
     expect(owners.programImplementation.materialInputs.length).toBeGreaterThan(0);
     expect(owners.materialHousing.acceptedInputs.length).toBeGreaterThan(0);
     expect(historyKinds).toEqual(expect.arrayContaining([
