@@ -49,6 +49,7 @@ import {
 import type {
   ConcurrentWorldConfiguration,
   CongressionalAttemptEligibilityAssessment,
+  CongressionalFormationDecision,
   CongressionalProcedureTransitionAttemptOccurrence,
   CongressionalTransitionKind,
   LegislativeTransitionAttemptAuthorization,
@@ -57,6 +58,7 @@ import type {
   ExternalActorActionOccurrence,
   ExternalActorOwnerState,
   I5HumanIdentityLinkage,
+  MaternityServiceAccessState,
   MediaStoryArtifact,
   PresidentialConcurrentWorldOwnerStates,
   PresidentialInquiryPreviewPresentation,
@@ -278,12 +280,14 @@ export const computeI5DomainEvidenceArtifactHash = (
   artifact: Omit<I5DomainEvidenceArtifact, "canonicalArtifactHash">,
 ): string => sha(artifact);
 
-const withoutArtifactHash = (
-  artifact: I5DomainEvidenceArtifact,
-): Omit<I5DomainEvidenceArtifact, "canonicalArtifactHash"> => {
-  const { canonicalArtifactHash, ...withoutHash } = artifact;
-  void canonicalArtifactHash;
-  return withoutHash;
+const assertExpectedI5DomainEvidenceArtifact = (
+  actual: I5DomainEvidenceArtifact,
+  expected: I5DomainEvidenceArtifact,
+  family: string,
+): void => {
+  if (!sameOrdered([actual], [expected])) {
+    throw new Error(`${family} evidence ${actual.id} does not independently reconcile to canonical source truth.`);
+  }
 };
 
 export const computeLegislativeRuntimeStateHash = (state: LegislativeRuntimeState): string => sha(state);
@@ -1061,13 +1065,12 @@ export const concurrentWorldBoundaryInstants = (
   ...configuration.ombReviewCapacity.openingAssignments.map((entry) => entry.deadline),
 ])].sort((left, right) => instant(left, left) - instant(right, right));
 
-const appendEmploymentBoundary = (
-  state: ConcurrentOperationState,
+const applyEmploymentBoundary = (
+  priorState: RegionalEmploymentState,
   configuration: ConcurrentWorldConfiguration,
   at: string,
-): ConcurrentOperationState => {
-  if (!employmentBoundaryInstants(configuration).includes(at)) return state;
-  const priorState = state.regionalEmployment.state;
+): RegionalEmploymentState => {
+  if (!employmentBoundaryInstants(configuration).includes(at)) return priorState;
   let material = [...priorState.materialOccurrences];
   const intervals = new Map(priorState.cells.map((entry) => [entry.id, [...entry.intervals]]));
   const current = new Map(priorState.cells.map((entry) => [entry.id, entry.currentEmployed]));
@@ -1140,38 +1143,62 @@ const appendEmploymentBoundary = (
   }
   material = sortedAtAndId(material, (entry) => entry.occurredAt, (entry) => entry.id) as EmploymentMaterialOccurrence[];
   return {
-    ...state,
-    regionalEmployment: {
-      ...state.regionalEmployment,
-      state: {
-        ...priorState,
-        cells: priorState.cells.map((entry) => ({
-          ...entry, currentEmployed: current.get(entry.id)!,
-          intervals: sortedAtAndId(intervals.get(entry.id)!, (candidate) => candidate.closesAt, (candidate) => candidate.id),
-        })),
-        materialOccurrences: material,
-      },
-    },
+    ...priorState,
+    cells: priorState.cells.map((entry) => ({
+      ...entry, currentEmployed: current.get(entry.id)!,
+      intervals: sortedAtAndId(intervals.get(entry.id)!, (candidate) => candidate.closesAt, (candidate) => candidate.id),
+    })),
+    materialOccurrences: material,
   };
 };
 
-const buildEmploymentArtifact = (
+const appendEmploymentBoundary = (
   state: ConcurrentOperationState,
+  configuration: ConcurrentWorldConfiguration,
+  at: string,
+): ConcurrentOperationState => ({
+  ...state,
+  regionalEmployment: {
+    ...state.regionalEmployment,
+    state: applyEmploymentBoundary(state.regionalEmployment.state, configuration, at),
+  },
+});
+
+const expectedEmploymentStateAt = (
+  configuration: ConcurrentWorldConfiguration,
+  at: string,
+): RegionalEmploymentState => {
+  let expected = openingEmploymentState(configuration);
+  for (const boundary of [...new Set(employmentBoundaryInstants(configuration))].filter((entry) =>
+    instant(entry, "Employment replay boundary") <= instant(at, "Employment replay target"))) {
+    expected = applyEmploymentBoundary(expected, configuration, boundary);
+  }
+  return expected;
+};
+
+const buildEmploymentArtifactFromOwner = (
+  employment: RegionalEmploymentState,
   configuration: ConcurrentWorldConfiguration,
   opportunity: EmploymentEvidenceReleaseOpportunity,
 ): I5DomainEvidenceArtifact | null => {
   const authority = configuration.domainObservationAuthorities.find((entry) =>
     entry.id === opportunity.observationAuthorityId &&
     isEffectiveAt(entry.effectiveFrom, entry.effectiveUntil, opportunity.opensAt));
-  const sources = state.regionalEmployment.state.materialOccurrences.filter((entry) =>
+  const sources = employment.materialOccurrences.filter((entry) =>
     instant(entry.occurredAt, `${entry.id} occurrence`) <= instant(opportunity.opensAt, `${opportunity.id} release`));
-  if (authority === undefined || sources.length === 0) return null;
+  if (authority === undefined || authority.sourceOwnerId !== configuration.employment.ownerId ||
+    authority.observingInstitutionId !== configuration.employment.producerInstitutionId ||
+    !authority.artifactKinds.includes(opportunity.domainEvidenceKind) ||
+    !authority.permittedClaimFamilies.includes(opportunity.domainEvidenceKind) ||
+    sources.length === 0 || sources.some((entry) =>
+      !authority.permittedRecordKinds.includes(entry.kind) ||
+      !authority.geographyOrEntityIds.includes(entry.cellId))) return null;
   const claims: I5DomainEvidenceClaim[] = opportunity.sectionIds.map((sectionId, index) => ({
     id: `${opportunity.artifactId}.claim.${index + 1}`,
     sectionId,
     claimFamily: opportunity.domainEvidenceKind,
     value: index === 0
-      ? state.regionalEmployment.state.cells.reduce((sum, entry) => sum + entry.currentEmployed, 0)
+      ? employment.cells.reduce((sum, entry) => sum + entry.currentEmployed, 0)
       : sources.map((entry) => entry.id),
     sourceOwnerId: configuration.ownerIds.regionalEmployment,
     sourceRecordId: sources[Math.min(index, sources.length - 1)].id,
@@ -1197,6 +1224,16 @@ const buildEmploymentArtifact = (
   };
   return { ...withoutHash, canonicalArtifactHash: computeI5DomainEvidenceArtifactHash(withoutHash) };
 };
+
+const buildEmploymentArtifact = (
+  state: ConcurrentOperationState,
+  configuration: ConcurrentWorldConfiguration,
+  opportunity: EmploymentEvidenceReleaseOpportunity,
+): I5DomainEvidenceArtifact | null => buildEmploymentArtifactFromOwner(
+  state.regionalEmployment.state,
+  configuration,
+  opportunity,
+);
 
 const releaseEmploymentEvidence = (
   state: ConcurrentOperationState,
@@ -1291,6 +1328,51 @@ const addCongressReceiptAndFormation = (
   };
 };
 
+const buildCongressAdministrationEvidenceArtifact = (
+  ownerId: string,
+  formation: CongressionalFormationDecision,
+  configuration: ConcurrentWorldConfiguration,
+): I5DomainEvidenceArtifact => {
+  const delivery = configuration.congress.administrationEvidenceDelivery;
+  const claims: I5DomainEvidenceClaim[] = [
+    {
+      id: `${delivery.artifactId}.claim.initiative`, sectionId: "initiative",
+      claimFamily: "CONGRESSIONAL_INITIATIVE_OPPORTUNITY", value: configuration.congress.initiativeId,
+      sourceOwnerId: ownerId, sourceRecordId: formation.id,
+      sourceRecordHash: sha(formation), observedAt: delivery.deliveredAt, observationAuthorityId: delivery.id,
+    },
+    {
+      id: `${delivery.artifactId}.claim.procedure-interval`, sectionId: "window",
+      claimFamily: "CONGRESSIONAL_INITIATIVE_OPPORTUNITY",
+      value: configuration.congress.procedureOpportunity.closesAt,
+      sourceOwnerId: ownerId,
+      sourceRecordId: configuration.congress.procedureOpportunity.id,
+      sourceRecordHash: sha(configuration.congress.procedureOpportunity),
+      observedAt: delivery.deliveredAt, observationAuthorityId: delivery.id,
+    },
+  ];
+  const withoutHash = {
+    kind: "I5_DOMAIN_EVIDENCE" as const,
+    domainEvidenceKind: "CONGRESSIONAL_INITIATIVE_OPPORTUNITY" as const,
+    id: delivery.artifactId, version: "1",
+    producerInstitutionId: ownerId,
+    producingOfficeId: null, authoringOfficeholderAssignmentId: null,
+    sourceOwnerId: ownerId,
+    sourceOccurrenceIds: [formation.id], observationAuthorityId: delivery.id,
+    asOf: delivery.deliveredAt, createdAt: delivery.deliveredAt, releasedAt: delivery.deliveredAt,
+    sectionIds: [...delivery.sectionIds], claims,
+    accessClass: "CONGRESS_TO_LEGISLATIVE_AFFAIRS_BOUNDED_OPPORTUNITY",
+    analysisOnly: false,
+    uncertainty: ["The route reports an initiative and procedural opportunity, not a guaranteed lower result."],
+    provenanceReference: delivery.provenanceReference,
+    revisionOfArtifactId: null, supersedesArtifactId: null,
+  };
+  return {
+    ...withoutHash,
+    canonicalArtifactHash: computeI5DomainEvidenceArtifactHash(withoutHash),
+  };
+};
+
 const deliverCongressEvidenceToAdministration = (
   state: ConcurrentOperationState,
   configuration: ConcurrentWorldConfiguration,
@@ -1302,43 +1384,11 @@ const deliverCongressEvidenceToAdministration = (
   const congress = state.congressionalInitiative.state;
   const formation = congress.formationDecisions.find((entry) => entry.decision === "INITIATE_DRAFT");
   if (formation === undefined || congress.legislativeRuntime === null) return state;
-  const claims: I5DomainEvidenceClaim[] = [
-    {
-      id: `${delivery.artifactId}.claim.initiative`, sectionId: "initiative",
-      claimFamily: "CONGRESSIONAL_INITIATIVE_OPPORTUNITY", value: configuration.congress.initiativeId,
-      sourceOwnerId: state.congressionalInitiative.ownerId, sourceRecordId: formation.id,
-      sourceRecordHash: sha(formation), observedAt: at, observationAuthorityId: delivery.id,
-    },
-    {
-      id: `${delivery.artifactId}.claim.procedure-interval`, sectionId: "window",
-      claimFamily: "CONGRESSIONAL_INITIATIVE_OPPORTUNITY",
-      value: configuration.congress.procedureOpportunity.closesAt,
-      sourceOwnerId: state.congressionalInitiative.ownerId,
-      sourceRecordId: configuration.congress.procedureOpportunity.id,
-      sourceRecordHash: sha(configuration.congress.procedureOpportunity),
-      observedAt: at, observationAuthorityId: delivery.id,
-    },
-  ];
-  const withoutHash = {
-    kind: "I5_DOMAIN_EVIDENCE" as const,
-    domainEvidenceKind: "CONGRESSIONAL_INITIATIVE_OPPORTUNITY" as const,
-    id: delivery.artifactId, version: "1",
-    producerInstitutionId: state.congressionalInitiative.ownerId,
-    producingOfficeId: null, authoringOfficeholderAssignmentId: null,
-    sourceOwnerId: state.congressionalInitiative.ownerId,
-    sourceOccurrenceIds: [formation.id], observationAuthorityId: delivery.id,
-    asOf: at, createdAt: at, releasedAt: at,
-    sectionIds: [...delivery.sectionIds], claims,
-    accessClass: "CONGRESS_TO_LEGISLATIVE_AFFAIRS_BOUNDED_OPPORTUNITY",
-    analysisOnly: false,
-    uncertainty: ["The route reports an initiative and procedural opportunity, not a guaranteed lower result."],
-    provenanceReference: delivery.provenanceReference,
-    revisionOfArtifactId: null, supersedesArtifactId: null,
-  };
-  const artifact: I5DomainEvidenceArtifact = {
-    ...withoutHash,
-    canonicalArtifactHash: computeI5DomainEvidenceArtifactHash(withoutHash),
-  };
+  const artifact = buildCongressAdministrationEvidenceArtifact(
+    state.congressionalInitiative.ownerId,
+    formation,
+    configuration,
+  );
   return {
     ...state,
     informationRoutes: {
@@ -1616,6 +1666,46 @@ const reconcileMaternityAccess = (
   };
 };
 
+const expectedMaternityOwnerAt = (
+  configuration: ConcurrentWorldConfiguration,
+  at: string,
+) => {
+  const source = configuration.maternityServiceAccess;
+  const effectiveCapacity = source.openingCapacity - source.withdrawnCapacity;
+  const materialHistory: MaternityServiceAccessState["materialHistory"][number][] = [{
+    id: "pop0.maternity-occurrence.configured-service-withdrawal",
+    kind: "SERVICE_WITHDRAWAL" as const,
+    occurredAt: source.withdrawalOccurredAt,
+    priorCapacity: source.openingCapacity,
+    resultingCapacity: effectiveCapacity,
+    priorTravelBurdenMinutes: source.openingTravelBurdenMinutes,
+    resultingTravelBurdenMinutes: source.openingTravelBurdenMinutes,
+    provenanceReference: source.provenanceReference,
+  }];
+  const reconciled = instant(at, "Maternity replay target") >=
+    instant(source.burdenReconciliationAt, "Maternity burden reconciliation");
+  if (reconciled) materialHistory.push({
+    id: "pop0.maternity-occurrence.access-burden-reconciled",
+    kind: "ACCESS_BURDEN_RECONCILED",
+    occurredAt: source.burdenReconciliationAt,
+    priorCapacity: effectiveCapacity,
+    resultingCapacity: effectiveCapacity,
+    priorTravelBurdenMinutes: source.openingTravelBurdenMinutes,
+    resultingTravelBurdenMinutes: source.reconciledTravelBurdenMinutes,
+    provenanceReference: source.provenanceReference,
+  });
+  return {
+    facilityId: source.facilityId,
+    serviceAreaId: source.serviceAreaId,
+    effectiveCapacity,
+    catchmentCount: source.catchmentCount,
+    currentTravelBurdenMinutes: reconciled
+      ? source.reconciledTravelBurdenMinutes
+      : source.openingTravelBurdenMinutes,
+    materialHistory,
+  };
+};
+
 const applyInquiryExpirations = (
   state: ConcurrentOperationState,
   configuration: ConcurrentWorldConfiguration,
@@ -1794,6 +1884,7 @@ const validateEmployment = (
   configuration: ConcurrentWorldConfiguration,
   current: string,
 ): void => {
+  const expectedCurrent = expectedEmploymentStateAt(configuration, current);
   if (!sameSet(state.regionalEmployment.state.cells.map((entry) => entry.id), exactEmploymentCells)) {
     throw new Error("Employment owner cell set is invalid.");
   }
@@ -1822,15 +1913,40 @@ const validateEmployment = (
   if (actualPlant !== duePlant || actualPlant > configuredTotal) {
     throw new Error("Employment plant overlay is not admitted exactly once.");
   }
-  for (const release of state.regionalEmployment.state.evidenceReleases) {
-    const opportunity = configuration.employment.releaseOpportunities.find((entry) => entry.id === release.opportunityId);
-    const artifact = findArtifact(state, release.artifactId);
-    if (opportunity === undefined || artifact?.kind !== "I5_DOMAIN_EVIDENCE" ||
-      artifact.observationAuthorityId !== opportunity.observationAuthorityId ||
-      artifact.canonicalArtifactHash !== computeI5DomainEvidenceArtifactHash(withoutArtifactHash(artifact)) ||
-      release.sourceOccurrenceIds.some((id) => !materialIds.includes(id))) {
-      throw new Error(`Employment evidence release ${release.id} has invalid owner lineage.`);
+  if (!sameOrdered(state.regionalEmployment.state.cells, expectedCurrent.cells) ||
+    !sameOrdered(state.regionalEmployment.state.materialOccurrences, expectedCurrent.materialOccurrences)) {
+    throw new Error("Employment canonical stock/flow owner contradicts configured autonomous progression.");
+  }
+  const dueOpportunities = configuration.employment.releaseOpportunities.filter((entry) =>
+    instant(entry.opensAt, `${entry.id} release`) <= instant(current, "Current I5 time"));
+  const employmentKinds: ReadonlySet<string> = new Set(
+    configuration.employment.releaseOpportunities.map((entry) => entry.domainEvidenceKind),
+  );
+  const artifacts = state.informationRoutes.state.artifacts.filter((entry): entry is I5DomainEvidenceArtifact =>
+    entry.kind === "I5_DOMAIN_EVIDENCE" && employmentKinds.has(entry.domainEvidenceKind));
+  if (state.regionalEmployment.state.evidenceReleases.length !== dueOpportunities.length ||
+    artifacts.length !== dueOpportunities.length) {
+    throw new Error("Employment evidence releases are missing, duplicated, early, or orphaned.");
+  }
+  for (const opportunity of dueOpportunities) {
+    const expectedOwner = expectedEmploymentStateAt(configuration, opportunity.opensAt);
+    const expectedArtifact = buildEmploymentArtifactFromOwner(expectedOwner, configuration, opportunity);
+    const release = state.regionalEmployment.state.evidenceReleases.find((entry) =>
+      entry.opportunityId === opportunity.id);
+    const artifact = artifacts.find((entry) => entry.id === opportunity.artifactId);
+    if (expectedArtifact === null || release === undefined || artifact === undefined ||
+      !sameOrdered([release], [{
+        id: `${opportunity.id}.release`,
+        artifactId: expectedArtifact.id,
+        opportunityId: opportunity.id,
+        sourceOccurrenceIds: [...expectedArtifact.sourceOccurrenceIds],
+        observationAuthorityId: expectedArtifact.observationAuthorityId,
+        releasedAt: opportunity.opensAt,
+        provenanceReference: expectedArtifact.provenanceReference,
+      }])) {
+      throw new Error(`Employment evidence release ${opportunity.id} has invalid owner lineage.`);
     }
+    assertExpectedI5DomainEvidenceArtifact(artifact, expectedArtifact, "Employment");
   }
 };
 
@@ -1847,6 +1963,15 @@ const validateCongress = (
     entry.source.kind === "EXTERNAL_OWNER_DELIVERY" &&
     entry.source.deliveryAuthorityId === delivery.id);
   const formation = congress.formationDecisions.find((entry) => entry.decision === "INITIATE_DRAFT");
+  if (formation !== undefined && (
+    formation.id !== "pop0.congress-formation-decision.regional-employment-stabilization" ||
+    formation.actorId !== configuration.congress.formationActorId ||
+    formation.opportunityId !== configuration.congress.formationOpportunity.id ||
+    formation.assessmentId !== "pop0.congress-assessment.formation-eligibility" ||
+    formation.decidedAt !== configuration.congress.evidenceDeliveryAt ||
+    formation.legislativeRuntimeReference !== configuration.congress.legislativeRuntimeReference ||
+    formation.provenanceReference !== configuration.congress.provenanceReference
+  )) throw new Error("Congress formation source record contradicts its configured owner opportunity.");
   const deliveryDue = formation !== undefined &&
     instant(current, "Congress validation time") >= instant(delivery.deliveredAt, "Congress administration delivery");
   if (deliveryDue ? deliveredArtifacts.length !== 1 || deliveredReceipts.length !== 1
@@ -1856,14 +1981,19 @@ const validateCongress = (
   if (deliveryDue) {
     const artifact = deliveredArtifacts[0];
     const receipt = deliveredReceipts[0];
+    const expectedArtifact = buildCongressAdministrationEvidenceArtifact(
+      state.congressionalInitiative.ownerId,
+      formation!,
+      configuration,
+    );
     if (artifact.id !== delivery.artifactId || artifact.sourceOwnerId !== state.congressionalInitiative.ownerId ||
       artifact.observationAuthorityId !== delivery.id || artifact.sourceOccurrenceIds.length !== 1 ||
       artifact.sourceOccurrenceIds[0] !== formation!.id ||
-      artifact.canonicalArtifactHash !== computeI5DomainEvidenceArtifactHash(withoutArtifactHash(artifact)) ||
       receipt.artifactId !== artifact.id || receipt.recipientOfficeId !== delivery.recipientOfficeId ||
       !sameOrdered(receipt.receivedSectionIds, delivery.sectionIds) || receipt.receivedAt !== delivery.deliveredAt) {
       throw new Error("Congress administration evidence route copies or fabricates initiative truth.");
     }
+    assertExpectedI5DomainEvidenceArtifact(artifact, expectedArtifact, "Congress");
   }
   requireUnique(congress.transitionAttempts.map((entry) => entry.transitionKind), "Congress transition attempts");
   if (!sameOrdered(congress.transitionAttempts.map((entry) => entry.transitionKind),
@@ -1893,6 +2023,102 @@ const validateCongress = (
   }
 };
 
+const validateHHSDomainEvidence = (
+  state: ConcurrentOperationState,
+  administration: PresidentialAdministrationConfiguration,
+  configuration: ConcurrentWorldConfiguration,
+  current: string,
+): void => {
+  const maternity = state.maternityServiceAccess.state;
+  requireUnique(maternity.evidenceArtifactIds, "Maternity evidence artifacts");
+  const artifacts = state.informationRoutes.state.artifacts.filter((entry): entry is I5DomainEvidenceArtifact =>
+    entry.kind === "I5_DOMAIN_EVIDENCE" &&
+    ["MATERNITY_MONITORING_GAP_MEMO", "RURAL_MATERNITY_ACCESS_SCOPING"].includes(entry.domainEvidenceKind));
+  if (!sameSet(artifacts.map((entry) => entry.id), maternity.evidenceArtifactIds)) {
+    throw new Error("HHS evidence artifacts do not exactly match maternity-owner evidence admissions.");
+  }
+  for (const artifact of artifacts) {
+    const authorities = configuration.domainObservationAuthorities.filter((entry) =>
+      entry.sourceOwnerId === state.maternityServiceAccess.ownerId &&
+      entry.artifactKinds.includes(artifact.domainEvidenceKind));
+    const authority = authorities.length === 1 ? authorities[0] : undefined;
+    const office = administration.offices.find((entry) =>
+      entry.parentInstitutionId === authority?.observingInstitutionId);
+    const operations = state.officeOperations.state.find((entry) => entry.officeId === office?.id);
+    const assignments = operations?.assignments.filter((entry) => entry.resultArtifactIds.includes(artifact.id)) ?? [];
+    const assignment = assignments.length === 1 ? assignments[0] : undefined;
+    const authorization = operations?.instrumentAssignmentAuthorizations.find((entry) =>
+      entry.assignmentId === assignment?.id);
+    const production = state.informationRoutes.state.officeArtifactProductions.find((entry) =>
+      entry.id === `${artifact.id}.production` && entry.artifactId === artifact.id);
+    const at = production?.producedAt;
+    const productionHolderId = production?.producingOfficeholderAssignmentId;
+    const holder = at === undefined || office === undefined ? undefined : administration.officeholderAssignments.find(
+      (entry) => entry.id === productionHolderId &&
+        entry.officeId === office.id && isEffectiveAt(entry.effectiveFrom, entry.effectiveUntil, at),
+    );
+    if (authority === undefined || office === undefined || operations === undefined || assignment === undefined ||
+      authorization?.scope.kind !== "ANALYSIS_ASSIGNMENT_SCOPE" ||
+      authorization.scope.productKind !== artifact.domainEvidenceKind ||
+      production === undefined || at === undefined || holder === undefined ||
+      production.producingOfficeId !== office.id || assignment.status !== "COMPLETED" ||
+      assignment.statusUpdatedAt !== at || !isEffectiveAt(authority.effectiveFrom, authority.effectiveUntil, at) ||
+      instant(at, `${artifact.id} production`) > instant(current, "Current I5 time") ||
+      authority.provenanceReference !== configuration.provenanceReference) {
+      throw new Error(`HHS evidence ${artifact.id} lacks its exact assignment, production, or observation authority.`);
+    }
+    const expectedMaterial = expectedMaternityOwnerAt(configuration, at);
+    if (!authority.permittedClaimFamilies.includes(artifact.domainEvidenceKind) ||
+      expectedMaterial.materialHistory.some((entry) => !authority.permittedRecordKinds.includes(entry.kind)) ||
+      !authority.geographyOrEntityIds.includes(configuration.maternityServiceAccess.serviceAreaId) ||
+      !authority.permittedFieldPaths.includes("effectiveCapacity") ||
+      !authority.permittedFieldPaths.includes("currentTravelBurdenMinutes")) {
+      throw new Error(`HHS evidence ${artifact.id} exceeds its claim-scoped observation authority.`);
+    }
+    const latest = expectedMaterial.materialHistory[expectedMaterial.materialHistory.length - 1];
+    const claims: I5DomainEvidenceClaim[] = [
+      {
+        id: `${artifact.id}.claim.capacity`, sectionId: "scope",
+        claimFamily: artifact.domainEvidenceKind, value: expectedMaterial.effectiveCapacity,
+        sourceOwnerId: state.maternityServiceAccess.ownerId, sourceRecordId: latest.id,
+        sourceRecordHash: sha(latest), observedAt: at, observationAuthorityId: authority.id,
+      },
+      {
+        id: `${artifact.id}.claim.travel-burden`, sectionId: "finding",
+        claimFamily: artifact.domainEvidenceKind, value: expectedMaterial.currentTravelBurdenMinutes,
+        sourceOwnerId: state.maternityServiceAccess.ownerId, sourceRecordId: latest.id,
+        sourceRecordHash: sha(latest), observedAt: at, observationAuthorityId: authority.id,
+      },
+    ];
+    const withoutHash = {
+      kind: "I5_DOMAIN_EVIDENCE" as const,
+      domainEvidenceKind: artifact.domainEvidenceKind as
+        "MATERNITY_MONITORING_GAP_MEMO" | "RURAL_MATERNITY_ACCESS_SCOPING",
+      id: artifact.id, version: "1",
+      producerInstitutionId: authority.observingInstitutionId,
+      producingOfficeId: office.id,
+      authoringOfficeholderAssignmentId: holder.id,
+      sourceOwnerId: state.maternityServiceAccess.ownerId,
+      sourceOccurrenceIds: expectedMaterial.materialHistory.map((entry) => entry.id),
+      observationAuthorityId: authority.id,
+      asOf: at, createdAt: at, releasedAt: at,
+      sectionIds: ["scope", "finding", "limitations"],
+      claims,
+      accessClass: "HHS_BOUNDED_SERVICE_ACCESS_ANALYSIS",
+      analysisOnly: true,
+      uncertainty: ["This bounded analysis does not create a national healthcare or Population owner."],
+      provenanceReference: authority.provenanceReference,
+      revisionOfArtifactId: null,
+      supersedesArtifactId: null,
+    };
+    const expectedArtifact: I5DomainEvidenceArtifact = {
+      ...withoutHash,
+      canonicalArtifactHash: computeI5DomainEvidenceArtifactHash(withoutHash),
+    };
+    assertExpectedI5DomainEvidenceArtifact(artifact, expectedArtifact, "HHS maternity-service");
+  }
+};
+
 const validateOMB = (
   state: ConcurrentOperationState,
   configuration: ConcurrentWorldConfiguration,
@@ -1917,10 +2143,107 @@ const validateOMB = (
     if (assignment === undefined || requirement === undefined || booking.teamId !== capacity.teamId ||
       booking.periodIds.length !== requirement.periodsConsumed ||
       assignment.expectedProductKind !== booking.authorizedProductKind ||
+      booking.sourceAuthorizationId !== assignment.authorityReference ||
       booking.status === "CONSUMED" && (booking.consumedAt === null || assignment.status !== "COMPLETED") ||
       booking.status === "RESERVED" && (booking.consumedAt !== null || booking.releasedAt !== null)) {
       throw new Error(`Budget-review booking ${booking.id} violates capacity/product ownership.`);
     }
+  }
+  const ombArtifacts = state.informationRoutes.state.artifacts.filter((entry): entry is I5DomainEvidenceArtifact =>
+    entry.kind === "I5_DOMAIN_EVIDENCE" && entry.domainEvidenceKind === "OMB_REVIEW_PRODUCT");
+  const consumedBookings = capacity.bookings.filter((entry) => entry.status === "CONSUMED");
+  if (ombArtifacts.length !== consumedBookings.length) {
+    throw new Error("Budget-review evidence products are missing, duplicated, or orphaned.");
+  }
+  for (const booking of consumedBookings) {
+    const assignment = office.assignments.find((entry) => entry.id === booking.assignmentId)!;
+    const configuredOpening = configuration.ombReviewCapacity.openingAssignments.find((entry) =>
+      entry.id === assignment.id);
+    const configuredReplacement = capacity.assignmentSupersessions.find((entry) =>
+      entry.replacementAssignmentId === assignment.id);
+    const replacementPrior = office.assignments.find((entry) =>
+      entry.id === configuredReplacement?.priorAssignmentId);
+    const canonicalOpening = configuredOpening !== undefined && !(
+      assignment.requesterId !== configuredOpening.requesterId ||
+      assignment.leadOfficeId !== office.officeId ||
+      assignment.objective !== configuredOpening.objective ||
+      !sameOrdered(assignment.sourceReferenceIds, configuredOpening.sourceReferenceIds) ||
+      assignment.requiredConsultationOfficeIds.length !== 0 ||
+      assignment.authorityReference !== configuredOpening.authorityReference ||
+      assignment.deadline !== configuredOpening.deadline ||
+      assignment.expectedProductKind !== configuredOpening.expectedProductKind ||
+      assignment.createdAt !== configuration.ombReviewCapacity.bookingOpensAt
+    );
+    const canonicalReplacement = configuredReplacement !== undefined && replacementPrior !== undefined &&
+      assignment.requesterId === replacementPrior.requesterId && assignment.leadOfficeId === office.officeId &&
+      assignment.objective === `Produce the typed less-claiming ${configuredReplacement.replacementProductKind} ` +
+        `authorized by ${configuredReplacement.sourceCoordinationRequestId}.` &&
+      sameOrdered(assignment.sourceReferenceIds, replacementPrior.sourceReferenceIds) &&
+      sameOrdered(assignment.requiredConsultationOfficeIds, replacementPrior.requiredConsultationOfficeIds) &&
+      assignment.authorityReference === configuredReplacement.sourceCoordinationRequestId &&
+      assignment.deadline === replacementPrior.deadline &&
+      assignment.expectedProductKind === configuredReplacement.replacementProductKind &&
+      assignment.createdAt === configuredReplacement.occurredAt;
+    if (!canonicalOpening && !canonicalReplacement) {
+      throw new Error(`Budget-review source assignment ${assignment.id} lacks configured or supersession provenance.`);
+    }
+    const artifactId = `pop0.artifact.budget-review-result.${assignment.id}`;
+    const artifact = ombArtifacts.find((entry) => entry.id === artifactId);
+    const at = booking.consumedAt!;
+    const periods = booking.periodIds.map((id) => capacity.periods.find((entry) => entry.id === id));
+    const latestPeriodEnd = periods.reduce((latest, period) => period !== undefined &&
+      instant(period.endsAt, period.id) > instant(latest, "Budget-review product boundary")
+      ? period.endsAt : latest, configuration.ombReviewCapacity.bookingOpensAt);
+    assertEffectiveOfficeholder(
+      state,
+      booking.actingOfficeholderAssignmentId,
+      office.officeId,
+      at,
+    );
+    const production = state.informationRoutes.state.officeArtifactProductions.find((entry) =>
+      entry.id === `${artifactId}.production` && entry.artifactId === artifactId);
+    if (artifact === undefined || periods.some((entry) => entry === undefined) || latestPeriodEnd !== at ||
+      assignment.statusUpdatedAt !== at || assignment.statusProvenanceReferenceId !== `${artifactId}.production` ||
+      !sameOrdered(assignment.resultArtifactIds, [artifactId]) || production?.producedAt !== at ||
+      production.producingOfficeId !== office.officeId ||
+      production.producingOfficeholderAssignmentId !== booking.actingOfficeholderAssignmentId ||
+      instant(at, `${artifactId} production`) > instant(assignment.deadline, `${assignment.id} deadline`)) {
+      throw new Error(`Budget-review evidence ${artifactId} lacks its canonical booking and assignment boundary.`);
+    }
+    const sourceAssignment = {
+      ...assignment,
+      status: "QUEUED" as const,
+      statusUpdatedAt: assignment.createdAt,
+      failureReason: null,
+      statusProvenanceReferenceId: null,
+      resultArtifactIds: [],
+      supersededByAssignmentId: null,
+    };
+    const claims: I5DomainEvidenceClaim[] = [{
+      id: `${artifactId}.claim.1`, sectionId: "bounded-result",
+      claimFamily: "OMB_REVIEW_PRODUCT", value: sourceAssignment.expectedProductKind,
+      sourceOwnerId: state.officeOperations.ownerId, sourceRecordId: sourceAssignment.id,
+      sourceRecordHash: sha(sourceAssignment), observedAt: at,
+      observationAuthorityId: sourceAssignment.authorityReference,
+    }];
+    const withoutHash = {
+      kind: "I5_DOMAIN_EVIDENCE" as const,
+      domainEvidenceKind: "OMB_REVIEW_PRODUCT" as const,
+      id: artifactId, version: "1",
+      producerInstitutionId: office.officeId, producingOfficeId: office.officeId,
+      authoringOfficeholderAssignmentId: booking.actingOfficeholderAssignmentId,
+      sourceOwnerId: state.officeOperations.ownerId, sourceOccurrenceIds: [sourceAssignment.id],
+      observationAuthorityId: sourceAssignment.authorityReference,
+      asOf: at, createdAt: at, releasedAt: at,
+      sectionIds: ["bounded-result"], claims, accessClass: "OMB_INTERNAL_PRODUCT",
+      analysisOnly: true, uncertainty: ["Bounded proof product; no direct domain outcome authority."],
+      provenanceReference: configuration.provenanceReference,
+      revisionOfArtifactId: null, supersedesArtifactId: null,
+    };
+    const expectedArtifact: I5DomainEvidenceArtifact = {
+      ...withoutHash, canonicalArtifactHash: computeI5DomainEvidenceArtifactHash(withoutHash),
+    };
+    assertExpectedI5DomainEvidenceArtifact(artifact, expectedArtifact, "Budget-review");
   }
   const authority = configuration.ombReviewCapacity.standingCoordinationAuthority;
   for (const request of capacity.coordinationRequests) {
@@ -2065,6 +2388,7 @@ export const assertPresidentialConcurrentWorldOwnerStates = (
   validateEmployment(state, configuration, current);
   validateCongress(state, configuration, current);
   validateOMB(state, configuration);
+  validateHHSDomainEvidence(state, administration, configuration, current);
   validateOfficeCommunications(state, configuration, current);
   if (!sameOrdered(state.externalActors.state.actorIds, configuration.externalActors.map((entry) => entry.id).sort())) {
     throw new Error("External-actor owner set contradicts configuration.");
@@ -2073,9 +2397,14 @@ export const assertPresidentialConcurrentWorldOwnerStates = (
     throw new Error("Media owner set contradicts configuration.");
   }
   const maternity = state.maternityServiceAccess.state;
+  const expectedMaternity = expectedMaternityOwnerAt(configuration, current);
   if (maternity.facilityId !== configuration.maternityServiceAccess.facilityId ||
     maternity.serviceAreaId !== configuration.maternityServiceAccess.serviceAreaId ||
-    maternity.evidenceArtifactIds.some((id) => findArtifact(state, id) === undefined)) {
+    maternity.evidenceArtifactIds.some((id) => findArtifact(state, id) === undefined) ||
+    maternity.effectiveCapacity !== expectedMaternity.effectiveCapacity ||
+    maternity.catchmentCount !== expectedMaternity.catchmentCount ||
+    maternity.currentTravelBurdenMinutes !== expectedMaternity.currentTravelBurdenMinutes ||
+    !sameOrdered(maternity.materialHistory, expectedMaternity.materialHistory)) {
     throw new Error("Maternity service owner duplicates or fabricates evidence truth.");
   }
   for (const presentation of state.presidentialInquiries.state.previewPresentations) {
